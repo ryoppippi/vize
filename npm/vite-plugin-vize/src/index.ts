@@ -622,6 +622,18 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         return normalizeFsIdForBuild(id);
       }
 
+      // Handle ?macro=true queries (Nuxt page macros: defineRouteRules, definePageMeta, etc.)
+      // Nuxt's router generates `import { default } from "page.vue?macro=true"` to extract
+      // route metadata. Without @vitejs/plugin-vue, Vize must handle this query and return
+      // the compiled script output so Vite's OXC transform can process it as JS.
+      if (id.includes("?macro=true")) {
+        const filePath = id.split("?")[0];
+        const resolved = resolveVuePath(filePath, importer);
+        if (resolved && fs.existsSync(resolved)) {
+          return `\0${resolved}?macro=true`;
+        }
+      }
+
       // Handle virtual style imports:
       //   Component.vue?vue&type=style&index=0&lang=scss
       //   Component.vue?vue&type=style&index=0&lang=scss&module
@@ -872,6 +884,30 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         return "";
       }
 
+      // Handle ?macro=true queries (Nuxt page macros: defineRouteRules, definePageMeta, etc.)
+      // Nuxt's PageMetaPlugin expects raw <script setup> content (as JS) so it can extract
+      // just the macro calls. We return the script setup block's source directly — NOT the
+      // fully compiled component — because the full compiled output includes template render
+      // functions, useI18n calls, and other setup code that shouldn't execute in macro context.
+      if (id.startsWith("\0") && id.endsWith("?macro=true")) {
+        const realPath = id.slice(1).replace("?macro=true", "");
+        if (fs.existsSync(realPath)) {
+          const source = fs.readFileSync(realPath, "utf-8");
+          // Extract <script setup> content
+          const setupMatch = source.match(/<script\s+setup[^>]*>([\s\S]*?)<\/script>/);
+          if (setupMatch) {
+            // Return script setup content wrapped in an export default so Nuxt's
+            // macro plugin can find definePageMeta/defineRouteRules calls.
+            const scriptContent = setupMatch[1];
+            return {
+              code: `${scriptContent}\nexport default {}`,
+              map: null,
+            };
+          }
+        }
+        return { code: "export default {}", map: null };
+      }
+
       // Handle vize virtual modules
       if (isVizeVirtual(id)) {
         const realPath = fromVirtualId(id);
@@ -966,8 +1002,12 @@ export function vize(options: VizeOptions = {}): Plugin[] {
       id: string,
       options?: { ssr?: boolean },
     ): Promise<TransformResult | null> {
-      if (isVizeVirtual(id)) {
-        const realPath = fromVirtualId(id);
+      // Handle vize virtual modules and ?macro=true queries
+      const isMacro = id.startsWith("\0") && id.endsWith("?macro=true");
+      if (isVizeVirtual(id) || isMacro) {
+        const realPath = isMacro
+          ? id.slice(1).replace("?macro=true", "")
+          : fromVirtualId(id);
         try {
           const result = await transformWithOxc(code, realPath, {
             lang: "ts",

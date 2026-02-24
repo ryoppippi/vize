@@ -82,6 +82,14 @@ pub fn compile_script_setup_inline(
     let mut ctx = ScriptCompileContext::new(content);
     ctx.analyze();
 
+    // Merge type definitions from normal <script> block so that
+    // defineProps<TypeRef>() can resolve types defined there.
+    if let Some(normal_src) = normal_script_content {
+        if !normal_src.is_empty() {
+            ctx.collect_types_from(normal_src);
+        }
+    }
+
     // Use arena-allocated Vec for better performance
     let bump = vize_carton::Bump::new();
     let mut output: vize_carton::Vec<u8> = vize_carton::Vec::with_capacity_in(4096, &bump);

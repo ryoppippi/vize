@@ -764,6 +764,42 @@ fn collect_from_expression<'a>(
                 rewrites,
             );
         }
+        Expression::ChainExpression(chain) => {
+            // Handle optional chaining: socialUrls?.x, foo?.bar()
+            match &chain.expression {
+                oxc_ast::ast::ChainElement::CallExpression(call) => {
+                    for arg in call.arguments.iter() {
+                        if let Some(e) = arg.as_expression() {
+                            collect_from_expression(
+                                e, source, local_to_key, local_bindings, rewrites,
+                            );
+                        }
+                    }
+                    collect_from_expression(
+                        &call.callee, source, local_to_key, local_bindings, rewrites,
+                    );
+                }
+                oxc_ast::ast::ChainElement::StaticMemberExpression(member) => {
+                    collect_from_expression(
+                        &member.object, source, local_to_key, local_bindings, rewrites,
+                    );
+                }
+                oxc_ast::ast::ChainElement::ComputedMemberExpression(member) => {
+                    collect_from_expression(
+                        &member.object, source, local_to_key, local_bindings, rewrites,
+                    );
+                    collect_from_expression(
+                        &member.expression, source, local_to_key, local_bindings, rewrites,
+                    );
+                }
+                oxc_ast::ast::ChainElement::PrivateFieldExpression(member) => {
+                    collect_from_expression(
+                        &member.object, source, local_to_key, local_bindings, rewrites,
+                    );
+                }
+                _ => {}
+            }
+        }
         _ => {}
     }
 }

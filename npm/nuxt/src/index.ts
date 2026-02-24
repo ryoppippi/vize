@@ -151,7 +151,9 @@ export default defineNuxtModule<VizeNuxtOptions>({
         // 2. i18n function injection: inject useI18n() for $t, $rt, $d, $n, $tm, $te
         // @nuxtjs/i18n's TransformI18nFunctionPlugin skips \0-prefixed IDs.
         // Must inject inside the setup() function body, not at module top level.
-        const i18nFnRe = /\$([tdn]|rt|tm|te)\s*\(/;
+        // Use negative lookbehind to exclude `_ctx.$t(` and `this.$t(` (property access),
+        // which are Vue template globals and don't need useI18n injection.
+        const i18nFnRe = /(?<![.\w])\$([tdn]|rt|tm|te)\s*\(/;
         if (i18nFnRe.test(result) && !result.includes("useI18n")) {
           const i18nMap: Record<string, string> = {
             $t: "t: $t", $rt: "rt: $rt", $d: "d: $d",
@@ -159,8 +161,8 @@ export default defineNuxtModule<VizeNuxtOptions>({
           };
           const usedFns: string[] = [];
           for (const [fn, destructure] of Object.entries(i18nMap)) {
-            // Escape $ for regex
-            if (new RegExp(`\\${fn}\\s*\\(`).test(result)) {
+            // Escape $ for regex, use negative lookbehind to skip _ctx.$t etc.
+            if (new RegExp(`(?<![.\\w])\\${fn}\\s*\\(`).test(result)) {
               usedFns.push(destructure);
             }
           }
