@@ -650,9 +650,12 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         return `\0${id}.${lang}`;
       }
 
-      // If importer is a vize virtual module, resolve non-vue imports against the real path
-      if (importer && isVizeVirtual(importer)) {
-        const cleanImporter = fromVirtualId(importer);
+      // If importer is a vize virtual module or macro module, resolve imports against the real path
+      const isMacroImporter = importer?.startsWith("\0") && importer?.endsWith("?macro=true");
+      if (importer && (isVizeVirtual(importer) || isMacroImporter)) {
+        const cleanImporter = isMacroImporter
+          ? importer.slice(1).replace("?macro=true", "")
+          : fromVirtualId(importer);
 
         logger.log(`resolveId from virtual: id=${id}, cleanImporter=${cleanImporter}`);
 
@@ -1031,6 +1034,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
           return { code: "export default {}", map: null };
         }
       }
+
       return null;
     },
 
@@ -1171,7 +1175,60 @@ export function vize(options: VizeOptions = {}): Plugin[] {
     },
   };
 
-  return [vueCompatPlugin, mainPlugin];
+  // Post-transform plugin to handle virtual SFC content from other plugins.
+  // Vue Macros' setupSFC wraps .setup.ts content in <script setup> tags during
+  // its transform hook (which runs after our enforce:"pre" mainPlugin).
+  // We catch that here and compile it as an SFC.
+  const postTransformPlugin: Plugin = {
+    name: "vize:post-transform",
+    enforce: "post",
+    async transform(
+      code: string,
+      id: string,
+      transformOptions?: { ssr?: boolean },
+    ): Promise<TransformResult | null> {
+      if (
+        !id.endsWith(".vue") &&
+        !id.endsWith(".vue.ts") &&
+        !id.includes("node_modules") &&
+        /<script\s+setup[\s>]/.test(code)
+      ) {
+        logger.log(`post-transform: compiling virtual SFC content from ${id}`);
+        try {
+          const compiled = compileFile(
+            id,
+            cache,
+            {
+              sourceMap: mergedOptions?.sourceMap ?? !(isProduction ?? false),
+              ssr: mergedOptions?.ssr ?? false,
+            },
+            code,
+          );
+
+          const output = generateOutput(compiled, {
+            isProduction,
+            isDev: server !== null,
+            extractCss,
+            filePath: id,
+          });
+
+          // Strip TypeScript from the compiled output
+          const result = await transformWithOxc(output, id, { lang: "ts" });
+          const defines = transformOptions?.ssr ? serverViteDefine : clientViteDefine;
+          let transformed = result.code;
+          if (Object.keys(defines).length > 0) {
+            transformed = applyDefineReplacements(transformed, defines);
+          }
+          return { code: transformed, map: result.map as TransformResult["map"] };
+        } catch (e: unknown) {
+          logger.error(`Virtual SFC compilation failed for ${id}:`, e);
+        }
+      }
+      return null;
+    },
+  };
+
+  return [vueCompatPlugin, mainPlugin, postTransformPlugin];
 }
 
 export default vize;
