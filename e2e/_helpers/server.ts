@@ -141,17 +141,24 @@ export function ensurePortFree(port: number): Promise<void> {
   });
 }
 
-export async function waitForHttpReady(url: string, _port: number, maxRetries = 10): Promise<void> {
+export async function waitForHttpReady(url: string, _port: number, maxRetries = 30): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (res.status < 500) {
-        return;
+        const body = await res.text();
+        // Nuxt loading screen returns 200 but has minimal HTML - wait for real content
+        const isLoadingScreen = body.includes("__nuxt-loading") || body.includes("nuxt-loading");
+        // SPA pages (misskey) are small but valid; SSR pages (Nuxt) should be larger
+        const hasAppMount = body.includes("__nuxt") || body.includes("__NUXT__") || body.includes("misskey_app");
+        if (hasAppMount && !isLoadingScreen) {
+          return;
+        }
       }
     } catch {
       // retry
     }
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 2000));
   }
   console.log(`[warn] HTTP health check did not succeed for ${url} after ${maxRetries} retries`);
 }

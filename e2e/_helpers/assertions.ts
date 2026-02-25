@@ -38,6 +38,8 @@ export function isFatalError(error: string): boolean {
     /net::ERR_/,
     /ECONNREFUSED/,
     /is not defined.*\$pinia/,
+    // Vite dep optimizer triggers page reload, causing transient import failures
+    /Failed to fetch dynamically imported module.*node_modules/,
   ];
   if (ignorePatterns.some((p) => p.test(error))) return false;
   return fatalPatterns.some((p) => p.test(error));

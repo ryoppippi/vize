@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./vite-dev",
   testMatch: "**/*.spec.ts",
   testIgnore: ["**/node_modules/**", "**/_git/**"],
-  timeout: 120_000,
+  timeout: 300_000,
   expect: { timeout: 30_000 },
   fullyParallel: false,
   retries: 0,

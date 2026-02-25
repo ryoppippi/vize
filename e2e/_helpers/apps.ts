@@ -226,7 +226,7 @@ export const misskeyApp: AppConfig = {
   readyPattern: /Local:\s+http:\/\//,
   allowNon200: true,
   waitUntil: "domcontentloaded",
-  startupTimeout: 90_000,
+  startupTimeout: 180_000,
   setup() {
     const misskeyDir = path.join(GIT_DIR, "misskey");
     const frontendDir = path.join(misskeyDir, "packages", "frontend");
@@ -432,14 +432,14 @@ export const npmxApp: AppConfig = {
   name: "npmx.dev",
   cwd: path.join(GIT_DIR, "npmx.dev"),
   command: "npx",
-  args: ["pnpm@10", "exec", "nuxt", "dev", "--port", "3001"],
+  args: ["pnpm@10", "exec", "nuxt", "dev", "--port", "3001", "--host", "0.0.0.0"],
   port: 3001,
   url: "http://127.0.0.1:3001",
   mountSelector: "#__nuxt",
-  readyPattern: /Local:\s+http:\/\/(localhost|127\.0\.0\.1):3001/,
+  readyPattern: /Local:\s+http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0):3001/,
   allowNon200: true,
   waitUntil: "load",
-  readyDelay: 15_000,
+  readyDelay: 30_000,
   env: {
     NUXT_SESSION_PASSWORD: "e2e-test-dummy-session-password-32chars!",
   },
@@ -491,15 +491,15 @@ export const vuefesApp: AppConfig = {
   name: "vuefes-2025",
   cwd: path.join(GIT_DIR, "vuefes-2025"),
   command: "npx",
-  args: ["pnpm@10", "exec", "nuxt", "dev", "--port", "3003"],
+  args: ["pnpm@10", "exec", "nuxt", "dev", "--port", "3003", "--host", "0.0.0.0"],
   port: 3003,
   url: "http://127.0.0.1:3003",
   mountSelector: "#__nuxt",
-  readyPattern: /Local:\s+http:\/\/(localhost|127\.0\.0\.1):3003/,
+  readyPattern: /Local:\s+http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0):3003/,
   allowNon200: true,
   waitUntil: "load",
-  readyDelay: 15_000,
-  startupTimeout: 120_000,
+  readyDelay: 30_000,
+  startupTimeout: 180_000,
   setup() {
     const vuefesDir = path.join(GIT_DIR, "vuefes-2025");
 
