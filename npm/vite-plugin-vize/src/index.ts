@@ -408,11 +408,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
           __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
         },
         optimizeDeps: {
-          include: ["vue"],
           exclude: ["virtual:vize-styles"],
-          rolldownOptions: {
-            external: [/\.vue$/],
-          },
         },
       };
     },
