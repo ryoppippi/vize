@@ -8,6 +8,7 @@
  * - Type Checker: `vize check` CLI command (via `vize` bin)
  */
 
+import fs from "node:fs";
 import { defineNuxtModule, addVitePlugin } from "@nuxt/kit";
 import vize from "@vizejs/vite-plugin";
 import { musea } from "@vizejs/vite-plugin-musea";
@@ -201,8 +202,14 @@ export default defineNuxtModule<VizeNuxtOptions>({
 
     // ─── UnoCSS bridge: patch filter to accept vize virtual modules ────────
     // UnoCSS's Vite plugin uses createFilter from unplugin-utils which
-    // hard-excludes \0-prefixed module IDs. Patch the transform functions
-    // to strip the \0 prefix so UnoCSS can extract utility classes.
+    // hard-excludes \0-prefixed module IDs. Additionally, UnoCSS's pipeline
+    // filter uses /\.(vue|...)($|\?)/ which rejects `.vue.ts` suffixes.
+    //
+    // Attributify support: UnoCSS's attributify extractor expects HTML-style
+    // attributes (e.g. `flex="~ col gap1"`) but Vize compiles templates to
+    // JS render functions where these become object properties (e.g.
+    // `{ flex: "~ col gap1" }`). To support attributify, we also feed the
+    // original .vue source to UnoCSS's extractor alongside the compiled JS.
     addVitePlugin({
       name: "vizejs:unocss-bridge",
       configResolved(config: { plugins: Array<{ name: string; transform?: Function }> }) {
@@ -211,8 +218,23 @@ export default defineNuxtModule<VizeNuxtOptions>({
             const origTransform = plugin.transform;
             plugin.transform = function (code: string, id: string, ...args: unknown[]) {
               if (id.startsWith("\0") && id.endsWith(".vue.ts")) {
-                // Strip \0 prefix so UnoCSS's filter doesn't reject it
-                return origTransform.call(this, code, id.slice(1), ...args);
+                // Strip \0 prefix AND .ts suffix so UnoCSS's filter accepts it.
+                // UnoCSS's defaultPipelineInclude is /\.(vue|...)($|\?)/ which
+                // requires .vue at end-of-string or before ?, not .vue.ts.
+                const normalizedId = id.slice(1).replace(/\.ts$/, "");
+
+                // Append original .vue source so UnoCSS's attributify extractor
+                // can find HTML-style attribute patterns (flex="~ col gap1" etc.)
+                // that don't survive template-to-render-function compilation.
+                let enrichedCode = code;
+                try {
+                  const originalSource = fs.readFileSync(normalizedId, "utf-8");
+                  enrichedCode = code + "\n" + originalSource;
+                } catch {
+                  // File may not exist (virtual components, etc.) — use compiled code only
+                }
+
+                return origTransform.call(this, enrichedCode, normalizedId, ...args);
               }
               return origTransform.call(this, code, id, ...args);
             };
