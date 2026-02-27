@@ -643,8 +643,8 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                     ctx.use_helper(RuntimeHelper::CreateBlock);
                     ctx.push(ctx.helper(RuntimeHelper::CreateBlock));
                     ctx.push("(");
-                    // Handle dynamic component (<component :is="...">)
-                    if el.tag == "component" {
+                    // Handle dynamic component (<component :is="..."> / <Component :is="...">)
+                    if el.tag == "component" || el.tag == "Component" {
                         let dynamic_is = el.props.iter().find_map(|p| {
                             if let PropNode::Directive(dir) = p {
                                 if dir.name == "bind" {

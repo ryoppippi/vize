@@ -738,8 +738,8 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             ctx.push(ctx.helper(RuntimeHelper::CreateBlock));
             ctx.push("(");
 
-            // Check for dynamic component (<component :is="..."> or <component is="...">)
-            let is_dynamic_component = el.tag == "component";
+            // Check for dynamic component (<component :is="..."> or <Component is="...">)
+            let is_dynamic_component = el.tag == "component" || el.tag == "Component";
             let (dynamic_is, static_is) = if is_dynamic_component {
                 // Check for :is="..." (dynamic binding)
                 let dynamic = el.props.iter().find_map(|p| {
@@ -1103,8 +1103,8 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             ctx.push(helper);
             ctx.push("(");
 
-            // Check for dynamic component (<component :is="..."> or <component is="...">)
-            let is_dynamic_component = el.tag == "component";
+            // Check for dynamic component (<component :is="..."> or <Component is="...">)
+            let is_dynamic_component = el.tag == "component" || el.tag == "Component";
             let (dynamic_is, static_is) = if is_dynamic_component {
                 let dynamic = el.props.iter().find_map(|p| {
                     if let PropNode::Directive(dir) = p {

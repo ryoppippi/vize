@@ -216,6 +216,12 @@ export default defineNuxtModule<VizeNuxtOptions>({
         for (const plugin of config.plugins) {
           if (plugin.name?.startsWith("unocss:") && typeof plugin.transform === "function") {
             const origTransform = plugin.transform;
+            // Only enrich with original .vue source for the global mode plugin
+            // (unocss:global:*) which does extraction only (returns null).
+            // Other plugins like unocss:transformers modify the code and would
+            // propagate the appended .vue source into the transform pipeline,
+            // causing parse errors in downstream transforms (e.g. transformWithOxc).
+            const isExtractionOnly = plugin.name.startsWith("unocss:global");
             plugin.transform = function (code: string, id: string, ...args: unknown[]) {
               if (id.startsWith("\0") && id.endsWith(".vue.ts")) {
                 // Strip \0 prefix AND .ts suffix so UnoCSS's filter accepts it.
@@ -223,18 +229,21 @@ export default defineNuxtModule<VizeNuxtOptions>({
                 // requires .vue at end-of-string or before ?, not .vue.ts.
                 const normalizedId = id.slice(1).replace(/\.ts$/, "");
 
-                // Append original .vue source so UnoCSS's attributify extractor
-                // can find HTML-style attribute patterns (flex="~ col gap1" etc.)
-                // that don't survive template-to-render-function compilation.
-                let enrichedCode = code;
-                try {
-                  const originalSource = fs.readFileSync(normalizedId, "utf-8");
-                  enrichedCode = code + "\n" + originalSource;
-                } catch {
-                  // File may not exist (virtual components, etc.) — use compiled code only
+                // For extraction-only plugins, append original .vue source so
+                // UnoCSS's attributify extractor can find HTML-style attribute
+                // patterns (flex="~ col gap1" etc.) that don't survive
+                // template-to-render-function compilation.
+                let effectiveCode = code;
+                if (isExtractionOnly) {
+                  try {
+                    const originalSource = fs.readFileSync(normalizedId, "utf-8");
+                    effectiveCode = code + "\n" + originalSource;
+                  } catch {
+                    // File may not exist (virtual components, etc.)
+                  }
                 }
 
-                return origTransform.call(this, enrichedCode, normalizedId, ...args);
+                return origTransform.call(this, effectiveCode, normalizedId, ...args);
               }
               return origTransform.call(this, code, id, ...args);
             };
