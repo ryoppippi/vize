@@ -281,11 +281,10 @@ pub fn compile_sfc(
     let is_ts = opts.is_ts.unwrap_or(false);
 
     // Extract scope_id from options (strip "data-v-" prefix if present)
-    let external_scope_id = opts.scope_id.as_ref().map(|sid| {
-        sid.strip_prefix("data-v-")
-            .unwrap_or(sid)
-            .to_string()
-    });
+    let external_scope_id = opts
+        .scope_id
+        .as_ref()
+        .map(|sid| sid.strip_prefix("data-v-").unwrap_or(sid).to_string());
 
     // Create compiler options with scope_id for scoped CSS
     let template_compiler_options = if has_scoped {
@@ -582,10 +581,13 @@ pub fn compile_sfc_batch_with_results(
 
         // Generate scope ID from filename using SHA-256 (matching JS-side generateScopeId)
         let scope_id = {
-            use sha2::{Sha256, Digest};
+            use sha2::{Digest, Sha256};
             let hash = Sha256::digest(filename.as_bytes());
             // Take first 8 hex chars of the SHA-256 hash (same as JS: hash.slice(0, 8))
-            format!("{:02x}{:02x}{:02x}{:02x}", hash[0], hash[1], hash[2], hash[3])
+            format!(
+                "{:02x}{:02x}{:02x}{:02x}",
+                hash[0], hash[1], hash[2], hash[3]
+            )
         };
 
         let has_scoped = source.contains("<style") && source.contains("scoped");

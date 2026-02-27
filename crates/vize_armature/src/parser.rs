@@ -562,6 +562,7 @@ impl<'a> Parser<'a> {
             let exp_node = SimpleExpressionNode::new(&*camelized, false, exp_loc);
             let exp_boxed = Box::new_in(exp_node, self.allocator);
             dir_node.exp = Some(ExpressionNode::Simple(exp_boxed));
+            dir_node.shorthand = true;
         }
 
         if let Some(ref mut current) = self.current_element {

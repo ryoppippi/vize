@@ -835,13 +835,7 @@ fn collect_from_expression<'a>(
             }
         }
         Expression::TaggedTemplateExpression(tagged) => {
-            collect_from_expression(
-                &tagged.tag,
-                source,
-                local_to_key,
-                local_bindings,
-                rewrites,
-            );
+            collect_from_expression(&tagged.tag, source, local_to_key, local_bindings, rewrites);
             for expr in tagged.quasi.expressions.iter() {
                 collect_from_expression(expr, source, local_to_key, local_bindings, rewrites);
             }
@@ -889,30 +883,54 @@ fn collect_from_expression<'a>(
                     for arg in call.arguments.iter() {
                         if let Some(e) = arg.as_expression() {
                             collect_from_expression(
-                                e, source, local_to_key, local_bindings, rewrites,
+                                e,
+                                source,
+                                local_to_key,
+                                local_bindings,
+                                rewrites,
                             );
                         }
                     }
                     collect_from_expression(
-                        &call.callee, source, local_to_key, local_bindings, rewrites,
+                        &call.callee,
+                        source,
+                        local_to_key,
+                        local_bindings,
+                        rewrites,
                     );
                 }
                 oxc_ast::ast::ChainElement::StaticMemberExpression(member) => {
                     collect_from_expression(
-                        &member.object, source, local_to_key, local_bindings, rewrites,
+                        &member.object,
+                        source,
+                        local_to_key,
+                        local_bindings,
+                        rewrites,
                     );
                 }
                 oxc_ast::ast::ChainElement::ComputedMemberExpression(member) => {
                     collect_from_expression(
-                        &member.object, source, local_to_key, local_bindings, rewrites,
+                        &member.object,
+                        source,
+                        local_to_key,
+                        local_bindings,
+                        rewrites,
                     );
                     collect_from_expression(
-                        &member.expression, source, local_to_key, local_bindings, rewrites,
+                        &member.expression,
+                        source,
+                        local_to_key,
+                        local_bindings,
+                        rewrites,
                     );
                 }
                 oxc_ast::ast::ChainElement::PrivateFieldExpression(member) => {
                     collect_from_expression(
-                        &member.object, source, local_to_key, local_bindings, rewrites,
+                        &member.object,
+                        source,
+                        local_to_key,
+                        local_bindings,
+                        rewrites,
                     );
                 }
                 _ => {}

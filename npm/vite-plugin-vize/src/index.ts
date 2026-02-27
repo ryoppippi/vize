@@ -826,7 +826,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         const params = new URLSearchParams(queryString);
         const indexStr = params.get("index");
         const lang = params.get("lang");
-        const hasModule = params.has("module");
+        const _hasModule = params.has("module");
         const scoped = params.get("scoped");
 
         // Try to get style block by index from cached module
@@ -1187,6 +1187,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         !id.endsWith(".vue") &&
         !id.endsWith(".vue.ts") &&
         !id.includes("node_modules") &&
+        id.endsWith(".setup.ts") &&
         /<script\s+setup[\s>]/.test(code)
       ) {
         logger.log(`post-transform: compiling virtual SFC content from ${id}`);
