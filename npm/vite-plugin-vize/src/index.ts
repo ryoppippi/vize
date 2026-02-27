@@ -1004,9 +1004,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
       // Handle vize virtual modules and ?macro=true queries
       const isMacro = id.startsWith("\0") && id.endsWith("?macro=true");
       if (isVizeVirtual(id) || isMacro) {
-        const realPath = isMacro
-          ? id.slice(1).replace("?macro=true", "")
-          : fromVirtualId(id);
+        const realPath = isMacro ? id.slice(1).replace("?macro=true", "") : fromVirtualId(id);
         try {
           const result = await transformWithOxc(code, realPath, {
             lang: "ts",

@@ -329,7 +329,12 @@ fn ts_type_to_js_type(ts_type: &str) -> String {
             }
 
             // Multiple distinct types → array form: [String, Number]
-            return format!("[{}]", js_types.join(", "));
+            let joined = js_types.join(", ");
+            let mut result = String::with_capacity(joined.len() + 2);
+            result.push('[');
+            result.push_str(&joined);
+            result.push(']');
+            return result;
         }
     }
 

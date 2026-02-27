@@ -247,7 +247,10 @@ pub fn compile_script_setup(
             // Handle side-effect imports without semicolons (e.g., import '@/css/reset.scss')
             // These have no 'from' clause and are always single-line
             if !trimmed.contains(" from ") && (trimmed.contains('\'') || trimmed.contains('"')) {
-                imports.push(format!("{}\n", line));
+                let mut import = String::with_capacity(line.len() + 1);
+                import.push_str(line);
+                import.push('\n');
+                imports.push(import);
                 continue;
             }
             in_import = true;
@@ -1126,10 +1129,20 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
                                     ""
                                 };
                                 if imported == local {
-                                    named_specs.push(format!("{}{}", type_prefix, imported));
+                                    let mut spec =
+                                        String::with_capacity(type_prefix.len() + imported.len());
+                                    spec.push_str(type_prefix);
+                                    spec.push_str(imported);
+                                    named_specs.push(spec);
                                 } else {
-                                    named_specs
-                                        .push(format!("{}{} as {}", type_prefix, imported, local));
+                                    let mut spec = String::with_capacity(
+                                        type_prefix.len() + imported.len() + 4 + local.len(),
+                                    );
+                                    spec.push_str(type_prefix);
+                                    spec.push_str(imported);
+                                    spec.push_str(" as ");
+                                    spec.push_str(local);
+                                    named_specs.push(spec);
                                 }
                             }
                             ImportDeclarationSpecifier::ImportDefaultSpecifier(s) => {
