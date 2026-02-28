@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted, inject, type ComputedRef } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
 import * as monaco from "monaco-editor";
 import type {
   WasmModule,
   TypeCheckResult,
   TypeCheckDiagnostic,
   TypeCheckCapabilities,
-} from "../wasm/index";
-import { TYPECHECK_PRESET, TYPECHECK_TYPED_PRESET } from "./presets/typecheck";
+} from "../../wasm/index";
+import { TYPECHECK_PRESET, TYPECHECK_TYPED_PRESET } from "../../shared/presets/typecheck";
 import { mdiCheckDecagram, mdiCheck, mdiCloseCircle, mdiAlert, mdiInformation } from "@mdi/js";
 
 interface Diagnostic {

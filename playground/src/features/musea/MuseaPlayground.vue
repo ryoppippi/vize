@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, inject, type ComputedRef } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
 
 interface Diagnostic {
   message: string;
@@ -10,9 +10,9 @@ interface Diagnostic {
   endColumn?: number;
   severity: "error" | "warning" | "info";
 }
-import CodeHighlight from "./CodeHighlight.vue";
-import type { WasmModule, ArtDescriptor, CsfOutput } from "../wasm/index";
-import { ART_PRESET } from "./presets/musea";
+import CodeHighlight from "../../shared/CodeHighlight.vue";
+import type { WasmModule, ArtDescriptor, CsfOutput } from "../../wasm/index";
+import { ART_PRESET } from "../../shared/presets/musea";
 import { mdiPalette, mdiDiamond } from "@mdi/js";
 
 const props = defineProps<{

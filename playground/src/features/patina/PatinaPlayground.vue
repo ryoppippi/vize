@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted, inject, type ComputedRef } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
 import * as monaco from "monaco-editor";
-import type { WasmModule, LintResult, LintDiagnostic, LintRule, LocaleInfo } from "../wasm/index";
-import { getWasm } from "../wasm/index";
-import { LINT_PRESET } from "./presets/patina";
+import type { WasmModule, LintResult, LintDiagnostic, LintRule, LocaleInfo } from "../../wasm/index";
+import { getWasm } from "../../wasm/index";
+import { LINT_PRESET } from "../../shared/presets/patina";
 import { mdiAlert, mdiCheckCircle, mdiCheck, mdiCloseCircle } from "@mdi/js";
 
 interface Diagnostic {

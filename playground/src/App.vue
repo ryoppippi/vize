@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, shallowRef, provide } from "vue";
-import MonacoEditor from "./components/MonacoEditor.vue";
-import CodeHighlight from "./components/CodeHighlight.vue";
-import MuseaPlayground from "./components/MuseaPlayground.vue";
-import PatinaPlayground from "./components/PatinaPlayground.vue";
-import GlyphPlayground from "./components/GlyphPlayground.vue";
-import CroquisPlayground from "./components/CroquisPlayground.vue";
-import CrossFilePlayground from "./components/CrossFilePlayground.vue";
-import TypeCheckPlayground from "./components/TypeCheckPlayground.vue";
+import MonacoEditor from "./shared/MonacoEditor.vue";
+import CodeHighlight from "./shared/CodeHighlight.vue";
+import MuseaPlayground from "./features/musea/MuseaPlayground.vue";
+import PatinaPlayground from "./features/patina/PatinaPlayground.vue";
+import GlyphPlayground from "./features/glyph/GlyphPlayground.vue";
+import CroquisPlayground from "./features/croquis/CroquisPlayground.vue";
+import CrossFilePlayground from "./features/cross-file/CrossFilePlayground.vue";
+import TypeCheckPlayground from "./features/canon/TypeCheckPlayground.vue";
 import { PRESETS, type PresetKey, type InputMode } from "./presets";
 import {
   loadWasm,

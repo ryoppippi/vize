@@ -10,16 +10,16 @@ import {
   inject,
   type ComputedRef,
 } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
-import type { Diagnostic } from "./MonacoEditor.vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
+import type { Diagnostic } from "../../shared/MonacoEditor.vue";
 import type {
   WasmModule,
   CroquisResult,
   BindingDisplay,
   BindingSource,
   ScopeDisplay,
-} from "../wasm/index";
-import { ANALYSIS_PRESET } from "./presets/croquis";
+} from "../../wasm/index";
+import { ANALYSIS_PRESET } from "../../shared/presets/croquis";
 import { mdiCodeTags, mdiChartTimelineVariant, mdiCheck, mdiCloseCircle, mdiAlert } from "@mdi/js";
 
 const props = defineProps<{

@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { ref, watch, computed, inject, toRaw, onMounted, onUnmounted, type ComputedRef } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
-import CodeHighlight from "./CodeHighlight.vue";
-import type { WasmModule, FormatOptions, FormatResult } from "../wasm/index";
-import { getWasm } from "../wasm/index";
-import { GLYPH_PRESET } from "./presets/glyph";
+import {
+  ref,
+  watch,
+  computed,
+  inject,
+  toRaw,
+  onMounted,
+  onUnmounted,
+  type ComputedRef,
+} from "vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
+import CodeHighlight from "../../shared/CodeHighlight.vue";
+import type { WasmModule, FormatOptions, FormatResult } from "../../wasm/index";
+import { getWasm } from "../../wasm/index";
+import { GLYPH_PRESET } from "../../shared/presets/glyph";
 import { mdiFileEdit, mdiAutoFix, mdiCheck } from "@mdi/js";
 
 const props = defineProps<{
   compiler: WasmModule | null;
 }>();
 const _injectedTheme = inject<ComputedRef<"dark" | "light">>("theme");
-const theme = computed<"dark" | "light">(() => _injectedTheme?.value ?? "light");
+const theme = computed<"dark" | "light">(
+  () => _injectedTheme?.value ?? "light",
+);
 
 const source = ref(GLYPH_PRESET);
 const formatResult = ref<FormatResult | null>(null);
@@ -49,7 +60,11 @@ const diffLines = computed(() => {
 
   const original = source.value.split("\n");
   const formatted = formatResult.value.code.split("\n");
-  const diff: Array<{ type: "same" | "removed" | "added"; content: string; lineNum: number }> = [];
+  const diff: Array<{
+    type: "same" | "removed" | "added";
+    content: string;
+    lineNum: number;
+  }> = [];
 
   // Simple diff - just show removed and added lines
   const maxLen = Math.max(original.length, formatted.length);
@@ -61,7 +76,11 @@ const diffLines = computed(() => {
     const fmtLine = formatted[fmtIdx];
 
     if (origLine === fmtLine) {
-      diff.push({ type: "same", content: origLine || "", lineNum: origIdx + 1 });
+      diff.push({
+        type: "same",
+        content: origLine || "",
+        lineNum: origIdx + 1,
+      });
       origIdx++;
       fmtIdx++;
     } else if (origLine !== undefined && fmtLine !== undefined) {
@@ -161,12 +180,18 @@ onUnmounted(() => {
     <div class="panel input-panel">
       <div class="panel-header">
         <div class="header-title">
-          <svg class="icon" viewBox="0 0 24 24"><path :d="mdiFileEdit" fill="currentColor" /></svg>
+          <svg class="icon" viewBox="0 0 24 24">
+            <path :d="mdiFileEdit" fill="currentColor" />
+          </svg>
           <h2>Source</h2>
         </div>
         <div class="panel-actions">
-          <button @click="source = GLYPH_PRESET" class="btn-ghost">Reset</button>
-          <button @click="copyToClipboard(source)" class="btn-ghost">Copy</button>
+          <button @click="source = GLYPH_PRESET" class="btn-ghost">
+            Reset
+          </button>
+          <button @click="copyToClipboard(source)" class="btn-ghost">
+            Copy
+          </button>
         </div>
       </div>
       <div class="editor-container">
@@ -177,12 +202,19 @@ onUnmounted(() => {
     <div class="panel output-panel">
       <div class="panel-header">
         <div class="header-title">
-          <svg class="icon" viewBox="0 0 24 24"><path :d="mdiAutoFix" fill="currentColor" /></svg>
+          <svg class="icon" viewBox="0 0 24 24">
+            <path :d="mdiAutoFix" fill="currentColor" />
+          </svg>
           <h2>Code Formatting</h2>
-          <span v-if="formatTime !== null" class="perf-badge"> {{ formatTime.toFixed(2) }}ms </span>
+          <span v-if="formatTime !== null" class="perf-badge">
+            {{ formatTime.toFixed(2) }}ms
+          </span>
           <span
             v-if="formatResult"
-            :class="['status-badge', formatResult.changed ? 'changed' : 'unchanged']"
+            :class="[
+              'status-badge',
+              formatResult.changed ? 'changed' : 'unchanged',
+            ]"
           >
             {{ formatResult.changed ? "Changed" : "Unchanged" }}
           </span>
@@ -194,7 +226,10 @@ onUnmounted(() => {
           >
             Formatted
           </button>
-          <button :class="['tab', { active: activeTab === 'diff' }]" @click="activeTab = 'diff'">
+          <button
+            :class="['tab', { active: activeTab === 'diff' }]"
+            @click="activeTab = 'diff'"
+          >
             Diff
           </button>
           <button
@@ -218,7 +253,10 @@ onUnmounted(() => {
             <div class="output-header-bar">
               <span class="output-title">Formatted Code</span>
               <div class="output-actions">
-                <button @click="copyToClipboard(formatResult?.code || '')" class="btn-ghost">
+                <button
+                  @click="copyToClipboard(formatResult?.code || '')"
+                  class="btn-ghost"
+                >
                   Copy
                 </button>
               </div>
@@ -240,10 +278,14 @@ onUnmounted(() => {
               <span class="output-title">Changes</span>
               <span class="diff-stats">
                 <span class="stat additions"
-                  >+{{ diffLines.filter((l) => l.type === "added").length }}</span
+                  >+{{
+                    diffLines.filter((l) => l.type === "added").length
+                  }}</span
                 >
                 <span class="stat deletions"
-                  >-{{ diffLines.filter((l) => l.type === "removed").length }}</span
+                  >-{{
+                    diffLines.filter((l) => l.type === "removed").length
+                  }}</span
                 >
               </span>
             </div>
@@ -255,7 +297,9 @@ onUnmounted(() => {
             </div>
             <div v-else class="diff-view">
               <div class="diff-line-numbers">
-                <span v-for="(line, i) in diffLines" :key="i" class="diff-ln">{{ i + 1 }}</span>
+                <span v-for="(line, i) in diffLines" :key="i" class="diff-ln">{{
+                  i + 1
+                }}</span>
               </div>
               <div class="diff-code">
                 <div
@@ -264,7 +308,11 @@ onUnmounted(() => {
                   :class="['diff-line', `diff-${line.type}`]"
                 >
                   <span class="line-prefix">{{
-                    line.type === "removed" ? "-" : line.type === "added" ? "+" : " "
+                    line.type === "removed"
+                      ? "-"
+                      : line.type === "added"
+                        ? "+"
+                        : " "
                   }}</span>
                   <span class="line-content">{{ line.content || " " }}</span>
                 </div>
@@ -292,7 +340,9 @@ onUnmounted(() => {
                         class="option-input"
                       />
                     </div>
-                    <span class="option-desc">Maximum line length before wrapping</span>
+                    <span class="option-desc"
+                      >Maximum line length before wrapping</span
+                    >
                   </label>
                   <label class="option-card">
                     <div class="option-header">
@@ -305,7 +355,9 @@ onUnmounted(() => {
                         class="option-input"
                       />
                     </div>
-                    <span class="option-desc">Number of spaces per indentation level</span>
+                    <span class="option-desc"
+                      >Number of spaces per indentation level</span
+                    >
                   </label>
                 </div>
               </div>
@@ -315,17 +367,29 @@ onUnmounted(() => {
                 <div class="toggle-grid">
                   <label class="toggle-card">
                     <div class="toggle-main">
-                      <input type="checkbox" v-model="options.useTabs" class="toggle-checkbox" />
+                      <input
+                        type="checkbox"
+                        v-model="options.useTabs"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Use Tabs</span>
                     </div>
-                    <span class="toggle-desc">Indent with tabs instead of spaces</span>
+                    <span class="toggle-desc"
+                      >Indent with tabs instead of spaces</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
-                      <input type="checkbox" v-model="options.semi" class="toggle-checkbox" />
+                      <input
+                        type="checkbox"
+                        v-model="options.semi"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Semicolons</span>
                     </div>
-                    <span class="toggle-desc">Add semicolons at the end of statements</span>
+                    <span class="toggle-desc"
+                      >Add semicolons at the end of statements</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -336,7 +400,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Single Quotes</span>
                     </div>
-                    <span class="toggle-desc">Use single quotes instead of double quotes</span>
+                    <span class="toggle-desc"
+                      >Use single quotes instead of double quotes</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -360,7 +426,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Bracket Same Line</span>
                     </div>
-                    <span class="toggle-desc">Put closing bracket on the same line</span>
+                    <span class="toggle-desc"
+                      >Put closing bracket on the same line</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -382,18 +450,26 @@ onUnmounted(() => {
                   <label class="option-card">
                     <div class="option-header">
                       <span class="option-name">Trailing Comma</span>
-                      <select v-model="options.trailingComma" class="option-select">
+                      <select
+                        v-model="options.trailingComma"
+                        class="option-select"
+                      >
                         <option value="all">All</option>
                         <option value="es5">ES5</option>
                         <option value="none">None</option>
                       </select>
                     </div>
-                    <span class="option-desc">Print trailing commas wherever possible</span>
+                    <span class="option-desc"
+                      >Print trailing commas wherever possible</span
+                    >
                   </label>
                   <label class="option-card">
                     <div class="option-header">
                       <span class="option-name">Arrow Parens</span>
-                      <select v-model="options.arrowParens" class="option-select">
+                      <select
+                        v-model="options.arrowParens"
+                        class="option-select"
+                      >
                         <option value="always">Always</option>
                         <option value="avoid">Avoid</option>
                       </select>
@@ -405,13 +481,18 @@ onUnmounted(() => {
                   <label class="option-card">
                     <div class="option-header">
                       <span class="option-name">Quote Props</span>
-                      <select v-model="options.quoteProps" class="option-select">
+                      <select
+                        v-model="options.quoteProps"
+                        class="option-select"
+                      >
                         <option value="as-needed">As Needed</option>
                         <option value="consistent">Consistent</option>
                         <option value="preserve">Preserve</option>
                       </select>
                     </div>
-                    <span class="option-desc">When to quote object properties</span>
+                    <span class="option-desc"
+                      >When to quote object properties</span
+                    >
                   </label>
                   <label class="option-card">
                     <div class="option-header">
@@ -433,7 +514,11 @@ onUnmounted(() => {
                 <div class="toggle-grid" style="margin-bottom: 0.75rem">
                   <label class="toggle-card">
                     <div class="toggle-main">
-                      <input type="checkbox" v-model="options.sortBlocks" class="toggle-checkbox" />
+                      <input
+                        type="checkbox"
+                        v-model="options.sortBlocks"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Sort Blocks</span>
                     </div>
                     <span class="toggle-desc"
@@ -445,12 +530,17 @@ onUnmounted(() => {
                   <label class="option-card">
                     <div class="option-header">
                       <span class="option-name">Attribute Sort Order</span>
-                      <select v-model="options.attributeSortOrder" class="option-select">
+                      <select
+                        v-model="options.attributeSortOrder"
+                        class="option-select"
+                      >
                         <option value="alphabetical">Alphabetical</option>
                         <option value="as-written">As Written</option>
                       </select>
                     </div>
-                    <span class="option-desc">How to sort attributes within priority groups</span>
+                    <span class="option-desc"
+                      >How to sort attributes within priority groups</span
+                    >
                   </label>
                   <label class="option-card">
                     <div class="option-header">
@@ -462,7 +552,9 @@ onUnmounted(() => {
                           options.maxAttributesPerLine =
                             ($event.target as HTMLInputElement).value === ''
                               ? null
-                              : Number(($event.target as HTMLInputElement).value)
+                              : Number(
+                                  ($event.target as HTMLInputElement).value,
+                                )
                         "
                         min="1"
                         max="20"
@@ -470,7 +562,9 @@ onUnmounted(() => {
                         class="option-input"
                       />
                     </div>
-                    <span class="option-desc">Max attributes per line before wrapping</span>
+                    <span class="option-desc"
+                      >Max attributes per line before wrapping</span
+                    >
                   </label>
                 </div>
                 <div class="toggle-grid" style="margin-top: 0.75rem">
@@ -483,7 +577,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Sort Attributes</span>
                     </div>
-                    <span class="toggle-desc">Sort HTML attributes in template</span>
+                    <span class="toggle-desc"
+                      >Sort HTML attributes in template</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -494,7 +590,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Normalize Directives</span>
                     </div>
-                    <span class="toggle-desc">Normalize v-bind/v-on/v-slot to shorthand</span>
+                    <span class="toggle-desc"
+                      >Normalize v-bind/v-on/v-slot to shorthand</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -505,7 +603,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Single Attribute Per Line</span>
                     </div>
-                    <span class="toggle-desc">Enforce single attribute per line in templates</span>
+                    <span class="toggle-desc"
+                      >Enforce single attribute per line in templates</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -516,7 +616,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Indent Script/Style</span>
                     </div>
-                    <span class="toggle-desc">Indent code inside script and style tags</span>
+                    <span class="toggle-desc"
+                      >Indent code inside script and style tags</span
+                    >
                   </label>
                   <label class="toggle-card">
                     <div class="toggle-main">
@@ -527,7 +629,9 @@ onUnmounted(() => {
                       />
                       <span class="toggle-name">Merge Bind Attrs</span>
                     </div>
-                    <span class="toggle-desc">Merge bind and non-bind attrs for sorting</span>
+                    <span class="toggle-desc"
+                      >Merge bind and non-bind attrs for sorting</span
+                    >
                   </label>
                 </div>
               </div>

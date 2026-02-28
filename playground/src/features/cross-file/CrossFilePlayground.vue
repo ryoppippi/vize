@@ -9,16 +9,16 @@ import {
   inject,
   type ComputedRef,
 } from "vue";
-import MonacoEditor from "./MonacoEditor.vue";
-import type { Diagnostic } from "./MonacoEditor.vue";
+import MonacoEditor from "../../shared/MonacoEditor.vue";
+import type { Diagnostic } from "../../shared/MonacoEditor.vue";
 import type {
   WasmModule,
   CroquisResult,
   CrossFileResult,
   CrossFileInput,
   CrossFileOptions as WasmCrossFileOptions,
-} from "../wasm/index";
-import { getWasm } from "../wasm/index";
+} from "../../wasm/index";
+import { getWasm } from "../../wasm/index";
 import {
   mdiLanguageTypescript,
   mdiVuejs,
@@ -32,7 +32,7 @@ import {
   mdiArrowRight,
   mdiPlus,
 } from "@mdi/js";
-import { PRESETS, type Preset } from "./presets/crossfile";
+import { PRESETS, type Preset } from "../../shared/presets/crossfile";
 
 const props = defineProps<{
   compiler: WasmModule | null;
