@@ -89,10 +89,7 @@ export function highlightCode(code: string, lang: string): string {
 
 /** Simple markdown formatter for help text */
 export function formatHelp(help: string): string {
-  let result = help
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  let result = help.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
   // Code blocks (```lang ... ```)
   result = result.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {

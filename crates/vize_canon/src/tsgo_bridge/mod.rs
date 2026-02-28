@@ -20,8 +20,7 @@ pub use types::{
 #[cfg(test)]
 mod tests {
     use super::{
-        LspDiagnostic, LspPosition, LspRange, TsgoBridgeConfig, TypeCheckResult,
-        VIRTUAL_URI_SCHEME,
+        LspDiagnostic, LspPosition, LspRange, TsgoBridgeConfig, TypeCheckResult, VIRTUAL_URI_SCHEME,
     };
 
     #[test]

@@ -13,7 +13,10 @@ use vize_carton::{
     source_range::{MappingData, SourceMap, SourceMapping, SourceRange},
     CompactString,
 };
-use vize_relief::ast::*;
+use vize_relief::ast::{
+    DirectiveNode, ElementNode, ExpressionNode, ForNode, IfNode, InterpolationNode, PropNode,
+    RootNode, TemplateChildNode,
+};
 use vize_relief::BindingType;
 
 use crate::analysis::BindingMetadata;

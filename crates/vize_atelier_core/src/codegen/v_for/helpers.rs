@@ -3,7 +3,7 @@
 //! Provides parameter extraction, destructuring pattern parsing,
 //! and utility predicates for v-for rendering.
 
-use crate::ast::*;
+use crate::ast::{ElementNode, ExpressionNode, PropNode};
 
 /// Extract parameter names from a v-for callback expression.
 /// Handles simple identifiers ("item"), destructuring patterns ("{ id, name }"),

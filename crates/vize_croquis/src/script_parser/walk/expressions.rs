@@ -5,7 +5,10 @@
 
 use oxc_ast::ast::{Argument, AssignmentTarget, CallExpression, ObjectPropertyKind, Statement};
 
-use super::*;
+use super::{
+    detect_provide_inject_call, extract_function_params, is_client_only_hook, walk_statement,
+    ClientOnlyScopeData, ClosureScopeData, CompactString, Expression, ScriptParseResult,
+};
 
 /// Walk an expression to find nested scopes (arrow functions, callbacks, etc.)
 ///

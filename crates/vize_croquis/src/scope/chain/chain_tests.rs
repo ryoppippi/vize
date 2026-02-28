@@ -1,10 +1,9 @@
 //! Tests for scope chain management.
 
 use super::{
-    BindingType, CallbackScopeData, ClientOnlyScopeData, CompactString,
-    EventHandlerScopeData, ExternalModuleScopeData, JsGlobalScopeData,
-    NonScriptSetupScopeData, ScopeBinding, ScopeChain, ScopeKind,
-    ScriptSetupScopeData, UniversalScopeData, VForScopeData, VSlotScopeData,
+    BindingType, CallbackScopeData, ClientOnlyScopeData, CompactString, EventHandlerScopeData,
+    ExternalModuleScopeData, JsGlobalScopeData, NonScriptSetupScopeData, ScopeBinding, ScopeChain,
+    ScopeKind, ScriptSetupScopeData, UniversalScopeData, VForScopeData, VSlotScopeData,
     VueGlobalScopeData,
 };
 use crate::scope::types::JsRuntime;

@@ -295,7 +295,7 @@ pub(crate) fn collect_binding_names(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::is_simple_identifier;
     use vize_croquis::builtins::is_global_allowed;
 
     #[test]

@@ -9,7 +9,7 @@ pub mod formatting;
 mod types;
 
 pub use formatting::{render_help, HelpRenderTarget};
-pub use types::*;
+pub use types::{Fix, HelpLevel, LintDiagnostic, LintSummary, Severity, TextEdit};
 
 #[cfg(test)]
 mod tests {

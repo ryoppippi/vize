@@ -275,8 +275,10 @@ impl CallGraph {
 
 #[cfg(test)]
 mod tests {
-    use super::builder::{categorize_vue_api, is_composable_name, is_vue_api};
-    use super::{CallGraph, CompactString, FunctionId, ScopeId, SetupContextKind, VueApiCategory};
+    use super::{CallGraph, FunctionId, SetupContextKind, VueApiCategory};
+    use crate::call_graph::builder::{categorize_vue_api, is_composable_name, is_vue_api};
+    use crate::scope::ScopeId;
+    use vize_carton::CompactString;
 
     #[test]
     fn test_categorize_vue_api() {

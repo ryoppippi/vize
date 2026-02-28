@@ -3,7 +3,10 @@
 //! Generates hoisted variable declarations and serializes JS child nodes,
 //! VNode calls, props expressions, and children to byte output.
 
-use crate::ast::*;
+use crate::ast::{
+    DynamicProps, ExpressionNode, JsChildNode, PropsExpression, RootNode, RuntimeHelper,
+    TemplateTextChildNode, VNodeCall, VNodeChildren, VNodeTag,
+};
 
 use super::{context::CodegenContext, helpers::escape_js_string};
 

@@ -441,6 +441,7 @@ fn extract_identifiers_oxc_slow(expr: &str) -> Vec<CompactString> {
 #[cfg(test)]
 mod tests {
     use super::extract_identifiers_oxc;
+    use vize_carton::CompactString;
 
     #[test]
     fn test_extract_identifiers_oxc() {

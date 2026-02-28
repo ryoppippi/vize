@@ -3,7 +3,7 @@
 //! Generates the function signature, preamble (import/destructuring statements),
 //! asset resolution (components and directives), and root text filtering.
 
-use crate::ast::*;
+use crate::ast::{RootNode, RuntimeHelper, TemplateChildNode};
 
 use super::context::CodegenContext;
 

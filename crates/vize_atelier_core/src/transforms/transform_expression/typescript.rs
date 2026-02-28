@@ -204,7 +204,7 @@ fn has_matching_outer_parens(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{needs_typescript_stripping, strip_typescript_from_expression};
 
     #[test]
     fn test_strip_typescript_from_expression() {

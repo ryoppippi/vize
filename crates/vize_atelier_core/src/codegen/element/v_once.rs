@@ -3,7 +3,9 @@
 //! Generates cache-wrapped elements for the `v-once` directive, which
 //! renders elements once and caches them for subsequent renders.
 
-use crate::ast::{ElementNode, ElementType, ExpressionNode, PropNode, RuntimeHelper, TemplateChildNode};
+use crate::ast::{
+    ElementNode, ElementType, ExpressionNode, PropNode, RuntimeHelper, TemplateChildNode,
+};
 
 use super::super::{
     context::CodegenContext,

@@ -185,7 +185,7 @@ impl ScopeKind {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BlockKind, JsRuntime, ScopeBinding, ScopeData, ScopeId, ScopeKind, Span};
     use insta::assert_snapshot;
     use vize_relief::BindingType;
 

@@ -3,7 +3,10 @@
 //! Handles import extraction, setup function scaffolding, compiler macro
 //! definitions, and props/emits type generation.
 
-use super::*;
+use super::{
+    BindingMetadata, BindingType, CompactString, MacroTracker, Path, RootNode, ScopeChain,
+    ScopeData, ScopeKind, ScriptParseResult, VirtualTsConfig, VirtualTsGenerator, VirtualTsOutput,
+};
 
 impl VirtualTsGenerator {
     /// Extract setup scope info from ScopeChain.

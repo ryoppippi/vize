@@ -3,7 +3,11 @@
 //! Handles template AST traversal, expression emission, v-for/v-if scoping,
 //! and source mapping for template expressions.
 
-use super::*;
+use super::{
+    BindingMetadata, BindingType, DirectiveNode, ElementNode, ExpressionNode, ForNode, IfNode,
+    InterpolationNode, MappingData, PropNode, RootNode, SourceMapping, SourceRange,
+    TemplateChildNode, VirtualTsGenerator, VirtualTsOutput,
+};
 
 impl VirtualTsGenerator {
     /// Generate virtual TypeScript from template AST (legacy API).

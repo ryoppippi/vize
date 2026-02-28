@@ -1,6 +1,6 @@
 //! Directive-to-prop generation (v-bind, v-on, v-model, v-html, v-text).
 
-use crate::ast::*;
+use crate::ast::{DirectiveNode, ExpressionNode, RuntimeHelper};
 
 use super::super::{
     context::CodegenContext,

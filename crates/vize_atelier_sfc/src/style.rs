@@ -363,7 +363,9 @@ pub fn extract_css_vars(css: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_scoped_css, extract_css_vars, scope_selector, transform_deep, transform_global};
+    use super::{
+        apply_scoped_css, extract_css_vars, scope_selector, transform_deep, transform_global,
+    };
 
     #[test]
     fn test_scope_simple_selector() {

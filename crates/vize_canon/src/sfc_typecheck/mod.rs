@@ -51,8 +51,7 @@ pub use runner::type_check_sfc;
 #[cfg(test)]
 mod tests {
     use super::{
-        type_check_sfc, SfcTypeCheckOptions, SfcTypeCheckResult, SfcTypeDiagnostic,
-        SfcTypeSeverity,
+        type_check_sfc, SfcTypeCheckOptions, SfcTypeCheckResult, SfcTypeDiagnostic, SfcTypeSeverity,
     };
 
     #[test]

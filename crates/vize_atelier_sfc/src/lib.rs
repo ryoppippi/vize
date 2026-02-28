@@ -54,9 +54,8 @@ pub use css::{compile_css, compile_style_block, CssCompileOptions, CssCompileRes
 pub use parse::parse_sfc;
 pub use types::{
     BindingMetadata, BindingType, BlockLocation, PadOption, PropsDestructure, ScriptCompileOptions,
-    SfcCompileOptions, SfcCompileResult, SfcCustomBlock, SfcDescriptor, SfcError,
-    SfcParseOptions, SfcScriptBlock, SfcStyleBlock, SfcTemplateBlock, StyleCompileOptions,
-    TemplateCompileOptions,
+    SfcCompileOptions, SfcCompileResult, SfcCustomBlock, SfcDescriptor, SfcError, SfcParseOptions,
+    SfcScriptBlock, SfcStyleBlock, SfcTemplateBlock, StyleCompileOptions, TemplateCompileOptions,
 };
 
 // Re-export key types from dependencies
