@@ -1,0 +1,617 @@
+//! Scope closure generation for virtual TypeScript.
+//!
+//! Generates TypeScript closures that mirror Vue's template scope hierarchy,
+//! including v-for, v-slot, and event handler scopes. Uses recursive
+//! tree-based generation so nested scopes are properly contained.
+
+use std::collections::{HashMap, HashSet};
+
+use vize_croquis::{
+    analysis::ComponentUsage, naming::to_pascal_case, Croquis, EventHandlerScopeData, Scope,
+    ScopeData, ScopeId, ScopeKind,
+};
+
+use super::expressions::{generate_component_prop_checks, generate_expression};
+use super::helpers::{get_dom_event_type, strip_as_assertion, to_camel_case, to_safe_identifier};
+use super::types::VizeMapping;
+
+/// Context for recursive scope generation, bundling shared parameters.
+pub(crate) struct ScopeGenContext<'a> {
+    pub(crate) summary: &'a Croquis,
+    pub(crate) expressions_by_scope: &'a HashMap<u32, Vec<&'a vize_croquis::TemplateExpression>>,
+    pub(crate) children_map: &'a HashMap<u32, Vec<ScopeId>>,
+    pub(crate) template_offset: u32,
+}
+
+/// Context for recursive component prop checks inside v-for scopes.
+pub(crate) struct VForPropsContext<'a> {
+    pub(crate) summary: &'a Croquis,
+    pub(crate) components_by_scope: &'a HashMap<u32, Vec<(usize, &'a ComponentUsage)>>,
+    pub(crate) children_map: &'a HashMap<u32, Vec<ScopeId>>,
+    pub(crate) template_offset: u32,
+}
+
+/// Generate scope closures from Croquis scope chain.
+/// Uses recursive tree-based generation so nested v-for/v-slot scopes
+/// are properly contained within their parent closures.
+pub(crate) fn generate_scope_closures(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    summary: &Croquis,
+    template_offset: u32,
+) {
+    // Group expressions by scope_id
+    let mut expressions_by_scope: HashMap<u32, Vec<_>> = HashMap::new();
+    for expr in &summary.template_expressions {
+        expressions_by_scope
+            .entry(expr.scope_id.as_u32())
+            .or_default()
+            .push(expr);
+    }
+
+    // Build scope tree: parent_scope_id -> Vec<child ScopeId>
+    let mut children_map: HashMap<u32, Vec<ScopeId>> = HashMap::new();
+    for scope in summary.scopes.iter() {
+        if let Some(parent_id) = scope.parent() {
+            children_map
+                .entry(parent_id.as_u32())
+                .or_default()
+                .push(scope.id);
+        }
+    }
+
+    // Determine which scopes are nested inside a closure scope (VFor/VSlot).
+    // These will be generated recursively inside their parent, not at top level.
+    let nested_scope_ids: HashSet<ScopeId> = summary
+        .scopes
+        .iter()
+        .filter(|scope| {
+            scope.parent().is_some_and(|pid| {
+                summary
+                    .scopes
+                    .iter()
+                    .any(|s| s.id == pid && matches!(s.kind, ScopeKind::VFor | ScopeKind::VSlot))
+            })
+        })
+        .map(|scope| scope.id)
+        .collect();
+
+    // Process non-nested scopes at template level
+    for scope in summary.scopes.iter() {
+        let scope_id = scope.id.as_u32();
+
+        // Skip scopes that are nested inside a closure parent
+        if nested_scope_ids.contains(&scope.id) {
+            continue;
+        }
+
+        // Global scopes: emit expressions directly
+        if matches!(
+            scope.kind,
+            ScopeKind::JsGlobalUniversal
+                | ScopeKind::JsGlobalBrowser
+                | ScopeKind::JsGlobalNode
+                | ScopeKind::VueGlobal
+        ) {
+            if let Some(exprs) = expressions_by_scope.get(&scope_id) {
+                for expr in exprs {
+                    generate_expression(ts, mappings, expr, template_offset, "  ");
+                }
+            }
+            continue;
+        }
+
+        let ctx = ScopeGenContext {
+            summary,
+            expressions_by_scope: &expressions_by_scope,
+            children_map: &children_map,
+            template_offset,
+        };
+        generate_scope_node(ts, mappings, &ctx, scope, "  ");
+    }
+
+    // Handle undefined references
+    generate_undefined_refs(ts, mappings, summary, template_offset);
+
+    // Generate component props type checks (scope-aware)
+    generate_component_props(ts, mappings, summary, &children_map, template_offset);
+}
+
+/// Handle undefined references from template.
+fn generate_undefined_refs(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    summary: &Croquis,
+    template_offset: u32,
+) {
+    if summary.undefined_refs.is_empty() {
+        return;
+    }
+
+    // Collect type export names to exclude from undefined refs
+    let type_export_names: HashSet<&str> = summary
+        .type_exports
+        .iter()
+        .map(|te| te.name.as_str())
+        .collect();
+
+    ts.push_str("\n  // Undefined references from template:\n");
+    let mut seen_names: HashSet<&str> = HashSet::new();
+    for undef in &summary.undefined_refs {
+        if !seen_names.insert(undef.name.as_str()) {
+            continue;
+        }
+        // Skip names that match type exports (these are type-level, not value-level)
+        if type_export_names.contains(undef.name.as_str()) {
+            continue;
+        }
+
+        let src_start = (template_offset + undef.offset) as usize;
+        let src_end = src_start + undef.name.len();
+
+        let gen_start = ts.len();
+        // Use void expression to reference the name without creating an unused variable
+        let expr_code = format!("  void ({});\n", undef.name);
+        let name_offset = expr_code.find(undef.name.as_str()).unwrap_or(0);
+        let gen_name_start = gen_start + name_offset;
+        let gen_name_end = gen_name_start + undef.name.len();
+
+        ts.push_str(&expr_code);
+        mappings.push(VizeMapping {
+            gen_range: gen_name_start..gen_name_end,
+            src_range: src_start..src_end,
+        });
+        ts.push_str(&format!(
+            "  // @vize-map: {}:{} -> {}:{}\n",
+            gen_name_start, gen_name_end, src_start, src_end
+        ));
+    }
+}
+
+/// Generate component props type checks (scope-aware).
+/// Type declarations are at template level, value checks are in their scope.
+fn generate_component_props(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    summary: &Croquis,
+    children_map: &HashMap<u32, Vec<ScopeId>>,
+    template_offset: u32,
+) {
+    if summary.component_usages.is_empty() {
+        return;
+    }
+
+    // Group component usages by scope_id
+    let mut components_by_scope: HashMap<u32, Vec<(usize, &ComponentUsage)>> = HashMap::new();
+    for (idx, usage) in summary.component_usages.iter().enumerate() {
+        components_by_scope
+            .entry(usage.scope_id.as_u32())
+            .or_default()
+            .push((idx, usage));
+    }
+
+    // Emit type declarations only for components with dynamic props
+    // (TypeScript type aliases cannot be inside function bodies)
+    ts.push_str("\n  // Component props type declarations\n");
+    for (idx, usage) in summary.component_usages.iter().enumerate() {
+        let component_name = &usage.name;
+
+        // Only emit type when there are dynamic props to check
+        let has_dynamic_props = usage.props.iter().any(|p| {
+            p.name.as_str() != "key"
+                && p.name.as_str() != "ref"
+                && p.value.is_some()
+                && p.is_dynamic
+        });
+        if !has_dynamic_props {
+            continue;
+        }
+
+        let src_start = (template_offset + usage.start) as usize;
+        let src_end = (template_offset + usage.end) as usize;
+
+        ts.push_str(&format!(
+            "  // @vize-map: component -> {}:{}\n",
+            src_start, src_end
+        ));
+        ts.push_str(&format!(
+            "  type __{}_Props_{} = typeof {} extends {{ new (): {{ $props: infer __P }} }} ? __P : (typeof {} extends (props: infer __P) => any ? __P : {{}});\n",
+            component_name, idx, component_name, component_name
+        ));
+
+        for prop in &usage.props {
+            if prop.name.as_str() == "key" || prop.name.as_str() == "ref" {
+                continue;
+            }
+            if prop.value.is_some() && prop.is_dynamic {
+                let camel_prop_name = to_camel_case(prop.name.as_str());
+                let safe_prop_name = prop.name.replace('-', "_");
+                ts.push_str(&format!(
+                    "  type __{}_{}_prop_{} = __{}_Props_{} extends {{ '{}'?: infer T }} ? T : __{}_Props_{} extends {{ '{}': infer T }} ? T : unknown;\n",
+                    component_name, idx, safe_prop_name,
+                    component_name, idx, camel_prop_name,
+                    component_name, idx, camel_prop_name
+                ));
+            }
+        }
+    }
+
+    // Collect all v-for scope IDs and determine which are nested
+    let vfor_scope_ids: HashSet<u32> = summary
+        .scopes
+        .iter()
+        .filter(|s| matches!(s.kind, ScopeKind::VFor))
+        .map(|s| s.id.as_u32())
+        .collect();
+
+    // Root VFor scopes: VFor scopes whose parent is NOT a VFor scope
+    let root_vfor_scope_ids: HashSet<u32> = summary
+        .scopes
+        .iter()
+        .filter(|s| {
+            matches!(s.kind, ScopeKind::VFor)
+                && s.parent().is_none_or(|pid| {
+                    summary
+                        .scopes
+                        .iter()
+                        .find(|p| p.id == pid)
+                        .is_none_or(|p| !matches!(p.kind, ScopeKind::VFor))
+                })
+        })
+        .map(|s| s.id.as_u32())
+        .collect();
+
+    ts.push_str("\n  // Component props value checks (template scope)\n");
+    for (idx, usage) in summary.component_usages.iter().enumerate() {
+        if vfor_scope_ids.contains(&usage.scope_id.as_u32()) {
+            continue; // Will be emitted inside v-for scope
+        }
+        generate_component_prop_checks(ts, mappings, usage, idx, template_offset, "  ");
+    }
+
+    // Emit value checks for components in v-for scopes (recursive for nesting)
+    for scope in summary.scopes.iter() {
+        if !matches!(scope.kind, ScopeKind::VFor) {
+            continue;
+        }
+        // Only process root v-for scopes here; nested ones are handled recursively
+        if !root_vfor_scope_ids.contains(&scope.id.as_u32()) {
+            continue;
+        }
+        let props_ctx = VForPropsContext {
+            summary,
+            components_by_scope: &components_by_scope,
+            children_map,
+            template_offset,
+        };
+        generate_vfor_component_props_recursive(ts, mappings, &props_ctx, scope, "  ");
+    }
+}
+
+/// Recursively generate a scope node (VFor/VSlot/EventHandler) and its nested children.
+fn generate_scope_node(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    ctx: &ScopeGenContext<'_>,
+    scope: &Scope,
+    indent: &str,
+) {
+    let scope_id = scope.id.as_u32();
+    let inner_indent = format!("{}  ", indent);
+
+    match scope.data() {
+        ScopeData::VFor(data) => {
+            ts.push_str(&format!(
+                "\n{}// v-for scope: {} in {}\n",
+                indent, data.value_alias, data.source
+            ));
+
+            // Strip TypeScript `as Type` assertion from v-for source expression.
+            // e.g., "(expr) as OptionSponsor[]" -> "(expr)" with type annotation
+            let (source_expr, type_annotation) = strip_as_assertion(&data.source);
+
+            let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
+            let element_type = if let Some(ref ta) = type_annotation {
+                // Use the asserted type's element type
+                format!("{}[number]", ta)
+            } else if is_simple_identifier {
+                format!("typeof {}[number]", source_expr)
+            } else {
+                "any".to_string()
+            };
+
+            ts.push_str(&format!(
+                "{}({}).forEach(({}: {}",
+                indent, source_expr, data.value_alias, element_type
+            ));
+
+            if let Some(ref key) = data.key_alias {
+                ts.push_str(&format!(", {}: number", key));
+            }
+            if let Some(ref index) = data.index_alias {
+                if data.key_alias.is_none() {
+                    ts.push_str(", _key: number");
+                }
+                ts.push_str(&format!(", {}: number", index));
+            }
+
+            ts.push_str(") => {\n");
+
+            // Mark v-for variables as used to avoid TS6133
+            ts.push_str(&format!("{}void {};\n", inner_indent, data.value_alias));
+            if let Some(ref key) = data.key_alias {
+                ts.push_str(&format!("{}void {};\n", inner_indent, key));
+            }
+            if let Some(ref index) = data.index_alias {
+                ts.push_str(&format!("{}void {};\n", inner_indent, index));
+            }
+
+            // Generate expressions in this scope
+            if let Some(exprs) = ctx.expressions_by_scope.get(&scope_id) {
+                for expr in exprs {
+                    generate_expression(ts, mappings, expr, ctx.template_offset, &inner_indent);
+                }
+            }
+
+            // Recursively generate child scopes inside this closure
+            generate_child_scopes(ts, mappings, ctx, scope_id, &inner_indent);
+
+            ts.push_str(indent);
+            ts.push_str("});\n");
+        }
+        ScopeData::VSlot(data) => {
+            ts.push_str(&format!("\n{}// v-slot scope: #{}\n", indent, data.name));
+
+            let props_pattern = data.props_pattern.as_deref().unwrap_or("slotProps");
+            ts.push_str(&format!(
+                "{}void function _slot_{}({}: any) {{\n",
+                indent, data.name, props_pattern
+            ));
+            // Mark slot prop variables as used
+            if data.prop_names.is_empty() {
+                // Simple identifier (no destructuring)
+                ts.push_str(&format!("{}void {};\n", inner_indent, props_pattern));
+            } else {
+                // Destructured: void each extracted prop name
+                for prop_name in data.prop_names.iter() {
+                    ts.push_str(&format!("{}void {};\n", inner_indent, prop_name));
+                }
+            }
+
+            if let Some(exprs) = ctx.expressions_by_scope.get(&scope_id) {
+                for expr in exprs {
+                    generate_expression(ts, mappings, expr, ctx.template_offset, &inner_indent);
+                }
+            }
+
+            // Recursively generate child scopes inside this closure
+            generate_child_scopes(ts, mappings, ctx, scope_id, &inner_indent);
+
+            ts.push_str(indent);
+            ts.push_str("};\n");
+        }
+        ScopeData::EventHandler(data) => {
+            ts.push_str(&format!("\n{}// @{} handler\n", indent, data.event_name));
+
+            let safe_event_name = to_safe_identifier(data.event_name.as_str());
+
+            if let Some(ref component_name) = data.target_component {
+                let pascal_event = to_pascal_case(data.event_name.as_str());
+                let on_handler = format!("on{}", pascal_event);
+
+                let prop_key = if on_handler.contains(':') {
+                    format!("\"{}\"", on_handler)
+                } else {
+                    on_handler
+                };
+
+                // Type alias (block-scoped in TypeScript)
+                ts.push_str(&format!(
+                    "{}type __{}_{}_event = typeof {} extends {{ new (): {{ $props: infer __P }} }}\n",
+                    indent, component_name, safe_event_name, component_name
+                ));
+                ts.push_str(&format!(
+                    "{}  ? __P extends {{ {}?: (arg: infer __A, ...rest: any[]) => any }} ? __A : unknown\n",
+                    indent, prop_key
+                ));
+                ts.push_str(&format!(
+                    "{}  : typeof {} extends (props: infer __P) => any\n",
+                    indent, component_name
+                ));
+                ts.push_str(&format!(
+                    "{}    ? __P extends {{ {}?: (arg: infer __A, ...rest: any[]) => any }} ? __A : unknown\n",
+                    indent, prop_key
+                ));
+                ts.push_str(&format!("{}    : unknown;\n", indent));
+
+                let event_type = format!("__{}_{}_event", component_name, safe_event_name);
+                ts.push_str(&format!("{}(($event: {}) => {{\n", indent, event_type));
+
+                generate_event_handler_expressions(
+                    ts,
+                    mappings,
+                    ctx.expressions_by_scope,
+                    scope_id,
+                    data,
+                    ctx.template_offset,
+                    &inner_indent,
+                );
+
+                ts.push_str(&format!("{}}})({{}} as {});\n", indent, event_type));
+            } else {
+                let event_type = get_dom_event_type(data.event_name.as_str());
+                ts.push_str(&format!("{}(($event: {}) => {{\n", indent, event_type));
+
+                generate_event_handler_expressions(
+                    ts,
+                    mappings,
+                    ctx.expressions_by_scope,
+                    scope_id,
+                    data,
+                    ctx.template_offset,
+                    &inner_indent,
+                );
+
+                ts.push_str(&format!("{}}})({{}} as {});\n", indent, event_type));
+            }
+        }
+        _ => {
+            if let Some(exprs) = ctx.expressions_by_scope.get(&scope_id) {
+                for expr in exprs {
+                    generate_expression(ts, mappings, expr, ctx.template_offset, indent);
+                }
+            }
+        }
+    }
+}
+
+/// Generate event handler expressions inside a closure.
+fn generate_event_handler_expressions(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    expressions_by_scope: &HashMap<u32, Vec<&vize_croquis::TemplateExpression>>,
+    scope_id: u32,
+    data: &EventHandlerScopeData,
+    template_offset: u32,
+    indent: &str,
+) {
+    if let Some(exprs) = expressions_by_scope.get(&scope_id) {
+        for expr in exprs {
+            let content = expr.content.as_str();
+            let is_simple_identifier = content
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '_' || c == '$');
+
+            let src_start = (template_offset + expr.start) as usize;
+            let src_end = (template_offset + expr.end) as usize;
+
+            let gen_start = ts.len();
+            if data.has_implicit_event && is_simple_identifier && !content.is_empty() {
+                ts.push_str(&format!(
+                    "{}{}($event);  // handler expression\n",
+                    indent, content
+                ));
+            } else {
+                ts.push_str(&format!("{}{};  // handler expression\n", indent, content));
+            }
+            let gen_end = ts.len();
+            mappings.push(VizeMapping {
+                gen_range: gen_start..gen_end,
+                src_range: src_start..src_end,
+            });
+            ts.push_str(&format!(
+                "{}// @vize-map: handler -> {}:{}\n",
+                indent, src_start, src_end
+            ));
+        }
+    }
+}
+
+/// Recursively generate child scopes that are VFor/VSlot/EventHandler.
+fn generate_child_scopes(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    ctx: &ScopeGenContext<'_>,
+    parent_scope_id: u32,
+    indent: &str,
+) {
+    if let Some(child_ids) = ctx.children_map.get(&parent_scope_id) {
+        for &child_id in child_ids {
+            if let Some(child_scope) = ctx.summary.scopes.get_scope(child_id) {
+                if matches!(
+                    child_scope.kind,
+                    ScopeKind::VFor | ScopeKind::VSlot | ScopeKind::EventHandler
+                ) {
+                    generate_scope_node(ts, mappings, ctx, child_scope, indent);
+                }
+            }
+        }
+    }
+}
+
+/// Recursively generate component prop checks inside nested v-for scopes.
+fn generate_vfor_component_props_recursive(
+    ts: &mut String,
+    mappings: &mut Vec<VizeMapping>,
+    ctx: &VForPropsContext<'_>,
+    scope: &Scope,
+    indent: &str,
+) {
+    let scope_id = scope.id.as_u32();
+    let inner_indent = format!("{}  ", indent);
+
+    if let ScopeData::VFor(data) = scope.data() {
+        let (source_expr, type_annotation) = strip_as_assertion(&data.source);
+
+        let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
+        let element_type = if let Some(ref ta) = type_annotation {
+            format!("{}[number]", ta)
+        } else if is_simple_identifier {
+            format!("typeof {}[number]", source_expr)
+        } else {
+            "any".to_string()
+        };
+
+        ts.push_str(&format!(
+            "\n{}// Component props in v-for scope: {} in {}\n",
+            indent, data.value_alias, data.source
+        ));
+        ts.push_str(&format!(
+            "{}({}).forEach(({}: {}",
+            indent, source_expr, data.value_alias, element_type
+        ));
+        if let Some(ref key) = data.key_alias {
+            ts.push_str(&format!(", {}: number", key));
+        }
+        if let Some(ref index) = data.index_alias {
+            if data.key_alias.is_none() {
+                ts.push_str(", _key: number");
+            }
+            ts.push_str(&format!(", {}: number", index));
+        }
+        ts.push_str(") => {\n");
+
+        // Mark v-for variables as used to avoid TS6133
+        ts.push_str(&format!("{}void {};\n", inner_indent, data.value_alias));
+        if let Some(ref key) = data.key_alias {
+            ts.push_str(&format!("{}void {};\n", inner_indent, key));
+        }
+        if let Some(ref index) = data.index_alias {
+            ts.push_str(&format!("{}void {};\n", inner_indent, index));
+        }
+
+        // Emit component prop checks for this scope
+        if let Some(usages) = ctx.components_by_scope.get(&scope_id) {
+            for &(idx, usage) in usages {
+                generate_component_prop_checks(
+                    ts,
+                    mappings,
+                    usage,
+                    idx,
+                    ctx.template_offset,
+                    &inner_indent,
+                );
+            }
+        }
+
+        // Recursively handle child v-for scopes
+        if let Some(child_ids) = ctx.children_map.get(&scope_id) {
+            for &child_id in child_ids {
+                if let Some(child_scope) = ctx.summary.scopes.get_scope(child_id) {
+                    if matches!(child_scope.kind, ScopeKind::VFor) {
+                        generate_vfor_component_props_recursive(
+                            ts,
+                            mappings,
+                            ctx,
+                            child_scope,
+                            &inner_indent,
+                        );
+                    }
+                }
+            }
+        }
+
+        ts.push_str(indent);
+        ts.push_str("});\n");
+    }
+}
