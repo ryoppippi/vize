@@ -60,6 +60,7 @@ pub use bumpalo::Bump;
 // Re-export compact_str::CompactString for convenience
 pub use compact_str::CompactString;
 pub use compact_str::CompactString as String;
+pub use compact_str::ToCompactString;
 
 // Re-export smallvec for stack-optimized collections
 pub use smallvec::{smallvec, SmallVec};

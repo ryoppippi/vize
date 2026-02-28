@@ -100,7 +100,7 @@ pub fn analyze_element_ids(
                     DiagnosticSeverity::Warning,
                     locations[0].0,
                     locations[0].1,
-                    format!(
+                    vize_carton::new_string!(
                         "Element ID '{}' is used in {} different locations across files",
                         id,
                         locations.len()
@@ -129,7 +129,7 @@ pub fn analyze_element_ids(
                         DiagnosticSeverity::Error,
                         *file_id,
                         *offset,
-                        format!("Static ID '{}' inside v-for will create duplicate IDs", id),
+                        vize_carton::new_string!("Static ID '{}' inside v-for will create duplicate IDs", id),
                     )
                     .with_suggestion("Use a dynamic ID like `:id=\"`item-${index}`\"` or useId()"),
                 );
@@ -157,7 +157,7 @@ pub fn analyze_element_ids(
                     DiagnosticSeverity::Warning,
                     file_id,
                     offset,
-                    format!("Dynamic ID '{}' may not produce unique values", id_expr),
+                    vize_carton::new_string!("Dynamic ID '{}' may not produce unique values", id_expr),
                 )
                 .with_suggestion("Include a unique identifier like index or item.id"),
             );
@@ -190,7 +190,7 @@ fn looks_unique(expr: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::looks_unique;
 
     #[test]
     fn test_looks_unique() {

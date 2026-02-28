@@ -2,6 +2,7 @@
 //!
 //! Handles import extraction, setup function scaffolding, compiler macro
 //! definitions, and props/emits type generation.
+#![allow(clippy::disallowed_macros)] // format! used for generating TypeScript code strings
 
 use super::{
     BindingMetadata, BindingType, CompactString, MacroTracker, Path, RootNode, ScopeChain,

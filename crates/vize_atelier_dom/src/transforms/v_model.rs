@@ -105,14 +105,14 @@ pub fn generate_model_props(
             props.push((String::from("value"), model_value.clone()));
 
             // Build event handler expression
-            let mut handler = format!("$event => (({}) = $event.target.value)", model_value);
+            let mut handler = vize_carton::new_string!("$event => (({}) = $event.target.value)", model_value);
 
             // Apply modifiers
             if modifiers.trim {
-                handler = format!("$event => (({}) = $event.target.value.trim())", model_value);
+                handler = vize_carton::new_string!("$event => (({}) = $event.target.value.trim())", model_value);
             }
             if modifiers.number {
-                handler = format!(
+                handler = vize_carton::new_string!(
                     "$event => (({}) = Number($event.target.value))",
                     model_value
                 );
@@ -124,7 +124,7 @@ pub fn generate_model_props(
             } else {
                 "onInput"
             };
-            props.push((String::from(event_name), String::from(handler)));
+            props.push((String::from(event_name), handler));
         }
     }
 
@@ -133,7 +133,7 @@ pub fn generate_model_props(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{get_model_event, get_model_prop, generate_model_props, VModelModifiers};
 
     #[test]
     fn test_modifiers() {

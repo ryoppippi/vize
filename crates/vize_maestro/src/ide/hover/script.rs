@@ -85,13 +85,14 @@ impl HoverService {
                         let (line, character) =
                             crate::ide::offset_to_position(&script.content, vts_offset);
                         let suffix = if is_setup { "setup.ts" } else { "script.ts" };
-                        let uri = format!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
+                        let uri = vize_carton::new_string!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
 
                         // Open/update virtual document
                         if bridge.is_initialized() {
+                            let doc_path = vize_carton::new_string!("{}.{}", ctx.uri.path(), suffix);
                             let _ = bridge
                                 .open_or_update_virtual_document(
-                                    &format!("{}.{}", ctx.uri.path(), suffix),
+                                    &doc_path,
                                     &script.content,
                                 )
                                 .await;
@@ -150,6 +151,7 @@ impl HoverService {
         let kind_desc = Self::binding_type_to_description(binding_type);
 
         // Add .value hint for refs in script
+        #[allow(clippy::disallowed_macros)]
         let value_hint = if summary.needs_value_in_script(word) {
             format!(
                 "\n\n**Tip:** Use `{}.value` to access the value in script.",
@@ -159,6 +161,7 @@ impl HoverService {
             String::new()
         };
 
+        #[allow(clippy::disallowed_macros)]
         let value = format!(
             "```typescript\n{}: {}\n```\n\n{}{}",
             word, inferred_type, kind_desc, value_hint
@@ -255,6 +258,7 @@ impl HoverService {
             _ => return None,
         };
 
+        #[allow(clippy::disallowed_macros)]
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,
@@ -301,6 +305,7 @@ impl HoverService {
             _ => return None,
         };
 
+        #[allow(clippy::disallowed_macros)]
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,

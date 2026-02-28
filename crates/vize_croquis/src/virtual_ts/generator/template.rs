@@ -2,6 +2,7 @@
 //!
 //! Handles template AST traversal, expression emission, v-for/v-if scoping,
 //! and source mapping for template expressions.
+#![allow(clippy::disallowed_macros)] // format! used for generating TypeScript code strings
 
 use super::{
     BindingMetadata, BindingType, DirectiveNode, ElementNode, ExpressionNode, ForNode, IfNode,

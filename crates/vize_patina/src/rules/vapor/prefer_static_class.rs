@@ -135,7 +135,7 @@ fn is_string_literal(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::PreferStaticClass;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

@@ -4,6 +4,8 @@
 //! Uses intelligent strategies instead of cartesian product to produce
 //! meaningful, manageable variant sets.
 
+#![allow(clippy::disallowed_macros)]
+
 pub mod strategy;
 pub mod types;
 
@@ -48,9 +50,10 @@ fn render_art_file(
     let mut output = String::new();
 
     // <art> block
-    output.push_str(&format!(
+    vize_carton::push_fmt!(
+        output,
         "<art title=\"{component_name}\" component=\"{component_path}\">\n"
-    ));
+    );
 
     // Variants
     for variant in variants {
@@ -60,14 +63,14 @@ fn render_art_file(
             format!("name=\"{}\"", variant.name)
         };
 
-        output.push_str(&format!("  <variant {attrs}>\n"));
+        vize_carton::push_fmt!(output, "  <variant {attrs}>\n");
 
         // Build component tag with props
         let props_str = render_props(&variant.props);
         if props_str.is_empty() {
-            output.push_str(&format!("    <{component_name} />\n"));
+            vize_carton::push_fmt!(output, "    <{component_name} />\n");
         } else {
-            output.push_str(&format!("    <{component_name}\n"));
+            vize_carton::push_fmt!(output, "    <{component_name}\n");
             output.push_str(&props_str);
             output.push_str("    />\n");
         }
@@ -79,9 +82,10 @@ fn render_art_file(
 
     // Script setup
     output.push_str("<script setup lang=\"ts\">\n");
-    output.push_str(&format!(
+    vize_carton::push_fmt!(
+        output,
         "import {component_name} from '{component_path}'\n"
-    ));
+    );
     output.push_str("</script>\n");
 
     output
@@ -116,7 +120,7 @@ fn render_props(props: &serde_json::Map<String, serde_json::Value>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{extract_component_name, generate_art_file, render_props, AutogenConfig, PropDefinition};
     use serde_json::json;
 
     #[test]

@@ -186,7 +186,7 @@ impl WrappedLine {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{TextWrap, WrapMode};
 
     #[test]
     fn test_wrap_no_wrap() {

@@ -477,7 +477,8 @@ pub fn count_dynamic_children(children: &[TemplateChildNode<'_>]) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{get_static_type, is_static_node, StaticType};
+    use crate::ast::{PropNode, TemplateChildNode};
     use crate::parser::parse;
     use bumpalo::Bump;
 

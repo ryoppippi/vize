@@ -64,6 +64,7 @@ fn extract_slot_props_with_oxc(pattern: &str) -> SmallVec<[CompactString; 4]> {
 
     let total_len = prefix.len() + pattern.len() + suffix.len();
     if total_len > buffer.len() {
+        #[allow(clippy::disallowed_macros)]
         let pattern_str = format!("let {} = x", pattern);
         return parse_slot_pattern(&pattern_str);
     }

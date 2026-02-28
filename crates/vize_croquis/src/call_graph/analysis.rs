@@ -190,12 +190,13 @@ impl CallGraph {
         // Setup function
         if let Some(setup_id) = self.setup_function {
             if let Some(func) = self.get_function(setup_id) {
-                out.push_str(&format!(
+                vize_carton::push_fmt!(
+                    out,
                     "**Setup Function**: `{}` (offset: {}..{})\n\n",
                     func.name.as_deref().unwrap_or("<anonymous>"),
                     func.start,
                     func.end
-                ));
+                );
             }
         }
 
@@ -210,13 +211,14 @@ impl CallGraph {
                 } else {
                     "📦"
                 };
-                out.push_str(&format!(
+                vize_carton::push_fmt!(
+                    out,
                     "- {} `{}` ({}..{})\n",
                     marker,
                     func.name.as_deref().unwrap_or("<anonymous>"),
                     func.start,
                     func.end
-                ));
+                );
             }
         }
 
@@ -226,10 +228,11 @@ impl CallGraph {
         out.push_str("|-----|----------|----------|--------|\n");
         for call in &self.vue_api_calls {
             let in_setup = if call.in_setup_context { "✅" } else { "❌" };
-            out.push_str(&format!(
+            vize_carton::push_fmt!(
+                out,
                 "| `{}` | {:?} | {} | {}..{} |\n",
                 call.name, call.category, in_setup, call.start, call.end
-            ));
+            );
         }
 
         // Composable calls
@@ -240,10 +243,11 @@ impl CallGraph {
             for call in &self.composable_calls {
                 let in_setup = if call.in_setup_context { "✅" } else { "❌" };
                 let source = call.source.as_deref().unwrap_or("-");
-                out.push_str(&format!(
+                vize_carton::push_fmt!(
+                    out,
                     "| `{}` | `{}` | {} | {}..{} |\n",
                     call.name, source, in_setup, call.start, call.end
-                ));
+                );
             }
         }
 
@@ -252,7 +256,8 @@ impl CallGraph {
         if !issues.is_empty() {
             out.push_str("\n### ⚠️ Issues: Vue APIs Outside Setup Context\n\n");
             for call in issues {
-                out.push_str(&format!(
+                vize_carton::push_fmt!(
+                    out,
                     "- `{}` at {}..{} - Vue {} API called outside setup context\n",
                     call.name,
                     call.start,
@@ -265,7 +270,7 @@ impl CallGraph {
                         VueApiCategory::TemplateRef => "template ref",
                         VueApiCategory::Other => "",
                     }
-                ));
+                );
             }
         }
 
@@ -275,7 +280,7 @@ impl CallGraph {
 
 #[cfg(test)]
 mod tests {
-    use super::{CallGraph, FunctionId, SetupContextKind, VueApiCategory};
+    use super::{CallGraph, SetupContextKind, VueApiCategory};
     use crate::call_graph::builder::{categorize_vue_api, is_composable_name, is_vue_api};
     use crate::scope::ScopeId;
     use vize_carton::CompactString;

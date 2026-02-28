@@ -67,53 +67,53 @@ pub(crate) fn generate_operation(
 
 /// Generate SetProp
 fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
-    let element = format!("n{}", set_prop.element);
+    let element = vize_carton::new_string!("n{}", set_prop.element);
     let key = &set_prop.prop.key.content;
     let is_svg = is_svg_tag(set_prop.tag.as_str());
 
     let value = if let Some(first) = set_prop.prop.values.first() {
         if first.is_static {
-            format!("\"{}\"", first.content)
+            vize_carton::new_string!("\"{}\"", first.content)
         } else {
-            format!("_ctx.{}", first.content)
+            vize_carton::new_string!("_ctx.{}", first.content)
         }
     } else {
-        String::from("undefined")
+        vize_carton::CompactString::from("undefined")
     };
 
     if key.as_str() == "class" {
         if is_svg {
             ctx.use_helper("setAttr");
-            ctx.push_line(&format!("_setAttr({}, \"class\", {})", element, value));
+            ctx.push_line_fmt(format_args!("_setAttr({}, \"class\", {})", element, value));
         } else {
             ctx.use_helper("setClass");
-            ctx.push_line(&format!("_setClass({}, {})", element, value));
+            ctx.push_line_fmt(format_args!("_setClass({}, {})", element, value));
         }
     } else if key.as_str() == "style" {
         if is_svg {
             ctx.use_helper("setAttr");
-            ctx.push_line(&format!("_setAttr({}, \"style\", {})", element, value));
+            ctx.push_line_fmt(format_args!("_setAttr({}, \"style\", {})", element, value));
         } else {
             ctx.use_helper("setStyle");
-            ctx.push_line(&format!("_setStyle({}, {})", element, value));
+            ctx.push_line_fmt(format_args!("_setStyle({}, {})", element, value));
         }
     } else {
         ctx.use_helper("setProp");
-        ctx.push_line(&format!("_setProp({}, \"{}\", {})", element, key, value));
+        ctx.push_line_fmt(format_args!("_setProp({}, \"{}\", {})", element, key, value));
     }
 }
 
 /// Generate SetDynamicProps
 fn generate_set_dynamic_props(ctx: &mut GenerateContext, set_props: &SetDynamicPropsIRNode<'_>) {
-    let element = format!("n{}", set_props.element);
+    let element = vize_carton::new_string!("n{}", set_props.element);
 
     for prop in set_props.props.iter() {
         let expr = if prop.is_static {
-            format!("\"{}\"", prop.content)
+            vize_carton::new_string!("\"{}\"", prop.content)
         } else {
-            prop.content.to_string()
+            vize_carton::CompactString::from(prop.content.as_str())
         };
-        ctx.push_line(&format!("Object.assign({}, {})", element, expr));
+        ctx.push_line_fmt(format_args!("Object.assign({}, {})", element, expr));
     }
 }
 
@@ -125,7 +125,7 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
     let text_ref = if let Some(text_var) = ctx.text_nodes.get(&set_text.element) {
         text_var.clone()
     } else {
-        format!("n{}", set_text.element)
+        vize_carton::new_string!("n{}", set_text.element).into()
     };
 
     let values: Vec<String> = set_text
@@ -134,17 +134,17 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
         .map(|v| {
             ctx.use_helper("toDisplayString");
             if v.is_static {
-                format!("\"{}\"", v.content)
+                vize_carton::new_string!("\"{}\"", v.content).into()
             } else {
-                format!("_toDisplayString(_ctx.{})", v.content)
+                vize_carton::new_string!("_toDisplayString(_ctx.{})", v.content).into()
             }
         })
         .collect();
 
     if values.len() == 1 {
-        ctx.push_line(&format!("_setText({}, {})", text_ref, values[0]));
+        ctx.push_line_fmt(format_args!("_setText({}, {})", text_ref, values[0]));
     } else {
-        ctx.push_line(&format!("_setText({}, {})", text_ref, values.join(" + ")));
+        ctx.push_line_fmt(format_args!("_setText({}, {})", text_ref, values.join(" + ")));
     }
 }
 
@@ -152,7 +152,7 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
 fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>) {
     ctx.use_helper("createInvoker");
 
-    let element = format!("n{}", set_event.element);
+    let element = vize_carton::new_string!("n{}", set_event.element);
     let event_name = &set_event.key.content;
 
     let handler = if let Some(ref value) = set_event.value {
@@ -164,22 +164,22 @@ fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>)
     // Determine handler format based on content
     let invoker_body = if handler.contains("$event") {
         // Handler uses $event - pass it as parameter
-        format!("$event => (_ctx.{})", handler)
+        vize_carton::new_string!("$event => (_ctx.{})", handler)
     } else if handler.contains("?.") {
         // Optional call expression like foo?.() or foo?.bar() - cache it
-        format!("(...args) => (_ctx.{})", handler)
+        vize_carton::new_string!("(...args) => (_ctx.{})", handler)
     } else if is_inline_statement(&handler) {
         // Inline statement like count++ or foo = bar
-        format!("() => (_ctx.{})", handler)
+        vize_carton::new_string!("() => (_ctx.{})", handler)
     } else if handler.contains("(") {
         // Handler is a call expression like handler()
-        format!("e => _ctx.{}(e)", handler)
+        vize_carton::new_string!("e => _ctx.{}(e)", handler)
     } else {
         // Handler is a method reference like handler
-        format!("e => _ctx.{}(e)", handler)
+        vize_carton::new_string!("e => _ctx.{}(e)", handler)
     };
 
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "{}.$evt{} = _createInvoker({})",
         element, event_name, invoker_body
     ));
@@ -187,96 +187,96 @@ fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>)
 
 /// Generate SetHtml
 fn generate_set_html(ctx: &mut GenerateContext, set_html: &SetHtmlIRNode<'_>) {
-    let element = format!("n{}", set_html.element);
+    let element = vize_carton::new_string!("n{}", set_html.element);
 
     let value = if set_html.value.is_static {
-        format!("\"{}\"", set_html.value.content)
+        vize_carton::new_string!("\"{}\"", set_html.value.content)
     } else {
-        set_html.value.content.to_string()
+        vize_carton::CompactString::from(set_html.value.content.as_str())
     };
 
-    ctx.push_line(&format!("{}.innerHTML = {}", element, value));
+    ctx.push_line_fmt(format_args!("{}.innerHTML = {}", element, value));
 }
 
 /// Generate SetTemplateRef
 fn generate_set_template_ref(ctx: &mut GenerateContext, set_ref: &SetTemplateRefIRNode<'_>) {
-    let element = format!("n{}", set_ref.element);
+    let element = vize_carton::new_string!("n{}", set_ref.element);
 
     let value = if set_ref.value.is_static {
-        format!("\"{}\"", set_ref.value.content)
+        vize_carton::new_string!("\"{}\"", set_ref.value.content)
     } else {
-        set_ref.value.content.to_string()
+        vize_carton::CompactString::from(set_ref.value.content.as_str())
     };
 
-    ctx.push_line(&format!("_setRef({}, {})", element, value));
+    ctx.push_line_fmt(format_args!("_setRef({}, {})", element, value));
 }
 
 /// Generate InsertNode
 fn generate_insert_node(ctx: &mut GenerateContext, insert: &InsertNodeIRNode) {
-    let parent = format!("n{}", insert.parent);
+    let parent = vize_carton::new_string!("n{}", insert.parent);
     let elements = insert
         .elements
         .iter()
-        .map(|e| format!("n{}", e))
-        .collect::<Vec<_>>()
+        .map(|e| vize_carton::new_string!("n{}", e))
+        .collect::<std::vec::Vec<_>>()
         .join(", ");
 
     if let Some(anchor) = insert.anchor {
-        ctx.push_line(&format!("_insert({}, [{}], n{})", parent, elements, anchor));
+        ctx.push_line_fmt(format_args!("_insert({}, [{}], n{})", parent, elements, anchor));
     } else {
-        ctx.push_line(&format!("_insert({}, [{}])", parent, elements));
+        ctx.push_line_fmt(format_args!("_insert({}, [{}])", parent, elements));
     }
 }
 
 /// Generate PrependNode
 fn generate_prepend_node(ctx: &mut GenerateContext, prepend: &PrependNodeIRNode) {
-    let parent = format!("n{}", prepend.parent);
+    let parent = vize_carton::new_string!("n{}", prepend.parent);
     let elements = prepend
         .elements
         .iter()
-        .map(|e| format!("n{}", e))
-        .collect::<Vec<_>>()
+        .map(|e| vize_carton::new_string!("n{}", e))
+        .collect::<std::vec::Vec<_>>()
         .join(", ");
 
-    ctx.push_line(&format!("_prepend({}, [{}])", parent, elements));
+    ctx.push_line_fmt(format_args!("_prepend({}, [{}])", parent, elements));
 }
 
 /// Generate Directive
 fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>) {
-    let element = format!("n{}", directive.element);
+    let element = vize_carton::new_string!("n{}", directive.element);
     let name = &directive.name;
 
     let arg = if let Some(ref arg) = directive.dir.arg {
         match arg {
             ExpressionNode::Simple(exp) => {
                 if exp.is_static {
-                    format!("\"{}\"", exp.content)
+                    vize_carton::new_string!("\"{}\"", exp.content)
                 } else {
-                    exp.content.to_string()
+                    vize_carton::CompactString::from(exp.content.as_str())
                 }
             }
-            _ => String::from("undefined"),
+            _ => vize_carton::CompactString::from("undefined"),
         }
     } else {
-        String::from("undefined")
+        vize_carton::CompactString::from("undefined")
     };
 
     let value = if let Some(ref exp) = directive.dir.exp {
         match exp {
             ExpressionNode::Simple(e) => {
                 if e.is_static {
-                    format!("\"{}\"", e.content)
+                    vize_carton::new_string!("\"{}\"", e.content)
                 } else {
-                    e.content.to_string()
+                    vize_carton::CompactString::from(e.content.as_str())
                 }
             }
-            _ => String::from("undefined"),
+            _ => vize_carton::CompactString::from("undefined"),
         }
     } else {
-        String::from("undefined")
+        vize_carton::CompactString::from("undefined")
     };
 
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "_withDirectives({}, [[_{}, {}, {}]])",
         element, name, value, arg
     ));
@@ -490,12 +490,12 @@ fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCompon
 fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'_>) {
     let name = ctx.next_temp();
     let slot_name = if slot.name.is_static {
-        format!("\"{}\"", slot.name.content)
+        vize_carton::new_string!("\"{}\"", slot.name.content)
     } else {
-        slot.name.content.to_string()
+        vize_carton::CompactString::from(slot.name.content.as_str())
     };
 
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "const {} = _renderSlot($slots, {})",
         name, slot_name
     ));
@@ -503,10 +503,10 @@ fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'_>) 
 
 /// Generate GetTextChild
 fn generate_get_text_child(ctx: &mut GenerateContext, get_text: &GetTextChildIRNode) {
-    let parent = format!("n{}", get_text.parent);
+    let parent = vize_carton::new_string!("n{}", get_text.parent);
     let child = ctx.next_temp();
 
-    ctx.push_line(&format!("const {} = {}.firstChild", child, parent));
+    ctx.push_line_fmt(format_args!("const {} = {}.firstChild", child, parent));
 }
 
 /// Check if handler is an inline statement (not a function reference)

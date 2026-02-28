@@ -177,7 +177,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &provide.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        CompactString::new(format!("Symbol:{}", s))
+                        vize_carton::new_string!("Symbol:{}", s)
                     }
                 };
 
@@ -255,6 +255,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
         for node in self.graph.nodes() {
             if let Some(entry) = self.registry.get(node.file_id) {
                 let path = entry.path.to_string_lossy();
+                #[allow(clippy::disallowed_macros)]
                 if path.ends_with(&format!("{}.ts", source_path))
                     || path.ends_with(&format!("{}/index.ts", source_path))
                     || path.contains(source_path)
@@ -303,7 +304,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &inject.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        CompactString::new(format!("Symbol:{}", s))
+                        vize_carton::new_string!("Symbol:{}", s)
                     }
                 };
 

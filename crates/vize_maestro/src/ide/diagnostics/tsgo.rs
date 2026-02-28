@@ -58,7 +58,7 @@ impl DiagnosticService {
         );
 
         // Create virtual document name (used by tsgo bridge to create the full URI)
-        let virtual_name = format!("{}.ts", uri.path());
+        let virtual_name = vize_carton::new_string!("{}.ts", uri.path());
 
         // Open or update document in tsgo (uses didChange if already open)
         tracing::info!("opening/updating virtual document: {}", virtual_name);

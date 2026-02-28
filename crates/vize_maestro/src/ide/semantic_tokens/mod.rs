@@ -223,9 +223,10 @@ impl SemanticTokensService {
 
         // Find attributes and their values
         for attr in art_attrs.iter().chain(variant_attrs.iter()) {
+            #[allow(clippy::disallowed_macros)]
             let pattern_eq = format!("{}=", attr);
             let mut pos = 0;
-            while let Some(start) = content[pos..].find(&pattern_eq) {
+            while let Some(start) = content[pos..].find(pattern_eq.as_str()) {
                 let abs_start = pos + start;
 
                 // Check if preceded by whitespace (attribute context)
@@ -489,9 +490,10 @@ impl SemanticTokensService {
         let variant_attrs = ["name", "args", "viewport", "skip-vrt"];
 
         for attr in art_attrs.iter().chain(variant_attrs.iter()) {
+            #[allow(clippy::disallowed_macros)]
             let pattern_eq = format!("{}=", attr);
             let mut pos = 0;
-            while let Some(start) = slice[pos..].find(&pattern_eq) {
+            while let Some(start) = slice[pos..].find(pattern_eq.as_str()) {
                 let rel_pos = pos + start;
                 let abs_pos = range_start + rel_pos;
 

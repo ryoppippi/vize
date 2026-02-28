@@ -235,7 +235,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32700,
-                        message: format!("Parse error: {}", e),
+                        message: vize_carton::new_string!("Parse error: {}", e).to_string(),
                         data: None,
                     }),
                 };
@@ -259,7 +259,7 @@ impl TsgoServer {
                 result: None,
                 error: Some(JsonRpcError {
                     code: -32601,
-                    message: format!("Method not found: {}", request.method),
+                    message: vize_carton::new_string!("Method not found: {}", request.method).to_string(),
                     data: None,
                 }),
             },
@@ -277,7 +277,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32602,
-                        message: format!("Invalid params: {}", e),
+                        message: vize_carton::new_string!("Invalid params: {}", e).to_string(),
                         data: None,
                     }),
                 };
@@ -319,7 +319,7 @@ impl TsgoServer {
         };
 
         let descriptor = parse_sfc(content, parse_opts)
-            .map_err(|e| format!("Failed to parse SFC: {}", e.message))?;
+            .map_err(|e| vize_carton::new_string!("Failed to parse SFC: {}", e.message).to_string())?;
 
         // Get script content
         let script_content = descriptor
@@ -406,7 +406,7 @@ impl TsgoServer {
             .expect("lsp_client must be initialized above");
 
         // Create virtual file URI (file:///path/to/file.vue.ts)
-        let virtual_uri = format!("file://{}.ts", uri);
+        let virtual_uri = vize_carton::new_string!("file://{}.ts", uri).to_string();
 
         // Open the virtual document
         client.did_open(&virtual_uri, content)?;
@@ -429,9 +429,9 @@ impl TsgoServer {
                     _ => "error",
                 };
                 let code = d.code.map(|c| match c {
-                    serde_json::Value::Number(n) => format!("TS{}", n),
+                    serde_json::Value::Number(n) => vize_carton::new_string!("TS{}", n).to_string(),
                     serde_json::Value::String(s) => s,
-                    _ => format!("{:?}", c),
+                    _ => vize_carton::new_string!("{:?}", c).to_string(),
                 });
                 Diagnostic {
                     message: d.message,
@@ -460,7 +460,7 @@ impl Default for TsgoServer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::JsonRpcRequest;
 
     #[test]
     fn test_json_rpc_request_parse() {

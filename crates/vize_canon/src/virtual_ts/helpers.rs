@@ -67,10 +67,11 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
     if !options.template_globals.is_empty() {
         ctx.push_str("    // Plugin globals (configurable via --globals)\n");
         for global in &options.template_globals {
-            ctx.push_str(&format!(
+            vize_carton::push_fmt!(
+                ctx,
                 "    const {}: {} = {};\n",
                 global.name, global.type_annotation, global.default_value
-            ));
+            );
         }
     }
 
@@ -83,7 +84,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
             if i > 0 {
                 ctx.push(' ');
             }
-            ctx.push_str(&format!("void {};", global.name));
+            vize_carton::push_fmt!(ctx, "void {};", global.name);
         }
         ctx.push('\n');
     }

@@ -117,7 +117,7 @@ impl TypeChecker {
         ctx: &TypeContext,
         result: &mut CheckResult,
     ) {
-        let pattern = format!("{}=\"", directive);
+        let pattern = vize_carton::new_string!("{}=\"", directive).to_string();
         let mut pos = 0;
 
         while let Some(start) = template[pos..].find(&pattern) {
@@ -234,7 +234,7 @@ impl TypeChecker {
                 let abs_start = pos + start + prefix.len();
 
                 // Find ="
-                if let Some(eq_pos) = template[abs_start..].find(&format!("{suffix}\"")) {
+                if let Some(eq_pos) = template[abs_start..].find(&*vize_carton::new_string!("{suffix}\"")) {
                     let expr_start = abs_start + eq_pos + 2;
                     if let Some(end) = template[expr_start..].find('"') {
                         let expr = &template[expr_start..expr_start + end];
@@ -298,7 +298,7 @@ impl TypeChecker {
         if !ctx.has_binding(ident) && !ctx.globals.contains_key(ident) {
             result.add_diagnostic(TypeDiagnostic::error(
                 TypeErrorCode::UnknownIdentifier,
-                format!("Cannot find name '{}'", ident),
+                vize_carton::new_string!("Cannot find name '{}'", ident).to_string(),
                 start,
                 end,
             ));

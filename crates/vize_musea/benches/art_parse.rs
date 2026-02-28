@@ -5,6 +5,8 @@
 //! These benchmarks measure the performance of the arena-allocated,
 //! zero-copy parser for Art files.
 
+#![allow(clippy::disallowed_macros)]
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
 use vize_carton::Bump;
 use vize_musea::{parse_art, transform_to_csf, transform_to_vue, ArtParseOptions};
@@ -172,7 +174,8 @@ fn generate_massive_art() -> String {
     art.push('\n');
 
     for i in 0..50 {
-        art.push_str(&format!(
+        vize_carton::push_fmt!(
+            art,
             r#"  <variant name="Variant {}" {}args='{{"index":{}}}'>
     <Component :index="args.index">Content for variant {}</Component>
   </variant>
@@ -181,7 +184,7 @@ fn generate_massive_art() -> String {
             if i == 0 { "default " } else { "" },
             i,
             i
-        ));
+        );
     }
 
     art.push_str("</art>\n");

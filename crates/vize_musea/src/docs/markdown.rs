@@ -1,5 +1,7 @@
 //! Markdown generation for individual Art components.
 
+#![allow(clippy::disallowed_macros)]
+
 use super::{DocOptions, DocOutput};
 use crate::types::{ArtDescriptor, ArtStatus, ArtVariant};
 
@@ -91,12 +93,13 @@ pub fn generate_variant_doc(variant: &ArtVariant<'_>, options: &DocOptions) -> S
 
     // Viewport info
     if let Some(ref viewport) = variant.viewport {
-        md.push_str(&format!(
+        vize_carton::push_fmt!(
+            md,
             "**Viewport:** {}x{}",
             viewport.width, viewport.height
-        ));
+        );
         if let Some(scale) = viewport.device_scale_factor {
-            md.push_str(&format!(" @{:.1}x", scale));
+            vize_carton::push_fmt!(md, " @{:.1}x", scale);
         }
         md.push_str("\n\n");
     }
@@ -113,7 +116,7 @@ pub fn generate_variant_doc(variant: &ArtVariant<'_>, options: &DocOptions) -> S
                 serde_json::Value::Number(n) => format!("`{}`", n),
                 _ => format!("`{}`", value),
             };
-            md.push_str(&format!("| `{}` | {} |\n", key, value_str));
+            vize_carton::push_fmt!(md, "| `{}` | {} |\n", key, value_str);
         }
         md.push('\n');
     }
@@ -146,7 +149,7 @@ fn generate_metadata_section(art: &ArtDescriptor<'_>) -> String {
     md.push_str("|---|---|\n");
 
     if let Some(category) = art.metadata.category {
-        md.push_str(&format!("| **Category** | `{}` |\n", category));
+        vize_carton::push_fmt!(md, "| **Category** | `{}` |\n", category);
     }
 
     if !art.metadata.tags.is_empty() {
@@ -156,14 +159,14 @@ fn generate_metadata_section(art: &ArtDescriptor<'_>) -> String {
             .iter()
             .map(|t| format!("`{}`", t))
             .collect();
-        md.push_str(&format!("| **Tags** | {} |\n", tags.join(" ")));
+        vize_carton::push_fmt!(md, "| **Tags** | {} |\n", tags.join(" "));
     }
 
     if let Some(order) = art.metadata.order {
-        md.push_str(&format!("| **Order** | {} |\n", order));
+        vize_carton::push_fmt!(md, "| **Order** | {} |\n", order);
     }
 
-    md.push_str(&format!("| **Variants** | {} |\n", art.variants.len()));
+    vize_carton::push_fmt!(md, "| **Variants** | {} |\n", art.variants.len());
 
     md.push('\n');
 
@@ -178,7 +181,7 @@ fn generate_toc(variants: &[ArtVariant<'_>]) -> String {
 
     for variant in variants {
         let anchor = slugify(variant.name);
-        md.push_str(&format!("- [{}](#{})", variant.name, anchor));
+        vize_carton::push_fmt!(md, "- [{}](#{})", variant.name, anchor);
         if variant.is_default {
             md.push_str(" *(default)*");
         }
@@ -219,7 +222,8 @@ fn slugify(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{format_status_badge, slugify};
+    use crate::types::ArtStatus;
 
     #[test]
     fn test_slugify() {

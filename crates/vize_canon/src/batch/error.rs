@@ -81,25 +81,29 @@ impl TsgoNotFoundError {
 
         if let Some(pm) = self.detected_pm {
             msg.push_str("To install, run:\n\n");
-            msg.push_str(&format!("  {}\n", self.install_command(pm)));
+            vize_carton::push_fmt!(msg, "  {}\n", self.install_command(pm));
         } else {
             msg.push_str("To install, run one of the following:\n\n");
-            msg.push_str(&format!(
+            vize_carton::push_fmt!(
+                msg,
                 "  {}  # npm\n",
                 self.install_command(PackageManager::Npm)
-            ));
-            msg.push_str(&format!(
+            );
+            vize_carton::push_fmt!(
+                msg,
                 "  {}  # pnpm\n",
                 self.install_command(PackageManager::Pnpm)
-            ));
-            msg.push_str(&format!(
+            );
+            vize_carton::push_fmt!(
+                msg,
                 "  {}  # yarn\n",
                 self.install_command(PackageManager::Yarn)
-            ));
-            msg.push_str(&format!(
+            );
+            vize_carton::push_fmt!(
+                msg,
                 "  {}  # bun\n",
                 self.install_command(PackageManager::Bun)
-            ));
+            );
         }
 
         msg
@@ -165,7 +169,7 @@ pub fn detect_package_manager(project_root: &Path) -> Option<PackageManager> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{PackageManager, TsgoNotFoundError};
 
     #[test]
     fn test_tsgo_not_found_error_message() {

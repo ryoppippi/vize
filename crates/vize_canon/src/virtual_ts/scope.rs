@@ -153,7 +153,7 @@ fn generate_undefined_refs(
 
         let gen_start = ts.len();
         // Use void expression to reference the name without creating an unused variable
-        let expr_code = format!("  void ({});\n", undef.name);
+        let expr_code = vize_carton::new_string!("  void ({});\n", undef.name).to_string();
         let name_offset = expr_code.find(undef.name.as_str()).unwrap_or(0);
         let gen_name_start = gen_start + name_offset;
         let gen_name_end = gen_name_start + undef.name.len();
@@ -163,10 +163,11 @@ fn generate_undefined_refs(
             gen_range: gen_name_start..gen_name_end,
             src_range: src_start..src_end,
         });
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            *ts,
             "  // @vize-map: {}:{} -> {}:{}\n",
             gen_name_start, gen_name_end, src_start, src_end
-        ));
+        );
     }
 }
 
@@ -212,14 +213,16 @@ fn generate_component_props(
         let src_start = (template_offset + usage.start) as usize;
         let src_end = (template_offset + usage.end) as usize;
 
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            *ts,
             "  // @vize-map: component -> {}:{}\n",
             src_start, src_end
-        ));
-        ts.push_str(&format!(
+        );
+        vize_carton::push_fmt!(
+            *ts,
             "  type __{}_Props_{} = typeof {} extends {{ new (): {{ $props: infer __P }} }} ? __P : (typeof {} extends (props: infer __P) => any ? __P : {{}});\n",
             component_name, idx, component_name, component_name
-        ));
+        );
 
         for prop in &usage.props {
             if prop.name.as_str() == "key" || prop.name.as_str() == "ref" {
@@ -228,12 +231,13 @@ fn generate_component_props(
             if prop.value.is_some() && prop.is_dynamic {
                 let camel_prop_name = to_camel_case(prop.name.as_str());
                 let safe_prop_name = prop.name.replace('-', "_");
-                ts.push_str(&format!(
+                vize_carton::push_fmt!(
+                    *ts,
                     "  type __{}_{}_prop_{} = __{}_Props_{} extends {{ '{}'?: infer T }} ? T : __{}_Props_{} extends {{ '{}': infer T }} ? T : unknown;\n",
                     component_name, idx, safe_prop_name,
                     component_name, idx, camel_prop_name,
                     component_name, idx, camel_prop_name
-                ));
+                );
             }
         }
     }
@@ -299,14 +303,15 @@ fn generate_scope_node(
     indent: &str,
 ) {
     let scope_id = scope.id.as_u32();
-    let inner_indent = format!("{}  ", indent);
+    let inner_indent = vize_carton::new_string!("{}  ", indent).to_string();
 
     match scope.data() {
         ScopeData::VFor(data) => {
-            ts.push_str(&format!(
+            vize_carton::push_fmt!(
+                *ts,
                 "\n{}// v-for scope: {} in {}\n",
                 indent, data.value_alias, data.source
-            ));
+            );
 
             // Strip TypeScript `as Type` assertion from v-for source expression.
             // e.g., "(expr) as OptionSponsor[]" -> "(expr)" with type annotation
@@ -315,37 +320,38 @@ fn generate_scope_node(
             let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
             let element_type = if let Some(ref ta) = type_annotation {
                 // Use the asserted type's element type
-                format!("{}[number]", ta)
+                vize_carton::new_string!("{}[number]", ta).to_string()
             } else if is_simple_identifier {
-                format!("typeof {}[number]", source_expr)
+                vize_carton::new_string!("typeof {}[number]", source_expr).to_string()
             } else {
                 "any".to_string()
             };
 
-            ts.push_str(&format!(
+            vize_carton::push_fmt!(
+                *ts,
                 "{}({}).forEach(({}: {}",
                 indent, source_expr, data.value_alias, element_type
-            ));
+            );
 
             if let Some(ref key) = data.key_alias {
-                ts.push_str(&format!(", {}: number", key));
+                vize_carton::push_fmt!(*ts, ", {}: number", key);
             }
             if let Some(ref index) = data.index_alias {
                 if data.key_alias.is_none() {
                     ts.push_str(", _key: number");
                 }
-                ts.push_str(&format!(", {}: number", index));
+                vize_carton::push_fmt!(*ts, ", {}: number", index);
             }
 
             ts.push_str(") => {\n");
 
             // Mark v-for variables as used to avoid TS6133
-            ts.push_str(&format!("{}void {};\n", inner_indent, data.value_alias));
+            vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, data.value_alias);
             if let Some(ref key) = data.key_alias {
-                ts.push_str(&format!("{}void {};\n", inner_indent, key));
+                vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, key);
             }
             if let Some(ref index) = data.index_alias {
-                ts.push_str(&format!("{}void {};\n", inner_indent, index));
+                vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, index);
             }
 
             // Generate expressions in this scope
@@ -362,21 +368,22 @@ fn generate_scope_node(
             ts.push_str("});\n");
         }
         ScopeData::VSlot(data) => {
-            ts.push_str(&format!("\n{}// v-slot scope: #{}\n", indent, data.name));
+            vize_carton::push_fmt!(*ts, "\n{}// v-slot scope: #{}\n", indent, data.name);
 
             let props_pattern = data.props_pattern.as_deref().unwrap_or("slotProps");
-            ts.push_str(&format!(
+            vize_carton::push_fmt!(
+                *ts,
                 "{}void function _slot_{}({}: any) {{\n",
                 indent, data.name, props_pattern
-            ));
+            );
             // Mark slot prop variables as used
             if data.prop_names.is_empty() {
                 // Simple identifier (no destructuring)
-                ts.push_str(&format!("{}void {};\n", inner_indent, props_pattern));
+                vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, props_pattern);
             } else {
                 // Destructured: void each extracted prop name
                 for prop_name in data.prop_names.iter() {
-                    ts.push_str(&format!("{}void {};\n", inner_indent, prop_name));
+                    vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, prop_name);
                 }
             }
 
@@ -393,41 +400,45 @@ fn generate_scope_node(
             ts.push_str("};\n");
         }
         ScopeData::EventHandler(data) => {
-            ts.push_str(&format!("\n{}// @{} handler\n", indent, data.event_name));
+            vize_carton::push_fmt!(*ts, "\n{}// @{} handler\n", indent, data.event_name);
 
             let safe_event_name = to_safe_identifier(data.event_name.as_str());
 
             if let Some(ref component_name) = data.target_component {
                 let pascal_event = to_pascal_case(data.event_name.as_str());
-                let on_handler = format!("on{}", pascal_event);
+                let on_handler = vize_carton::new_string!("on{}", pascal_event).to_string();
 
                 let prop_key = if on_handler.contains(':') {
-                    format!("\"{}\"", on_handler)
+                    vize_carton::new_string!("\"{}\"", on_handler).to_string()
                 } else {
                     on_handler
                 };
 
                 // Type alias (block-scoped in TypeScript)
-                ts.push_str(&format!(
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}type __{}_{}_event = typeof {} extends {{ new (): {{ $props: infer __P }} }}\n",
                     indent, component_name, safe_event_name, component_name
-                ));
-                ts.push_str(&format!(
+                );
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}  ? __P extends {{ {}?: (arg: infer __A, ...rest: any[]) => any }} ? __A : unknown\n",
                     indent, prop_key
-                ));
-                ts.push_str(&format!(
+                );
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}  : typeof {} extends (props: infer __P) => any\n",
                     indent, component_name
-                ));
-                ts.push_str(&format!(
+                );
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}    ? __P extends {{ {}?: (arg: infer __A, ...rest: any[]) => any }} ? __A : unknown\n",
                     indent, prop_key
-                ));
-                ts.push_str(&format!("{}    : unknown;\n", indent));
+                );
+                vize_carton::push_fmt!(*ts, "{}    : unknown;\n", indent);
 
-                let event_type = format!("__{}_{}_event", component_name, safe_event_name);
-                ts.push_str(&format!("{}(($event: {}) => {{\n", indent, event_type));
+                let event_type = vize_carton::new_string!("__{}_{}_event", component_name, safe_event_name).to_string();
+                vize_carton::push_fmt!(*ts, "{}(($event: {}) => {{\n", indent, event_type);
 
                 generate_event_handler_expressions(
                     ts,
@@ -439,10 +450,10 @@ fn generate_scope_node(
                     &inner_indent,
                 );
 
-                ts.push_str(&format!("{}}})({{}} as {});\n", indent, event_type));
+                vize_carton::push_fmt!(*ts, "{}}})({{}} as {});\n", indent, event_type);
             } else {
                 let event_type = get_dom_event_type(data.event_name.as_str());
-                ts.push_str(&format!("{}(($event: {}) => {{\n", indent, event_type));
+                vize_carton::push_fmt!(*ts, "{}(($event: {}) => {{\n", indent, event_type);
 
                 generate_event_handler_expressions(
                     ts,
@@ -454,7 +465,7 @@ fn generate_scope_node(
                     &inner_indent,
                 );
 
-                ts.push_str(&format!("{}}})({{}} as {});\n", indent, event_type));
+                vize_carton::push_fmt!(*ts, "{}}})({{}} as {});\n", indent, event_type);
             }
         }
         _ => {
@@ -489,22 +500,24 @@ fn generate_event_handler_expressions(
 
             let gen_start = ts.len();
             if data.has_implicit_event && is_simple_identifier && !content.is_empty() {
-                ts.push_str(&format!(
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}{}($event);  // handler expression\n",
                     indent, content
-                ));
+                );
             } else {
-                ts.push_str(&format!("{}{};  // handler expression\n", indent, content));
+                vize_carton::push_fmt!(*ts, "{}{};  // handler expression\n", indent, content);
             }
             let gen_end = ts.len();
             mappings.push(VizeMapping {
                 gen_range: gen_start..gen_end,
                 src_range: src_start..src_end,
             });
-            ts.push_str(&format!(
+            vize_carton::push_fmt!(
+                *ts,
                 "{}// @vize-map: handler -> {}:{}\n",
                 indent, src_start, src_end
-            ));
+            );
         }
     }
 }
@@ -540,46 +553,48 @@ fn generate_vfor_component_props_recursive(
     indent: &str,
 ) {
     let scope_id = scope.id.as_u32();
-    let inner_indent = format!("{}  ", indent);
+    let inner_indent = vize_carton::new_string!("{}  ", indent).to_string();
 
     if let ScopeData::VFor(data) = scope.data() {
         let (source_expr, type_annotation) = strip_as_assertion(&data.source);
 
         let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
         let element_type = if let Some(ref ta) = type_annotation {
-            format!("{}[number]", ta)
+            vize_carton::new_string!("{}[number]", ta).to_string()
         } else if is_simple_identifier {
-            format!("typeof {}[number]", source_expr)
+            vize_carton::new_string!("typeof {}[number]", source_expr).to_string()
         } else {
             "any".to_string()
         };
 
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            *ts,
             "\n{}// Component props in v-for scope: {} in {}\n",
             indent, data.value_alias, data.source
-        ));
-        ts.push_str(&format!(
+        );
+        vize_carton::push_fmt!(
+            *ts,
             "{}({}).forEach(({}: {}",
             indent, source_expr, data.value_alias, element_type
-        ));
+        );
         if let Some(ref key) = data.key_alias {
-            ts.push_str(&format!(", {}: number", key));
+            vize_carton::push_fmt!(*ts, ", {}: number", key);
         }
         if let Some(ref index) = data.index_alias {
             if data.key_alias.is_none() {
                 ts.push_str(", _key: number");
             }
-            ts.push_str(&format!(", {}: number", index));
+            vize_carton::push_fmt!(*ts, ", {}: number", index);
         }
         ts.push_str(") => {\n");
 
         // Mark v-for variables as used to avoid TS6133
-        ts.push_str(&format!("{}void {};\n", inner_indent, data.value_alias));
+        vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, data.value_alias);
         if let Some(ref key) = data.key_alias {
-            ts.push_str(&format!("{}void {};\n", inner_indent, key));
+            vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, key);
         }
         if let Some(ref index) = data.index_alias {
-            ts.push_str(&format!("{}void {};\n", inner_indent, index));
+            vize_carton::push_fmt!(*ts, "{}void {};\n", inner_indent, index);
         }
 
         // Emit component prop checks for this scope

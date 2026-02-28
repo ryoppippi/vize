@@ -37,10 +37,11 @@ impl HoverService {
 
         // Try to get type information from vize_canon
         if let Some(type_info) = crate::ide::TypeService::get_type_at(ctx) {
-            let mut value = format!("**{}**\n\n```typescript\n{}\n```", word, type_info.display);
+            #[allow(clippy::disallowed_macros)]
+        let mut value = format!("**{}**\n\n```typescript\n{}\n```", word, type_info.display);
 
             if let Some(ref doc) = type_info.documentation {
-                value.push_str(&format!("\n\n{}", doc));
+                vize_carton::push_fmt!(value, "\n\n{}", doc);
             }
 
             return Some(Hover {
@@ -61,6 +62,7 @@ impl HoverService {
                     return Some(Hover {
                         contents: HoverContents::Markup(MarkupContent {
                             kind: MarkupKind::Markdown,
+                            #[allow(clippy::disallowed_macros)]
                             value: format!("**{}**\n\n*Binding from `<script setup>`*", word),
                         }),
                         range: None,
@@ -73,6 +75,7 @@ impl HoverService {
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,
+                #[allow(clippy::disallowed_macros)]
                 value: format!("**{}**\n\n*Template expression*", word),
             }),
             range: None,
@@ -104,13 +107,16 @@ impl HoverService {
                     if let Some(vts_offset) = Self::sfc_to_virtual_ts_offset(ctx, ctx.offset) {
                         let (line, character) =
                             crate::ide::offset_to_position(&template.content, vts_offset);
+                        #[allow(clippy::disallowed_macros)]
                         let uri = format!("vize-virtual://{}.template.ts", ctx.uri.path());
 
                         // Open/update virtual document
                         if bridge.is_initialized() {
+                            #[allow(clippy::disallowed_macros)]
+                            let vdoc_uri = format!("{}.template.ts", ctx.uri.path());
                             let _ = bridge
                                 .open_or_update_virtual_document(
-                                    &format!("{}.template.ts", ctx.uri.path()),
+                                    &vdoc_uri,
                                     &template.content,
                                 )
                                 .await;
@@ -175,6 +181,7 @@ impl HoverService {
         // Format the hover content
         let kind_desc = Self::binding_type_to_description(binding_type);
 
+        #[allow(clippy::disallowed_macros)]
         let value = format!(
             "```typescript\n{}: {}\n```\n\n{}\n\n*Source: `<script setup>`*",
             word, inferred_type, kind_desc
@@ -213,6 +220,7 @@ impl HoverService {
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,
+                #[allow(clippy::disallowed_macros)]
                 value: format!("**{}**\n\n{}\n\n[Vue Documentation](https://vuejs.org/api/built-in-directives.html)", title, description),
             }),
             range: None,

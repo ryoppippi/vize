@@ -88,7 +88,7 @@ fn get_expression_content(expr: &vize_relief::ast::ExpressionNode) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoTemplateKey;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

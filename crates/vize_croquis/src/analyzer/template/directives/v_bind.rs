@@ -60,10 +60,10 @@ impl Analyzer {
                         .as_ref()
                         .map(|arg| match arg {
                             ExpressionNode::Simple(s) => {
-                                CompactString::new(format!(":{}callback", s.content))
+                                vize_carton::new_string!(":{}callback", s.content)
                             }
                             ExpressionNode::Compound(c) => {
-                                CompactString::new(format!(":{}callback", c.loc.source))
+                                vize_carton::new_string!(":{}callback", c.loc.source)
                             }
                         })
                         .unwrap_or_else(|| CompactString::const_new(":bind callback"));

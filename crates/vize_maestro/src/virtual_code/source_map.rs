@@ -346,7 +346,7 @@ impl SourceMap {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{SourceMap, SourceMapping, SourceRange};
 
     #[test]
     fn test_source_range_contains() {

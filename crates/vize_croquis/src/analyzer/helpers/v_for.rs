@@ -89,6 +89,7 @@ fn parse_v_for_with_oxc(
 
     let total_len = prefix.len() + inner.len() + suffix.len();
     if total_len > buffer.len() {
+        #[allow(clippy::disallowed_macros)]
         let pattern_str = format!("let [{}] = x", inner);
         return parse_v_for_pattern(&pattern_str, source);
     }

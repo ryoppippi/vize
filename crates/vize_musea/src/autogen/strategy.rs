@@ -3,6 +3,8 @@
 //! Instead of cartesian product (which explodes combinatorially),
 //! we use intelligent strategies that produce meaningful variants.
 
+#![allow(clippy::disallowed_macros)]
+
 use super::types::{AutogenConfig, GeneratedVariant, PropDefinition};
 use serde_json::{json, Map, Value};
 
@@ -265,7 +267,9 @@ fn to_pascal_case(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::super::types::{AutogenConfig, PropDefinition};
+    use super::{generate_variants, parse_union_type, to_pascal_case};
+    use serde_json::json;
 
     #[test]
     fn test_parse_string_union() {

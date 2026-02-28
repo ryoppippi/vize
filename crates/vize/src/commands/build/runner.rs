@@ -3,6 +3,8 @@
 //! Contains the main compilation pipeline, file collection, pattern matching,
 //! and per-file compilation with profiling.
 
+#![allow(clippy::disallowed_macros)]
+
 use std::{
     fs,
     path::PathBuf,

@@ -20,6 +20,8 @@
 //! }
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use memchr::memmem;
 use std::collections::HashMap;
 
@@ -290,7 +292,7 @@ fn normalize_value(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{MuseaLintResult, normalize_value, PreferDesignTokens, PreferDesignTokensConfig, TokenInfo};
 
     fn create_config() -> PreferDesignTokensConfig {
         let mut config = PreferDesignTokensConfig::default();

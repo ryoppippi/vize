@@ -226,7 +226,9 @@ fn count_lines_fast(bytes: &[u8], pos: usize) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{parse_variants, parse_viewport};
+    use crate::types::ArtParseError;
+    use vize_carton::Bump;
 
     #[test]
     fn test_parse_single_variant() {

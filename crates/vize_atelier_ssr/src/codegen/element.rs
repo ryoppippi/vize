@@ -142,22 +142,22 @@ impl<'a> SsrCodegenContext<'a> {
         match arg_name.as_deref() {
             Some("class") => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderClass);
-                self.push_string_part_dynamic(&format!("_ssrRenderClass({})", exp));
+                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderClass({exp})"));
             }
             Some("style") => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderStyle);
                 self.push_string_part_static(" style=\"");
-                self.push_string_part_dynamic(&format!("_ssrRenderStyle({})", exp));
+                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderStyle({exp})"));
                 self.push_string_part_static("\"");
             }
             Some(name) => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
-                self.push_string_part_dynamic(&format!("_ssrRenderAttr(\"{}\", {})", name, exp));
+                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttr(\"{name}\", {exp})"));
             }
             None => {
                 // v-bind without argument - spread attributes
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttrs);
-                self.push_string_part_dynamic(&format!("_ssrRenderAttrs({})", exp));
+                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttrs({})", exp));
             }
         }
     }
@@ -185,7 +185,7 @@ impl<'a> SsrCodegenContext<'a> {
                     Some("checkbox") => {
                         self.use_ssr_helper(RuntimeHelper::SsrIncludeBooleanAttr);
                         self.use_ssr_helper(RuntimeHelper::SsrLooseContain);
-                        self.push_string_part_dynamic(&format!(
+                        self.push_string_part_dynamic(&vize_carton::new_string!(
                             "(_ssrIncludeBooleanAttr(Array.isArray({}) ? _ssrLooseContain({}, null) : {})) ? \" checked\" : \"\"",
                             exp, exp, exp
                         ));
@@ -195,7 +195,7 @@ impl<'a> SsrCodegenContext<'a> {
                         self.use_ssr_helper(RuntimeHelper::SsrLooseEqual);
                         let value = self.get_element_attr_value(el, "value");
                         let value_exp = value.as_deref().unwrap_or("null");
-                        self.push_string_part_dynamic(&format!(
+                        self.push_string_part_dynamic(&vize_carton::new_string!(
                             "(_ssrIncludeBooleanAttr(_ssrLooseEqual({}, {}))) ? \" checked\" : \"\"",
                             exp, value_exp
                         ));
@@ -203,7 +203,7 @@ impl<'a> SsrCodegenContext<'a> {
                     _ => {
                         // text input
                         self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
-                        self.push_string_part_dynamic(&format!(
+                        self.push_string_part_dynamic(&vize_carton::new_string!(
                             "_ssrRenderAttr(\"value\", {})",
                             exp
                         ));
@@ -236,7 +236,7 @@ impl<'a> SsrCodegenContext<'a> {
         };
 
         // v-show="expr" => style="display: none" if !expr
-        self.push_string_part_dynamic(&format!(
+        self.push_string_part_dynamic(&vize_carton::new_string!(
             "(({}) ? \"\" : \" style=\\\"display: none;\\\"\")",
             exp
         ));
@@ -250,7 +250,7 @@ impl<'a> SsrCodegenContext<'a> {
     ) {
         self.use_ssr_helper(RuntimeHelper::SsrGetDirectiveProps);
         // Custom directives use ssrGetDirectiveProps to merge props
-        self.push_string_part_dynamic(&format!(
+        self.push_string_part_dynamic(&vize_carton::new_string!(
             "_ssrRenderAttrs(_ssrGetDirectiveProps(_ctx, _directives, \"{}\"))",
             dir.name
         ));

@@ -130,7 +130,7 @@ pub fn create_ime() -> Box<dyn PlatformIme + Send> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Event, ImeEvent, ImeMode, PlatformIme, TerminalIme};
 
     #[test]
     fn test_terminal_ime_new() {

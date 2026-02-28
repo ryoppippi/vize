@@ -338,7 +338,7 @@ impl VrtConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BrowserConfig, DiffStyle, VrtConfig, VrtOptions, VrtThreshold};
 
     #[test]
     fn test_vrt_config_default() {

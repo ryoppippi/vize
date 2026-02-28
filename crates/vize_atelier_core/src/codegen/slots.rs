@@ -456,7 +456,7 @@ fn strip_ctx_prefix_for_slot_params(ctx: &CodegenContext, content: &str) -> std:
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{is_valid_js_identifier, prefix_slot_defaults};
 
     #[test]
     fn test_is_valid_js_identifier_valid() {

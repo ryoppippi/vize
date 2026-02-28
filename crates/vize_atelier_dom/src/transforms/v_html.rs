@@ -24,10 +24,9 @@ pub fn generate_html_warning() -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    use super::{generate_html_prop, generate_html_warning, is_v_html};
     use vize_atelier_core::{DirectiveNode, ExpressionNode, SimpleExpressionNode, SourceLocation};
     use vize_carton::{Box, Bump};
-
-    use super::*;
 
     fn create_test_directive<'a>(allocator: &'a Bump, name: &str, exp: &str) -> DirectiveNode<'a> {
         let mut dir = DirectiveNode::new(allocator, name, SourceLocation::STUB);

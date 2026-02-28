@@ -294,7 +294,7 @@ impl<'a> TypeIntelligence<'a> {
     fn add_binding_completions(&self, completions: &mut Vec<Completion>) {
         for (name, &binding_type) in self.summary.bindings.bindings.iter() {
             let kind = binding_type_to_completion_kind(binding_type);
-            let detail = Some(CompactString::new(format!("{:?}", binding_type)));
+            let detail = Some(vize_carton::new_string!("{:?}", binding_type));
 
             completions.push(Completion {
                 label: CompactString::new(name),
@@ -357,7 +357,7 @@ fn format_binding_hover(name: &str, binding_type: BindingType) -> CompactString 
         BindingType::VueGlobal => "vue global",
         BindingType::ExternalModule => "external module",
     };
-    CompactString::new(format!("```typescript\n{}: {}\n```", name, type_str))
+    vize_carton::new_string!("```typescript\n{}: {}\n```", name, type_str)
 }
 
 /// Get hover for Vue template globals.
@@ -465,7 +465,10 @@ fn add_directive_arg_completions(completions: &mut Vec<Completion>) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{get_vue_global_hover, is_ident_char, TypeIntelligence};
+    use vize_carton::CompactString;
+    use vize_croquis::Croquis;
+    use vize_relief::BindingType;
 
     #[test]
     fn test_is_ident_char() {

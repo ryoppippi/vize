@@ -162,7 +162,7 @@ pub enum ImeEvent {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{ImeMode, ImeState};
 
     #[test]
     fn test_ime_state_new() {

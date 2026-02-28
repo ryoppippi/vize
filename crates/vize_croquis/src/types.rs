@@ -333,7 +333,7 @@ fn is_valid_identifier(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{TypeDefinitions, TypeResolver};
 
     #[test]
     fn test_extract_inline_props() {

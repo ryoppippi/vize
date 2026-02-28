@@ -25,6 +25,7 @@ impl DiagnosticService {
                 let (end_line, end_col) = offset_to_line_col(content, lint_diag.end as usize);
 
                 // Build the diagnostic message with help text (render as plain text for LSP)
+                #[allow(clippy::disallowed_macros)]
                 let message = if let Some(ref help) = lint_diag.help {
                     format!(
                         "{}\n\nHelp: {}",
@@ -87,11 +88,12 @@ impl DiagnosticService {
 
             // Reconstruct the art block content including tags for the linter
             // The linter expects a full art file, so we wrap the content
+            #[allow(clippy::disallowed_macros)]
             let art_content = format!(
                 "<art{}>\n{}\n</art>",
                 // Reconstruct attributes
                 custom.attrs.iter().fold(String::new(), |mut acc, (k, v)| {
-                    acc.push_str(&format!(" {}=\"{}\"", k, v));
+                    vize_carton::push_fmt!(acc, " {}=\"{}\"", k, v);
                     acc
                 }),
                 custom.content
@@ -115,6 +117,7 @@ impl DiagnosticService {
                     let (end_line, end_col) =
                         offset_to_line_col(content, custom.loc.tag_end.min(content.len()));
 
+                    #[allow(clippy::disallowed_macros)]
                     let message = if let Some(ref help) = lint_diag.help {
                         format!(
                             "{}\n\nHelp: {}",
@@ -160,6 +163,7 @@ impl DiagnosticService {
                     let (end_line, end_col) =
                         offset_to_line_col(content, sfc_end.min(content.len()));
 
+                    #[allow(clippy::disallowed_macros)]
                     let message = if let Some(ref help) = lint_diag.help {
                         format!(
                             "{}\n\nHelp: {}",
@@ -317,6 +321,7 @@ impl DiagnosticService {
                 let sfc_end_line = template.loc.start_line as u32 + end_line;
 
                 // Build the diagnostic message with help text (render as plain text for LSP)
+                #[allow(clippy::disallowed_macros)]
                 let message = if let Some(ref help) = lint_diag.help {
                     format!(
                         "{}\n\nHelp: {}",
@@ -327,6 +332,7 @@ impl DiagnosticService {
                     lint_diag.message.to_string()
                 };
 
+                #[allow(clippy::disallowed_macros)]
                 Diagnostic {
                     range: Range {
                         start: Position {

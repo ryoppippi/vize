@@ -217,7 +217,7 @@ fn pascal_to_kebab(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RequireComponentRegistration;
 
     #[test]
     fn test_pascal_to_kebab() {

@@ -170,7 +170,7 @@ impl Rule for NoFloatingPromises {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoFloatingPromises;
 
     #[test]
     fn test_meta() {

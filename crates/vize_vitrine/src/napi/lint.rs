@@ -82,7 +82,7 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
 
     if files.is_empty() {
         return Ok(LintResultNapi {
-            output: format!("No .vue files found matching patterns: {:?}", patterns),
+            output: vize_carton::new_string!("No .vue files found matching patterns: {:?}", patterns),
             error_count: 0,
             warning_count: 0,
             file_count: 0,
@@ -145,11 +145,12 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
 
     let elapsed = start.elapsed();
     if format == OutputFormat::Text {
-        output.push_str(&format!(
+        vize_carton::push_fmt!(
+            output,
             "\n{}\n",
             format_summary(total_errors, total_warnings, files.len())
-        ));
-        output.push_str(&format!("Linted {} files in {:.4?}", files.len(), elapsed));
+        );
+        vize_carton::push_fmt!(output, "Linted {} files in {:.4?}", files.len(), elapsed);
     }
 
     Ok(LintResultNapi {

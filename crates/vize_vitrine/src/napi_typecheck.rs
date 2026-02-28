@@ -204,6 +204,7 @@ pub struct BatchTypeCheckResultNapi {
 
 /// Batch type check SFC files matching a glob pattern (native multithreading)
 #[napi(js_name = "typeCheckBatch")]
+#[allow(clippy::disallowed_macros)]
 pub fn type_check_batch_napi(
     pattern: String,
     options: Option<TypeCheckOptionsNapi>,

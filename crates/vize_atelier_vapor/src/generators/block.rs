@@ -45,12 +45,25 @@ impl GenerateContext {
     }
 
     pub fn next_temp(&mut self) -> String {
-        let name = format!("_t{}", self.temp_count);
+        let name = vize_carton::new_string!("_t{}", self.temp_count);
         self.temp_count += 1;
-        name
+        name.into()
     }
 
     pub fn newline(&mut self) {
+        self.code.push('\n');
+    }
+
+    /// Push string to buffer (compatible with `push_fmt!` macro)
+    pub fn push_str(&mut self, s: &str) {
+        self.code.push_str(s);
+    }
+
+    /// Push formatted line (format_args! + newline with indentation)
+    pub fn push_line_fmt(&mut self, args: std::fmt::Arguments<'_>) {
+        self.push_indent();
+        use std::fmt::Write as _;
+        self.write_fmt(args).unwrap();
         self.code.push('\n');
     }
 }
@@ -58,6 +71,14 @@ impl GenerateContext {
 impl Default for GenerateContext {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl std::fmt::Write for GenerateContext {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.code.push_str(s);
+        Ok(())
     }
 }
 
@@ -83,14 +104,14 @@ pub fn generate_block(
         let returns = block
             .returns
             .iter()
-            .map(|r| format!("_n{}", r))
+            .map(|r| vize_carton::new_string!("_n{}", r))
             .collect::<Vec<_>>()
             .join(", ");
 
         if block.returns.len() == 1 {
-            ctx.push_line(&format!("return {}", returns));
+            ctx.push_line_fmt(format_args!("return {}", returns));
         } else {
-            ctx.push_line(&format!("return [{}]", returns));
+            ctx.push_line_fmt(format_args!("return [{}]", returns));
         }
     }
 }
@@ -113,7 +134,7 @@ pub fn generate_template_instantiation(
     element_id: usize,
     template_index: usize,
 ) {
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "const _n{} = _tmpl${}()",
         element_id, template_index
     ));
@@ -125,7 +146,7 @@ pub fn generate_template_declaration(
     template_index: usize,
     template: &str,
 ) {
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "const _tmpl${} = _template(\"{}\")",
         template_index,
         escape_template(template)
@@ -142,7 +163,7 @@ pub fn escape_template(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{escape_template, GenerateContext};
 
     #[test]
     fn test_generate_context() {

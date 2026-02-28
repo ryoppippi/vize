@@ -184,6 +184,7 @@ impl Compiler {
 
     /// Parse template to AST
     #[wasm_bindgen]
+    #[allow(clippy::disallowed_macros)]
     pub fn parse(&self, template: &str, _options: JsValue) -> Result<JsValue, JsValue> {
         let allocator = Bump::new();
 
@@ -368,6 +369,7 @@ impl Default for Compiler {
 }
 
 /// Internal compile function
+#[allow(clippy::disallowed_macros)]
 fn compile_internal(
     template: &str,
     opts: &CompilerOptions,
@@ -467,6 +469,7 @@ fn compile_internal(
 }
 
 /// Build AST JSON from root node
+#[allow(clippy::disallowed_macros)]
 fn build_ast_json(root: &vize_atelier_core::RootNode<'_>) -> serde_json::Value {
     use vize_atelier_core::TemplateChildNode;
 

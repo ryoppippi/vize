@@ -96,7 +96,7 @@ impl VirtualProject {
         let file_name = virtual_path
             .file_name()
             .and_then(|n| n.to_str())
-            .map(|n| format!("{}.ts", n))
+            .map(|n| vize_carton::new_string!("{}.ts", n).to_string())
             .ok_or_else(|| TsgoError::PathError {
                 path: path.to_path_buf(),
             })?;
@@ -305,7 +305,7 @@ impl VirtualProject {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::VirtualProject;
     use std::fs;
     use tempfile::TempDir;
 

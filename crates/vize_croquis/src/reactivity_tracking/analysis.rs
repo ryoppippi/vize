@@ -31,14 +31,16 @@ impl ReactivityTracker {
             .count();
 
         md.push_str("## Summary\n\n");
-        md.push_str(&format!(
+        vize_carton::push_fmt!(
+            md,
             "- **Tracked Bindings**: {}\n",
             self.bindings.len()
-        ));
-        md.push_str(&format!(
+        );
+        vize_carton::push_fmt!(
+            md,
             "- **Violations**: {} errors, {} warnings, {} info\n\n",
             error_count, warning_count, info_count
-        ));
+        );
 
         // Bindings table
         if !self.bindings.is_empty() {
@@ -47,7 +49,6 @@ impl ReactivityTracker {
             md.push_str("|------|--------|-------|-------|\n");
 
             for binding in self.bindings.values() {
-                let origin = format!("{:?}", binding.origin);
                 let state = match binding.state {
                     BindingState::Active => "✓ Active",
                     BindingState::ReactivityLost => "✗ Lost",
@@ -55,10 +56,11 @@ impl ReactivityTracker {
                     BindingState::Escaped => "↗ Escaped",
                     BindingState::Reassigned => "⟲ Reassigned",
                 };
-                md.push_str(&format!(
-                    "| `{}` | {} | {} | {} |\n",
-                    binding.name, origin, state, binding.scope_depth
-                ));
+                vize_carton::push_fmt!(
+                    md,
+                    "| `{}` | {:?} | {} | {} |\n",
+                    binding.name, binding.origin, state, binding.scope_depth
+                );
             }
             md.push('\n');
         }
@@ -75,14 +77,15 @@ impl ReactivityTracker {
                     ViolationSeverity::Hint => "💡",
                 };
 
-                md.push_str(&format!("### {} {}\n\n", icon, violation.message));
-                md.push_str(&format!(
+                vize_carton::push_fmt!(md, "### {} {}\n\n", icon, violation.message);
+                vize_carton::push_fmt!(
+                    md,
                     "**Location**: offset {}..{}\n\n",
                     violation.start, violation.end
-                ));
+                );
 
                 if let Some(ref suggestion) = violation.suggestion {
-                    md.push_str(&format!("**Suggestion**: {}\n\n", suggestion));
+                    vize_carton::push_fmt!(md, "**Suggestion**: {}\n\n", suggestion);
                 }
 
                 // Add detailed explanation for specific violation kinds
@@ -90,15 +93,17 @@ impl ReactivityTracker {
                     ViolationKind::DestructuringLoss { extracted_props } => {
                         md.push_str("```\n");
                         md.push_str("// ❌ Reactivity is lost:\n");
-                        md.push_str(&format!(
+                        vize_carton::push_fmt!(
+                            md,
                             "const {{ {} }} = reactiveObj\n",
                             extracted_props.join(", ")
-                        ));
+                        );
                         md.push_str("\n// ✓ Keep reactivity:\n");
-                        md.push_str(&format!(
+                        vize_carton::push_fmt!(
+                            md,
                             "const {{ {} }} = toRefs(reactiveObj)\n",
                             extracted_props.join(", ")
-                        ));
+                        );
                         md.push_str("```\n\n");
                     }
                     ViolationKind::SpreadLoss => {

@@ -162,7 +162,7 @@ impl Rule for AttributeHyphenation {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::AttributeHyphenation;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

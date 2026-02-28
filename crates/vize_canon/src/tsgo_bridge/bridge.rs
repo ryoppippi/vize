@@ -105,7 +105,7 @@ impl TsgoBridge {
 
         tracing::info!("tsgo_bridge: spawning process...");
         let mut child = cmd.spawn().map_err(|e| {
-            TsgoBridgeError::SpawnFailed(format!("Failed to spawn tsgo at {:?}: {}", tsgo_path, e))
+            TsgoBridgeError::SpawnFailed(vize_carton::new_string!("Failed to spawn tsgo at {:?}: {}", tsgo_path, e).to_string())
         })?;
         tracing::info!("tsgo_bridge: process spawned");
 
@@ -215,7 +215,7 @@ impl TsgoBridge {
                         if name_str.starts_with("@typescript+native-preview-")
                             && name_str.contains(platform_suffix)
                         {
-                            let native_path = entry.path().join(format!(
+                            let native_path = entry.path().join(&*vize_carton::new_string!(
                                 "node_modules/@typescript/native-preview-{}/lib/tsgo",
                                 platform_suffix
                             ));
@@ -229,7 +229,7 @@ impl TsgoBridge {
 
             // Try npm/yarn structure
             let native_candidates = [
-                dir.join(format!(
+                dir.join(&*vize_carton::new_string!(
                     "node_modules/@typescript/native-preview-{}/lib/tsgo",
                     platform_suffix
                 )),
@@ -285,7 +285,7 @@ impl TsgoBridge {
             .config
             .working_dir
             .as_ref()
-            .map(|p| format!("file://{}", p.display()))
+            .map(|p| vize_carton::new_string!("file://{}", p.display()).to_string())
             .unwrap_or_else(|| "file:///".to_string());
 
         tracing::info!("tsgo_bridge: LSP rootUri = {}", root_uri);
@@ -341,7 +341,7 @@ impl TsgoBridge {
         let content = serde_json::to_string(&request)
             .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
 
-        let message = format!("Content-Length: {}\r\n\r\n{}", content.len(), content);
+        let message = vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
 
         // Create response channel
         let (tx, rx) = oneshot::channel();
@@ -394,7 +394,7 @@ impl TsgoBridge {
         let content = serde_json::to_string(&notification)
             .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
 
-        let message = format!("Content-Length: {}\r\n\r\n{}", content.len(), content);
+        let message = vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
 
         let mut stdin_guard = self.stdin.lock().await;
         if let Some(ref mut stdin) = *stdin_guard {
@@ -430,10 +430,10 @@ impl TsgoBridge {
             if name.starts_with("file://") {
                 name.to_string()
             } else {
-                format!("file://{}", name)
+                vize_carton::new_string!("file://{}", name).to_string()
             }
         } else {
-            format!("{}://{}", VIRTUAL_URI_SCHEME, name)
+            vize_carton::new_string!("{}://{}", VIRTUAL_URI_SCHEME, name).to_string()
         };
 
         // Clear cached diagnostics for this URI
@@ -476,10 +476,10 @@ impl TsgoBridge {
             if name.starts_with("file://") {
                 name.to_string()
             } else {
-                format!("file://{}", name)
+                vize_carton::new_string!("file://{}", name).to_string()
             }
         } else {
-            format!("{}://{}", VIRTUAL_URI_SCHEME, name)
+            vize_carton::new_string!("{}://{}", VIRTUAL_URI_SCHEME, name).to_string()
         };
 
         // Check if document is already open
@@ -753,7 +753,7 @@ impl TsgoBridge {
         }
 
         let hover: LspHover = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(format!("Failed to parse hover: {}", e))
+            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse hover: {}", e).to_string())
         })?;
 
         Ok(Some(hover))
@@ -799,7 +799,7 @@ impl TsgoBridge {
 
         // Try parsing as definition response (can be location, array, or links)
         let response: LspDefinitionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(format!("Failed to parse definition: {}", e))
+            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse definition: {}", e).to_string())
         })?;
 
         Ok(response.into_locations())
@@ -848,7 +848,7 @@ impl TsgoBridge {
 
         // Try parsing as completion response (can be array or list)
         let response: LspCompletionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(format!("Failed to parse completion: {}", e))
+            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse completion: {}", e).to_string())
         })?;
 
         Ok(response.items())

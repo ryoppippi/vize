@@ -50,11 +50,11 @@ pub(crate) fn generate_imports(ctx: &GenerateContext) -> String {
 
     let imports = helpers
         .iter()
-        .map(|h| format!("{} as _{}", h, h))
-        .collect::<Vec<_>>()
+        .map(|h| vize_carton::new_string!("{} as _{}", h, h))
+        .collect::<std::vec::Vec<_>>()
         .join(", ");
 
-    format!("import {{ {} }} from 'vue';\n", imports)
+    vize_carton::new_string!("import {{ {} }} from 'vue';\n", imports).into()
 }
 
 /// Escape template string for JavaScript

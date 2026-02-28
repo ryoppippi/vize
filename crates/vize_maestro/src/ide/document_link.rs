@@ -355,7 +355,7 @@ impl DocumentLinkService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::DocumentLinkService;
 
     #[test]
     fn test_extract_import_path() {

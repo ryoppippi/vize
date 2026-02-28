@@ -99,16 +99,16 @@ pub(crate) fn definition_in_style(ctx: &IdeContext) -> Option<GotoDefinitionResp
 /// Find the location of a binding definition in raw script content (not virtual code).
 pub(crate) fn find_binding_location_raw(content: &str, name: &str) -> Option<BindingLocation> {
     let patterns = [
-        format!("const {} ", name),
-        format!("const {}=", name),
-        format!("const {}:", name),
-        format!("let {} ", name),
-        format!("let {}=", name),
-        format!("let {}:", name),
-        format!("var {} ", name),
-        format!("var {}=", name),
-        format!("function {}(", name),
-        format!("function {} (", name),
+        vize_carton::new_string!("const {} ", name),
+        vize_carton::new_string!("const {}=", name),
+        vize_carton::new_string!("const {}:", name),
+        vize_carton::new_string!("let {} ", name),
+        vize_carton::new_string!("let {}=", name),
+        vize_carton::new_string!("let {}:", name),
+        vize_carton::new_string!("var {} ", name),
+        vize_carton::new_string!("var {}=", name),
+        vize_carton::new_string!("function {}(", name),
+        vize_carton::new_string!("function {} (", name),
     ];
 
     for pattern in &patterns {
@@ -126,13 +126,13 @@ pub(crate) fn find_binding_location_raw(content: &str, name: &str) -> Option<Bin
 
     // Check for destructuring patterns
     let destructure_patterns = [
-        format!("{{ {} }}", name),
-        format!("{{ {}, ", name),
-        format!("{{ {} ,", name),
-        format!(", {} }}", name),
-        format!(", {}, ", name),
-        format!(" {} }}", name),
-        format!(" {}, ", name),
+        vize_carton::new_string!("{{ {} }}", name),
+        vize_carton::new_string!("{{ {}, ", name),
+        vize_carton::new_string!("{{ {} ,", name),
+        vize_carton::new_string!(", {} }}", name),
+        vize_carton::new_string!(", {}, ", name),
+        vize_carton::new_string!(" {} }}", name),
+        vize_carton::new_string!(" {}, ", name),
     ];
 
     for pattern in &destructure_patterns {
@@ -150,11 +150,11 @@ pub(crate) fn find_binding_location_raw(content: &str, name: &str) -> Option<Bin
 
     // Check for import patterns
     let import_patterns = [
-        format!("import {} from", name),
-        format!("import {{ {} }}", name),
-        format!("import {{ {}, ", name),
-        format!("import {{ {} ,", name),
-        format!(", {} }}", name),
+        vize_carton::new_string!("import {} from", name),
+        vize_carton::new_string!("import {{ {} }}", name),
+        vize_carton::new_string!("import {{ {}, ", name),
+        vize_carton::new_string!("import {{ {} ,", name),
+        vize_carton::new_string!(", {} }}", name),
     ];
 
     for pattern in &import_patterns {
@@ -184,14 +184,14 @@ pub(crate) fn find_binding_location(
     let search_content = &content[content_start..];
 
     let patterns = [
-        format!("const {} ", name),
-        format!("const {}=", name),
-        format!("let {} ", name),
-        format!("let {}=", name),
-        format!("var {} ", name),
-        format!("var {}=", name),
-        format!("function {}(", name),
-        format!("function {} (", name),
+        vize_carton::new_string!("const {} ", name),
+        vize_carton::new_string!("const {}=", name),
+        vize_carton::new_string!("let {} ", name),
+        vize_carton::new_string!("let {}=", name),
+        vize_carton::new_string!("var {} ", name),
+        vize_carton::new_string!("var {}=", name),
+        vize_carton::new_string!("function {}(", name),
+        vize_carton::new_string!("function {} (", name),
     ];
 
     for pattern in &patterns {
@@ -208,7 +208,7 @@ pub(crate) fn find_binding_location(
     }
 
     // Check for destructuring patterns
-    let destructure_pattern = format!("{{ {}", name);
+    let destructure_pattern = vize_carton::new_string!("{{ {}", name);
     if let Some(pos) = search_content.find(destructure_pattern.as_str()) {
         let name_offset = destructure_pattern.find(name).unwrap_or(0);
         let actual_offset = content_start + pos + name_offset;
@@ -221,10 +221,10 @@ pub(crate) fn find_binding_location(
     }
 
     let destructure_patterns = [
-        format!("{{ {}, ", name),
-        format!("{{ {} }}", name),
-        format!(", {} }}", name),
-        format!(", {}, ", name),
+        vize_carton::new_string!("{{ {}, ", name),
+        vize_carton::new_string!("{{ {} }}", name),
+        vize_carton::new_string!(", {} }}", name),
+        vize_carton::new_string!(", {}, ", name),
     ];
 
     for pattern in &destructure_patterns {

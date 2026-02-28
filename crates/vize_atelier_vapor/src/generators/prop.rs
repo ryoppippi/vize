@@ -5,12 +5,12 @@ use crate::ir::{SetDynamicPropsIRNode, SetPropIRNode};
 
 /// Generate SetProp code
 pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
-    let element = format!("_n{}", set_prop.element);
+    let element = vize_carton::new_string!("_n{}", set_prop.element);
     let key = &set_prop.prop.key.content;
 
-    let value = if let Some(first) = set_prop.prop.values.first() {
+    let value: String = if let Some(first) = set_prop.prop.values.first() {
         if first.is_static {
-            format!("\"{}\"", first.content)
+            vize_carton::new_string!("\"{}\"", first.content).into()
         } else {
             first.content.to_string()
         }
@@ -21,16 +21,16 @@ pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>
     // Determine how to set the prop
     if is_dom_prop(key) {
         // DOM property
-        ctx.push_line(&format!("{}.{} = {}", element, key, value));
+        ctx.push_line_fmt(format_args!("{}.{} = {}", element, key, value));
     } else if key.starts_with("on") {
         // Event handler as prop (component)
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "_setEventProp({}, \"{}\", {})",
             element, key, value
         ));
     } else {
         // Attribute
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "_setAttribute({}, \"{}\", {})",
             element, key, value
         ));
@@ -42,15 +42,15 @@ pub fn generate_set_dynamic_props(
     ctx: &mut GenerateContext,
     set_props: &SetDynamicPropsIRNode<'_>,
 ) {
-    let element = format!("_n{}", set_props.element);
+    let element = vize_carton::new_string!("_n{}", set_props.element);
 
     for prop in set_props.props.iter() {
-        let expr = if prop.is_static {
-            format!("\"{}\"", prop.content)
+        let expr: String = if prop.is_static {
+            vize_carton::new_string!("\"{}\"", prop.content).into()
         } else {
             prop.content.to_string()
         };
-        ctx.push_line(&format!("_setDynamicProps({}, {})", element, expr));
+        ctx.push_line_fmt(format_args!("_setDynamicProps({}, {})", element, expr));
     }
 }
 
@@ -73,29 +73,29 @@ fn is_dom_prop(key: &str) -> bool {
 /// Generate class binding
 pub fn generate_class_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        format!("{}.className = \"{}\"", element_var, value)
+        vize_carton::new_string!("{}.className = \"{}\"", element_var, value).into()
     } else {
-        format!("_setClass({}, {})", element_var, value)
+        vize_carton::new_string!("_setClass({}, {})", element_var, value).into()
     }
 }
 
 /// Generate style binding
 pub fn generate_style_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        format!("{}.style.cssText = \"{}\"", element_var, value)
+        vize_carton::new_string!("{}.style.cssText = \"{}\"", element_var, value).into()
     } else {
-        format!("_setStyle({}, {})", element_var, value)
+        vize_carton::new_string!("_setStyle({}, {})", element_var, value).into()
     }
 }
 
 /// Generate attribute binding
 pub fn generate_attribute(element_var: &str, name: &str, value: &str) -> String {
-    format!("{}.setAttribute(\"{}\", {})", element_var, name, value)
+    vize_carton::new_string!("{}.setAttribute(\"{}\", {})", element_var, name, value).into()
 }
 
 /// Generate prop binding for component
 pub fn generate_component_prop(component_var: &str, key: &str, value: &str) -> String {
-    format!("{}.$props.{} = {}", component_var, key, value)
+    vize_carton::new_string!("{}.$props.{} = {}", component_var, key, value).into()
 }
 
 /// Normalize prop key for components
@@ -120,7 +120,7 @@ pub fn normalize_prop_key(key: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{generate_class_binding, is_dom_prop, normalize_prop_key};
 
     #[test]
     fn test_is_dom_prop() {

@@ -7,9 +7,9 @@ use crate::ir::SlotOutletIRNode;
 pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'_>) {
     let temp = ctx.next_temp();
     let slot_name = if slot.name.is_static {
-        format!("\"{}\"", slot.name.content)
+        vize_carton::new_string!("\"{}\"", slot.name.content)
     } else {
-        slot.name.content.to_string()
+        vize_carton::CompactString::from(slot.name.content.as_str())
     };
 
     // Generate props for slot
@@ -21,19 +21,19 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
             .iter()
             .map(|p| {
                 let key = &p.key.content;
-                let value = if let Some(first) = p.values.first() {
+                let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        format!("\"{}\"", first.content)
+                        vize_carton::new_string!("\"{}\"", first.content).into()
                     } else {
                         first.content.to_string()
                     }
                 } else {
                     String::from("undefined")
                 };
-                format!("{}: {}", key, value)
+                vize_carton::new_string!("{}: {}", key, value).into()
             })
             .collect();
-        Some(format!("{{ {} }}", prop_strs.join(", ")))
+        Some(vize_carton::new_string!("{{ {} }}", prop_strs.join(", ")))
     };
 
     // Generate fallback if present
@@ -41,7 +41,7 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
 
     if let Some(props_str) = props {
         if has_fallback {
-            ctx.push_line(&format!(
+            ctx.push_line_fmt(format_args!(
                 "const {} = _renderSlot($slots, {}, {}, () => {{",
                 temp, slot_name, props_str
             ));
@@ -51,13 +51,13 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
             ctx.deindent();
             ctx.push_line("})");
         } else {
-            ctx.push_line(&format!(
+            ctx.push_line_fmt(format_args!(
                 "const {} = _renderSlot($slots, {}, {})",
                 temp, slot_name, props_str
             ));
         }
     } else if has_fallback {
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "const {} = _renderSlot($slots, {}, {{}}, () => {{",
             temp, slot_name
         ));
@@ -66,7 +66,7 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
         ctx.deindent();
         ctx.push_line("})");
     } else {
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "const {} = _renderSlot($slots, {})",
             temp, slot_name
         ));
@@ -76,9 +76,9 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
 /// Generate slot function for component
 pub fn generate_slot_function(name: &str, params: Option<&str>, body: &str) -> String {
     if let Some(p) = params {
-        format!("{}: ({}) => {}", name, p, body)
+        vize_carton::new_string!("{}: ({}) => {}", name, p, body).into()
     } else {
-        format!("{}: () => {}", name, body)
+        vize_carton::new_string!("{}: () => {}", name, body).into()
     }
 }
 
@@ -89,17 +89,17 @@ pub fn generate_scoped_slots(slots: &[(String, Option<String>, String)]) -> Stri
         .map(|(name, params, body)| generate_slot_function(name, params.as_deref(), body))
         .collect();
 
-    format!("{{ {} }}", slot_strs.join(", "))
+    vize_carton::new_string!("{{ {} }}", slot_strs.join(", ")).into()
 }
 
 /// Generate slot props normalization
 pub fn generate_normalize_slots(slots_expr: &str) -> String {
-    format!("_normalizeSlots({})", slots_expr)
+    vize_carton::new_string!("_normalizeSlots({})", slots_expr).into()
 }
 
 /// Generate dynamic slot name
 pub fn generate_dynamic_slot_name(expr: &str) -> String {
-    format!("[{}]", expr)
+    vize_carton::new_string!("[{}]", expr).into()
 }
 
 /// Check if slot is dynamic
@@ -109,7 +109,7 @@ pub fn is_dynamic_slot_name(name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{generate_dynamic_slot_name, generate_slot_function, is_dynamic_slot_name};
 
     #[test]
     fn test_generate_slot_function_no_params() {

@@ -16,6 +16,8 @@
 //! <div :class="foo"></div>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -210,7 +212,7 @@ fn get_expression_content(expr: &vize_relief::ast::ExpressionNode) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoDuplicateAttributes;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

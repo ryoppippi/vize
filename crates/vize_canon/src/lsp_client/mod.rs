@@ -89,9 +89,9 @@ impl TsgoLspClient {
         // Create a temporary directory with a proper tsconfig.json.
         // This ensures tsgo uses ES module mode (import.meta, dynamic import, etc.)
         // regardless of the project's tsconfig.json state.
-        let temp_dir_path = std::env::temp_dir().join(format!("vize-tsgo-{}", std::process::id()));
+        let temp_dir_path = std::env::temp_dir().join(&*vize_carton::new_string!("vize-tsgo-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir_path)
-            .map_err(|e| format!("Failed to create temp directory: {}", e))?;
+            .map_err(|e| vize_carton::new_string!("Failed to create temp directory: {}", e).to_string())?;
         let tsconfig_content = serde_json::json!({
             "compilerOptions": {
                 "target": "ES2022",
@@ -107,7 +107,7 @@ impl TsgoLspClient {
             temp_dir_path.join("tsconfig.json"),
             tsconfig_content.to_string(),
         )
-        .map_err(|e| format!("Failed to write temp tsconfig.json: {}", e))?;
+        .map_err(|e| vize_carton::new_string!("Failed to write temp tsconfig.json: {}", e).to_string())?;
 
         let mut cmd = Command::new(tsgo);
         cmd.arg("--lsp")
@@ -121,7 +121,7 @@ impl TsgoLspClient {
 
         let mut process = cmd
             .spawn()
-            .map_err(|e| format!("Failed to start tsgo lsp: {}", e))?;
+            .map_err(|e| vize_carton::new_string!("Failed to start tsgo lsp: {}", e).to_string())?;
 
         let stdin = process
             .stdin
@@ -163,7 +163,7 @@ impl TsgoLspClient {
     /// Initialize LSP connection
     fn initialize(&mut self, project_root: Option<&std::path::PathBuf>) -> Result<(), String> {
         // Convert project root to file:// URI
-        let root_uri = project_root.map(|p| format!("file://{}", p.display()));
+        let root_uri = project_root.map(|p| vize_carton::new_string!("file://{}", p.display()).to_string());
 
         let workspace_folders = root_uri.as_ref().map(|uri| {
             serde_json::json!([{
@@ -258,7 +258,7 @@ impl TsgoLspClient {
                         if name_str.starts_with("@typescript+native-preview-")
                             && name_str.contains(platform_suffix)
                         {
-                            let native_path = entry.path().join(format!(
+                            let native_path = entry.path().join(&*vize_carton::new_string!(
                                 "node_modules/@typescript/native-preview-{}/lib/tsgo",
                                 platform_suffix
                             ));
@@ -272,7 +272,7 @@ impl TsgoLspClient {
 
             // Try npm/yarn structure
             let native_candidates = [
-                dir.join(format!(
+                dir.join(&*vize_carton::new_string!(
                     "node_modules/@typescript/native-preview-{}/lib/tsgo",
                     platform_suffix
                 )),
@@ -324,20 +324,20 @@ impl TsgoLspClient {
         // Common npm global binary locations
         let candidates = [
             // npm global (custom prefix)
-            format!("{}/.npm-global/bin/tsgo", home),
+            vize_carton::new_string!("{}/.npm-global/bin/tsgo", home).to_string(),
             // npm global (default)
-            format!("{}/.npm/bin/tsgo", home),
+            vize_carton::new_string!("{}/.npm/bin/tsgo", home).to_string(),
             // pnpm global
-            format!("{}/.local/share/pnpm/tsgo", home),
+            vize_carton::new_string!("{}/.local/share/pnpm/tsgo", home).to_string(),
             // volta
-            format!("{}/.volta/bin/tsgo", home),
+            vize_carton::new_string!("{}/.volta/bin/tsgo", home).to_string(),
             // mise/asdf shims
-            format!("{}/.local/share/mise/shims/tsgo", home),
-            format!("{}/.asdf/shims/tsgo", home),
+            vize_carton::new_string!("{}/.local/share/mise/shims/tsgo", home).to_string(),
+            vize_carton::new_string!("{}/.asdf/shims/tsgo", home).to_string(),
             // fnm
-            format!("{}/.local/share/fnm/node-versions/current/bin/tsgo", home),
+            vize_carton::new_string!("{}/.local/share/fnm/node-versions/current/bin/tsgo", home).to_string(),
             // nvm (check current version)
-            format!("{}/.nvm/versions/node/current/bin/tsgo", home),
+            vize_carton::new_string!("{}/.nvm/versions/node/current/bin/tsgo", home).to_string(),
             // Homebrew (macOS)
             "/opt/homebrew/bin/tsgo".to_string(),
             "/usr/local/bin/tsgo".to_string(),

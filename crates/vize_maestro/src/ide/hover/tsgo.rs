@@ -119,7 +119,8 @@ impl HoverService {
                     .map(|item| match item {
                         LspMarkedString::String(s) => Self::wrap_type_info_in_codeblock(&s),
                         LspMarkedString::LanguageString { language, value } => {
-                            format!("```{}\n{}\n```", language, value)
+                            #[allow(clippy::disallowed_macros)]
+                            { format!("```{}\n{}\n```", language, value) }
                         }
                     })
                     .collect::<Vec<_>>()
@@ -170,7 +171,8 @@ impl HoverService {
             || text.contains(" & ");
 
         if looks_like_type_info {
-            format!("```typescript\n{}\n```", text)
+            #[allow(clippy::disallowed_macros)]
+            { format!("```typescript\n{}\n```", text) }
         } else {
             text.to_string()
         }

@@ -32,13 +32,14 @@ fn bench_lint_large_template(c: &mut Criterion) {
     // Generate a larger template
     let mut template = String::from("<div>\n");
     for i in 0..100 {
-        template.push_str(&format!(
+        vize_carton::push_fmt!(
+            template,
             r#"  <div v-if="show{i}">
     <span>{{ message{i} }}</span>
     <button @click="handle{i}">Button {i}</button>
   </div>
 "#,
-        ));
+        );
     }
     template.push_str("</div>");
 

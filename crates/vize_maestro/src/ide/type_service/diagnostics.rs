@@ -71,6 +71,7 @@ impl TypeService {
                                 let (rel_end_line, rel_end_col) =
                                     offset_to_line_col(&content, rel.end as usize);
 
+                                #[allow(clippy::disallowed_macros)]
                                 DiagnosticRelatedInformation {
                                     location: Location {
                                         uri: rel
@@ -97,6 +98,7 @@ impl TypeService {
                 };
 
                 // Build help message
+                #[allow(clippy::disallowed_macros)]
                 let message = if let Some(ref help) = diag.help {
                     format!("{}\n\nHelp: {}", diag.message, help)
                 } else {
@@ -104,6 +106,7 @@ impl TypeService {
                 };
 
                 // Build code description URL
+                #[allow(clippy::disallowed_macros)]
                 let code_description = diag.code.as_ref().map(|code| CodeDescription {
                     href: Url::parse(&format!(
                         "https://github.com/ubugeeei/vize/wiki/type-errors#{}",

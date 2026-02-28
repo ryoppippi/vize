@@ -119,7 +119,7 @@ impl MaestroServer {
             };
 
             if let Some(NumberOrString::String(ref rule)) = diag.code {
-                markdown.push_str(&format!("### {} {}\n\n", severity_icon, rule));
+                vize_carton::push_fmt!(markdown, "### {} {}\n\n", severity_icon, rule);
             }
 
             let parts: Vec<&str> = diag.message.split("\n\nHelp: ").collect();
@@ -127,14 +127,15 @@ impl MaestroServer {
             markdown.push_str("\n\n");
 
             if parts.len() > 1 {
-                markdown.push_str(&format!("**Help:** {}\n\n", parts[1]));
+                vize_carton::push_fmt!(markdown, "**Help:** {}\n\n", parts[1]);
             }
 
             if let Some(ref code_desc) = diag.code_description {
-                markdown.push_str(&format!(
+                vize_carton::push_fmt!(
+                    markdown,
                     "[📖 View rule documentation]({})\n\n",
                     code_desc.href
-                ));
+                );
             }
 
             markdown.push_str("---\n\n");

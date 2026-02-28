@@ -26,6 +26,8 @@
 //! </template>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -140,7 +142,7 @@ impl Rule for NoUnusedComponents {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoUnusedComponents;
 
     #[test]
     fn test_meta() {

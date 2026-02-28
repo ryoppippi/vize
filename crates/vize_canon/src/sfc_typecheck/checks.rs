@@ -69,7 +69,7 @@ pub fn check_props_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: format!("Prop '{}' should have a type definition", prop.name),
+                message: vize_carton::new_string!("Prop '{}' should have a type definition", prop.name).to_string(),
                 start,
                 end,
                 code: Some("untyped-prop".to_string()),
@@ -148,7 +148,7 @@ pub fn check_emits_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: format!("Emit '{}' should have a type definition", emit.name),
+                message: vize_carton::new_string!("Emit '{}' should have a type definition", emit.name).to_string(),
                 start,
                 end,
                 code: Some("untyped-emit".to_string()),
@@ -171,17 +171,17 @@ pub fn check_template_bindings(
     for undef_ref in &summary.undefined_refs {
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: format!(
+            message: vize_carton::new_string!(
                 "Undefined reference '{}' in {}",
                 undef_ref.name, undef_ref.context
-            ),
+            ).to_string(),
             start: undef_ref.offset + template_offset,
             end: undef_ref.offset + template_offset + undef_ref.name.len() as u32,
             code: Some("undefined-binding".to_string()),
-            help: Some(format!(
+            help: Some(vize_carton::new_string!(
                 "Make sure '{}' is defined in script setup or imported",
                 undef_ref.name
-            )),
+            ).to_string()),
             related: Vec::new(),
         });
     }
@@ -203,34 +203,34 @@ pub fn check_reactivity(
     for loss in summary.reactivity.losses() {
         let message = match &loss.kind {
             ReactivityLossKind::ReactiveDestructure { source_name, .. } => {
-                format!(
+                vize_carton::new_string!(
                     "Destructuring reactive object '{}' loses reactivity",
                     source_name
-                )
+                ).to_string()
             }
             ReactivityLossKind::RefValueDestructure { source_name, .. } => {
-                format!("Destructuring ref '{}' loses reactivity", source_name)
+                vize_carton::new_string!("Destructuring ref '{}' loses reactivity", source_name).to_string()
             }
             ReactivityLossKind::RefValueExtract {
                 source_name,
                 target_name,
             } => {
-                format!(
+                vize_carton::new_string!(
                     "Extracting '{}' from '{}.value' loses reactivity",
                     target_name, source_name
-                )
+                ).to_string()
             }
             ReactivityLossKind::ReactiveSpread { source_name } => {
-                format!(
+                vize_carton::new_string!(
                     "Spreading reactive object '{}' loses reactivity",
                     source_name
-                )
+                ).to_string()
             }
             ReactivityLossKind::ReactiveReassign { source_name } => {
-                format!(
+                vize_carton::new_string!(
                     "Reassigning reactive variable '{}' disconnects reactivity",
                     source_name
-                )
+                ).to_string()
             }
         };
 
@@ -280,7 +280,7 @@ pub fn check_invalid_exports(
     for export in &summary.invalid_exports {
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: format!("Cannot export '{}' from <script setup>", export.name),
+            message: vize_carton::new_string!("Cannot export '{}' from <script setup>", export.name).to_string(),
             start: export.start + script_offset,
             end: export.end + script_offset,
             code: Some("invalid-export".to_string()),

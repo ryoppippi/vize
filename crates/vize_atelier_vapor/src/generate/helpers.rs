@@ -17,7 +17,7 @@ pub(crate) fn generate_effect(
     if effect.operations.len() == 1 {
         let op = &effect.operations[0];
         let op_code = generate_operation_inline(ctx, op);
-        ctx.push_line(&format!("_renderEffect(() => {})", op_code));
+        ctx.push_line_fmt(format_args!("_renderEffect(() => {})", op_code));
     } else {
         ctx.push_line("_renderEffect(() => {");
         ctx.indent();
@@ -38,38 +38,38 @@ pub(crate) fn generate_operation_inline(
 ) -> String {
     match op {
         OperationNode::SetProp(set_prop) => {
-            let element = format!("n{}", set_prop.element);
+            let element = vize_carton::new_string!("n{}", set_prop.element);
             let key = &set_prop.prop.key.content;
             let is_svg = is_svg_tag(set_prop.tag.as_str());
             let value = if let Some(first) = set_prop.prop.values.first() {
                 if first.is_static {
-                    format!("\"{}\"", first.content)
+                    vize_carton::new_string!("\"{}\"", first.content)
                 } else {
-                    format!("_ctx.{}", first.content)
+                    vize_carton::new_string!("_ctx.{}", first.content)
                 }
             } else {
-                String::from("undefined")
+                vize_carton::CompactString::from("undefined")
             };
 
             if key.as_str() == "class" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    format!("_setAttr({}, \"class\", {})", element, value)
+                    vize_carton::new_string!("_setAttr({}, \"class\", {})", element, value).into()
                 } else {
                     ctx.use_helper("setClass");
-                    format!("_setClass({}, {})", element, value)
+                    vize_carton::new_string!("_setClass({}, {})", element, value).into()
                 }
             } else if key.as_str() == "style" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    format!("_setAttr({}, \"style\", {})", element, value)
+                    vize_carton::new_string!("_setAttr({}, \"style\", {})", element, value).into()
                 } else {
                     ctx.use_helper("setStyle");
-                    format!("_setStyle({}, {})", element, value)
+                    vize_carton::new_string!("_setStyle({}, {})", element, value).into()
                 }
             } else {
                 ctx.use_helper("setProp");
-                format!("_setProp({}, \"{}\", {})", element, key, value)
+                vize_carton::new_string!("_setProp({}, \"{}\", {})", element, key, value).into()
             }
         }
         OperationNode::SetText(set_text) => {
@@ -77,7 +77,7 @@ pub(crate) fn generate_operation_inline(
             let text_ref = if let Some(text_var) = ctx.text_nodes.get(&set_text.element) {
                 text_var.clone()
             } else {
-                format!("n{}", set_text.element)
+                vize_carton::new_string!("n{}", set_text.element).into()
             };
 
             let values: Vec<String> = set_text
@@ -86,17 +86,17 @@ pub(crate) fn generate_operation_inline(
                 .map(|v| {
                     ctx.use_helper("toDisplayString");
                     if v.is_static {
-                        format!("\"{}\"", v.content)
+                        vize_carton::new_string!("\"{}\"", v.content).into()
                     } else {
-                        format!("_toDisplayString(_ctx.{})", v.content)
+                        vize_carton::new_string!("_toDisplayString(_ctx.{})", v.content).into()
                     }
                 })
                 .collect();
 
             if values.len() == 1 {
-                format!("_setText({}, {})", text_ref, values[0])
+                vize_carton::new_string!("_setText({}, {})", text_ref, values[0]).into()
             } else {
-                format!("_setText({}, {})", text_ref, values.join(" + "))
+                vize_carton::new_string!("_setText({}, {})", text_ref, values.join(" + ")).into()
             }
         }
         _ => String::from("/* unsupported */"),

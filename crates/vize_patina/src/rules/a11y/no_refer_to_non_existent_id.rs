@@ -121,7 +121,7 @@ impl Rule for NoReferToNonExistentId {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoReferToNonExistentId;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

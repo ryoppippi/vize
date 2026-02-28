@@ -173,6 +173,22 @@ impl CodegenContext {
         }
     }
 
+    /// Push string to buffer (alias for `push`, compatible with `push_all!`/`push_fmt!` macros)
+    #[inline]
+    #[allow(dead_code)]
+    pub fn push_str(&mut self, code: &str) {
+        self.code.extend_from_slice(code.as_bytes());
+    }
+
+    /// Push formatted line (format_args! + newline with indentation)
+    #[inline]
+    #[allow(dead_code)]
+    pub fn push_line_fmt(&mut self, args: std::fmt::Arguments<'_>) {
+        use std::fmt::Write as _;
+        self.write_fmt(args).unwrap();
+        self.newline();
+    }
+
     /// Get the generated code as a String
     pub fn into_code(self) -> String {
         // SAFETY: We only push valid UTF-8 strings
@@ -183,5 +199,13 @@ impl CodegenContext {
     pub fn code_as_str(&self) -> &str {
         // SAFETY: We only push valid UTF-8 strings
         unsafe { std::str::from_utf8_unchecked(&self.code) }
+    }
+}
+
+impl std::fmt::Write for CodegenContext {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.code.extend_from_slice(s.as_bytes());
+        Ok(())
     }
 }

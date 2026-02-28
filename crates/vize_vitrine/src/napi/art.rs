@@ -352,7 +352,7 @@ pub fn generate_art_catalog(
     let mut entries = Vec::with_capacity(sources.len());
     for (idx, source) in sources.iter().enumerate() {
         let parse_opts = ArtParseOptions {
-            filename: format!("component_{}.art.vue", idx),
+            filename: vize_carton::new_string!("component_{}.art.vue", idx),
         };
 
         if let Ok(descriptor) = musea_parse(&allocator, source, parse_opts) {
@@ -411,7 +411,7 @@ pub fn generate_art_docs_batch(
         .filter_map(|(idx, source)| {
             let allocator = Bump::new();
             let parse_opts = ArtParseOptions {
-                filename: format!("component_{}.art.vue", idx),
+                filename: vize_carton::new_string!("component_{}.art.vue", idx),
             };
 
             musea_parse(&allocator, source, parse_opts)

@@ -35,6 +35,8 @@
 //! - Callback functions passed as arguments (inferred from context)
 //! - Arrow functions without block body (e.g., `x => x + 1`)
 
+#![allow(clippy::disallowed_macros)]
+
 use memchr::memmem;
 
 use crate::diagnostic::{LintDiagnostic, Severity};
@@ -226,7 +228,7 @@ impl ScriptRule for RequireFunctionReturnType {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RequireFunctionReturnType;
     use crate::rules::script::ScriptLinter;
 
     fn create_linter() -> ScriptLinter {

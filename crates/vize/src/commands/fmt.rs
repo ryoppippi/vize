@@ -1,5 +1,7 @@
 //! Format command - High-performance Vue SFC formatting using vize_glyph
 
+#![allow(clippy::disallowed_macros)]
+
 use clap::Args;
 use ignore::WalkBuilder;
 use rayon::prelude::*;

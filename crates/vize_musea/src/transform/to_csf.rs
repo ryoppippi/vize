@@ -3,6 +3,8 @@
 //! This module generates Storybook-compatible Component Story Format (CSF) files
 //! from Art descriptors.
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::types::{ArtDescriptor, ArtVariant, CsfOutput};
 
 /// Transform an Art descriptor to Storybook CSF 3.0 format.
@@ -65,7 +67,7 @@ fn generate_imports(art: &ArtDescriptor<'_>) -> String {
     // Import the component
     let component_path = art.metadata.component.unwrap_or("./Component.vue");
 
-    imports.push_str(&format!("import Component from '{}';\n", component_path));
+    vize_carton::push_fmt!(imports, "import Component from '{}';\n", component_path);
 
     // Add script imports if present
     if let Some(script) = &art.script_setup {
@@ -94,7 +96,7 @@ fn generate_meta(art: &ArtDescriptor<'_>) -> String {
     };
 
     meta.push_str("const meta: Meta<typeof Component> = {\n");
-    meta.push_str(&format!("  title: '{}',\n", escape_string(&title)));
+    vize_carton::push_fmt!(meta, "  title: '{}',\n", escape_string(&title));
     meta.push_str("  component: Component,\n");
 
     // Add tags
@@ -102,20 +104,21 @@ fn generate_meta(art: &ArtDescriptor<'_>) -> String {
     for tag in &art.metadata.tags {
         tags.push(tag.to_string());
     }
-    meta.push_str(&format!(
+    vize_carton::push_fmt!(
+        meta,
         "  tags: [{}],\n",
         tags.iter()
             .map(|t| format!("'{}'", t))
             .collect::<Vec<_>>()
             .join(", ")
-    ));
+    );
 
     // Add parameters for description
     if let Some(desc) = art.metadata.description {
         meta.push_str("  parameters: {\n");
         meta.push_str("    docs: {\n");
         meta.push_str("      description: {\n");
-        meta.push_str(&format!("        component: '{}',\n", escape_string(desc)));
+        vize_carton::push_fmt!(meta, "        component: '{}',\n", escape_string(desc));
         meta.push_str("      },\n");
         meta.push_str("    },\n");
         meta.push_str("  },\n");
@@ -135,11 +138,11 @@ fn generate_story(variant: &ArtVariant<'_>, _art: &ArtDescriptor<'_>) -> String 
     // Convert variant name to PascalCase for export name
     let export_name = to_pascal_case(variant.name);
 
-    story.push_str(&format!("export const {}: Story = {{\n", export_name));
+    vize_carton::push_fmt!(story, "export const {}: Story = {{\n", export_name);
 
     // Add name if different from export name
     if export_name != variant.name {
-        story.push_str(&format!("  name: '{}',\n", escape_string(variant.name)));
+        vize_carton::push_fmt!(story, "  name: '{}',\n", escape_string(variant.name));
     }
 
     // Add args if present
@@ -148,7 +151,7 @@ fn generate_story(variant: &ArtVariant<'_>, _art: &ArtDescriptor<'_>) -> String 
         for (key, value) in &variant.args {
             let value_str =
                 serde_json::to_string(value).unwrap_or_else(|_| "undefined".to_string());
-            story.push_str(&format!("    {}: {},\n", key, value_str));
+            vize_carton::push_fmt!(story, "    {}: {},\n", key, value_str);
         }
         story.push_str("  },\n");
     }
@@ -162,7 +165,7 @@ fn generate_story(variant: &ArtVariant<'_>, _art: &ArtDescriptor<'_>) -> String 
 
     // Use the variant's template
     let template = variant.template.trim();
-    story.push_str(&format!("    template: `{}`,\n", escape_template(template)));
+    vize_carton::push_fmt!(story, "    template: `{}`,\n", escape_template(template));
 
     story.push_str("  }),\n");
 
@@ -212,7 +215,7 @@ fn escape_template(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{escape_string, escape_template, to_pascal_case, transform_to_csf};
     use crate::parse::parse_art;
     use crate::types::ArtParseOptions;
     use vize_carton::Bump;

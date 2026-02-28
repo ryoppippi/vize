@@ -242,7 +242,7 @@ impl Default for Analyzer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Analyzer, AnalyzerOptions};
     use crate::analysis::{InvalidExportKind, TypeExportKind};
 
     #[test]
@@ -450,40 +450,40 @@ export type UserProps = { name: string }
         let mut output = String::new();
         output.push_str("=== Bindings ===\n");
         for (name, ty) in summary.bindings.iter() {
-            output.push_str(&std::format!("  {}: {:?}\n", name, ty));
+            vize_carton::push_fmt!(output, "  {}: {:?}\n", name, ty);
         }
 
         output.push_str("\n=== Macros ===\n");
-        output.push_str(&std::format!("  props: {}\n", summary.macros.props().len()));
-        output.push_str(&std::format!("  emits: {}\n", summary.macros.emits().len()));
-        output.push_str(&std::format!(
-            "  models: {}\n",
-            summary.macros.models().len()
-        ));
+        vize_carton::push_fmt!(output, "  props: {}\n", summary.macros.props().len());
+        vize_carton::push_fmt!(output, "  emits: {}\n", summary.macros.emits().len());
+        vize_carton::push_fmt!(output, "  models: {}\n", summary.macros.models().len());
 
         output.push_str("\n=== Reactivity ===\n");
         for source in summary.reactivity.sources() {
-            output.push_str(&std::format!(
+            vize_carton::push_fmt!(
+                output,
                 "  {}: kind={:?}, needs_value={}\n",
                 source.name,
                 source.kind,
                 source.kind.needs_value_access()
-            ));
+            );
         }
 
         output.push_str("\n=== Provide/Inject ===\n");
-        output.push_str(&std::format!(
+        vize_carton::push_fmt!(
+            output,
             "  provides: {}\n",
             summary.provide_inject.provides().len()
-        ));
-        output.push_str(&std::format!(
+        );
+        vize_carton::push_fmt!(
+            output,
             "  injects: {}\n",
             summary.provide_inject.injects().len()
-        ));
+        );
 
         output.push_str("\n=== Type Exports ===\n");
         for te in &summary.type_exports {
-            output.push_str(&std::format!("  {}: {:?}\n", te.name, te.kind));
+            vize_carton::push_fmt!(output, "  {}: {:?}\n", te.name, te.kind);
         }
 
         assert_snapshot!(output);
@@ -511,17 +511,18 @@ const emit = defineEmits(['update', 'delete', 'select'])
         let mut output = String::new();
         output.push_str("=== Props ===\n");
         for prop in summary.macros.props() {
-            output.push_str(&std::format!(
+            vize_carton::push_fmt!(
+                output,
                 "  {}: required={}, has_default={}\n",
                 prop.name,
                 prop.required,
                 prop.default_value.is_some()
-            ));
+            );
         }
 
         output.push_str("\n=== Emits ===\n");
         for emit in summary.macros.emits() {
-            output.push_str(&std::format!("  {}\n", emit.name));
+            vize_carton::push_fmt!(output, "  {}\n", emit.name);
         }
 
         assert_snapshot!(output);
@@ -562,17 +563,18 @@ const { name, id } = inject('user') as { name: string; id: number }
         let mut output = String::new();
         output.push_str("=== Provides ===\n");
         for p in summary.provide_inject.provides() {
-            output.push_str(&std::format!("  key: {:?}\n", p.key));
+            vize_carton::push_fmt!(output, "  key: {:?}\n", p.key);
         }
 
         output.push_str("\n=== Injects ===\n");
         for i in summary.provide_inject.injects() {
-            output.push_str(&std::format!(
+            vize_carton::push_fmt!(
+                output,
                 "  key: {:?}, has_default: {}, pattern: {:?}\n",
                 i.key,
                 i.default_value.is_some(),
                 i.pattern
-            ));
+            );
         }
 
         assert_snapshot!(output);

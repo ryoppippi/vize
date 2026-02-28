@@ -198,7 +198,7 @@ pub type CompilerResult<T> = Result<T, CompilerError>;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{CompilerError, ErrorCode};
 
     #[test]
     fn compiler_error_new() {

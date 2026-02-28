@@ -97,7 +97,7 @@ impl<'a> SfcDescriptor<'a> {
     pub fn template_hash(&self) -> Option<String> {
         self.template
             .as_ref()
-            .map(|t| vize_carton::hash::content_hash(&t.content))
+            .map(|t| vize_carton::hash::content_hash(&t.content).to_string())
     }
 
     /// Compute hash of all style blocks content.
@@ -111,7 +111,7 @@ impl<'a> SfcDescriptor<'a> {
             combined.push_str(&style.content);
             combined.push('\0'); // Separator
         }
-        Some(vize_carton::hash::content_hash(&combined))
+        Some(vize_carton::hash::content_hash(&combined).to_string())
     }
 
     /// Compute hash of the script blocks (script + script_setup) content.
@@ -122,14 +122,14 @@ impl<'a> SfcDescriptor<'a> {
 
         match (script_content, script_setup_content) {
             (None, None) => None,
-            (Some(s), None) => Some(vize_carton::hash::content_hash(s)),
-            (None, Some(ss)) => Some(vize_carton::hash::content_hash(ss)),
+            (Some(s), None) => Some(vize_carton::hash::content_hash(s).to_string()),
+            (None, Some(ss)) => Some(vize_carton::hash::content_hash(ss).to_string()),
             (Some(s), Some(ss)) => {
                 let mut combined = String::with_capacity(s.len() + ss.len() + 1);
                 combined.push_str(s);
                 combined.push('\0');
                 combined.push_str(ss);
-                Some(vize_carton::hash::content_hash(&combined))
+                Some(vize_carton::hash::content_hash(&combined).to_string())
             }
         }
     }

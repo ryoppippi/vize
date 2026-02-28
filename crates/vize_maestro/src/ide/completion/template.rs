@@ -48,6 +48,7 @@ pub(crate) fn complete_template(ctx: &IdeContext) -> Vec<CompletionItem> {
             // Add bindings with accurate type information
             for (name, binding_type) in croquis.bindings.iter() {
                 let (kind, type_detail, doc) = items::binding_type_to_completion_info(binding_type);
+                #[allow(clippy::disallowed_macros)]
                 items_vec.push(CompletionItem {
                     label: name.to_string(),
                     kind: Some(kind),
@@ -74,6 +75,7 @@ pub(crate) fn complete_template(ctx: &IdeContext) -> Vec<CompletionItem> {
                     .unwrap_or("unknown");
                 let required = if prop.required { "" } else { "?" };
 
+                #[allow(clippy::disallowed_macros)]
                 items_vec.push(CompletionItem {
                     label: prop.name.to_string(),
                     kind: Some(CompletionItemKind::PROPERTY),
@@ -105,6 +107,7 @@ pub(crate) fn complete_template(ctx: &IdeContext) -> Vec<CompletionItem> {
             // Add reactive sources with special handling
             for source in croquis.reactivity.sources() {
                 let kind_str = source.kind.to_display();
+                #[allow(clippy::disallowed_macros)]
                 items_vec.push(CompletionItem {
                     label: source.name.to_string(),
                     kind: Some(CompletionItemKind::VARIABLE),

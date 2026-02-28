@@ -161,7 +161,7 @@ pub fn generate_art_catalog_wasm(
         let source_val = sources.get(idx);
         if let Some(source) = source_val.as_string() {
             let parse_opts = ArtParseOptions {
-                filename: format!("component_{}.art.vue", idx),
+                filename: vize_carton::new_string!("component_{}.art.vue", idx),
             };
 
             if let Ok(descriptor) = parse_art(&allocator, &source, parse_opts) {

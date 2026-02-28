@@ -248,15 +248,15 @@ pub(crate) fn transform_element<'a>(
 
 /// Generate element template string (recursively includes static children)
 pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
-    let mut template = format!("<{}", el.tag);
+    let mut template = vize_carton::new_string!("<{}", el.tag);
 
     // Add static attributes
     for prop in el.props.iter() {
         if let PropNode::Attribute(attr) = prop {
             if let Some(ref value) = attr.value {
-                template.push_str(&format!(" {}=\"{}\"", attr.name, value.content));
+                vize_carton::push_fmt!(template, " {}=\"{}\"", attr.name, value.content);
             } else {
-                template.push_str(&format!(" {}", attr.name));
+                vize_carton::push_fmt!(template, " {}", attr.name);
             }
         }
     }
@@ -293,10 +293,10 @@ pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
             }
         }
 
-        template.push_str(&format!("</{}>", el.tag));
+        vize_carton::push_fmt!(template, "</{}>", el.tag);
     }
 
-    template.into()
+    template
 }
 
 /// Escape HTML special characters in text content (vuejs/core #14310)

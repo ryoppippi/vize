@@ -62,7 +62,7 @@ impl VirtualCodeGenerator {
 
             // Generate virtual TypeScript
             let mut template_doc = self.template_gen.generate(&ast, template_content);
-            template_doc.uri = format!("{}.__template.ts", base_uri);
+            template_doc.uri = vize_carton::new_string!("{}.__template.ts", base_uri).to_string();
 
             docs.template = Some(template_doc);
         }
@@ -70,14 +70,14 @@ impl VirtualCodeGenerator {
         // Generate script virtual code
         if let Some(ref script) = descriptor.script {
             let mut script_doc = self.script_gen.generate(script, false);
-            script_doc.uri = format!("{}.__script.ts", base_uri);
+            script_doc.uri = vize_carton::new_string!("{}.__script.ts", base_uri).to_string();
             docs.script = Some(script_doc);
         }
 
         // Generate script setup virtual code
         if let Some(ref script_setup) = descriptor.script_setup {
             let mut script_doc = self.script_gen.generate(script_setup, true);
-            script_doc.uri = format!("{}.__script_setup.ts", base_uri);
+            script_doc.uri = vize_carton::new_string!("{}.__script_setup.ts", base_uri).to_string();
             docs.script_setup = Some(script_doc);
         }
 
@@ -85,7 +85,7 @@ impl VirtualCodeGenerator {
         for (i, style) in descriptor.styles.iter().enumerate() {
             let mut style_doc = self.style_gen.generate(style, i);
             let ext = style.lang.as_ref().map(|l| l.as_ref()).unwrap_or("css");
-            style_doc.uri = format!("{}.__style_{}.{}", base_uri, i, ext);
+            style_doc.uri = vize_carton::new_string!("{}.__style_{}.{}", base_uri, i, ext).to_string();
             docs.styles.push(style_doc);
         }
 
@@ -116,7 +116,7 @@ impl VirtualCodeGenerator {
             self.template_gen
                 .set_block_offset(template.loc.start as u32);
             let mut template_doc = self.template_gen.generate(&ast, template_content);
-            template_doc.uri = format!("{}.__template.ts", base_uri);
+            template_doc.uri = vize_carton::new_string!("{}.__template.ts", base_uri).to_string();
 
             docs.template = Some(template_doc);
         }
@@ -124,14 +124,14 @@ impl VirtualCodeGenerator {
         // Generate script virtual code
         if let Some(ref script) = descriptor.script {
             let mut script_doc = self.script_gen.generate(script, false);
-            script_doc.uri = format!("{}.__script.ts", base_uri);
+            script_doc.uri = vize_carton::new_string!("{}.__script.ts", base_uri).to_string();
             docs.script = Some(script_doc);
         }
 
         // Generate script setup virtual code
         if let Some(ref script_setup) = descriptor.script_setup {
             let mut script_doc = self.script_gen.generate(script_setup, true);
-            script_doc.uri = format!("{}.__script_setup.ts", base_uri);
+            script_doc.uri = vize_carton::new_string!("{}.__script_setup.ts", base_uri).to_string();
             docs.script_setup = Some(script_doc);
         }
 
@@ -139,7 +139,7 @@ impl VirtualCodeGenerator {
         for (i, style) in descriptor.styles.iter().enumerate() {
             let mut style_doc = self.style_gen.generate(style, i);
             let ext = style.lang.as_ref().map(|l| l.as_ref()).unwrap_or("css");
-            style_doc.uri = format!("{}.__style_{}.{}", base_uri, i, ext);
+            style_doc.uri = vize_carton::new_string!("{}.__style_{}.{}", base_uri, i, ext).to_string();
             docs.styles.push(style_doc);
         }
 
@@ -311,7 +311,10 @@ pub fn find_block_at_offset(descriptor: &SfcDescriptor, offset: usize) -> Option
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        find_block_at_offset, BatchVirtualCodeGenerator, BlockType, VirtualCodeGenerator,
+        VirtualLanguage,
+    };
 
     #[test]
     fn test_virtual_code_generator() {

@@ -65,6 +65,7 @@ pub(crate) fn complete_script(ctx: &IdeContext, is_setup: bool) -> Vec<Completio
                     BindingType::SetupRef | BindingType::SetupMaybeRef
                 );
 
+                #[allow(clippy::disallowed_macros)]
                 items_vec.push(CompletionItem {
                     label: name.to_string(),
                     kind: Some(kind),
@@ -91,6 +92,7 @@ pub(crate) fn complete_script(ctx: &IdeContext, is_setup: bool) -> Vec<Completio
                 let needs_value = source.kind.needs_value_access();
                 let kind_str = source.kind.to_display();
 
+                #[allow(clippy::disallowed_macros)]
                 items_vec.push(CompletionItem {
                     label: source.name.to_string(),
                     kind: Some(CompletionItemKind::VARIABLE),

@@ -86,6 +86,7 @@ impl CodeLensService {
                             character: 0,
                         },
                     },
+                    #[allow(clippy::disallowed_macros)]
                     command: Some(Command {
                         title: format!(
                             "{} reference{}",
@@ -233,7 +234,7 @@ impl CodeLensService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::CodeLensService;
 
     #[test]
     fn test_find_declarations() {

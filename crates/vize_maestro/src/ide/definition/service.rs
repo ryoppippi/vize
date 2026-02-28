@@ -98,12 +98,15 @@ impl super::DefinitionService {
                     {
                         let (line, character) =
                             crate::ide::offset_to_position(&tmpl.content, vts_offset);
+                        #[allow(clippy::disallowed_macros)]
                         let uri = format!("vize-virtual://{}.template.ts", ctx.uri.path());
 
                         if bridge.is_initialized() {
+                            #[allow(clippy::disallowed_macros)]
+                            let vdoc_uri = format!("{}.template.ts", ctx.uri.path());
                             let _ = bridge
                                 .open_or_update_virtual_document(
-                                    &format!("{}.template.ts", ctx.uri.path()),
+                                    &vdoc_uri,
                                     &tmpl.content,
                                 )
                                 .await;
@@ -155,12 +158,15 @@ impl super::DefinitionService {
                         let (line, character) =
                             crate::ide::offset_to_position(&s.content, vts_offset);
                         let suffix = if is_setup { "setup.ts" } else { "script.ts" };
+                        #[allow(clippy::disallowed_macros)]
                         let uri = format!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
 
                         if bridge.is_initialized() {
+                            #[allow(clippy::disallowed_macros)]
+                            let vdoc_uri = format!("{}.{}", ctx.uri.path(), suffix);
                             let _ = bridge
                                 .open_or_update_virtual_document(
-                                    &format!("{}.{}", ctx.uri.path(), suffix),
+                                    &vdoc_uri,
                                     &s.content,
                                 )
                                 .await;

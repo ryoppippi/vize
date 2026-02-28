@@ -86,6 +86,49 @@ macro_rules! push_line {
     };
 }
 
+/// Create a new [`CompactString`] using format arguments.
+///
+/// This avoids `format!()` (which returns `std::string::String`)
+/// and directly builds a `CompactString`.
+///
+/// # Examples
+///
+/// ```
+/// use vize_carton::new_string;
+///
+/// let name = "world";
+/// let s = new_string!("Hello, {}!", name);
+/// assert_eq!(s, "Hello, world!");
+/// ```
+#[macro_export]
+macro_rules! new_string {
+    ($($arg:tt)*) => {{
+        $crate::ToCompactString::to_compact_string(&::core::format_args!($($arg)*))
+    }};
+}
+
+/// Push formatted content to a string using `write!`.
+///
+/// Works on both `std::string::String` and `CompactString` (anything
+/// implementing `std::fmt::Write`).
+///
+/// # Examples
+///
+/// ```
+/// use vize_carton::push_fmt;
+///
+/// let mut s = String::new();
+/// push_fmt!(s, "Hello, {}!", "world");
+/// assert_eq!(s, "Hello, world!");
+/// ```
+#[macro_export]
+macro_rules! push_fmt {
+    ($dst:expr, $($arg:tt)*) => {{
+        use ::std::fmt::Write as _;
+        ::std::fmt::Write::write_fmt(&mut $dst, format_args!($($arg)*)).unwrap()
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     #[test]

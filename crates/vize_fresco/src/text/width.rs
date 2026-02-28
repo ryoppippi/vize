@@ -56,6 +56,7 @@ impl TextWidth {
 
     /// Truncate string with ellipsis if needed.
     /// The ellipsis is "..." (3 columns).
+    #[allow(clippy::disallowed_macros)]
     pub fn truncate_with_ellipsis(s: &str, max_width: usize) -> String {
         let width = Self::width(s);
         if width <= max_width {
@@ -72,6 +73,7 @@ impl TextWidth {
     }
 
     /// Pad string to specified width.
+    #[allow(clippy::disallowed_macros)]
     pub fn pad_right(s: &str, target_width: usize) -> String {
         let current_width = Self::width(s);
         if current_width >= target_width {
@@ -83,6 +85,7 @@ impl TextWidth {
     }
 
     /// Pad string to specified width (left padding).
+    #[allow(clippy::disallowed_macros)]
     pub fn pad_left(s: &str, target_width: usize) -> String {
         let current_width = Self::width(s);
         if current_width >= target_width {
@@ -94,6 +97,7 @@ impl TextWidth {
     }
 
     /// Center string within specified width.
+    #[allow(clippy::disallowed_macros)]
     pub fn center(s: &str, target_width: usize) -> String {
         let current_width = Self::width(s);
         if current_width >= target_width {
@@ -115,7 +119,7 @@ impl TextWidth {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TextWidth;
 
     #[test]
     fn test_ascii_width() {

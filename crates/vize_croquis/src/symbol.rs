@@ -198,7 +198,9 @@ impl From<&ScopeBinding> for SymbolFlags {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::SymbolTable;
+    use crate::ScopeId;
+    use vize_relief::BindingType;
 
     #[test]
     fn test_symbol_table() {

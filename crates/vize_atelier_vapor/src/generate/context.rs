@@ -73,9 +73,31 @@ impl<'a> GenerateContext<'a> {
         }
     }
 
+    /// Push string to buffer (alias for `push`, compatible with `push_all!`/`push_fmt!` macros)
+    #[allow(dead_code)]
+    pub(crate) fn push_str(&mut self, s: &str) {
+        self.code.push_str(s);
+    }
+
+    /// Push formatted line (format_args! + newline with indentation)
+    pub(crate) fn push_line_fmt(&mut self, args: std::fmt::Arguments<'_>) {
+        self.push_indent();
+        use std::fmt::Write as _;
+        self.write_fmt(args).unwrap();
+        self.code.push('\n');
+    }
+
     pub(crate) fn next_temp(&mut self) -> String {
-        let name = format!("_t{}", self.temp_count);
+        let name = vize_carton::new_string!("_t{}", self.temp_count);
         self.temp_count += 1;
-        name
+        name.into()
+    }
+}
+
+impl std::fmt::Write for GenerateContext<'_> {
+    #[inline]
+    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+        self.code.push_str(s);
+        Ok(())
     }
 }

@@ -180,7 +180,7 @@ impl TsgoLspClient {
             if let Some(msg_id) = msg.get("id") {
                 if msg_id.as_i64() == Some(id) {
                     if let Some(error) = msg.get("error") {
-                        return Err(format!("LSP error: {:?}", error));
+                        return Err(vize_carton::new_string!("LSP error: {:?}", error).to_string());
                     }
                     return Ok(msg.get("result").cloned().unwrap_or(Value::Null));
                 }
@@ -204,18 +204,18 @@ impl TsgoLspClient {
 
     /// Send a message with Content-Length header
     pub(crate) fn send_message(&mut self, msg: &Value) -> Result<(), String> {
-        let content = serde_json::to_string(msg).map_err(|e| format!("JSON error: {}", e))?;
-        let header = format!("Content-Length: {}\r\n\r\n", content.len());
+        let content = serde_json::to_string(msg).map_err(|e| vize_carton::new_string!("JSON error: {}", e).to_string())?;
+        let header = vize_carton::new_string!("Content-Length: {}\r\n\r\n", content.len()).to_string();
 
         self.stdin
             .write_all(header.as_bytes())
-            .map_err(|e| format!("Write error: {}", e))?;
+            .map_err(|e| vize_carton::new_string!("Write error: {}", e).to_string())?;
         self.stdin
             .write_all(content.as_bytes())
-            .map_err(|e| format!("Write error: {}", e))?;
+            .map_err(|e| vize_carton::new_string!("Write error: {}", e).to_string())?;
         self.stdin
             .flush()
-            .map_err(|e| format!("Flush error: {}", e))?;
+            .map_err(|e| vize_carton::new_string!("Flush error: {}", e).to_string())?;
 
         Ok(())
     }
@@ -236,16 +236,16 @@ impl TsgoLspClient {
                         thread::sleep(Duration::from_millis(1));
                         continue;
                     }
-                    Err(e) => return Err(format!("Read error: {}", e)),
+                    Err(e) => return Err(vize_carton::new_string!("Read error: {}", e).to_string()),
                 }
             };
 
             if bytes_read == 0 {
                 // EOF - process may have exited
-                return Err(format!(
+                return Err(vize_carton::new_string!(
                     "EOF while reading headers. Headers read so far: {:?}",
                     headers_read
-                ));
+                ).to_string());
             }
 
             headers_read.push(line.clone());
@@ -258,15 +258,15 @@ impl TsgoLspClient {
             if let Some(len_str) = line.strip_prefix("Content-Length: ") {
                 content_length = len_str
                     .parse()
-                    .map_err(|e| format!("Invalid Content-Length: {}", e))?;
+                    .map_err(|e| vize_carton::new_string!("Invalid Content-Length: {}", e).to_string())?;
             }
         }
 
         if content_length == 0 {
-            return Err(format!(
+            return Err(vize_carton::new_string!(
                 "No Content-Length header. Headers: {:?}",
                 headers_read
-            ));
+            ).to_string());
         }
 
         // Read content (with retry on WouldBlock)
@@ -280,12 +280,12 @@ impl TsgoLspClient {
                     thread::sleep(Duration::from_millis(1));
                     continue;
                 }
-                Err(e) => return Err(format!("Read error: {}", e)),
+                Err(e) => return Err(vize_carton::new_string!("Read error: {}", e).to_string()),
             }
         }
 
         let msg: Value =
-            serde_json::from_slice(&content).map_err(|e| format!("JSON parse error: {}", e))?;
+            serde_json::from_slice(&content).map_err(|e| vize_carton::new_string!("JSON parse error: {}", e).to_string())?;
 
         Ok(msg)
     }

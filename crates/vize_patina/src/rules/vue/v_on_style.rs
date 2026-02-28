@@ -19,6 +19,8 @@
 //! <div @click="handleClick"></div>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::{Fix, LintDiagnostic, Severity, TextEdit};
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -181,7 +183,7 @@ impl Rule for VOnStyle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::VOnStyle;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

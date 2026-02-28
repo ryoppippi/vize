@@ -139,7 +139,7 @@ pub fn parse_for_alias(content: &str) -> (Option<String>, Option<String>, Option
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::parse_for_alias;
 
     #[test]
     fn test_parse_for_alias_simple() {

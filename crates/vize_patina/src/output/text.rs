@@ -1,5 +1,7 @@
 //! Rich terminal output using oxc_diagnostics.
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::linter::LintResult;
 use oxc_diagnostics::{GraphicalReportHandler, GraphicalTheme, NamedSource};
 use std::sync::Arc;

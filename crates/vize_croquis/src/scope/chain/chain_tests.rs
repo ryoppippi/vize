@@ -646,14 +646,15 @@ fn test_scope_chain_snapshot() {
     // Snapshot the scope chain structure
     let mut output = String::new();
     for scope in chain.iter() {
-        output.push_str(&format!(
+        vize_carton::push_fmt!(
+            output,
             "Scope {} ({:?}): {} bindings\n",
             scope.id.as_u32(),
             scope.kind,
             scope.binding_count()
-        ));
+        );
         for (name, binding) in scope.bindings() {
-            output.push_str(&format!("  - {}: {:?}\n", name, binding.binding_type));
+            vize_carton::push_fmt!(output, "  - {}: {:?}\n", name, binding.binding_type);
         }
     }
 
@@ -761,32 +762,35 @@ fn test_snapshot_complex_nested_scopes() {
     output.push_str("-- All scopes (root to current) --\n");
     for (depth, scope) in chain.iter().enumerate() {
         let indent = "  ".repeat(depth);
-        output.push_str(&format!(
+        vize_carton::push_fmt!(
+            output,
             "{}{:?} (id={})\n",
             indent,
             scope.kind,
             scope.id.as_u32(),
-        ));
+        );
         for (name, binding) in scope.bindings() {
-            output.push_str(&format!(
+            vize_carton::push_fmt!(
+                output,
                 "{}  • {}: {:?} at offset {}\n",
                 indent, name, binding.binding_type, binding.declaration_offset
-            ));
+            );
         }
     }
 
     output.push_str("\n-- Lookup test --\n");
     for name in ["count", "item", "row", "e", "console", "unknown"] {
         if let Some((scope, binding)) = chain.lookup(name) {
-            output.push_str(&format!(
+            vize_carton::push_fmt!(
+                output,
                 "{}: found in {:?} (scope {}), type={:?}\n",
                 name,
                 scope.kind,
                 scope.id.as_u32(),
                 binding.binding_type
-            ));
+            );
         } else {
-            output.push_str(&format!("{}: not found\n", name));
+            vize_carton::push_fmt!(output, "{}: not found\n", name);
         }
     }
 
@@ -802,11 +806,12 @@ fn test_snapshot_scope_transitions() {
 
     // Track scope changes
     let log_state = |chain: &ScopeChain, output: &mut String, action: &str| {
-        output.push_str(&format!(
+        vize_carton::push_fmt!(
+            *output,
             "[{}] current={:?}\n",
             action,
             chain.current_scope().kind,
-        ));
+        );
     };
 
     log_state(&chain, &mut output, "initial");
@@ -895,7 +900,7 @@ fn test_snapshot_binding_types() {
 
     for (name, _binding_type) in &bindings {
         let (_, binding) = chain.lookup(name).unwrap();
-        output.push_str(&format!("{}: {:?}\n", name, binding.binding_type,));
+        vize_carton::push_fmt!(output, "{}: {:?}\n", name, binding.binding_type);
     }
 
     assert_snapshot!(output);

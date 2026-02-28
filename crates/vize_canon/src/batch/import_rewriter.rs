@@ -160,7 +160,7 @@ impl ImportRewriter {
     fn rewrite_module_specifier(&self, path: &str) -> Option<String> {
         // Only rewrite relative .vue imports
         if path.ends_with(".vue") && (path.starts_with("./") || path.starts_with("../")) {
-            Some(format!("{}.ts", path))
+            Some(vize_carton::new_string!("{}.ts", path).to_string())
         } else {
             None
         }
@@ -202,7 +202,8 @@ impl<'a> Visit<'a> for DynamicImportCollector {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ImportRewriter;
+    use oxc_span::SourceType;
 
     #[test]
     fn test_rewrite_default_import() {

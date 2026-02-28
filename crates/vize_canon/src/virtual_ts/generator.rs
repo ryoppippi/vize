@@ -193,12 +193,13 @@ pub fn generate_virtual_ts_with_offsets(
     ts.push_str("// ========== Setup Scope ==========\n");
     let async_prefix = if is_async { "async " } else { "" };
     let generic_params = generic_param
-        .map(|g| format!("<{}>", g))
+        .map(|g| vize_carton::new_string!("<{}>", g).to_string())
         .unwrap_or_default();
-    ts.push_str(&format!(
+    vize_carton::push_fmt!(
+        ts,
         "{}function __setup{}() {{\n",
         async_prefix, generic_params
-    ));
+    );
 
     // Compiler macros (only valid inside setup scope)
     ts.push_str(VUE_SETUP_COMPILER_MACROS);
@@ -240,7 +241,7 @@ pub fn generate_virtual_ts_with_offsets(
             {
                 let leading_ws = &output_line[..output_line.len() - trimmed_line.len()];
                 let rest = trimmed_line.strip_prefix("export ").unwrap();
-                output_line = std::borrow::Cow::Owned(format!("{}{}", leading_ws, rest));
+                output_line = std::borrow::Cow::Owned(vize_carton::new_string!("{}{}", leading_ws, rest).to_string());
             }
 
             // Replace import.meta with polyfill variable to avoid TS1343
@@ -265,12 +266,13 @@ pub fn generate_virtual_ts_with_offsets(
             src_byte_offset += line.len() + 1; // +1 for newline
         }
         let script_gen_end = ts.len();
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            ts,
             "  // @vize-map: {}:{} -> 0:{}\n\n",
             script_gen_start,
             script_gen_end,
             script.len()
-        ));
+        );
     }
 
     // Template scope (nested inside setup)
@@ -303,12 +305,12 @@ pub fn generate_virtual_ts_with_offsets(
                     );
                     has_unresolved = true;
                 }
-                ts.push_str(&format!("  const {}: any = undefined as any;\n", name));
+                vize_carton::push_fmt!(ts, "  const {}: any = undefined as any;\n", name);
             }
 
             ts.push_str("\n  // Mark used components as referenced\n");
             for component in &summary.used_components {
-                ts.push_str(&format!("  void {};\n", component));
+                vize_carton::push_fmt!(ts, "  void {};\n", component);
             }
         }
 
@@ -369,7 +371,7 @@ pub fn generate_virtual_ts_with_offsets(
                 if !first {
                     ts.push(' ');
                 }
-                ts.push_str(&format!("void {};", name));
+                vize_carton::push_fmt!(ts, "void {};", name);
                 first = false;
             }
             ts.push('\n');
@@ -404,7 +406,7 @@ pub fn generate_virtual_ts_with_offsets(
             .strip_prefix('<')
             .and_then(|s| s.strip_suffix('>'))
             .unwrap_or(type_args.as_str());
-        ts.push_str(&format!("export type Slots = {};\n", inner_type));
+        vize_carton::push_fmt!(ts, "export type Slots = {};\n", inner_type);
     } else {
         ts.push_str("export type Slots = {};\n");
     }
@@ -416,12 +418,13 @@ pub fn generate_virtual_ts_with_offsets(
                 .strip_prefix('<')
                 .and_then(|s| s.strip_suffix('>'))
                 .unwrap_or(type_args.as_str());
-            ts.push_str(&format!("export type Exposed = {};\n", inner_type));
+            vize_carton::push_fmt!(ts, "export type Exposed = {};\n", inner_type);
         } else if let Some(ref runtime_args) = expose.runtime_args {
-            ts.push_str(&format!(
+            vize_carton::push_fmt!(
+                ts,
                 "export type Exposed = typeof ({});\n",
                 runtime_args
-            ));
+            );
         }
     }
     ts.push('\n');

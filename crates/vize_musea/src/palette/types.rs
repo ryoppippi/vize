@@ -311,7 +311,7 @@ pub struct PaletteOutput {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{ControlKind, Palette, PropControl, SelectOption};
 
     #[test]
     fn test_control_builders() {

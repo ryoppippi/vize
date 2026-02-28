@@ -31,6 +31,7 @@ impl SummaryBuilder {
         for call in tracker.all_calls() {
             self.summary.macros.push(MacroDisplay {
                 name: call.name.to_string(),
+                #[allow(clippy::disallowed_macros)]
                 kind: format!("{:?}", call.kind),
                 start: call.start,
                 end: call.end,
@@ -78,6 +79,7 @@ impl SummaryBuilder {
         for block in tracker.blocks() {
             self.summary.optimization.blocks.push(BlockDisplay {
                 id: block.id,
+                #[allow(clippy::disallowed_macros)]
                 block_type: format!("{:?}", block.block_type),
                 parent_id: block.parent_id,
                 dynamic_children: block.dynamic_children_count,
@@ -128,6 +130,7 @@ impl SummaryBuilder {
         for hoist in tracker.hoists() {
             self.summary.hoists.push(HoistDisplay {
                 id: hoist.id.as_u32(),
+                #[allow(clippy::disallowed_macros)]
                 level: format!("{:?}", hoist.level),
                 content: hoist.content.to_string(),
             });
@@ -178,9 +181,9 @@ impl Croquis {
         let mut output = String::with_capacity(4096);
 
         output.push_str("[analysis]\n");
-        output.push_str(&format!("is_async = {}\n", self.is_async));
-        output.push_str(&format!("scope_count = {}\n", self.stats.scope_count));
-        output.push_str(&format!("binding_count = {}\n", self.stats.binding_count));
+        vize_carton::push_fmt!(output, "is_async = {}\n", self.is_async);
+        vize_carton::push_fmt!(output, "scope_count = {}\n", self.stats.scope_count);
+        vize_carton::push_fmt!(output, "binding_count = {}\n", self.stats.binding_count);
         output.push('\n');
 
         // Scopes
@@ -207,14 +210,15 @@ impl Croquis {
             for scope in &self.scopes {
                 let (prefix, display_id) = display_id_map.get(&scope.id).unwrap();
                 // Format: prefix+display_id kind @start:end {bindings} $ parent_refs
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "{}{} {} @{}:{}",
                     prefix,
                     display_id,
                     scope.kind.to_display(),
                     scope.start,
                     scope.end
-                ));
+                );
 
                 // Bindings
                 if !scope.bindings.is_empty() {
@@ -239,9 +243,9 @@ impl Croquis {
                             output.push_str(", ");
                         }
                         if let Some((p_prefix, p_display_id)) = display_id_map.get(parent_id) {
-                            output.push_str(&format!("{}{}", p_prefix, p_display_id));
+                            vize_carton::push_fmt!(output, "{}{}", p_prefix, p_display_id);
                         } else {
-                            output.push_str(&format!("#{}", parent_id));
+                            vize_carton::push_fmt!(output, "#{}", parent_id);
                         }
                         first = false;
                     }
@@ -255,12 +259,13 @@ impl Croquis {
         if !self.props.is_empty() {
             output.push_str("[props]\n");
             for prop in &self.props {
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "  {} = {{ type = {:?}, required = {} }}\n",
                     prop.name,
                     prop.prop_type.as_deref().unwrap_or("any"),
                     prop.required
-                ));
+                );
             }
             output.push('\n');
         }
@@ -269,7 +274,7 @@ impl Croquis {
         if !self.emits.is_empty() {
             output.push_str("[emits]\n");
             for emit in &self.emits {
-                output.push_str(&format!("  {} = {:?}\n", emit.name, emit.payload_type));
+                vize_carton::push_fmt!(output, "  {} = {:?}\n", emit.name, emit.payload_type);
             }
             output.push('\n');
         }
@@ -278,10 +283,11 @@ impl Croquis {
         if !self.top_level_awaits.is_empty() {
             output.push_str("[top_level_await]\n");
             for await_expr in &self.top_level_awaits {
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "  {{ expression = \"{}\", span = [{}, {}] }}\n",
                     await_expr.expression, await_expr.start, await_expr.end
-                ));
+                );
             }
             output.push('\n');
         }
@@ -290,10 +296,11 @@ impl Croquis {
         if !self.optimization.event_cache.is_empty() {
             output.push_str("[event_cache]\n");
             for event in &self.optimization.event_cache {
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "  _cache[{}] = {{ event = \"{}\", handler = \"{}\" }}\n",
                     event.cache_index, event.event_name, event.handler
-                ));
+                );
             }
             output.push('\n');
         }
@@ -302,10 +309,11 @@ impl Croquis {
         if !self.optimization.blocks.is_empty() {
             output.push_str("[blocks]\n");
             for block in &self.optimization.blocks {
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "  block_{} = {{ type = \"{}\", dynamic_children = {} }}\n",
                     block.id, block.block_type, block.dynamic_children
-                ));
+                );
             }
             output.push('\n');
         }
@@ -320,10 +328,11 @@ impl Croquis {
                     Severity::Info => "info",
                     Severity::Hint => "hint",
                 };
-                output.push_str(&format!(
+                vize_carton::push_fmt!(
+                    output,
                     "  {{ severity = \"{}\", message = \"{}\" }}\n",
                     severity, diag.message
-                ));
+                );
             }
         }
 

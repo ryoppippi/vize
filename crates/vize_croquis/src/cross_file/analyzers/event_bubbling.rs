@@ -80,7 +80,7 @@ pub fn analyze_event_bubbling(
                         DiagnosticSeverity::Info,
                         source_id,
                         *offset,
-                        format!(
+                        vize_carton::new_string!(
                             "Event '{}' propagates {} levels without being handled",
                             event_name, bubble.depth
                         ),
@@ -104,7 +104,7 @@ pub fn analyze_event_bubbling(
                                         DiagnosticSeverity::Info,
                                         *file_id,
                                         0,
-                                        format!(
+                                        vize_carton::new_string!(
                                             "Event '{}' has .{} modifier which may prevent handling",
                                             event_name, modifier
                                         ),
@@ -238,7 +238,8 @@ fn extract_modifiers(expr: &str) -> Vec<CompactString> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::extract_modifiers;
+    use vize_carton::CompactString;
 
     #[test]
     fn test_extract_modifiers() {

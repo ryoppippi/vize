@@ -224,7 +224,7 @@ pub enum CompletionKind {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{CompletionItem, CompletionKind, TypeInfo, TypeKind};
 
     #[test]
     fn test_type_info() {

@@ -36,6 +36,8 @@
 //!
 //! Variables starting with `_` are ignored by default (e.g., `_unused`).
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -152,7 +154,7 @@ impl Rule for NoUnusedVars {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoUnusedVars;
 
     #[test]
     fn test_meta() {

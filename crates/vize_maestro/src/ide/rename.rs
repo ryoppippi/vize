@@ -408,7 +408,7 @@ impl RenameService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RenameService;
 
     #[test]
     fn test_get_word_at_offset() {

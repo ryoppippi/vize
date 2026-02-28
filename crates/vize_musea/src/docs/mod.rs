@@ -119,7 +119,7 @@ pub struct CatalogOutput {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{generate_catalog, generate_component_doc, CatalogEntry, DocOptions};
     use crate::{parse_art, ArtParseOptions};
     use vize_carton::Bump;
 

@@ -161,10 +161,10 @@ impl TemplateCodeGenerator {
             ExpressionNode::Compound(_compound) => {
                 // For compound expressions, we just track the overall location
                 // but don't emit individual parts for simplicity
-                let var_name = format!("__VIZE_{}", self.expr_counter);
+                let var_name = vize_carton::new_string!("__VIZE_{}", self.expr_counter);
                 self.expr_counter += 1;
 
-                let line = format!("const {} = void 0; // compound expression\n", var_name);
+                let line = vize_carton::new_string!("const {} = void 0; // compound expression\n", var_name);
                 self.write(&line);
             }
         }
@@ -176,14 +176,14 @@ impl TemplateCodeGenerator {
             return;
         }
 
-        let var_name = format!("__VIZE_{}", self.expr_counter);
+        let var_name = vize_carton::new_string!("__VIZE_{}", self.expr_counter);
         self.expr_counter += 1;
 
         // Generate TypeScript: const __VIZE_N = __VIZE_ctx.expr;
-        let line = format!("const {} = __VIZE_ctx.{};\n", var_name, expr.content);
+        let line = vize_carton::new_string!("const {} = __VIZE_ctx.{};\n", var_name, expr.content);
 
         // Calculate positions
-        let expr_start_in_line = format!("const {} = __VIZE_ctx.", var_name).len() as u32;
+        let expr_start_in_line = vize_carton::new_string!("const {} = __VIZE_ctx.", var_name).len() as u32;
         let gen_start = self.gen_offset + expr_start_in_line;
         let gen_end = gen_start + expr.content.len() as u32;
 
@@ -383,7 +383,7 @@ fn get_expression_content<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TemplateCodeGenerator;
 
     #[test]
     fn test_template_code_generator() {

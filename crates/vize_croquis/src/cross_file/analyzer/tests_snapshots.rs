@@ -68,25 +68,20 @@ const displayCount = computed(() => dashboardState.value.count)"#,
     output.push_str("=== Cross-File Analysis Result ===\n\n");
 
     output.push_str("== Statistics ==\n");
-    output.push_str(&std::format!(
-        "Files analyzed: {}\n",
-        result.stats.files_analyzed
-    ));
-    output.push_str(&std::format!(
-        "Vue components: {}\n",
-        result.stats.vue_components
-    ));
-    output.push_str(&std::format!(
+    vize_carton::push_fmt!(output, "Files analyzed: {}\n", result.stats.files_analyzed);
+    vize_carton::push_fmt!(output, "Vue components: {}\n", result.stats.vue_components);
+    vize_carton::push_fmt!(
+        output,
         "Dependency edges: {}\n",
         result.stats.dependency_edges
-    ));
-    output.push_str(&std::format!("Errors: {}\n", result.stats.error_count));
-    output.push_str(&std::format!("Warnings: {}\n", result.stats.warning_count));
+    );
+    vize_carton::push_fmt!(output, "Errors: {}\n", result.stats.error_count);
+    vize_carton::push_fmt!(output, "Warnings: {}\n", result.stats.warning_count);
 
     output.push_str("\n== Provide/Inject Matches ==\n");
     for m in &result.provide_inject_matches {
-        output.push_str(&std::format!("  {:?} -> {:?}\n", m.provider, m.consumer));
-        output.push_str(&std::format!("    key: {:?}\n", m.key));
+        vize_carton::push_fmt!(output, "  {:?} -> {:?}\n", m.provider, m.consumer);
+        vize_carton::push_fmt!(output, "    key: {:?}\n", m.key);
     }
 
     output.push_str("\n== Diagnostics ==\n");
@@ -94,7 +89,8 @@ const displayCount = computed(() => dashboardState.value.count)"#,
     let mut sorted_diags = result.diagnostics.clone();
     sorted_diags.sort_by(|a, b| a.message.cmp(&b.message));
     for d in &sorted_diags {
-        output.push_str(&std::format!(
+        vize_carton::push_fmt!(
+            output,
             "  [{}] {:?}: {}\n",
             if d.is_error() {
                 "ERROR"
@@ -105,7 +101,7 @@ const displayCount = computed(() => dashboardState.value.count)"#,
             },
             d.primary_file,
             d.message
-        ));
+        );
     }
 
     assert_snapshot!(output);
@@ -173,13 +169,10 @@ const b = inject('b')"#,
     nodes.sort_by(|a, b| a.path.cmp(&b.path));
 
     for node in nodes {
-        output.push_str(&std::format!("Node: {}\n", node.path));
-        output.push_str(&std::format!(
-            "  component_name: {:?}\n",
-            node.component_name
-        ));
-        output.push_str(&std::format!("  is_entry: {}\n", node.is_entry));
-        output.push_str(&std::format!("  imports: {:?}\n", node.imports));
+        vize_carton::push_fmt!(output, "Node: {}\n", node.path);
+        vize_carton::push_fmt!(output, "  component_name: {:?}\n", node.component_name);
+        vize_carton::push_fmt!(output, "  is_entry: {}\n", node.is_entry);
+        vize_carton::push_fmt!(output, "  imports: {:?}\n", node.imports);
         output.push('\n');
     }
 
@@ -219,20 +212,17 @@ const localCount = ref(0)"#,
 
     output.push_str("== Reactivity Issues ==\n");
     for issue in &result.reactivity_issues {
-        output.push_str(&std::format!("  File: {:?}\n", issue.file_id));
-        output.push_str(&std::format!("    kind: {:?}\n", issue.kind));
-        output.push_str(&std::format!("    source: {:?}\n", issue.source));
+        vize_carton::push_fmt!(output, "  File: {:?}\n", issue.file_id);
+        vize_carton::push_fmt!(output, "    kind: {:?}\n", issue.kind);
+        vize_carton::push_fmt!(output, "    source: {:?}\n", issue.source);
         output.push('\n');
     }
 
     output.push_str("== Cross-File Reactivity Issues ==\n");
     for issue in &result.cross_file_reactivity_issues {
-        output.push_str(&std::format!("  File: {:?}\n", issue.file_id));
-        output.push_str(&std::format!("    kind: {:?}\n", issue.kind));
-        output.push_str(&std::format!(
-            "    related_file: {:?}\n",
-            issue.related_file
-        ));
+        vize_carton::push_fmt!(output, "  File: {:?}\n", issue.file_id);
+        vize_carton::push_fmt!(output, "    kind: {:?}\n", issue.kind);
+        vize_carton::push_fmt!(output, "    related_file: {:?}\n", issue.related_file);
         output.push('\n');
     }
 
@@ -289,25 +279,26 @@ const comp = inject('computedValue')"#,
     output.push_str("=== Provide/Inject Patterns ===\n\n");
 
     for entry in analyzer.registry().iter() {
-        output.push_str(&std::format!("File: {}\n", entry.filename));
+        vize_carton::push_fmt!(output, "File: {}\n", entry.filename);
 
         if !entry.analysis.provide_inject.provides().is_empty() {
             output.push_str("  Provides:\n");
             for p in entry.analysis.provide_inject.provides() {
-                output.push_str(&std::format!("    - key: {:?}\n", p.key));
-                output.push_str(&std::format!("      value: {}\n", p.value));
+                vize_carton::push_fmt!(output, "    - key: {:?}\n", p.key);
+                vize_carton::push_fmt!(output, "      value: {}\n", p.value);
             }
         }
 
         if !entry.analysis.provide_inject.injects().is_empty() {
             output.push_str("  Injects:\n");
             for i in entry.analysis.provide_inject.injects() {
-                output.push_str(&std::format!("    - key: {:?}\n", i.key));
-                output.push_str(&std::format!(
+                vize_carton::push_fmt!(output, "    - key: {:?}\n", i.key);
+                vize_carton::push_fmt!(
+                    output,
                     "      has_default: {}\n",
                     i.default_value.is_some()
-                ));
-                output.push_str(&std::format!("      pattern: {:?}\n", i.pattern));
+                );
+                vize_carton::push_fmt!(output, "      pattern: {:?}\n", i.pattern);
             }
         }
         output.push('\n');

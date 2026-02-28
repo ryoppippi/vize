@@ -3,6 +3,8 @@
 //! Contains the direct tsgo LSP runner, Unix socket runner, file collection,
 //! and globals parsing.
 
+#![allow(clippy::disallowed_macros)]
+
 use std::{fs, path::PathBuf, time::Instant};
 
 use ignore::WalkBuilder;

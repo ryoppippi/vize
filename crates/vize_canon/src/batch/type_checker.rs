@@ -155,7 +155,8 @@ impl TypeChecker for BatchTypeChecker {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BatchTypeChecker, Diagnostic, TypeCheckResult};
+    use std::path::PathBuf;
     use tempfile::TempDir;
 
     #[test]

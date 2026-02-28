@@ -96,7 +96,7 @@ fn get_text_content(element: &ElementNode) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoDuplicateDt;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

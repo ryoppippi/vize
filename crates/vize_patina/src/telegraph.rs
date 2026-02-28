@@ -21,6 +21,8 @@
 //!                              +-- OxlintBridge --> oxlint (future)
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::diagnostic::{render_help, HelpRenderTarget, Severity};
 use crate::linter::LintResult;
 
@@ -338,7 +340,7 @@ pub struct OxlintBridge {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{LintResult, LspEmitter, Telegraph, offset_to_line_col};
     use crate::diagnostic::LintDiagnostic;
 
     #[test]

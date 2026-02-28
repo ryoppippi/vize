@@ -339,7 +339,7 @@ impl ServerState {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ServerState;
 
     #[test]
     fn default_format_options() {

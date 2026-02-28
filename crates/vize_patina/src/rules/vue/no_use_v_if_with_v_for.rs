@@ -119,7 +119,7 @@ impl Rule for NoUseVIfWithVFor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoUseVIfWithVFor;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

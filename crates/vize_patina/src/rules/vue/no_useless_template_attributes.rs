@@ -22,6 +22,8 @@
 //! <template v-slot:header><div /></template>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -129,7 +131,7 @@ impl Rule for NoUselessTemplateAttributes {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoUselessTemplateAttributes;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

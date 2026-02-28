@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_macros)]
 //! Coverage report generator for Vue compiler tests
 //!
 //! Usage:

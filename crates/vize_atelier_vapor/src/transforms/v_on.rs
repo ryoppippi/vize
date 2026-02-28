@@ -133,26 +133,27 @@ pub fn generate_event_handler(
 
     if !modifiers.keys.is_empty() {
         let keys: Vec<&str> = modifiers.keys.iter().map(|k| k.as_str()).collect();
-        result = format!(
-            "_withKeys({}, [{}])",
-            result,
+        result = vize_carton::new_string!(
+            "_withKeys({result}, [{}])",
             keys.iter()
-                .map(|k| format!("\"{}\"", k))
+                .map(|k| vize_carton::new_string!("\"{k}\""))
                 .collect::<Vec<_>>()
                 .join(", ")
-        );
+        )
+        .into();
     }
 
     if !modifiers.non_keys.is_empty() {
         let mods: Vec<&str> = modifiers.non_keys.iter().map(|m| m.as_str()).collect();
-        result = format!(
+        result = vize_carton::new_string!(
             "_withModifiers({}, [{}])",
             result,
             mods.iter()
-                .map(|m| format!("\"{}\"", m))
+                .map(|m| vize_carton::new_string!("\"{}\"", m))
                 .collect::<Vec<_>>()
                 .join(", ")
-        );
+        )
+        .into();
     }
 
     result
@@ -160,7 +161,8 @@ pub fn generate_event_handler(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::generate_event_handler;
+    use crate::ir::EventModifiers;
     use vize_carton::String;
 
     #[test]

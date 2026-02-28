@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_macros)]
 //! Test runner for Vue compiler - compares output with Vue's official compiler.
 //!
 //! This runner reads fixtures from tests/fixtures/ and expected outputs from
@@ -592,7 +593,7 @@ pub fn run_fixture_tests(fixture_path: &Path, expected_path: &Path) -> Vec<TestR
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::run_fixture_tests;
     use std::path::PathBuf;
 
     fn fixtures_path() -> PathBuf {

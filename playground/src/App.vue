@@ -12,7 +12,6 @@ import { PRESETS, type PresetKey, type InputMode } from "./presets";
 import {
   loadWasm,
   isWasmLoaded,
-  isUsingMock,
   type CompilerOptions,
   type CompileResult,
   type SfcCompileResult,
@@ -599,7 +598,7 @@ onMounted(async () => {
   try {
     const loaded = await loadWasm();
     compiler.value = loaded;
-    wasmStatus.value = isUsingMock() ? "mock" : "ready";
+    wasmStatus.value = "ready";
     compile();
   } catch (e) {
     console.error("Failed to load WASM:", e);

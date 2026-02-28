@@ -19,6 +19,8 @@
 //! <div :class="foo"></div>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::{Fix, LintDiagnostic, Severity, TextEdit};
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -169,7 +171,7 @@ impl Rule for VBindStyle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::VBindStyle;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

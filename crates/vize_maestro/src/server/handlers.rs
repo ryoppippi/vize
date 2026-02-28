@@ -364,6 +364,7 @@ impl LanguageServer for MaestroServer {
         }
 
         for (i, style) in descriptor.styles.iter().enumerate() {
+            #[allow(clippy::disallowed_macros)]
             let name = if let Some(ref module) = style.module {
                 format!("style module={}", module)
             } else if style.scoped {

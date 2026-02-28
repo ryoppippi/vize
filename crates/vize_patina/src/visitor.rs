@@ -101,7 +101,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("TODO")
                     } else {
-                        CompactString::from(format!("TODO: {}", d.payload))
+                        vize_carton::new_string!("TODO: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/todo";
                     self.ctx.warn(msg, loc);
@@ -112,7 +112,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("FIXME")
                     } else {
-                        CompactString::from(format!("FIXME: {}", d.payload))
+                        vize_carton::new_string!("FIXME: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/fixme";
                     self.ctx.error(msg, loc);
@@ -139,7 +139,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("Deprecated")
                     } else {
-                        CompactString::from(format!("Deprecated: {}", d.payload))
+                        vize_carton::new_string!("Deprecated: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/deprecated";
                     self.ctx.warn(msg, loc);
@@ -332,7 +332,7 @@ fn find_pattern(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{CompactString, ExpressionNode, parse_v_for_variables};
     use vize_carton::Bump;
     use vize_relief::ast::SimpleExpressionNode;
 

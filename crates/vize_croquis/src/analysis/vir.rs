@@ -328,7 +328,9 @@ impl Croquis {
         for scope in self.scopes.iter() {
             let prefix = get_effective_prefix(scope);
             let counter = prefix_counters.entry(prefix).or_insert(0);
-            id_to_display.insert(scope.id.as_u32(), format!("{}{}", prefix, *counter));
+            #[allow(clippy::disallowed_macros)]
+            let display_id = format!("{}{}", prefix, *counter);
+            id_to_display.insert(scope.id.as_u32(), display_id);
             *counter += 1;
         }
 
@@ -355,7 +357,11 @@ impl Croquis {
                 if refs.is_empty() {
                     String::new()
                 } else {
-                    format!(" < {}", refs.join(", "))
+                    {
+                        #[allow(clippy::disallowed_macros)]
+                        let s = format!(" < {}", refs.join(", "));
+                        s
+                    }
                 }
             };
 

@@ -325,8 +325,8 @@ impl Slot {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::types::TypeKind;
+    use super::{Binding, BindingKind, Prop, TypeContext};
+    use crate::types::{TypeInfo, TypeKind};
 
     #[test]
     fn test_type_context() {

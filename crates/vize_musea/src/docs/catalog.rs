@@ -1,5 +1,7 @@
 //! Catalog and index generation for Art collections.
 
+#![allow(clippy::disallowed_macros)]
+
 use super::{CatalogOutput, DocOptions};
 use crate::types::{ArtDescriptor, ArtStatus};
 use serde::{Deserialize, Serialize};
@@ -80,18 +82,19 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
     let categories = collect_categories(entries);
     let tags = collect_tags(entries);
 
-    md.push_str(&format!(
+    vize_carton::push_fmt!(
+        md,
         "> **{}** components across **{}** categories\n\n",
         entries.len(),
         categories.len()
-    ));
+    );
 
     // Quick links to categories
     if !categories.is_empty() {
         md.push_str("## Categories\n\n");
         for category in &categories {
             let anchor = slugify(category);
-            md.push_str(&format!("- [{}](#{})\n", category, anchor));
+            vize_carton::push_fmt!(md, "- [{}](#{})\n", category, anchor);
         }
         md.push('\n');
     }
@@ -100,7 +103,7 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
     let by_category = group_by_category(entries);
 
     for category in &categories {
-        md.push_str(&format!("## {}\n\n", category));
+        vize_carton::push_fmt!(md, "## {}\n\n", category);
 
         if let Some(category_entries) = by_category.get(category.as_str()) {
             md.push_str(&generate_component_table(category_entries));
@@ -141,7 +144,7 @@ pub fn generate_category_index(
     md.push_str(category);
     md.push_str("\n\n");
 
-    md.push_str(&format!("> **{}** components\n\n", filtered.len()));
+    vize_carton::push_fmt!(md, "> **{}** components\n\n", filtered.len());
 
     // Component table
     md.push_str(&generate_component_table(&filtered));
@@ -151,7 +154,7 @@ pub fn generate_category_index(
     if !tags.is_empty() && options.include_metadata {
         md.push_str("## Tags\n\n");
         for tag in &tags {
-            md.push_str(&format!("- `{}`\n", tag));
+            vize_carton::push_fmt!(md, "- `{}`\n", tag);
         }
         md.push('\n');
     }
@@ -176,32 +179,33 @@ pub fn generate_tags_index(entries: &[CatalogEntry], _options: &DocOptions) -> C
     let mut tags: Vec<_> = by_tag.keys().collect();
     tags.sort();
 
-    md.push_str(&format!("> **{}** tags\n\n", tags.len()));
+    vize_carton::push_fmt!(md, "> **{}** tags\n\n", tags.len());
 
     // Tag cloud / list
     md.push_str("## All Tags\n\n");
     for tag in &tags {
         let count = by_tag.get(*tag).map(|v| v.len()).unwrap_or(0);
         let anchor = slugify(tag);
-        md.push_str(&format!("- [`{}`](#{}) ({})\n", tag, anchor, count));
+        vize_carton::push_fmt!(md, "- [`{}`](#{}) ({})\n", tag, anchor, count);
     }
     md.push('\n');
 
     // Components by tag
     for tag in &tags {
-        md.push_str(&format!("## {}\n\n", tag));
+        vize_carton::push_fmt!(md, "## {}\n\n", tag);
 
         if let Some(tag_entries) = by_tag.get(*tag) {
             md.push_str("| Component | Category | Variants |\n");
             md.push_str("|-----------|----------|----------|\n");
             for entry in tag_entries {
-                md.push_str(&format!(
+                vize_carton::push_fmt!(
+                    md,
                     "| [{}]({}) | {} | {} |\n",
                     entry.title,
                     entry.doc_path,
                     entry.category.as_deref().unwrap_or("-"),
                     entry.variant_count
-                ));
+                );
             }
             md.push('\n');
         }
@@ -254,10 +258,11 @@ fn generate_component_table(entries: &[&CatalogEntry]) -> String {
             ArtStatus::Deprecated => "⚠️",
         };
 
-        md.push_str(&format!(
+        vize_carton::push_fmt!(
+            md,
             "| [{}]({}) | {} | {} | {} |\n",
             entry.title, entry.doc_path, desc, entry.variant_count, status
-        ));
+        );
     }
 
     md.push('\n');
@@ -330,7 +335,10 @@ fn slugify(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        collect_categories, generate_catalog, generate_tags_index, slugify, CatalogEntry, DocOptions,
+    };
+    use crate::types::ArtStatus;
 
     fn make_entry(title: &str, category: Option<&str>, tags: &[&str]) -> CatalogEntry {
         CatalogEntry {

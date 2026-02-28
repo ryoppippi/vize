@@ -28,6 +28,8 @@
 //! .baz { color: green !important; } /* vize-disable-line css/no-important */
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 mod no_display_none;
 mod no_hardcoded_values;
 mod no_id_selectors;
@@ -448,7 +450,7 @@ impl Default for CssLinter {
 
 #[cfg(test)]
 mod disable_tests {
-    use super::*;
+    use super::{CssLinter, CssRuleMeta, DisabledRules, strip_vize_comments};
 
     #[test]
     fn test_parse_disable_comments() {

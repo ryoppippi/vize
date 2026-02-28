@@ -116,6 +116,7 @@ impl CodeActionService {
             };
 
             // Create code action
+            #[allow(clippy::disallowed_macros)]
             let action = CodeAction {
                 title: format!("Fix: {}", fix.message),
                 kind: Some(CodeActionKind::QUICKFIX),
@@ -243,7 +244,8 @@ fn ranges_overlap(a: &Range, b: &Range) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{offset_to_line_col, ranges_overlap};
+    use tower_lsp::lsp_types::{Position, Range};
 
     #[test]
     fn test_ranges_overlap() {

@@ -138,6 +138,7 @@ pub(crate) fn attribute_priority(name: &str) -> u8 {
 }
 
 /// Render an attribute back to its string representation.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn render_attribute(attr: &ParsedAttribute) -> String {
     match &attr.value {
         Some(value) => format!("{}=\"{}\"", attr.name, value),

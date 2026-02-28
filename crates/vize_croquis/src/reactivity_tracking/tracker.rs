@@ -215,11 +215,11 @@ impl ReactivityTracker {
                         kind: violation_kind,
                         start,
                         end,
-                        message: CompactString::new(format!(
+                        message: vize_carton::new_string!(
                             "Destructuring '{}' loses reactivity for: {}",
                             binding.name,
                             extracted_props.join(", ")
-                        )),
+                        ),
                         suggestion,
                         severity: ViolationSeverity::Error,
                     });
@@ -233,10 +233,10 @@ impl ReactivityTracker {
                         kind: ViolationKind::SpreadLoss,
                         start,
                         end,
-                        message: CompactString::new(format!(
+                        message: vize_carton::new_string!(
                             "Spreading '{}' creates a non-reactive copy",
                             binding.name
-                        )),
+                        ),
                         suggestion: Some(CompactString::new(
                             "Use Object.assign() to merge into reactive object, or toRaw() for intentional copy",
                         )),
@@ -252,10 +252,10 @@ impl ReactivityTracker {
                         kind: ViolationKind::ReactiveConst,
                         start,
                         end,
-                        message: CompactString::new(format!(
+                        message: vize_carton::new_string!(
                             "Cannot reassign '{}' declared with const",
                             binding.name
-                        )),
+                        ),
                         suggestion: Some(CompactString::new(
                             "Use let instead of const if reassignment is needed, or mutate the object's properties",
                         )),
@@ -268,10 +268,10 @@ impl ReactivityTracker {
                         kind: ViolationKind::Reassignment,
                         start,
                         end,
-                        message: CompactString::new(format!(
+                        message: vize_carton::new_string!(
                             "Reassigning '{}' breaks reactivity tracking",
                             binding.name
-                        )),
+                        ),
                         suggestion: Some(CompactString::new(
                             "Mutate the object's properties instead, or use ref() for replaceable values",
                         )),
@@ -286,10 +286,10 @@ impl ReactivityTracker {
                     kind: ViolationKind::ExternalMutation,
                     start,
                     end,
-                    message: CompactString::new(format!(
+                    message: vize_carton::new_string!(
                         "Reactive object '{}' assigned to external target '{}' - external code may mutate state",
                         binding.name, target
-                    )),
+                    ),
                     suggestion: Some(CompactString::new(
                         "Use toRaw() or structuredClone(toRaw()) to pass non-reactive copy",
                     )),
@@ -305,10 +305,10 @@ impl ReactivityTracker {
                     kind: ViolationKind::UnsafeClosureCapture,
                     start,
                     end,
-                    message: CompactString::new(format!(
+                    message: vize_carton::new_string!(
                         "Reactive reference '{}' captured in closure",
                         binding.name
-                    )),
+                    ),
                     suggestion: Some(CompactString::new(
                         "Ensure closure doesn't outlive component, or use watchEffect for reactive effects",
                     )),
@@ -326,10 +326,10 @@ impl ReactivityTracker {
                         kind: ViolationKind::MissingValueAccess,
                         start,
                         end,
-                        message: CompactString::new(format!(
+                        message: vize_carton::new_string!(
                             "Ref '{}' used without .value - did you mean {}.value?",
                             binding.name, binding.name
-                        )),
+                        ),
                         suggestion: Some(CompactString::new(
                             "Access .value to get/set the underlying value, or use unref() for conditional unwrapping",
                         )),

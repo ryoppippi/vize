@@ -201,7 +201,9 @@ impl<'a> Painter<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BorderStyle, Painter, RenderNode, RenderTree};
+    use crate::layout::Rect;
+    use crate::terminal::{Buffer, Style};
 
     #[test]
     fn test_paint_text() {

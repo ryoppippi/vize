@@ -5,14 +5,14 @@ use crate::ir::SetTextIRNode;
 
 /// Generate SetText code
 pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
-    let element = format!("_n{}", set_text.element);
+    let element = vize_carton::new_string!("_n{}", set_text.element);
 
     let values: Vec<String> = set_text
         .values
         .iter()
         .map(|v| {
             if v.is_static {
-                format!("\"{}\"", escape_text(&v.content))
+                vize_carton::new_string!("\"{}\"", escape_text(&v.content)).into()
             } else {
                 v.content.to_string()
             }
@@ -20,35 +20,40 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
         .collect();
 
     if values.len() == 1 {
-        ctx.push_line(&format!("_setText({}, {})", element, values[0]));
+        ctx.push_line_fmt(format_args!("_setText({}, {})", element, values[0]));
     } else if values.is_empty() {
-        ctx.push_line(&format!("_setText({}, \"\")", element));
+        ctx.push_line_fmt(format_args!("_setText({}, \"\")", element));
     } else {
-        ctx.push_line(&format!("_setText({}, {})", element, values.join(" + ")));
+        ctx.push_line_fmt(format_args!(
+            "_setText({}, {})",
+            element,
+            values.join(" + ")
+        ));
     }
 }
 
 /// Generate text content assignment
 pub fn generate_text_content(element_var: &str, content: &str, is_static: bool) -> String {
     if is_static {
-        format!("{}.textContent = \"{}\"", element_var, escape_text(content))
+        vize_carton::new_string!("{}.textContent = \"{}\"", element_var, escape_text(content))
+            .into()
     } else {
-        format!("{}.textContent = {}", element_var, content)
+        vize_carton::new_string!("{}.textContent = {}", element_var, content).into()
     }
 }
 
 /// Generate createTextNode
 pub fn generate_create_text_node(content: &str, is_static: bool) -> String {
     if is_static {
-        format!("document.createTextNode(\"{}\")", escape_text(content))
+        vize_carton::new_string!("document.createTextNode(\"{}\")", escape_text(content)).into()
     } else {
-        format!("document.createTextNode({})", content)
+        vize_carton::new_string!("document.createTextNode({})", content).into()
     }
 }
 
 /// Generate toDisplayString call
 pub fn generate_to_display_string(expr: &str) -> String {
-    format!("_toDisplayString({})", expr)
+    vize_carton::new_string!("_toDisplayString({})", expr).into()
 }
 
 /// Escape text for JavaScript string
@@ -69,7 +74,7 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
     if parts.len() == 1 {
         let (is_static, content) = parts[0];
         if is_static {
-            return format!("\"{}\"", escape_text(content));
+            return vize_carton::new_string!("\"{}\"", escape_text(content)).into();
         } else {
             return generate_to_display_string(content);
         }
@@ -79,7 +84,7 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
         .iter()
         .map(|(is_static, content)| {
             if *is_static {
-                format!("\"{}\"", escape_text(content))
+                vize_carton::new_string!("\"{}\"", escape_text(content)).into()
             } else {
                 generate_to_display_string(content)
             }
@@ -97,7 +102,7 @@ pub fn can_inline_text(content: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{build_text_expression, escape_text, generate_to_display_string};
 
     #[test]
     fn test_escape_text() {

@@ -45,7 +45,7 @@ pub fn type_check_sfc(source: &str, options: &SfcTypeCheckOptions) -> SfcTypeChe
         Err(e) => {
             result.add_diagnostic(SfcTypeDiagnostic {
                 severity: SfcTypeSeverity::Error,
-                message: format!("Failed to parse SFC: {}", e.message),
+                message: vize_carton::new_string!("Failed to parse SFC: {}", e.message).to_string(),
                 start: 0,
                 end: 0,
                 code: Some("parse-error".to_string()),

@@ -8,6 +8,7 @@ use crate::{options::FormatOptions, script};
 use super::attributes::attribute_priority;
 
 /// Normalize directive shorthands and assign sort priority.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn normalize_attribute(
     name: &str,
     value: Option<String>,
@@ -78,6 +79,7 @@ fn format_directive_value(name: &str, value: &str, options: &FormatOptions) -> S
 }
 
 /// Format `v-for` expression: normalize spacing in `(item, index) in items`.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn format_v_for_expression(expr: &str) -> String {
     // Split on " in " or " of " (respecting nested parens/brackets)
     let (iterator_part, keyword, collection_part) =

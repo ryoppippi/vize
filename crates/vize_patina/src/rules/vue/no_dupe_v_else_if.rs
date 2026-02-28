@@ -166,7 +166,7 @@ fn normalize_condition(condition: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoDupeVElseIf;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

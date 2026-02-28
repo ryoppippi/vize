@@ -213,7 +213,7 @@ impl AriaProps {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::AriaProps;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

@@ -132,7 +132,7 @@ fn loc_info(loc: &SourceLocation) -> LocInfo {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::IdDuplication;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

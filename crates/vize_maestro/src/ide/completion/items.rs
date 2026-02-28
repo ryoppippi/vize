@@ -84,6 +84,7 @@ pub(crate) fn binding_type_to_completion_info(
 }
 
 /// Create a directive completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn directive_item(label: &str, description: &str, snippet: &str) -> CompletionItem {
     CompletionItem {
         label: label.to_string(),
@@ -103,6 +104,7 @@ pub(crate) fn directive_item(label: &str, description: &str, snippet: &str) -> C
 }
 
 /// Create a @vize: directive completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn vize_directive_item(label: &str, snippet: &str, description: &str) -> CompletionItem {
     CompletionItem {
         label: label.to_string(),
@@ -123,6 +125,7 @@ pub(crate) fn vize_directive_item(label: &str, snippet: &str, description: &str)
 }
 
 /// Create a component completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn component_item(label: &str, description: &str, snippet: &str) -> CompletionItem {
     CompletionItem {
         label: label.to_string(),
@@ -154,6 +157,7 @@ pub(crate) fn snippet_item(label: &str, description: &str, snippet: &str) -> Com
 }
 
 /// Create an API completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn api_item(label: &str, signature: &str, description: &str) -> CompletionItem {
     CompletionItem {
         label: label.to_string(),
@@ -171,6 +175,7 @@ pub(crate) fn api_item(label: &str, signature: &str, description: &str) -> Compl
 }
 
 /// Create a macro completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn macro_item(
     label: &str,
     signature: &str,
@@ -219,6 +224,7 @@ pub(crate) fn attr_item(label: &str, description: &str, snippet: &str) -> Comple
 }
 
 /// Create a CSS completion item.
+#[allow(clippy::disallowed_macros)]
 pub(crate) fn css_item(
     label: &str,
     signature: &str,

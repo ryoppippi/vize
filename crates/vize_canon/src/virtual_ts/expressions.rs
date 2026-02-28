@@ -27,41 +27,43 @@ pub(crate) fn generate_expression(
 
     if let Some(ref guard) = expr.vif_guard {
         // Wrap in if block for type narrowing
-        ts.push_str(&format!("{}if ({}) {{\n", indent, guard));
+        vize_carton::push_fmt!(*ts, "{indent}if ({guard}) {{\n");
         let gen_expr_start = ts.len();
-        ts.push_str(&format!(
-            "{}  void ({}); // {}\n",
-            indent,
+        vize_carton::push_fmt!(
+            *ts,
+            "{indent}  void ({}); // {}\n",
             expr.content,
             expr.kind.as_str()
-        ));
+        );
         let gen_expr_end = ts.len();
         mappings.push(VizeMapping {
             gen_range: gen_expr_start..gen_expr_end,
             src_range: src_start..src_end,
         });
-        ts.push_str(&format!(
-            "{}  // @vize-map: expr -> {}:{}\n",
-            indent, src_start, src_end
-        ));
-        ts.push_str(&format!("{}}}\n", indent));
+        vize_carton::push_fmt!(
+            *ts,
+            "{indent}  // @vize-map: expr -> {src_start}:{src_end}\n",
+        );
+        vize_carton::push_fmt!(*ts, "{indent}}}\n");
     } else {
         let gen_expr_start = ts.len();
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            *ts,
             "{}void ({}); // {}\n",
             indent,
             expr.content,
             expr.kind.as_str()
-        ));
+        );
         let gen_expr_end = ts.len();
         mappings.push(VizeMapping {
             gen_range: gen_expr_start..gen_expr_end,
             src_range: src_start..src_end,
         });
-        ts.push_str(&format!(
+        vize_carton::push_fmt!(
+            *ts,
             "{}// @vize-map: expr -> {}:{}\n",
             indent, src_start, src_end
-        ));
+        );
     }
 }
 
@@ -83,18 +85,20 @@ pub(crate) fn generate_component_prop_checks(
             if prop.is_dynamic {
                 let prop_src_start = (template_offset + prop.start) as usize;
                 let prop_src_end = (template_offset + prop.end) as usize;
-                ts.push_str(&format!(
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}// @vize-map: prop -> {}:{}\n",
                     indent, prop_src_start, prop_src_end
-                ));
+                );
 
                 let safe_prop_name = prop.name.replace('-', "_");
 
                 let gen_prop_start = ts.len();
-                ts.push_str(&format!(
+                vize_carton::push_fmt!(
+                    *ts,
                     "{}({}) as __{}_{}_prop_{};\n",
                     indent, value, component_name, idx, safe_prop_name
-                ));
+                );
                 let gen_prop_end = ts.len();
                 mappings.push(VizeMapping {
                     gen_range: gen_prop_start..gen_prop_end,

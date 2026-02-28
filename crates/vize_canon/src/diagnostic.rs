@@ -218,7 +218,7 @@ impl TypeErrorCode {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{TypeDiagnostic, TypeErrorCode, TypeSeverity};
 
     #[test]
     fn test_diagnostic_creation() {

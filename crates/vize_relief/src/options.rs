@@ -292,7 +292,7 @@ pub struct CompilerOptions {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BindingMetadata, BindingType, CodegenMode, CodegenOptions, ParseMode, ParserOptions, TransformOptions, WhitespaceStrategy};
 
     #[test]
     fn parser_options_default() {

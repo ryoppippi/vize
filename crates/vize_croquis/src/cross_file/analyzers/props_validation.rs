@@ -141,7 +141,7 @@ pub fn analyze_props_validation(
                     DiagnosticSeverity::Error,
                     parent_id,
                     0,
-                    format!(
+                    vize_carton::new_string!(
                         "**Missing Required Prop**: `{}` must be passed to `<{}>`\n\n\
                         This prop is declared as required in the component's `defineProps`.",
                         prop_name, child_component_name
@@ -150,7 +150,7 @@ pub fn analyze_props_validation(
                 .with_related(
                     child_id,
                     0,
-                    format!("Prop `{}` is declared as required here", prop_name),
+                    vize_carton::new_string!("Prop `{}` is declared as required here", prop_name),
                 );
 
                 diagnostics.push(diagnostic);
@@ -192,14 +192,14 @@ pub fn analyze_props_validation(
                     DiagnosticSeverity::Warning, // Warning since it might be intentional $attrs
                     parent_id,
                     0,
-                    format!(
+                    vize_carton::new_string!(
                         "**Undeclared Prop**: `{}` is passed to `<{}>` but not declared\n\n\
                         The prop is not defined in the component's `defineProps`.\n\
                         If intentional, it will fall through to the root element via `$attrs`.",
                         passed_prop, child_component_name
                     ),
                 )
-                .with_suggestion(format!(
+                .with_suggestion(vize_carton::new_string!(
                     "Add to defineProps:\n```typescript\ndefineProps<{{\n  {}: unknown\n}}>()\n```\n\n\
                     Or use `v-bind=\"$attrs\"` in the child component for fallthrough.",
                     passed_prop
@@ -283,7 +283,7 @@ fn is_builtin_attr(name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::is_builtin_attr;
 
     #[test]
     fn test_is_builtin_attr() {

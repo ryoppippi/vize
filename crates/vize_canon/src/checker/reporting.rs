@@ -67,7 +67,7 @@ impl TypeChecker {
         directive: &str,
         offset: usize,
     ) -> Option<(String, usize)> {
-        let pattern = format!("{}=\"", directive);
+        let pattern = vize_carton::new_string!("{}=\"", directive).to_string();
         let mut pos = 0;
 
         while let Some(start) = template[pos..].find(&pattern) {

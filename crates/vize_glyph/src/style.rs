@@ -72,7 +72,7 @@ fn reindent_css(source: &str, options: &FormatOptions) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{format_style_content, FormatOptions};
 
     #[test]
     fn test_format_simple_css() {

@@ -410,7 +410,8 @@ impl<'a> ArtStyleBlock<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{ArtDescriptor, ArtStatus, ViewportConfig};
+    use vize_carton::Bump;
 
     #[test]
     fn test_art_descriptor_new() {

@@ -226,6 +226,7 @@ pub(crate) fn kebab_to_camel(s: &str) -> String {
 
 /// Find a property name within defineProps type/object definition.
 pub(crate) fn find_prop_in_define_props(content: &str, property_name: &str) -> Option<usize> {
+    #[allow(clippy::disallowed_macros)]
     let patterns = [
         format!("{}: ", property_name),
         format!("{}?: ", property_name),
@@ -326,6 +327,7 @@ pub(crate) fn find_import_path(ctx: &IdeContext<'_>, component_name: &str) -> Op
     let content = &ctx.content;
 
     // Pattern 1: import ComponentName from 'path'
+    #[allow(clippy::disallowed_macros)]
     let default_import_pattern = format!("import {} from", component_name);
     if let Some(pos) = content.find(&default_import_pattern) {
         return extract_import_path_from_pos(content, pos + default_import_pattern.len());
@@ -333,6 +335,7 @@ pub(crate) fn find_import_path(ctx: &IdeContext<'_>, component_name: &str) -> Op
 
     // Pattern 2: import { ComponentName } from 'path'
     let import_positions: Vec<_> = content.match_indices("import ").collect();
+    #[allow(clippy::disallowed_macros)]
     for (pos, _) in import_positions {
         let rest = &content[pos..];
         if let Some(from_pos) = rest.find(" from") {
@@ -384,7 +387,9 @@ pub(crate) fn resolve_import_path(current_uri: &Url, import_path: &str) -> Optio
             }
             // Try index files
             for ext in extensions {
-                let index_file = resolved.join(format!("index{}", ext));
+                #[allow(clippy::disallowed_macros)]
+                let index_name = format!("index{}", ext);
+                let index_file = resolved.join(index_name);
                 if index_file.exists() {
                     return Some(index_file);
                 }

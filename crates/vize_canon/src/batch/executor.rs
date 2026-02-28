@@ -220,7 +220,8 @@ impl TsgoExecutor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TsgoExecutor;
+    use std::path::PathBuf;
 
     #[test]
     fn test_parse_location() {

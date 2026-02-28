@@ -217,7 +217,8 @@ impl Default for Buffer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Buffer;
+    use crate::terminal::cell::{Cell, Style};
 
     #[test]
     fn test_buffer_new() {

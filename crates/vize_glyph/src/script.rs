@@ -51,6 +51,7 @@ pub fn format_script_content(
 
 /// Format a JS expression (for use in template directive values and interpolations).
 /// Returns None if the expression cannot be parsed/formatted.
+#[allow(clippy::disallowed_macros)]
 pub fn format_js_expression(expr: &str, options: &FormatOptions) -> Option<String> {
     let trimmed = expr.trim();
     if trimmed.is_empty() {
@@ -94,7 +95,7 @@ pub fn format_js_expression(expr: &str, options: &FormatOptions) -> Option<Strin
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{format_js_expression, format_script_content, Allocator, FormatOptions};
 
     #[test]
     fn test_format_simple_script() {

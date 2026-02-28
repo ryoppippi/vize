@@ -93,20 +93,20 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
     if parts.len() == 1 {
         let (is_static, content) = &parts[0];
         if *is_static {
-            return format!("\"{}\"", escape_text(content)).into();
+            return vize_carton::new_string!("\"{}\"", escape_text(content));
         } else {
-            return format!("_toDisplayString({})", content).into();
+            return vize_carton::new_string!("_toDisplayString({})", content);
         }
     }
 
     // Multiple parts - concatenate with +
-    let exprs: std::vec::Vec<std::string::String> = parts
+    let exprs: std::vec::Vec<vize_carton::CompactString> = parts
         .iter()
         .map(|(is_static, content)| {
             if *is_static {
-                format!("\"{}\"", escape_text(content))
+                vize_carton::new_string!("\"{}\"", escape_text(content))
             } else {
-                format!("_toDisplayString({})", content)
+                vize_carton::new_string!("_toDisplayString({})", content)
             }
         })
         .collect();
@@ -124,7 +124,8 @@ fn escape_text(s: &str) -> std::string::String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::generate_text_expression;
+    use vize_carton::String;
 
     #[test]
     fn test_generate_text_expression_static() {

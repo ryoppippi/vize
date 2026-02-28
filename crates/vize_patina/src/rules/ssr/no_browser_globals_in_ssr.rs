@@ -358,7 +358,7 @@ impl Rule for NoBrowserGlobalsInSsr {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoBrowserGlobalsInSsr;
     use crate::context::SsrMode;
     use crate::rule::RuleRegistry;
     use crate::Linter;

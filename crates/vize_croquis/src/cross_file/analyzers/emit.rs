@@ -107,7 +107,7 @@ pub fn analyze_emits(
                             DiagnosticSeverity::Warning,
                             *child_id,
                             0,
-                            format!(
+                            vize_carton::new_string!(
                                 "Event '{}' is declared in defineEmits but never emitted",
                                 emit
                             ),
@@ -130,12 +130,12 @@ pub fn analyze_emits(
                             DiagnosticSeverity::Error,
                             *child_id,
                             child_info.emit_offsets.get(emit).copied().unwrap_or(0),
-                            format!(
+                            vize_carton::new_string!(
                                 "Event '{}' is emitted but not declared in defineEmits",
                                 emit
                             ),
                         )
-                        .with_suggestion(format!("Add '{}' to defineEmits", emit)),
+                        .with_suggestion(vize_carton::new_string!("Add '{}' to defineEmits", emit)),
                     );
                 }
             }
@@ -156,7 +156,7 @@ pub fn analyze_emits(
                                     DiagnosticSeverity::Warning,
                                     node.file_id,
                                     *offset,
-                                    format!(
+                                    vize_carton::new_string!(
                                         "Listening for '{}' but child component doesn't emit it",
                                         event
                                     ),
@@ -164,7 +164,7 @@ pub fn analyze_emits(
                                 .with_related(
                                     *child_id,
                                     0,
-                                    format!("'{}' component", child_name),
+                                    vize_carton::new_string!("'{}' component", child_name),
                                 ),
                             );
                         }
@@ -282,7 +282,7 @@ fn is_native_event(event: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::is_native_event;
 
     #[test]
     fn test_native_event_detection() {

@@ -8,8 +8,10 @@ mod handlers;
 mod helpers;
 mod state;
 
-pub use capabilities::*;
-pub use state::*;
+pub use capabilities::server_capabilities;
+#[cfg(feature = "native")]
+pub use state::BatchTypeCheckCache;
+pub use state::ServerState;
 
 use tower_lsp::Client;
 

@@ -94,21 +94,22 @@ pub fn generate_model_handler(value_expr: &str, modifiers: &[String]) -> String 
     for modifier in modifiers {
         match modifier.as_str() {
             "number" => {
-                event_value = format!("Number({})", event_value);
+                event_value = vize_carton::new_string!("Number({event_value})").into();
             }
             "trim" => {
-                event_value = format!("{}.trim()", event_value);
+                event_value = vize_carton::new_string!("{event_value}.trim()").into();
             }
             _ => {}
         }
     }
 
-    format!("$event => {{ {} = {} }}", value_expr, event_value).into()
+    vize_carton::new_string!("$event => {{ {value_expr} = {event_value} }}")
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::generate_model_handler;
+    use vize_carton::String;
 
     #[test]
     fn test_generate_model_handler_simple() {

@@ -187,7 +187,7 @@ impl<'a> SsrCodegenContext<'a> {
             let helpers: Vec<_> = self
                 .ssr_helpers
                 .iter()
-                .map(|h| format!("{} as _{}", h.name(), h.name()))
+                .map(|h| vize_carton::new_string!("{} as _{}", h.name(), h.name()))
                 .collect();
             preamble.push_str(&helpers.join(", "));
             preamble.push_str(" } from \"@vue/server-renderer\"\n");
@@ -199,7 +199,7 @@ impl<'a> SsrCodegenContext<'a> {
             let helpers: Vec<_> = self
                 .core_helpers
                 .iter()
-                .map(|h| format!("{} as _{}", h.name(), h.name()))
+                .map(|h| vize_carton::new_string!("{} as _{}", h.name(), h.name()))
                 .collect();
             preamble.push_str(&helpers.join(", "));
             preamble.push_str(" } from \"vue\"\n");

@@ -267,9 +267,10 @@ pub(crate) fn collect_script_tokens(script: &str, base_line: u32, tokens: &mut V
 
     // Highlight compiler macros with Macro token type
     for macro_name in compiler_macros {
+        #[allow(clippy::disallowed_macros)]
         let pattern = format!("{}(", macro_name);
         let mut pos = 0;
-        while let Some(found) = script[pos..].find(&pattern) {
+        while let Some(found) = script[pos..].find(pattern.as_str()) {
             let abs_pos = pos + found;
 
             // Check word boundary
@@ -293,9 +294,10 @@ pub(crate) fn collect_script_tokens(script: &str, base_line: u32, tokens: &mut V
 
     // Highlight Vue functions with Function token type
     for func in vue_functions {
+        #[allow(clippy::disallowed_macros)]
         let pattern = format!("{}(", func);
         let mut pos = 0;
-        while let Some(found) = script[pos..].find(&pattern) {
+        while let Some(found) = script[pos..].find(pattern.as_str()) {
             let abs_pos = pos + found;
 
             // Check word boundary

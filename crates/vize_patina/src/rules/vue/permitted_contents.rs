@@ -188,7 +188,7 @@ impl Rule for PermittedContents {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::PermittedContents;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

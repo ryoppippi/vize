@@ -100,6 +100,7 @@ impl HoverService {
             _ => return None,
         };
 
+        #[allow(clippy::disallowed_macros)]
         Some(Hover {
             contents: HoverContents::Markup(MarkupContent {
                 kind: MarkupKind::Markdown,
@@ -173,6 +174,7 @@ impl HoverService {
         binding_type: BindingType,
     ) -> Option<String> {
         // Patterns to look for initialization
+        #[allow(clippy::disallowed_macros)]
         let patterns = [
             format!("const {} = ref(", name),
             format!("const {} = ref<", name),
@@ -205,6 +207,7 @@ impl HoverService {
         }
 
         // Check for explicit type annotation: const name: Type = ...
+        #[allow(clippy::disallowed_macros)]
         let type_annotation_patterns = [format!("const {}: ", name), format!("let {}: ", name)];
 
         for pattern in &type_annotation_patterns {
@@ -226,6 +229,7 @@ impl HoverService {
     }
 
     /// Format the wrapper type (Ref, Reactive, etc.) with the inner type.
+    #[allow(clippy::disallowed_macros)]
     fn format_wrapper_type(pattern: &str, inner_type: &str) -> String {
         if pattern.contains("ref(") || pattern.contains("ref<") || pattern.contains("shallowRef(") {
             format!("Ref<{}>", inner_type)
@@ -340,6 +344,7 @@ impl HoverService {
     }
 
     /// Infer prop type from defineProps.
+    #[allow(clippy::disallowed_macros)]
     fn infer_prop_type(content: &str, prop_name: &str) -> Option<String> {
         // Look for defineProps<{ propName: Type }>
         if let Some(props_start) = content.find("defineProps<") {
@@ -348,7 +353,7 @@ impl HoverService {
                 let props_type = &after[..end];
                 // Look for the property
                 let prop_pattern = format!("{}: ", prop_name);
-                if let Some(prop_pos) = props_type.find(&prop_pattern) {
+                if let Some(prop_pos) = props_type.find(prop_pattern.as_str()) {
                     let after_prop = &props_type[prop_pos + prop_pattern.len()..];
                     if let Some(type_str) = Self::extract_prop_type(after_prop) {
                         return Some(type_str);
@@ -356,7 +361,7 @@ impl HoverService {
                 }
                 // Also check for optional: propName?: Type
                 let opt_pattern = format!("{}?: ", prop_name);
-                if let Some(prop_pos) = props_type.find(&opt_pattern) {
+                if let Some(prop_pos) = props_type.find(opt_pattern.as_str()) {
                     let after_prop = &props_type[prop_pos + opt_pattern.len()..];
                     if let Some(type_str) = Self::extract_prop_type(after_prop) {
                         return Some(format!("{} | undefined", type_str));
@@ -417,12 +422,14 @@ impl HoverBuilder {
     }
 
     /// Add a title.
+    #[allow(clippy::disallowed_macros)]
     pub fn title(mut self, title: &str) -> Self {
         self.sections.push(format!("**{}**", title));
         self
     }
 
     /// Add a code block.
+    #[allow(clippy::disallowed_macros)]
     pub fn code(mut self, language: &str, code: &str) -> Self {
         self.sections
             .push(format!("```{}\n{}\n```", language, code));
@@ -436,6 +443,7 @@ impl HoverBuilder {
     }
 
     /// Add a documentation link.
+    #[allow(clippy::disallowed_macros)]
     pub fn link(mut self, text: &str, url: &str) -> Self {
         self.sections.push(format!("[{}]({})", text, url));
         self

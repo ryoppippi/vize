@@ -91,7 +91,7 @@ impl<'a> SsrCodegenContext<'a> {
             ExpressionNode::Compound(_) => "_ctx.value", // placeholder
         };
 
-        self.push_string_part_dynamic(&format!("_ssrInterpolate({})", exp));
+        self.push_string_part_dynamic(&vize_carton::new_string!("_ssrInterpolate({exp})"));
     }
 
     /// Process an if node

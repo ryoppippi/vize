@@ -3,6 +3,8 @@
 //! This module generates Vue components that can be used to render
 //! Art variants in the Musea gallery.
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::types::ArtDescriptor;
 
 /// Output of Vue transformation.
@@ -39,10 +41,11 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
 
     // Import target component
     if let Some(ref component_path) = art.metadata.component {
-        code.push_str(&format!(
+        vize_carton::push_fmt!(
+            code,
             "import TargetComponent from '{}';\n",
             component_path
-        ));
+        );
     }
 
     // Re-export script imports if present
@@ -59,23 +62,25 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
     code.push('\n');
 
     // Export metadata
-    code.push_str(&format!(
+    vize_carton::push_fmt!(
+        code,
         "export const metadata = {};\n\n",
         generate_metadata_json(art)
-    ));
+    );
 
     // Export variants array
     code.push_str("export const variants = [\n");
     for variant in &art.variants {
         let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".to_string());
 
-        code.push_str(&format!(
+        vize_carton::push_fmt!(
+            code,
             "  {{ name: '{}', isDefault: {}, args: {}, skipVrt: {} }},\n",
             escape_js_string(variant.name),
             variant.is_default,
             args_json,
             variant.skip_vrt
-        ));
+        );
     }
     code.push_str("];\n\n");
 
@@ -84,7 +89,8 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
         let component_name = to_pascal_case(variant.name);
         let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".to_string());
 
-        code.push_str(&format!(
+        vize_carton::push_fmt!(
+            code,
             r#"export const {} = defineComponent({{
   name: '{}',
   setup(props, {{ attrs }}) {{
@@ -102,15 +108,15 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
             args_json,
             escape_js_string(variant.name),
             generate_render_expression(variant.template, art),
-        ));
+        );
 
         // Mark as default if applicable
         if variant.is_default {
-            code.push_str(&format!("{}.isDefault = true;\n\n", component_name));
+            vize_carton::push_fmt!(code, "{}.isDefault = true;\n\n", component_name);
         }
 
         // Store index for ordering
-        code.push_str(&format!("{}.variantIndex = {};\n\n", component_name, i));
+        vize_carton::push_fmt!(code, "{}.variantIndex = {};\n\n", component_name, i);
     }
 
     // Default export - the gallery component
@@ -128,11 +134,12 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
 
     for variant in &art.variants {
         let component_name = to_pascal_case(variant.name);
-        code.push_str(&format!(
+        vize_carton::push_fmt!(
+            code,
             "      '{}': {},\n",
             escape_js_string(variant.name),
             component_name
-        ));
+        );
     }
 
     code.push_str(
@@ -182,24 +189,26 @@ fn generate_render_expression(template: &str, art: &ArtDescriptor<'_>) -> String
 fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
     let mut json = String::new();
     json.push_str("{\n");
-    json.push_str(&format!(
+    vize_carton::push_fmt!(
+        json,
         "  title: '{}',\n",
         escape_js_string(art.metadata.title)
-    ));
+    );
 
     if let Some(desc) = art.metadata.description {
-        json.push_str(&format!("  description: '{}',\n", escape_js_string(desc)));
+        vize_carton::push_fmt!(json, "  description: '{}',\n", escape_js_string(desc));
     }
 
     if let Some(component) = art.metadata.component {
-        json.push_str(&format!(
+        vize_carton::push_fmt!(
+            json,
             "  component: '{}',\n",
             escape_js_string(component)
-        ));
+        );
     }
 
     if let Some(category) = art.metadata.category {
-        json.push_str(&format!("  category: '{}',\n", escape_js_string(category)));
+        vize_carton::push_fmt!(json, "  category: '{}',\n", escape_js_string(category));
     }
 
     if !art.metadata.tags.is_empty() {
@@ -209,19 +218,20 @@ fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
             .iter()
             .map(|t| format!("'{}'", escape_js_string(t)))
             .collect();
-        json.push_str(&format!("  tags: [{}],\n", tags.join(", ")));
+        vize_carton::push_fmt!(json, "  tags: [{}],\n", tags.join(", "));
     }
 
-    json.push_str(&format!(
+    vize_carton::push_fmt!(
+        json,
         "  status: '{}',\n",
         status_to_string(art.metadata.status)
-    ));
+    );
 
     if let Some(order) = art.metadata.order {
-        json.push_str(&format!("  order: {},\n", order));
+        vize_carton::push_fmt!(json, "  order: {},\n", order);
     }
 
-    json.push_str(&format!("  variantCount: {},\n", art.variants.len()));
+    vize_carton::push_fmt!(json, "  variantCount: {},\n", art.variants.len());
 
     json.push('}');
     json
@@ -232,26 +242,29 @@ fn generate_metadata_module(art: &ArtDescriptor<'_>) -> String {
     let mut code = String::new();
 
     code.push_str("// Auto-generated metadata module\n");
-    code.push_str(&format!(
+    vize_carton::push_fmt!(
+        code,
         "export const metadata = {};\n\n",
         generate_metadata_json(art)
-    ));
+    );
 
     code.push_str("export const variants = [\n");
     for variant in &art.variants {
         code.push_str("  {\n");
-        code.push_str(&format!(
+        vize_carton::push_fmt!(
+            code,
             "    name: '{}',\n",
             escape_js_string(variant.name)
-        ));
-        code.push_str(&format!("    isDefault: {},\n", variant.is_default));
-        code.push_str(&format!("    skipVrt: {},\n", variant.skip_vrt));
+        );
+        vize_carton::push_fmt!(code, "    isDefault: {},\n", variant.is_default);
+        vize_carton::push_fmt!(code, "    skipVrt: {},\n", variant.skip_vrt);
 
         if let Some(ref viewport) = variant.viewport {
-            code.push_str(&format!(
+            vize_carton::push_fmt!(
+                code,
                 "    viewport: {{ width: {}, height: {} }},\n",
                 viewport.width, viewport.height
-            ));
+            );
         }
 
         code.push_str("  },\n");
@@ -302,7 +315,7 @@ fn escape_template_literal(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{escape_template_literal, to_pascal_case, transform_to_vue};
     use crate::parse::parse_art;
     use crate::types::ArtParseOptions;
     use vize_carton::Bump;

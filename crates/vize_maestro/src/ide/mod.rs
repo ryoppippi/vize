@@ -234,7 +234,9 @@ impl<'a> IdeContext<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        is_component_tag, kebab_to_pascal, offset_to_position, pascal_to_kebab, position_to_offset,
+    };
 
     #[test]
     fn test_offset_to_position() {

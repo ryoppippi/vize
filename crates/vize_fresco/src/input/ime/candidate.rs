@@ -219,7 +219,7 @@ impl CandidateList {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Candidate, CandidateList};
 
     #[test]
     fn test_candidate_new() {
@@ -278,7 +278,7 @@ mod tests {
     #[test]
     fn test_candidate_list_pagination() {
         let candidates: Vec<_> = (0..25)
-            .map(|i| Candidate::new(format!("item{}", i)))
+            .map(|i| Candidate::new(vize_carton::new_string!("item{}", i)))
             .collect();
         let mut list = CandidateList::with_candidates(candidates).with_page_size(10);
 

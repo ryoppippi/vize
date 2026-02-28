@@ -100,7 +100,7 @@ impl Rule for RequireDatetime {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RequireDatetime;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

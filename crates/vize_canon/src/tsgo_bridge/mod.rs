@@ -26,7 +26,7 @@ mod tests {
     #[test]
     fn test_virtual_uri_format() {
         let name = "Component.vue.ts";
-        let uri = format!("{}://{}", VIRTUAL_URI_SCHEME, name);
+        let uri = vize_carton::new_string!("{}://{}", VIRTUAL_URI_SCHEME, name).to_string();
         assert_eq!(uri, "vize-virtual://Component.vue.ts");
     }
 

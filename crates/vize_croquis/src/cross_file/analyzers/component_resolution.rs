@@ -96,13 +96,13 @@ pub fn analyze_component_resolution(
                     DiagnosticSeverity::Error,
                     file_id,
                     0,
-                    format!(
+                    vize_carton::new_string!(
                         "**Unregistered Component**: `<{}>` is used in template but not imported\n\n\
                         The component must be imported in `<script setup>` or registered globally.",
                         component_name
                     ),
                 )
-                .with_suggestion(format!(
+                .with_suggestion(vize_carton::new_string!(
                     "```typescript\nimport {} from './{}.vue'\n```",
                     component_name, component_name
                 ));
@@ -150,7 +150,7 @@ pub fn analyze_component_resolution(
                             DiagnosticSeverity::Error,
                             file_id,
                             scope.span.start,
-                            format!(
+                            vize_carton::new_string!(
                                 "**Unresolved Import**: Cannot find module `{}`\n\n\
                                 - Check if the file exists at the specified path\n\
                                 - Verify the import path is correct (relative paths start with `./` or `../`)\n\
@@ -211,6 +211,7 @@ fn is_builtin_component(name: &str) -> bool {
 }
 
 /// Try to resolve an import specifier to a file in the registry.
+#[allow(clippy::disallowed_macros)]
 fn resolve_import(
     specifier: &str,
     registry: &ModuleRegistry,
@@ -284,7 +285,7 @@ fn resolve_import(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::is_builtin_component;
 
     #[test]
     fn test_is_builtin_component() {

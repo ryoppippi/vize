@@ -147,7 +147,7 @@ impl Rule for RequireTypedProps {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RequireTypedProps;
 
     #[test]
     fn test_meta() {

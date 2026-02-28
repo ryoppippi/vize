@@ -261,7 +261,10 @@ pub fn names_match(a: &str, b: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        is_camel_case, is_camel_case_loose, is_kebab_case, is_kebab_case_loose, is_pascal_case,
+        names_match, to_pascal_case,
+    };
 
     #[test]
     fn test_to_pascal_case() {

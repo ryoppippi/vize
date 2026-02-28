@@ -203,7 +203,7 @@ impl Rule for NoUndefinedRefs {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoUndefinedRefs;
 
     #[test]
     fn test_extract_identifiers() {

@@ -329,7 +329,7 @@ fn extract_identifiers_from_compound(
 
 #[cfg(test)]
 mod tests {
-    use super::{is_used_in_template, resolve_template_used_identifiers};
+    use super::{is_used_in_template, resolve_template_used_identifiers, TemplateUsedIdentifiers};
     use vize_atelier_core::parser::parse;
     use vize_carton::Bump;
 

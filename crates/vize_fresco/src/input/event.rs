@@ -93,7 +93,8 @@ pub fn read_event() -> std::io::Result<Event> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Event;
+    use crate::input::keyboard::KeyEvent;
 
     #[test]
     fn test_event_is_key() {

@@ -96,7 +96,7 @@ pub fn format_style(source: &str, options: &FormatOptions) -> Result<String, For
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{format_sfc, format_sfc_with_allocator, format_script, Allocator, FormatOptions};
 
     #[test]
     fn test_format_simple_sfc() {

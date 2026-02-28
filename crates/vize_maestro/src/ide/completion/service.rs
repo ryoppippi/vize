@@ -121,12 +121,12 @@ impl super::CompletionService {
                 {
                     let (line, character) =
                         crate::ide::offset_to_position(&tmpl.content, vts_offset);
-                    let uri = format!("vize-virtual://{}.template.ts", ctx.uri.path());
+                    let uri = vize_carton::new_string!("vize-virtual://{}.template.ts", ctx.uri.path());
 
                     if bridge.is_initialized() {
                         let _ = bridge
                             .open_or_update_virtual_document(
-                                &format!("{}.template.ts", ctx.uri.path()),
+                                &vize_carton::new_string!("{}.template.ts", ctx.uri.path()),
                                 &tmpl.content,
                             )
                             .await;
@@ -167,12 +167,12 @@ impl super::CompletionService {
                 {
                     let (line, character) = crate::ide::offset_to_position(&s.content, vts_offset);
                     let suffix = if is_setup { "setup.ts" } else { "script.ts" };
-                    let uri = format!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
+                    let uri = vize_carton::new_string!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
 
                     if bridge.is_initialized() {
                         let _ = bridge
                             .open_or_update_virtual_document(
-                                &format!("{}.{}", ctx.uri.path(), suffix),
+                                &vize_carton::new_string!("{}.{}", ctx.uri.path(), suffix),
                                 &s.content,
                             )
                             .await;

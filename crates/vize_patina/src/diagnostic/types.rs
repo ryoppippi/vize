@@ -4,6 +4,8 @@
 //! `Fix`, and `LintSummary` -- the primary data structures used to report
 //! and represent lint findings.
 
+#![allow(clippy::disallowed_macros)]
+
 use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::Span;
 use serde::Serialize;

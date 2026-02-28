@@ -208,7 +208,7 @@ pub fn analyze_fallthrough(
                     info.file_id,
                     0,
                     info.template_end - info.template_start,
-                    format!(
+                    vize_carton::new_string!(
                         "Attributes {:?} are passed but not used (component has multiple roots)",
                         unused_attrs
                     ),
@@ -274,7 +274,9 @@ fn is_standard_html_attr(attr: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::FallthroughInfo;
+    use crate::cross_file::registry::FileId;
+    use vize_carton::FxHashSet;
 
     #[test]
     fn test_fallthrough_info_issues() {

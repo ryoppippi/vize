@@ -257,7 +257,7 @@ fn is_valid_identifier(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{extract_simple_bindings, is_valid_identifier};
 
     #[test]
     fn test_extract_simple_bindings() {

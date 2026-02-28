@@ -40,6 +40,8 @@
 //! </template>
 //! ```
 
+#![allow(clippy::disallowed_macros)]
+
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
@@ -190,7 +192,7 @@ impl Rule for NoMutatingProps {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::NoMutatingProps;
 
     #[test]
     fn test_meta() {

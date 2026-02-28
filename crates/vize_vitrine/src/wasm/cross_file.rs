@@ -27,7 +27,7 @@ pub fn analyze_cross_file_wasm(files: JsValue, options: JsValue) -> Result<JsVal
         let path = js_sys::Reflect::get(&file_obj, &JsValue::from_str("path"))
             .ok()
             .and_then(|v| v.as_string())
-            .unwrap_or_else(|| format!("file_{}.vue", i));
+            .unwrap_or_else(|| vize_carton::new_string!("file_{}.vue", i));
         let source = js_sys::Reflect::get(&file_obj, &JsValue::from_str("source"))
             .ok()
             .and_then(|v| v.as_string())

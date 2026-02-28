@@ -134,7 +134,7 @@ impl WorkspaceSymbolsService {
                 &style.content,
                 style.loc.start_line as u32,
                 query,
-                Some(&format!("style[{}]", idx)),
+                Some(&vize_carton::new_string!("style[{}]", idx)),
                 symbols,
             );
         }
@@ -319,6 +319,7 @@ impl WorkspaceSymbolsService {
             // CSS class selectors
             for class in Self::extract_css_classes(trimmed) {
                 if class.to_lowercase().contains(query) {
+                    #[allow(clippy::disallowed_macros)]
                     symbols.push(Self::create_symbol(
                         format!(".{}", class),
                         SymbolKind::STRING,
@@ -332,6 +333,7 @@ impl WorkspaceSymbolsService {
             // CSS ID selectors
             for id in Self::extract_css_ids(trimmed) {
                 if id.to_lowercase().contains(query) {
+                    #[allow(clippy::disallowed_macros)]
                     symbols.push(Self::create_symbol(
                         format!("#{}", id),
                         SymbolKind::STRING,
@@ -475,7 +477,8 @@ impl WorkspaceSymbolsService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::WorkspaceSymbolsService;
+    use tower_lsp::lsp_types::SymbolKind;
 
     #[test]
     fn test_to_pascal_case() {

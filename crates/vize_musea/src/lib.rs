@@ -92,7 +92,7 @@ pub fn serve() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{parse_art, transform_to_csf, transform_to_vue, ArtDescriptorOwned, ArtParseOptions, Bump};
 
     #[test]
     fn test_full_workflow() {

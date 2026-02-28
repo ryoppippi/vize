@@ -37,7 +37,7 @@ fn compile_full(src: &str) -> String {
 // =============================================================================
 
 mod text {
-    use super::*;
+    use super::{compile_full, get_compiled_string};
 
     #[test]
     fn static_text() {
@@ -82,7 +82,7 @@ mod text {
 // =============================================================================
 
 mod element {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn basic_elements() {
@@ -154,7 +154,7 @@ mod element {
 // =============================================================================
 
 mod v_if {
-    use super::*;
+    use super::compile_full;
 
     #[test]
     fn basic_v_if() {
@@ -193,7 +193,7 @@ mod v_if {
 // =============================================================================
 
 mod v_for {
-    use super::*;
+    use super::compile_full;
 
     #[test]
     fn basic_v_for() {
@@ -236,7 +236,7 @@ mod v_for {
 // =============================================================================
 
 mod v_model {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn v_model_text_input() {
@@ -270,7 +270,7 @@ mod v_model {
 // =============================================================================
 
 mod v_show {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn basic_v_show() {
@@ -290,7 +290,7 @@ mod v_show {
 // =============================================================================
 
 mod component {
-    use super::*;
+    use super::compile_full;
 
     #[test]
     fn basic_component() {
@@ -313,7 +313,7 @@ mod component {
 // =============================================================================
 
 mod slot {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn basic_slot() {
@@ -336,7 +336,7 @@ mod slot {
 // =============================================================================
 
 mod v_html {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn basic_v_html() {
@@ -356,7 +356,7 @@ mod v_html {
 // =============================================================================
 
 mod v_text {
-    use super::*;
+    use super::get_compiled_string;
 
     #[test]
     fn basic_v_text() {
@@ -437,7 +437,7 @@ mod css_vars {
 // =============================================================================
 
 mod fragment {
-    use super::*;
+    use super::compile_full;
 
     #[test]
     fn multiple_root_elements() {
@@ -455,7 +455,7 @@ mod fragment {
 // =============================================================================
 
 mod nested {
-    use super::*;
+    use super::compile_full;
 
     #[test]
     fn v_if_inside_v_for() {

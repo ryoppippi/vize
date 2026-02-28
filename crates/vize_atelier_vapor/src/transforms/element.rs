@@ -8,19 +8,20 @@ use vize_atelier_core::{ElementNode, ElementType, PropNode, TemplateChildNode};
 
 /// Generate static template string for an element
 pub fn generate_element_template(el: &ElementNode<'_>) -> String {
-    let mut template = format!("<{}", el.tag);
+    let mut template = vize_carton::new_string!("<{}", el.tag);
 
     // Add static attributes
     for prop in el.props.iter() {
         if let PropNode::Attribute(attr) = prop {
             if let Some(ref value) = attr.value {
-                template.push_str(&format!(
+                vize_carton::push_fmt!(
+                    template,
                     " {}=\"{}\"",
                     attr.name,
                     escape_attr(&value.content)
-                ));
+                );
             } else {
-                template.push_str(&format!(" {}", attr.name));
+                vize_carton::push_fmt!(template, " {}", attr.name);
             }
         }
     }
@@ -44,10 +45,10 @@ pub fn generate_element_template(el: &ElementNode<'_>) -> String {
             }
         }
 
-        template.push_str(&format!("</{}>", el.tag));
+        vize_carton::push_fmt!(template, "</{}>", el.tag);
     }
 
-    template.into()
+    template
 }
 
 /// Check if element is static (no dynamic bindings or children)
@@ -125,7 +126,7 @@ fn escape_attr(s: &str) -> std::string::String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{escape_attr, escape_html};
 
     #[test]
     fn test_escape_html() {

@@ -243,7 +243,7 @@ pub fn compile_sfc(
         external_scope_id
             .as_ref()
             .map(|scope_id| vize_atelier_dom::DomCompilerOptions {
-                scope_id: Some(format!("data-v-{}", scope_id).into()),
+                scope_id: Some(vize_carton::new_string!("data-v-{}", scope_id).into()),
                 ..Default::default()
             })
     } else {
@@ -294,6 +294,7 @@ pub fn compile_sfc(
 
 /// Batch compile SFC files matching a glob pattern (native multithreading)
 #[napi(js_name = "compileSfcBatch")]
+#[allow(clippy::disallowed_macros)]
 pub fn compile_sfc_batch(
     pattern: String,
     options: Option<BatchCompileOptionsNapi>,
@@ -464,7 +465,7 @@ pub fn compile_sfc_batch_with_results(
             use sha2::{Digest, Sha256};
             let hash = Sha256::digest(filename.as_bytes());
             // Take first 8 hex chars of the SHA-256 hash (same as JS: hash.slice(0, 8))
-            format!(
+            vize_carton::new_string!(
                 "{:02x}{:02x}{:02x}{:02x}",
                 hash[0], hash[1], hash[2], hash[3]
             )
@@ -510,7 +511,7 @@ pub fn compile_sfc_batch_with_results(
         // Create compiler options with scope_id for scoped CSS
         let template_compiler_options = if actual_has_scoped {
             Some(vize_atelier_dom::DomCompilerOptions {
-                scope_id: Some(format!("data-v-{}", scope_id).into()),
+                scope_id: Some(vize_carton::new_string!("data-v-{}", scope_id).into()),
                 ..Default::default()
             })
         } else {

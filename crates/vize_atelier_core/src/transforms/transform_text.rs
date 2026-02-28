@@ -171,7 +171,7 @@ fn escape_text(s: &str) -> std::string::String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{condense_whitespace, is_whitespace_only, TextPart};
 
     #[test]
     fn test_is_whitespace_only() {

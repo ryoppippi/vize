@@ -20,10 +20,13 @@ pub mod errors;
 pub mod options;
 pub mod transforms;
 
-pub use codegen::*;
-pub use errors::*;
-pub use options::*;
-pub use transforms::*;
+pub use codegen::{SsrCodegenContext, SsrCodegenResult};
+pub use errors::SsrErrorCode;
+pub use options::SsrCompilerOptions;
+pub use transforms::{
+    get_v_html_exp, get_v_model_exp, get_v_show_exp, get_v_text_exp, has_v_html, has_v_model,
+    has_v_show, has_v_text,
+};
 
 // Re-export core types
 pub use vize_atelier_core::{
@@ -121,7 +124,7 @@ fn get_namespace(tag: &str, parent: Option<&str>) -> Namespace {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{compile_ssr, Bump};
 
     #[test]
     fn test_compile_simple_element() {

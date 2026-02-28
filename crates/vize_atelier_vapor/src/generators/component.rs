@@ -9,7 +9,7 @@ pub fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCo
     let tag = &component.tag;
 
     // Generate props object
-    let props = if component.props.is_empty() {
+    let props: String = if component.props.is_empty() {
         String::from("{}")
     } else {
         let prop_strs: Vec<String> = component
@@ -17,19 +17,19 @@ pub fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCo
             .iter()
             .map(|p| {
                 let key = &p.key.content;
-                let value = if let Some(first) = p.values.first() {
+                let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        format!("\"{}\"", first.content)
+                        vize_carton::new_string!("\"{}\"", first.content).into()
                     } else {
                         first.content.to_string()
                     }
                 } else {
                     String::from("undefined")
                 };
-                format!("{}: {}", key, value)
+                vize_carton::new_string!("{}: {}", key, value).into()
             })
             .collect();
-        format!("{{ {} }}", prop_strs.join(", "))
+        vize_carton::new_string!("{{ {} }}", prop_strs.join(", ")).into()
     };
 
     // Generate slots if present
@@ -40,12 +40,12 @@ pub fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCo
     };
 
     if let Some(slots) = slots_code {
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "const {} = _createComponent({}, {}, {})",
             temp, tag, props, slots
         ));
     } else {
-        ctx.push_line(&format!(
+        ctx.push_line_fmt(format_args!(
             "const {} = _createComponent({}, {})",
             temp, tag, props
         ));
@@ -58,10 +58,10 @@ fn generate_slots_object(component: &CreateComponentIRNode<'_>) -> String {
         .slots
         .iter()
         .map(|slot| {
-            let name = if slot.name.is_static {
+            let name: String = if slot.name.is_static {
                 slot.name.content.to_string()
             } else {
-                format!("[{}]", slot.name.content)
+                vize_carton::new_string!("[{}]", slot.name.content).into()
             };
 
             let params = slot
@@ -70,16 +70,16 @@ fn generate_slots_object(component: &CreateComponentIRNode<'_>) -> String {
                 .map(|p| p.content.to_string())
                 .unwrap_or_default();
 
-            format!("{}: ({}) => {{ /* slot content */ }}", name, params)
+            vize_carton::new_string!("{}: ({}) => {{ /* slot content */ }}", name, params).into()
         })
         .collect();
 
-    format!("{{ {} }}", slot_strs.join(", "))
+    vize_carton::new_string!("{{ {} }}", slot_strs.join(", ")).into()
 }
 
 /// Generate component resolution
 pub fn generate_resolve_component(name: &str) -> String {
-    format!("_resolveComponent(\"{}\")", name)
+    vize_carton::new_string!("_resolveComponent(\"{}\")", name).into()
 }
 
 /// Generate dynamic component
@@ -89,25 +89,28 @@ pub fn generate_dynamic_component(
     slots: Option<&str>,
 ) -> String {
     if let Some(slots_code) = slots {
-        format!(
+        vize_carton::new_string!(
             "_createComponent({}, {}, {})",
-            component_expr, props, slots_code
+            component_expr,
+            props,
+            slots_code
         )
+        .into()
     } else {
-        format!("_createComponent({}, {})", component_expr, props)
+        vize_carton::new_string!("_createComponent({}, {})", component_expr, props).into()
     }
 }
 
 /// Generate async component wrapper
 pub fn generate_async_component(component_expr: &str) -> String {
-    format!("_defineAsyncComponent(() => {})", component_expr)
+    vize_carton::new_string!("_defineAsyncComponent(() => {})", component_expr).into()
 }
 
 /// Generate suspense boundary
 pub fn generate_suspense(fallback: Option<&str>) -> (String, String) {
     if let Some(fb) = fallback {
         (
-            format!("_createSuspense({{ fallback: () => {} }})", fb),
+            vize_carton::new_string!("_createSuspense({{ fallback: () => {} }})", fb).into(),
             String::from("})"),
         )
     } else {
@@ -121,28 +124,28 @@ pub fn generate_keep_alive(
     exclude: Option<&str>,
     max: Option<usize>,
 ) -> String {
-    let mut options = Vec::new();
+    let mut options: Vec<vize_carton::CompactString> = Vec::new();
 
     if let Some(inc) = include {
-        options.push(format!("include: {}", inc));
+        options.push(vize_carton::new_string!("include: {}", inc));
     }
     if let Some(exc) = exclude {
-        options.push(format!("exclude: {}", exc));
+        options.push(vize_carton::new_string!("exclude: {}", exc));
     }
     if let Some(m) = max {
-        options.push(format!("max: {}", m));
+        options.push(vize_carton::new_string!("max: {}", m));
     }
 
     if options.is_empty() {
         String::from("_createKeepAlive({})")
     } else {
-        format!("_createKeepAlive({{ {} }})", options.join(", "))
+        vize_carton::new_string!("_createKeepAlive({{ {} }})", options.join(", ")).into()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{generate_keep_alive, generate_resolve_component};
 
     #[test]
     fn test_generate_resolve_component() {

@@ -6,6 +6,7 @@ use wasm_bindgen::prelude::*;
 
 /// Analyze Vue SFC for semantic information (scopes, bindings, etc.)
 #[wasm_bindgen(js_name = "analyzeSfc")]
+#[allow(clippy::disallowed_macros)]
 pub fn analyze_sfc_wasm(source: &str, options: JsValue) -> Result<JsValue, JsValue> {
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};

@@ -143,7 +143,7 @@ impl Rule for RequireTypedEmits {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::RequireTypedEmits;
 
     #[test]
     fn test_meta() {

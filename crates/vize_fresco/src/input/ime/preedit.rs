@@ -140,7 +140,7 @@ impl Preedit {
             // Get the text without the character before cursor
             let before = st.slice(0, self.cursor - 1);
             let after = st.slice(self.cursor, st.grapheme_count);
-            self.text = CompactString::from(format!("{}{}", before, after));
+            self.text = vize_carton::new_string!("{}{}", before, after);
             self.cursor -= 1;
         }
     }
@@ -154,7 +154,7 @@ impl Preedit {
 
         let before = st.slice(0, self.cursor);
         let after = st.slice(self.cursor + 1, st.grapheme_count);
-        self.text = CompactString::from(format!("{}{}", before, after));
+        self.text = vize_carton::new_string!("{}{}", before, after);
     }
 
     /// Move cursor left.
@@ -226,7 +226,7 @@ pub enum SegmentStyle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Preedit, PreeditSegment, SegmentStyle};
 
     #[test]
     fn test_preedit_new() {

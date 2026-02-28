@@ -1,5 +1,7 @@
 //! Palette code generation from Art descriptors.
 
+#![allow(clippy::disallowed_macros)]
+
 use super::inference::infer_control_from_values;
 use super::{Palette, PaletteOptions, PaletteOutput, PropControl};
 use crate::types::ArtDescriptor;
@@ -207,9 +209,9 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
 
         // Range config
         if let Some(ref range) = control.range {
-            sb.push_str(&format!(", min: {}, max: {}", range.min, range.max));
+            vize_carton::push_fmt!(sb, ", min: {}, max: {}", range.min, range.max);
             if let Some(step) = range.step {
-                sb.push_str(&format!(", step: {}", step));
+                vize_carton::push_fmt!(sb, ", step: {}", step);
             }
         }
 
@@ -223,7 +225,7 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
                     sb.push_str(", ");
                 }
                 match &opt.value {
-                    serde_json::Value::String(s) => sb.push_str(&format!("'{}'", s)),
+                    serde_json::Value::String(s) => vize_carton::push_fmt!(sb, "'{}'", s),
                     serde_json::Value::Number(n) => sb.push_str(&n.to_string()),
                     serde_json::Value::Bool(b) => sb.push_str(&b.to_string()),
                     _ => sb.push_str("null"),
@@ -234,14 +236,14 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
 
         // Description
         if let Some(ref desc) = control.description {
-            sb.push_str(&format!("    description: '{}',\n", desc));
+            vize_carton::push_fmt!(sb, "    description: '{}',\n", desc);
         }
 
         // Default value
         if let Some(ref default) = control.default_value {
             sb.push_str("    defaultValue: ");
             match default {
-                serde_json::Value::String(s) => sb.push_str(&format!("'{}'", s)),
+                serde_json::Value::String(s) => vize_carton::push_fmt!(sb, "'{}'", s),
                 serde_json::Value::Number(n) => sb.push_str(&n.to_string()),
                 serde_json::Value::Bool(b) => sb.push_str(&b.to_string()),
                 _ => sb.push_str(&default.to_string()),
@@ -251,7 +253,7 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
 
         // Table category (group)
         if let Some(ref group) = control.group {
-            sb.push_str(&format!("    table: {{ category: '{}' }},\n", group));
+            vize_carton::push_fmt!(sb, "    table: {{ category: '{}' }},\n", group);
         }
 
         sb.push_str("  },\n");
@@ -264,7 +266,11 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        generate_palette, generate_storybook_argtypes, generate_typescript_interface, to_pascal_case,
+        Palette, PropControl,
+    };
+    use super::super::PaletteOptions;
     use crate::{parse_art, ArtParseOptions, Bump};
 
     #[test]

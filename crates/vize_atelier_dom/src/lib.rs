@@ -12,8 +12,14 @@
 pub mod options;
 pub mod transforms;
 
-pub use options::*;
-pub use transforms::*;
+pub use options::{element_checks, event_modifiers, DomCompilerOptions};
+pub use transforms::{
+    generate_html_prop, generate_html_warning, generate_key_guard, generate_modifier_guard,
+    generate_model_props, generate_show_directive, generate_show_style, generate_text_children,
+    generate_text_content, get_model_event, get_model_helper, get_model_prop, is_v_html, is_v_show,
+    is_v_text, resolve_key_alias, EventModifiers, EventOptions, MouseModifiers,
+    PropagationModifiers, SystemModifiers, VModelModifiers, V_SHOW, V_TEXT,
+};
 
 // Re-export core types
 pub use vize_atelier_core::{
@@ -128,8 +134,12 @@ fn get_namespace(tag: &str, parent: Option<&str>) -> Namespace {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        compile_template, compile_template_with_options, DomCompilerOptions, Namespace,
+        TemplateChildNode,
+    };
     use vize_atelier_core::options::CodegenMode;
+    use vize_carton::Bump;
 
     #[test]
     fn test_compile_simple_element() {

@@ -51,7 +51,7 @@ pub fn generate_v_once_wrapper(index: usize) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{has_v_once, TemplateChildNode};
     use crate::parser::parse;
     use bumpalo::Bump;
 

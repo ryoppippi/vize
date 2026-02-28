@@ -193,7 +193,7 @@ impl Rule for LandmarkRoles {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::LandmarkRoles;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

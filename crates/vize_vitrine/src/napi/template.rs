@@ -18,6 +18,7 @@ use vize_atelier_vapor::{compile_vapor as vapor_compile, VaporCompilerOptions};
 
 /// Compile Vue template to VDom render function
 #[napi]
+#[allow(clippy::disallowed_macros)]
 pub fn compile(template: String, options: Option<CompilerOptions>) -> Result<CompileResult> {
     let opts = options.unwrap_or_default();
     let allocator = Bump::new();
@@ -109,6 +110,7 @@ pub fn compile_vapor(template: String, options: Option<CompilerOptions>) -> Resu
 
 /// Parse template to AST only
 #[napi]
+#[allow(clippy::disallowed_macros)]
 pub fn parse_template(
     template: String,
     _options: Option<CompilerOptions>,
@@ -128,6 +130,7 @@ pub fn parse_template(
 }
 
 /// Build AST JSON from root node.
+#[allow(clippy::disallowed_macros)]
 fn build_ast_json(root: &vize_atelier_core::RootNode<'_>) -> serde_json::Value {
     use vize_atelier_core::TemplateChildNode;
 

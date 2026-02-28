@@ -1,5 +1,3 @@
-import type { CroquisResult } from "../../wasm/index";
-
 export interface CrossFileIssue {
   id: string;
   type: string;
@@ -13,10 +11,4 @@ export interface CrossFileIssue {
   endColumn?: number;
   relatedLocations?: Array<{ file: string; line: number; column: number; message: string }>;
   suggestion?: string;
-}
-
-export interface AnalyzerContext {
-  files: Record<string, string>;
-  croquisResults: Record<string, CroquisResult | null>;
-  dependencyGraph: Record<string, string[]>;
 }

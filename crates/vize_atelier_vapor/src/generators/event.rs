@@ -5,12 +5,12 @@ use crate::ir::{EventModifiers, SetEventIRNode};
 
 /// Generate SetEvent code
 pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>) {
-    let element = format!("_n{}", set_event.element);
+    let element = vize_carton::new_string!("_n{}", set_event.element);
     let event_name = &set_event.key.content;
 
-    let handler = if let Some(ref value) = set_event.value {
+    let handler: String = if let Some(ref value) = set_event.value {
         if value.is_static {
-            format!("\"{}\"", value.content)
+            vize_carton::new_string!("\"{}\"", value.content).into()
         } else {
             value.content.to_string()
         }
@@ -21,7 +21,7 @@ pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<
     // Apply modifiers if present
     let final_handler = apply_modifiers(&handler, &set_event.modifiers);
 
-    ctx.push_line(&format!(
+    ctx.push_line_fmt(format_args!(
         "_on({}, \"{}\", {})",
         element, event_name, final_handler
     ));
@@ -36,9 +36,9 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let keys: Vec<String> = modifiers
             .keys
             .iter()
-            .map(|k| format!("\"{}\"", k))
+            .map(|k| vize_carton::new_string!("\"{}\"", k).into())
             .collect();
-        result = format!("_withKeys({}, [{}])", result, keys.join(", "));
+        result = vize_carton::new_string!("_withKeys({}, [{}])", result, keys.join(", ")).into();
     }
 
     // Apply non-key modifiers
@@ -46,9 +46,10 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let mods: Vec<String> = modifiers
             .non_keys
             .iter()
-            .map(|m| format!("\"{}\"", m))
+            .map(|m| vize_carton::new_string!("\"{}\"", m).into())
             .collect();
-        result = format!("_withModifiers({}, [{}])", result, mods.join(", "));
+        result =
+            vize_carton::new_string!("_withModifiers({}, [{}])", result, mods.join(", ")).into();
     }
 
     result
@@ -74,7 +75,7 @@ pub fn generate_event_options(modifiers: &EventModifiers) -> Option<String> {
         parts.push("passive: true");
     }
 
-    Some(format!("{{ {} }}", parts.join(", ")))
+    Some(vize_carton::new_string!("{{ {} }}", parts.join(", ")).into())
 }
 
 /// Generate delegate event handler
@@ -85,24 +86,29 @@ pub fn generate_delegate_event(
     options: Option<&str>,
 ) -> String {
     if let Some(opts) = options {
-        format!(
+        vize_carton::new_string!(
             "_delegate({}, \"{}\", {}, {})",
-            element_var, event_name, handler, opts
+            element_var,
+            event_name,
+            handler,
+            opts
         )
+        .into()
     } else {
-        format!(
-            "_delegate({}, \"{}\", {})",
-            element_var, event_name, handler
-        )
+        vize_carton::new_string!("_delegate({}, \"{}\", {})", element_var, event_name, handler)
+            .into()
     }
 }
 
 /// Generate inline event handler
 pub fn generate_inline_handler(element_var: &str, event_name: &str, handler: &str) -> String {
-    format!(
+    vize_carton::new_string!(
         "{}.addEventListener(\"{}\", {})",
-        element_var, event_name, handler
+        element_var,
+        event_name,
+        handler
     )
+    .into()
 }
 
 /// Capitalize event name for onEvent format
@@ -110,13 +116,16 @@ pub fn capitalize_event_name(event: &str) -> String {
     let mut chars = event.chars();
     match chars.next() {
         None => String::new(),
-        Some(first) => format!("on{}{}", first.to_uppercase(), chars.as_str()),
+        Some(first) => {
+            vize_carton::new_string!("on{}{}", first.to_uppercase(), chars.as_str()).into()
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{apply_modifiers, capitalize_event_name, generate_event_options};
+    use crate::ir::EventModifiers;
 
     #[test]
     fn test_apply_modifiers_none() {
