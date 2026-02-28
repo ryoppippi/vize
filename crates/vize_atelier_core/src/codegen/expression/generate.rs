@@ -3,7 +3,7 @@
 //! Handles generating event handler expressions with proper arrow function
 //! wrapping, TypeScript stripping, and identifier prefixing.
 
-use crate::ast::*;
+use crate::ast::{CompoundExpressionChild, ExpressionNode};
 
 use super::{
     super::context::CodegenContext, generate_simple_expression,

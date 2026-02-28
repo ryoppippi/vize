@@ -194,7 +194,7 @@ fn resolve_object_key(key: &PropertyKey<'_>, computed: bool, _source: &str) -> O
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{analyze_script_bindings, BindingType};
 
     #[test]
     fn test_analyze_props_array() {

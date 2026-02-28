@@ -155,7 +155,7 @@ pub fn extract_import_identifiers(import: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::process_import_for_types;
 
     #[test]
     fn test_default_import_with_type_named_import() {
