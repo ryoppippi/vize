@@ -29,10 +29,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
     }
 
     impl<'a, 'b> Visit<'_> for IdentifierVisitor<'a, 'b> {
-        fn visit_identifier_reference(
-            &mut self,
-            ident: &oxc_ast::ast::IdentifierReference<'_>,
-        ) {
+        fn visit_identifier_reference(&mut self, ident: &oxc_ast::ast::IdentifierReference<'_>) {
             let name = ident.name.as_str();
 
             // Skip if local variable
@@ -82,9 +79,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
                 let needs_value = matches!(
                     binding_type,
                     Some(
-                        BindingType::SetupLet
-                            | BindingType::SetupMaybeRef
-                            | BindingType::SetupRef
+                        BindingType::SetupLet | BindingType::SetupMaybeRef | BindingType::SetupRef
                     )
                 );
                 let replacement = if needs_value {
@@ -119,10 +114,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
             }
         }
 
-        fn visit_assignment_expression(
-            &mut self,
-            expr: &oxc_ast::ast::AssignmentExpression<'_>,
-        ) {
+        fn visit_assignment_expression(&mut self, expr: &oxc_ast::ast::AssignmentExpression<'_>) {
             self.collect_assignment_targets(&expr.left);
             walk_assignment_expression(self, expr);
         }
@@ -147,9 +139,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
 
                     let mut is_ref = false;
                     let mut needs_unref = false;
-                    let prefix = if let Some(ref metadata) =
-                        self.ctx.options.binding_metadata
-                    {
+                    let prefix = if let Some(ref metadata) = self.ctx.options.binding_metadata {
                         if let Some(binding_type) = metadata.bindings.get(name) {
                             is_ref = self.ctx.options.inline
                                 && matches!(binding_type, BindingType::SetupRef);
@@ -216,10 +206,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
             walk_object_property(self, prop);
         }
 
-        fn visit_variable_declarator(
-            &mut self,
-            declarator: &oxc_ast::ast::VariableDeclarator<'_>,
-        ) {
+        fn visit_variable_declarator(&mut self, declarator: &oxc_ast::ast::VariableDeclarator<'_>) {
             // Add local var names to skip list
             if let oxc_ast::ast::BindingPattern::BindingIdentifier(ident) = &declarator.id {
                 self.local_vars.insert(ident.name.to_string());
@@ -236,9 +223,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
         ) {
             // Add arrow function params to local vars
             for param in &arrow.params.items {
-                if let oxc_ast::ast::BindingPattern::BindingIdentifier(ident) =
-                    &param.pattern
-                {
+                if let oxc_ast::ast::BindingPattern::BindingIdentifier(ident) = &param.pattern {
                     self.local_vars.insert(ident.name.to_string());
                 }
             }
@@ -248,10 +233,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
     }
 
     impl<'a, 'b> IdentifierVisitor<'a, 'b> {
-        fn collect_assignment_targets(
-            &mut self,
-            target: &oxc_ast::ast::AssignmentTarget<'_>,
-        ) {
+        fn collect_assignment_targets(&mut self, target: &oxc_ast::ast::AssignmentTarget<'_>) {
             use oxc_ast::ast::{AssignmentTarget, AssignmentTargetProperty};
 
             match target {
@@ -270,9 +252,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
                             AssignmentTargetProperty::AssignmentTargetPropertyProperty(
                                 prop_prop,
                             ) => {
-                                self.collect_assignment_targets_maybe_default(
-                                    &prop_prop.binding,
-                                );
+                                self.collect_assignment_targets_maybe_default(&prop_prop.binding);
                             }
                         }
                     }
@@ -317,9 +297,7 @@ fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContext) -> Strin
                             AssignmentTargetProperty::AssignmentTargetPropertyProperty(
                                 prop_prop,
                             ) => {
-                                self.collect_assignment_targets_maybe_default(
-                                    &prop_prop.binding,
-                                );
+                                self.collect_assignment_targets_maybe_default(&prop_prop.binding);
                             }
                         }
                     }
