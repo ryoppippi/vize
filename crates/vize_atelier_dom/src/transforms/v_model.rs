@@ -105,16 +105,15 @@ pub fn generate_model_props(
             props.push((String::from("value"), model_value.clone()));
 
             // Build event handler expression
-            let mut handler = vize_carton::new_string!("$event => (({}) = $event.target.value)", model_value);
+            let mut handler = vize_carton::new_string!("$event => (({model_value}) = $event.target.value)");
 
             // Apply modifiers
             if modifiers.trim {
-                handler = vize_carton::new_string!("$event => (({}) = $event.target.value.trim())", model_value);
+                handler = vize_carton::new_string!("$event => (({model_value}) = $event.target.value.trim())");
             }
             if modifiers.number {
                 handler = vize_carton::new_string!(
-                    "$event => (({}) = Number($event.target.value))",
-                    model_value
+                    "$event => (({model_value}) = Number($event.target.value))"
                 );
             }
 

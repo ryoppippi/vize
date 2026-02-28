@@ -119,7 +119,7 @@ impl MaestroServer {
             };
 
             if let Some(NumberOrString::String(ref rule)) = diag.code {
-                vize_carton::push_fmt!(markdown, "### {} {}\n\n", severity_icon, rule);
+                vize_carton::push_fmt!(markdown, "### {severity_icon} {rule}\n\n");
             }
 
             let parts: Vec<&str> = diag.message.split("\n\nHelp: ").collect();

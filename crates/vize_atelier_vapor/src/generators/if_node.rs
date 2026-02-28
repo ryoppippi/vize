@@ -15,8 +15,7 @@ where
     };
 
     ctx.push_line_fmt(format_args!(
-        "_createIf(() => {}, () => {{",
-        condition
+        "_createIf(() => {condition}, () => {{"
     ));
     ctx.indent();
     generate_block(ctx, &if_node.positive);
@@ -42,9 +41,9 @@ pub fn generate_if_expression(
     else_expr: Option<&str>,
 ) -> String {
     if let Some(else_val) = else_expr {
-        vize_carton::new_string!("{} ? {} : {}", condition, then_expr, else_val).into()
+        vize_carton::new_string!("{condition} ? {then_expr} : {else_val}").into()
     } else {
-        vize_carton::new_string!("{} ? {} : null", condition, then_expr).into()
+        vize_carton::new_string!("{condition} ? {then_expr} : null").into()
     }
 }
 

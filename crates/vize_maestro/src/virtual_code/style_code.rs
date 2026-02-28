@@ -51,7 +51,7 @@ impl StyleCodeGenerator {
         let extension = style.lang.as_ref().map(|l| l.as_ref()).unwrap_or("css");
 
         VirtualDocument {
-            uri: vize_carton::new_string!("__style_{}.{}", index, extension).to_string(),
+            uri: vize_carton::new_string!("__style_{index}.{extension}").to_string(),
             content: content.to_string(),
             language: VirtualLanguage::Style,
             source_map,

@@ -450,7 +450,7 @@ export type UserProps = { name: string }
         let mut output = String::new();
         output.push_str("=== Bindings ===\n");
         for (name, ty) in summary.bindings.iter() {
-            vize_carton::push_fmt!(output, "  {}: {:?}\n", name, ty);
+            vize_carton::push_fmt!(output, "  {name}: {:?}\n", ty);
         }
 
         output.push_str("\n=== Macros ===\n");

@@ -77,7 +77,7 @@ impl ReactivityTracker {
                     ViolationSeverity::Hint => "💡",
                 };
 
-                vize_carton::push_fmt!(md, "### {} {}\n\n", icon, violation.message);
+                vize_carton::push_fmt!(md, "### {icon} {}\n\n", violation.message);
                 vize_carton::push_fmt!(
                     md,
                     "**Location**: offset {}..{}\n\n",
@@ -85,7 +85,7 @@ impl ReactivityTracker {
                 );
 
                 if let Some(ref suggestion) = violation.suggestion {
-                    vize_carton::push_fmt!(md, "**Suggestion**: {}\n\n", suggestion);
+                    vize_carton::push_fmt!(md, "**Suggestion**: {suggestion}\n\n");
                 }
 
                 // Add detailed explanation for specific violation kinds

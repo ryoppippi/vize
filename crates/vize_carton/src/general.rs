@@ -212,7 +212,7 @@ pub fn get_modifier_prop_name(name: &str) -> String {
 
     let suffix = if name == "model" { "$" } else { "" };
 
-    crate::new_string!("{}Modifiers{}", base, suffix)
+    crate::new_string!("{base}Modifiers{suffix}")
 }
 
 /// Check if a string is a valid JavaScript identifier
@@ -236,7 +236,7 @@ pub fn is_simple_identifier(s: &str) -> bool {
 /// Generate a props access expression
 pub fn gen_props_access_exp(name: &str) -> String {
     if is_simple_identifier(name) {
-        crate::new_string!("__props.{}", name)
+        crate::new_string!("__props.{name}")
     } else {
         crate::new_string!("__props[{}]", serde_json::to_string(name).unwrap())
     }

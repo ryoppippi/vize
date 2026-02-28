@@ -95,7 +95,7 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
         if *is_static {
             return vize_carton::new_string!("\"{}\"", escape_text(content));
         } else {
-            return vize_carton::new_string!("_toDisplayString({})", content);
+            return vize_carton::new_string!("_toDisplayString({content})");
         }
     }
 
@@ -106,7 +106,7 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
             if *is_static {
                 vize_carton::new_string!("\"{}\"", escape_text(content))
             } else {
-                vize_carton::new_string!("_toDisplayString({})", content)
+                vize_carton::new_string!("_toDisplayString({content})")
             }
         })
         .collect();

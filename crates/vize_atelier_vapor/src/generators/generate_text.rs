@@ -20,13 +20,12 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
         .collect();
 
     if values.len() == 1 {
-        ctx.push_line_fmt(format_args!("_setText({}, {})", element, values[0]));
+        ctx.push_line_fmt(format_args!("_setText({element}, {})", values[0]));
     } else if values.is_empty() {
-        ctx.push_line_fmt(format_args!("_setText({}, \"\")", element));
+        ctx.push_line_fmt(format_args!("_setText({element}, \"\")"));
     } else {
         ctx.push_line_fmt(format_args!(
-            "_setText({}, {})",
-            element,
+            "_setText({element}, {})",
             values.join(" + ")
         ));
     }
@@ -35,10 +34,10 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
 /// Generate text content assignment
 pub fn generate_text_content(element_var: &str, content: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{}.textContent = \"{}\"", element_var, escape_text(content))
+        vize_carton::new_string!("{element_var}.textContent = \"{}\"", escape_text(content))
             .into()
     } else {
-        vize_carton::new_string!("{}.textContent = {}", element_var, content).into()
+        vize_carton::new_string!("{element_var}.textContent = {content}").into()
     }
 }
 
@@ -47,13 +46,13 @@ pub fn generate_create_text_node(content: &str, is_static: bool) -> String {
     if is_static {
         vize_carton::new_string!("document.createTextNode(\"{}\")", escape_text(content)).into()
     } else {
-        vize_carton::new_string!("document.createTextNode({})", content).into()
+        vize_carton::new_string!("document.createTextNode({content})").into()
     }
 }
 
 /// Generate toDisplayString call
 pub fn generate_to_display_string(expr: &str) -> String {
-    vize_carton::new_string!("_toDisplayString({})", expr).into()
+    vize_carton::new_string!("_toDisplayString({expr})").into()
 }
 
 /// Escape text for JavaScript string

@@ -21,18 +21,16 @@ pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>
     // Determine how to set the prop
     if is_dom_prop(key) {
         // DOM property
-        ctx.push_line_fmt(format_args!("{}.{} = {}", element, key, value));
+        ctx.push_line_fmt(format_args!("{element}.{key} = {value}"));
     } else if key.starts_with("on") {
         // Event handler as prop (component)
         ctx.push_line_fmt(format_args!(
-            "_setEventProp({}, \"{}\", {})",
-            element, key, value
+            "_setEventProp({element}, \"{key}\", {value})"
         ));
     } else {
         // Attribute
         ctx.push_line_fmt(format_args!(
-            "_setAttribute({}, \"{}\", {})",
-            element, key, value
+            "_setAttribute({element}, \"{key}\", {value})"
         ));
     }
 }
@@ -50,7 +48,7 @@ pub fn generate_set_dynamic_props(
         } else {
             prop.content.to_string()
         };
-        ctx.push_line_fmt(format_args!("_setDynamicProps({}, {})", element, expr));
+        ctx.push_line_fmt(format_args!("_setDynamicProps({element}, {expr})"));
     }
 }
 
@@ -73,9 +71,9 @@ fn is_dom_prop(key: &str) -> bool {
 /// Generate class binding
 pub fn generate_class_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{}.className = \"{}\"", element_var, value).into()
+        vize_carton::new_string!("{element_var}.className = \"{value}\"").into()
     } else {
-        vize_carton::new_string!("_setClass({}, {})", element_var, value).into()
+        vize_carton::new_string!("_setClass({element_var}, {value})").into()
     }
 }
 

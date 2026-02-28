@@ -38,7 +38,7 @@ pub(crate) fn generate_props_type(ts: &mut String, summary: &Croquis) {
         {
             // Type arg references existing type
         } else {
-            vize_carton::push_fmt!(*ts, "export type Props = {};\n", inner_type);
+            vize_carton::push_fmt!(*ts, "export type Props = {inner_type};\n");
         }
     } else if has_props {
         ts.push_str("export type Props = {\n");

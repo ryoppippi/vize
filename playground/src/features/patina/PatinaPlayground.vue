@@ -143,7 +143,7 @@ onUnmounted(() => {
           <h2>Source</h2>
         </div>
         <div class="panel-actions">
-          <button @click="source = LINT_PRESET" class="btn-ghost">Reset</button>
+          <button class="btn-ghost" @click="source = LINT_PRESET">Reset</button>
         </div>
       </div>
       <div class="editor-container">
@@ -151,8 +151,8 @@ onUnmounted(() => {
           ref="editorRef"
           v-model="source"
           language="vue"
-          :diagnostics="diagnostics"
-          :theme="theme"
+          :diagnostics
+          :theme
         />
       </div>
     </div>
@@ -199,7 +199,7 @@ onUnmounted(() => {
             <div class="output-header-bar">
               <span class="output-title">Issues</span>
               <div class="locale-selector">
-                <select v-model="currentLocale" @change="setLocale(currentLocale)">
+                <select v-model="currentLocale" aria-label="Locale" @change="setLocale(currentLocale)">
                   <option v-for="locale in locales" :key="locale.code" :value="locale.code">
                     {{ locale.name }}
                   </option>
@@ -246,8 +246,8 @@ onUnmounted(() => {
             <div class="output-header-bar">
               <span class="output-title">Rule Configuration</span>
               <div class="rules-actions">
-                <button @click="enableAllRules" class="btn-action">Enable All</button>
-                <button @click="disableAllRules" class="btn-action">Disable All</button>
+                <button class="btn-action" @click="enableAllRules">Enable All</button>
+                <button class="btn-action" @click="disableAllRules">Disable All</button>
               </div>
             </div>
 

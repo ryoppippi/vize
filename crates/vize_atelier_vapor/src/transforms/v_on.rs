@@ -146,10 +146,9 @@ pub fn generate_event_handler(
     if !modifiers.non_keys.is_empty() {
         let mods: Vec<&str> = modifiers.non_keys.iter().map(|m| m.as_str()).collect();
         result = vize_carton::new_string!(
-            "_withModifiers({}, [{}])",
-            result,
+            "_withModifiers({result}, [{}])",
             mods.iter()
-                .map(|m| vize_carton::new_string!("\"{}\"", m))
+                .map(|m| vize_carton::new_string!("\"{m}\""))
                 .collect::<Vec<_>>()
                 .join(", ")
         )

@@ -106,7 +106,7 @@ impl Analyzer {
                         });
 
                         usage.events.push(EventListener {
-                            name: vize_carton::new_string!("update:{}", model_name),
+                            name: vize_carton::new_string!("update:{model_name}"),
                             handler: value,
                             modifiers: SmallVec::new(),
                             start: dir.loc.start.offset,

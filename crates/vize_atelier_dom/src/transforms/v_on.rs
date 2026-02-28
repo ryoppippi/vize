@@ -207,7 +207,7 @@ pub fn generate_key_guard(keys: &[String]) -> String {
             let resolved = resolve_key_alias(key.as_str())
                 .map(|k| k.to_string())
                 .unwrap_or_else(|| vize_carton::capitalize(key.as_str()).to_string());
-            vize_carton::new_string!("$event.key !== \"{}\"", resolved).into()
+            vize_carton::new_string!("$event.key !== \"{resolved}\"").into()
         })
         .collect();
 

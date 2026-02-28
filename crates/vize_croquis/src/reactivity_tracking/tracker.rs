@@ -287,8 +287,8 @@ impl ReactivityTracker {
                     start,
                     end,
                     message: vize_carton::new_string!(
-                        "Reactive object '{}' assigned to external target '{}' - external code may mutate state",
-                        binding.name, target
+                        "Reactive object '{}' assigned to external target '{target}' - external code may mutate state",
+                        binding.name
                     ),
                     suggestion: Some(CompactString::new(
                         "Use toRaw() or structuredClone(toRaw()) to pass non-reactive copy",

@@ -85,7 +85,7 @@ function copyToClipboard(text: string) {
         </div>
       </div>
       <div class="editor-container">
-        <MonacoEditor v-model="source" language="vue" :diagnostics="diagnostics" :theme="theme" />
+        <MonacoEditor v-model="source" language="vue" :diagnostics :theme />
       </div>
     </div>
 
@@ -188,8 +188,11 @@ function copyToClipboard(text: string) {
                     v-for="token in colorTokens"
                     :key="token.name"
                     class="color-token"
-                    @click="copyToClipboard(token.name)"
+                    role="button"
+                    tabindex="0"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <div class="color-swatch" :style="{ background: token.value }"></div>
                     <div class="token-info">
@@ -208,8 +211,11 @@ function copyToClipboard(text: string) {
                     v-for="token in sizeTokens"
                     :key="token.name"
                     class="size-token"
-                    @click="copyToClipboard(token.name)"
+                    role="button"
+                    tabindex="0"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <code class="token-name">{{ token.name }}</code>
                     <span class="token-value">{{ token.value }}</span>
@@ -226,8 +232,11 @@ function copyToClipboard(text: string) {
                     v-for="token in otherTokens"
                     :key="token.name"
                     class="other-token"
-                    @click="copyToClipboard(token.name)"
+                    role="button"
+                    tabindex="0"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <code class="token-name">{{ token.name }}</code>
                     <span class="token-value">{{ token.value }}</span>
@@ -256,10 +265,10 @@ function copyToClipboard(text: string) {
                     <span v-if="variant.isDefault" class="default-badge">default</span>
                     <span v-if="variant.skipVrt" class="skip-badge">skip vrt</span>
                   </div>
-                  <button @click="copyToClipboard(variant.template)" class="btn-copy">Copy</button>
+                  <button class="btn-copy" @click="copyToClipboard(variant.template)">Copy</button>
                 </div>
                 <div class="variant-template">
-                  <CodeHighlight :code="variant.template" language="html" :theme="theme" />
+                  <CodeHighlight :code="variant.template" language="html" :theme />
                 </div>
               </div>
             </div>
@@ -271,7 +280,7 @@ function copyToClipboard(text: string) {
               <span class="output-title">Storybook CSF</span>
               <div class="csf-actions">
                 <code class="filename-badge">{{ csfOutput.filename }}</code>
-                <button @click="copyToClipboard(csfOutput.code)" class="btn-copy">Copy</button>
+                <button class="btn-copy" @click="copyToClipboard(csfOutput.code)">Copy</button>
               </div>
             </div>
             <div class="code-container">
@@ -279,7 +288,7 @@ function copyToClipboard(text: string) {
                 :code="csfOutput.code"
                 language="typescript"
                 show-line-numbers
-                :theme="theme"
+                :theme
               />
             </div>
           </div>

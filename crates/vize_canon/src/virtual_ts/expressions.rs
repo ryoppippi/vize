@@ -49,8 +49,7 @@ pub(crate) fn generate_expression(
         let gen_expr_start = ts.len();
         vize_carton::push_fmt!(
             *ts,
-            "{}void ({}); // {}\n",
-            indent,
+            "{indent}void ({}); // {}\n",
             expr.content,
             expr.kind.as_str()
         );
@@ -61,8 +60,7 @@ pub(crate) fn generate_expression(
         });
         vize_carton::push_fmt!(
             *ts,
-            "{}// @vize-map: expr -> {}:{}\n",
-            indent, src_start, src_end
+            "{indent}// @vize-map: expr -> {src_start}:{src_end}\n",
         );
     }
 }
@@ -87,8 +85,7 @@ pub(crate) fn generate_component_prop_checks(
                 let prop_src_end = (template_offset + prop.end) as usize;
                 vize_carton::push_fmt!(
                     *ts,
-                    "{}// @vize-map: prop -> {}:{}\n",
-                    indent, prop_src_start, prop_src_end
+                    "{indent}// @vize-map: prop -> {prop_src_start}:{prop_src_end}\n",
                 );
 
                 let safe_prop_name = prop.name.replace('-', "_");
@@ -96,8 +93,7 @@ pub(crate) fn generate_component_prop_checks(
                 let gen_prop_start = ts.len();
                 vize_carton::push_fmt!(
                     *ts,
-                    "{}({}) as __{}_{}_prop_{};\n",
-                    indent, value, component_name, idx, safe_prop_name
+                    "{indent}({value}) as __{component_name}_{idx}_prop_{safe_prop_name};\n",
                 );
                 let gen_prop_end = ts.len();
                 mappings.push(VizeMapping {

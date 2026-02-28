@@ -134,7 +134,7 @@ impl WorkspaceSymbolsService {
                 &style.content,
                 style.loc.start_line as u32,
                 query,
-                Some(&vize_carton::new_string!("style[{}]", idx)),
+                Some(&vize_carton::new_string!("style[{idx}]")),
                 symbols,
             );
         }

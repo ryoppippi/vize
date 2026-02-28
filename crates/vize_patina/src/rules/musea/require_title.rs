@@ -83,7 +83,7 @@ fn has_attribute(tag: &str, attr_name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{MuseaLintResult, RequireTitle};
+    use super::{MuseaLintResult, MuseaRule, RequireTitle};
 
     #[test]
     fn test_valid_with_title() {

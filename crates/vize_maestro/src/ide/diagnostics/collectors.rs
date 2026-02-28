@@ -93,7 +93,7 @@ impl DiagnosticService {
                 "<art{}>\n{}\n</art>",
                 // Reconstruct attributes
                 custom.attrs.iter().fold(String::new(), |mut acc, (k, v)| {
-                    vize_carton::push_fmt!(acc, " {}=\"{}\"", k, v);
+                    vize_carton::push_fmt!(acc, " {k}=\"{v}\"");
                     acc
                 }),
                 custom.content

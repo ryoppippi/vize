@@ -157,7 +157,7 @@ impl<'a> SsrCodegenContext<'a> {
             None => {
                 // v-bind without argument - spread attributes
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttrs);
-                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttrs({})", exp));
+                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttrs({exp})"));
             }
         }
     }
@@ -186,8 +186,7 @@ impl<'a> SsrCodegenContext<'a> {
                         self.use_ssr_helper(RuntimeHelper::SsrIncludeBooleanAttr);
                         self.use_ssr_helper(RuntimeHelper::SsrLooseContain);
                         self.push_string_part_dynamic(&vize_carton::new_string!(
-                            "(_ssrIncludeBooleanAttr(Array.isArray({}) ? _ssrLooseContain({}, null) : {})) ? \" checked\" : \"\"",
-                            exp, exp, exp
+                            "(_ssrIncludeBooleanAttr(Array.isArray({exp}) ? _ssrLooseContain({exp}, null) : {exp})) ? \" checked\" : \"\""
                         ));
                     }
                     Some("radio") => {
@@ -196,16 +195,14 @@ impl<'a> SsrCodegenContext<'a> {
                         let value = self.get_element_attr_value(el, "value");
                         let value_exp = value.as_deref().unwrap_or("null");
                         self.push_string_part_dynamic(&vize_carton::new_string!(
-                            "(_ssrIncludeBooleanAttr(_ssrLooseEqual({}, {}))) ? \" checked\" : \"\"",
-                            exp, value_exp
+                            "(_ssrIncludeBooleanAttr(_ssrLooseEqual({exp}, {value_exp}))) ? \" checked\" : \"\""
                         ));
                     }
                     _ => {
                         // text input
                         self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
                         self.push_string_part_dynamic(&vize_carton::new_string!(
-                            "_ssrRenderAttr(\"value\", {})",
-                            exp
+                            "_ssrRenderAttr(\"value\", {exp})"
                         ));
                     }
                 }
@@ -237,8 +234,7 @@ impl<'a> SsrCodegenContext<'a> {
 
         // v-show="expr" => style="display: none" if !expr
         self.push_string_part_dynamic(&vize_carton::new_string!(
-            "(({}) ? \"\" : \" style=\\\"display: none;\\\"\")",
-            exp
+            "(({exp}) ? \"\" : \" style=\\\"display: none;\\\"\")"
         ));
     }
 

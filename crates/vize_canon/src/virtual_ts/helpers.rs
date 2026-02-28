@@ -70,7 +70,9 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
             vize_carton::push_fmt!(
                 ctx,
                 "    const {}: {} = {};\n",
-                global.name, global.type_annotation, global.default_value
+                global.name,
+                global.type_annotation,
+                global.default_value
             );
         }
     }

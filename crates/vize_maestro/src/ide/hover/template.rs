@@ -41,7 +41,7 @@ impl HoverService {
         let mut value = format!("**{}**\n\n```typescript\n{}\n```", word, type_info.display);
 
             if let Some(ref doc) = type_info.documentation {
-                vize_carton::push_fmt!(value, "\n\n{}", doc);
+                vize_carton::push_fmt!(value, "\n\n{doc}");
             }
 
             return Some(Hover {
