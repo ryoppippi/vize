@@ -1,4 +1,4 @@
-use super::*;
+use super::{CrossFileAnalyzer, CrossFileOptions};
 use crate::AnalyzerOptions;
 use std::path::Path;
 

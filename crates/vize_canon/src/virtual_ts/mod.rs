@@ -22,7 +22,7 @@ mod tests {
     use super::helpers::{
         generate_template_context, get_dom_event_type, VUE_SETUP_COMPILER_MACROS,
     };
-    use super::*;
+    use super::{generate_virtual_ts, TemplateGlobal, VirtualTsOptions};
 
     #[test]
     fn test_vue_setup_compiler_macros_are_actual_functions() {

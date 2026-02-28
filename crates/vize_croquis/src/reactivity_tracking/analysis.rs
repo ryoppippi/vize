@@ -4,7 +4,7 @@
 //! that renders a human-readable Markdown report of tracked bindings and violations.
 
 use super::tracker::ReactivityTracker;
-use super::*;
+use super::{BindingState, ViolationKind, ViolationSeverity};
 
 impl ReactivityTracker {
     /// Generate markdown report.

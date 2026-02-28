@@ -4,7 +4,7 @@
 //! v-model, v-show, and custom directives on elements.
 
 use crate::{
-    ast::*,
+    ast::{ElementNode, ExpressionNode, PropNode, RuntimeHelper},
     transforms::v_model::{get_vmodel_helper, parse_model_modifiers},
 };
 

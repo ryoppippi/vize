@@ -7,7 +7,7 @@ pub use runner::TypeChecker;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TypeChecker;
     use crate::context::{Binding, BindingKind, TypeContext};
     use crate::types::{TypeInfo, TypeKind};
 

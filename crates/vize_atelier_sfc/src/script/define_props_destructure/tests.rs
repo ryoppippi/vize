@@ -407,7 +407,10 @@ return { msg, count }"#;
     // ==================== Snapshot tests ====================
 
     mod snapshots {
-        use super::*;
+        use super::{
+            make_bindings, transform_destructured_props, PropsDestructureBinding,
+            PropsDestructuredBindings,
+        };
 
         #[test]
         fn test_basic_usage() {

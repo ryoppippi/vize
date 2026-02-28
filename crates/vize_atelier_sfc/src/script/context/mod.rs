@@ -189,7 +189,7 @@ impl ScriptCompileContext {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ScriptCompileContext;
     use crate::types::BindingType;
 
     #[test]

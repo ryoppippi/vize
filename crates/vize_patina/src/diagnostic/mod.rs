@@ -13,7 +13,7 @@ pub use types::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{formatting, render_help, HelpLevel, HelpRenderTarget};
 
     #[test]
     fn test_help_level_full() {

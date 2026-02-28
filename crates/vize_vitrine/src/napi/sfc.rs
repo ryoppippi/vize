@@ -4,9 +4,9 @@
 //! compileSfcBatchWithResults functions for Vue Single File Components.
 
 use glob::glob;
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::{Env, Error, Object, Result, Status};
 use napi_derive::napi;
-use rayon::prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     fs,
     sync::atomic::{AtomicUsize, Ordering},

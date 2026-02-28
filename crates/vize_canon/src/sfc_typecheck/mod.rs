@@ -50,7 +50,10 @@ pub use runner::type_check_sfc;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        type_check_sfc, SfcTypeCheckOptions, SfcTypeCheckResult, SfcTypeDiagnostic,
+        SfcTypeSeverity,
+    };
 
     #[test]
     fn test_type_check_empty_sfc() {

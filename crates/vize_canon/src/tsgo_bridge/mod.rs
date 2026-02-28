@@ -19,7 +19,10 @@ pub use types::{
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        LspDiagnostic, LspPosition, LspRange, TsgoBridgeConfig, TypeCheckResult,
+        VIRTUAL_URI_SCHEME,
+    };
 
     #[test]
     fn test_virtual_uri_format() {

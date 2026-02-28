@@ -3,7 +3,7 @@
 //! Provides compile, compileVapor, and parseTemplate functions
 //! for direct template-to-render-function compilation.
 
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
 use vize_carton::Bump;
 

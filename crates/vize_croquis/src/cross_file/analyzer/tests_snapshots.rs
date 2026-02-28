@@ -1,4 +1,4 @@
-use super::*;
+use super::{CrossFileAnalyzer, CrossFileOptions};
 use crate::AnalyzerOptions;
 use insta::assert_snapshot;
 use std::path::Path;

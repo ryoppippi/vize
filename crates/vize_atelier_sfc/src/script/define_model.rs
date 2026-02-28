@@ -58,7 +58,7 @@ pub struct ModelDecl {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::extract_define_model;
 
     #[test]
     fn test_extract_define_model_single() {

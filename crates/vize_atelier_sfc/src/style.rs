@@ -1,6 +1,6 @@
 //! Style block processing and scoped CSS.
 
-use crate::types::*;
+use crate::types::{SfcError, SfcStyleBlock, StyleCompileOptions};
 
 /// Compile a style block
 pub fn compile_style(
@@ -363,7 +363,7 @@ pub fn extract_css_vars(css: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{apply_scoped_css, extract_css_vars, scope_selector, transform_deep, transform_global};
 
     #[test]
     fn test_scope_simple_selector() {

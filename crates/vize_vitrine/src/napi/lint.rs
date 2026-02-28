@@ -4,9 +4,9 @@
 //! with native multithreading and .gitignore awareness.
 
 use glob::glob;
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
-use rayon::prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
     fs,
     sync::atomic::{AtomicUsize, Ordering},

@@ -1,6 +1,6 @@
 //! Tests for cross-file diagnostics.
 
-use super::*;
+use super::{CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity};
 use crate::cross_file::FileId;
 
 fn make_file_id() -> FileId {

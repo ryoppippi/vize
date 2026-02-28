@@ -3,9 +3,9 @@
 //! Provides art parsing, CSF transformation, documentation generation,
 //! catalog generation, palette/props controls, and variant autogeneration.
 
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
-use rayon::prelude::*;
+use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 
 // ============================================================================
 // Art file types

@@ -3,7 +3,10 @@
 //! Contains the `CrossFileReactivityAnalyzer` struct and its collection,
 //! tracking, and detection methods.
 
-use super::types::*;
+use super::types::{
+    ComposableInfo, CrossFileReactiveValue, CrossFileReactivityIssue, CrossFileReactivityIssueKind,
+    ProvideDefinition, ReactiveValueId, ReactivityFlow, ReactivityFlowKind, ReactivityLossReason,
+};
 use crate::cross_file::diagnostics::{CrossFileDiagnostic, DiagnosticSeverity};
 use crate::cross_file::graph::{DependencyEdge, DependencyGraph};
 use crate::cross_file::registry::{FileId, ModuleRegistry};

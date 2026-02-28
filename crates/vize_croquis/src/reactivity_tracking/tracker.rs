@@ -374,7 +374,9 @@ impl ReactivityTracker {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        CompactString, ReactiveOrigin, ReactivityTracker, UseSiteKind, ViolationKind,
+    };
 
     #[test]
     fn test_basic_tracking() {

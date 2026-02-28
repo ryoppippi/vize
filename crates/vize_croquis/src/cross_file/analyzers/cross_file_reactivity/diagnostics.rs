@@ -1,7 +1,7 @@
 //! Diagnostics generation and reporting for cross-file reactivity analysis.
 
 use super::analyzer::CrossFileReactivityAnalyzer;
-use super::types::*;
+use super::types::{CrossFileReactivityIssueKind, ReactivityFlowKind};
 use crate::cross_file::diagnostics::{
     CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity,
 };

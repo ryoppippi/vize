@@ -190,7 +190,9 @@ pub fn get_escaped_prop_name(key: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        extract_type_args, find_matching_paren, get_escaped_prop_name, is_valid_identifier,
+    };
 
     #[test]
     fn test_find_matching_paren() {

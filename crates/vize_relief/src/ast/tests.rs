@@ -1,6 +1,11 @@
 //! Tests for AST node types.
 
-use super::*;
+use super::{
+    ArrayExpression, AttributeNode, BlockStatement, CallExpression, Callee, CommentNode,
+    CompoundExpressionNode, ConstantType, DirectiveNode, ElementNode, ElementType, IfBranchNode,
+    IfNode, Namespace, NodeType, ObjectExpression, Position, RootNode, RuntimeHelper,
+    SimpleExpressionNode, SourceLocation, TemplateChildNode, TextNode,
+};
 use vize_carton::Bump;
 
 // ========================================================================

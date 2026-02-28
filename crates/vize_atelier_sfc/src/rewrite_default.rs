@@ -297,7 +297,7 @@ pub fn rewrite_default(input: &str, as_name: &str, is_ts: bool) -> (String, bool
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::rewrite_default;
 
     #[test]
     fn test_rewrite_default_object() {

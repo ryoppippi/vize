@@ -11,7 +11,7 @@ use std::{
 };
 
 use ignore::Walk;
-use rayon::prelude::*;
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use vize_atelier_sfc::{
     compile_sfc, parse_sfc, ScriptCompileOptions, SfcCompileOptions, SfcParseOptions,
     StyleCompileOptions, TemplateCompileOptions,

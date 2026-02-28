@@ -1,4 +1,4 @@
-use super::*;
+use super::parse_sfc;
 use std::borrow::Cow;
 
 #[test]

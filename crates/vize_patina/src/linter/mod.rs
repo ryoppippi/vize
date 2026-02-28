@@ -12,7 +12,7 @@ pub use config::{LintResult, Linter};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Linter;
     use vize_carton::Allocator;
 
     #[test]
