@@ -356,7 +356,12 @@ fn is_call_of(call: &CallExpression<'_>, name: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashSet;
+
+    use super::{
+        extract_event_name_from_function_type, extract_events_from_type_literal, gen_runtime_emits,
+        ScriptCompileContext,
+    };
 
     #[test]
     fn test_extract_event_name_from_function_type() {

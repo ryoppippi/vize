@@ -171,7 +171,7 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
 
 /// Run type checking directly with tsgo LSP (no file I/O).
 pub(crate) fn run_direct(args: &CheckArgs) {
-    use rayon::prelude::*;
+    use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};
     use vize_canon::{

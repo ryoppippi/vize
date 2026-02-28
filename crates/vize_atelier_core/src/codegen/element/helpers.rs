@@ -3,7 +3,9 @@
 //! Utility functions for checking element properties like directives,
 //! renderable props, and special element types.
 
-use crate::ast::*;
+use crate::ast::{
+    DirectiveNode, ElementNode, ElementType, ExpressionNode, PropNode, TemplateChildNode,
+};
 use vize_carton::is_builtin_directive;
 
 use super::super::{

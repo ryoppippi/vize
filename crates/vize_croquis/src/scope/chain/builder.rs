@@ -3,7 +3,13 @@
 //! Provides all `enter_*` methods that create new scopes and push them
 //! onto the chain (v-for, v-slot, event handler, callback, module, etc.).
 
-use super::*;
+use super::{
+    smallvec, BindingType, BlockScopeData, CallbackScopeData, ClientOnlyScopeData,
+    ClosureScopeData, CompactString, EventHandlerScopeData, ExternalModuleScopeData,
+    JsGlobalScopeData, NonScriptSetupScopeData, ParentScopes, Scope, ScopeBinding, ScopeChain,
+    ScopeData, ScopeId, ScopeKind, ScriptSetupScopeData, UniversalScopeData, VForScopeData,
+    VSlotScopeData, VueGlobalScopeData,
+};
 
 impl ScopeChain {
     /// Enter a new scope

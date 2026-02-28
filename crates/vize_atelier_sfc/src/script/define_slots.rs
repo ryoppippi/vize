@@ -35,7 +35,7 @@ pub fn extract_define_slots(content: &str) -> Option<MacroCall> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::extract_define_slots;
 
     #[test]
     fn test_extract_define_slots() {

@@ -35,7 +35,7 @@ pub fn extract_define_expose(content: &str) -> Option<MacroCall> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::extract_define_expose;
 
     #[test]
     fn test_extract_define_expose() {

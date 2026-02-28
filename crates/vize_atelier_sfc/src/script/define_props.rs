@@ -62,7 +62,7 @@ pub struct PropTypeData {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{extract_define_props, extract_with_defaults};
 
     #[test]
     fn test_extract_define_props_simple() {
