@@ -2,7 +2,7 @@
 //!
 //! Transforms v-show directive for toggling display.
 
-use vize_carton::{Box, Bump, String};
+use vize_carton::{cstr, Box, Bump, String};
 
 use crate::ir::{DirectiveIRNode, OperationNode};
 use vize_atelier_core::{DirectiveNode, ExpressionNode};
@@ -42,7 +42,7 @@ pub fn needs_transition(_el: &vize_atelier_core::ElementNode<'_>) -> bool {
 
 /// Generate v-show effect code
 pub fn generate_v_show_effect(element_var: &str, condition: &str) -> String {
-    vize_carton::new_string!("{element_var}.style.display = {condition} ? '' : 'none'")
+    cstr!("{element_var}.style.display = {condition} ? '' : 'none'")
 }
 
 #[cfg(test)]

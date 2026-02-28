@@ -2,6 +2,7 @@
 
 use super::{CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity};
 use crate::cross_file::FileId;
+use vize_carton::append;
 
 fn make_file_id() -> FileId {
     FileId::new(0)
@@ -437,9 +438,9 @@ fn test_snapshot_all_diagnostic_kinds() {
     output.push_str("=== All Diagnostic Kinds ===\n\n");
 
     for diag in &diagnostics {
-        vize_carton::push_fmt!(output, "--- {:?} ---\n", diag.kind);
-        vize_carton::push_fmt!(output, "Severity: {}\n", diag.severity.display_name());
-        vize_carton::push_fmt!(output, "Message: {}\n", diag.message);
+        append!(output, "--- {:?} ---\n", diag.kind);
+        append!(output, "Severity: {}\n", diag.severity.display_name());
+        append!(output, "Message: {}\n", diag.message);
         output.push_str("\nMarkdown Output:\n");
         output.push_str(&diag.to_markdown());
         output.push_str("\n\n");
@@ -475,14 +476,14 @@ fn test_snapshot_diagnostic_with_related_files() {
 
     let mut output = String::new();
     output.push_str("=== Diagnostic with Related Files ===\n\n");
-    vize_carton::push_fmt!(output, "Primary file: {:?}\n", diag.primary_file);
-    vize_carton::push_fmt!(
+    append!(output, "Primary file: {:?}\n", diag.primary_file);
+    append!(
         output,
         "Offset: {} - {}\n",
         diag.primary_offset,
         diag.primary_end_offset
     );
-    vize_carton::push_fmt!(
+    append!(
         output,
         "Related files count: {}\n",
         diag.related_files.len()
@@ -490,7 +491,7 @@ fn test_snapshot_diagnostic_with_related_files() {
 
     output.push_str("\nRelated files:\n");
     for (file_id, offset, msg) in &diag.related_files {
-        vize_carton::push_fmt!(output, "  - {:?} at {offset}: {msg}\n", file_id);
+        append!(output, "  - {:?} at {offset}: {msg}\n", file_id);
     }
 
     output.push_str("\nMarkdown Output:\n");
@@ -526,9 +527,9 @@ fn test_snapshot_severity_levels() {
             "Example diagnostic",
         );
 
-        vize_carton::push_fmt!(output, "== {} ==\n", severity.display_name().to_uppercase());
-        vize_carton::push_fmt!(output, "is_error: {}\n", diag.is_error());
-        vize_carton::push_fmt!(output, "is_warning: {}\n", diag.is_warning());
+        append!(output, "== {} ==\n", severity.display_name().to_uppercase());
+        append!(output, "is_error: {}\n", diag.is_error());
+        append!(output, "is_warning: {}\n", diag.is_warning());
         output.push_str("\nMarkdown:\n");
         output.push_str(&diag.to_markdown());
         output.push('\n');

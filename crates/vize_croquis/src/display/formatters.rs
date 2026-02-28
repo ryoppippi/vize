@@ -13,6 +13,7 @@ use super::{
     MacroDisplay, MemoCacheDisplay, OnceCacheDisplay, PropDisplay, SelectorDisplay, Severity,
     TopLevelAwaitDisplay,
 };
+use vize_carton::append;
 
 /// Builder for Croquis
 #[derive(Debug, Default)]
@@ -181,9 +182,9 @@ impl Croquis {
         let mut output = String::with_capacity(4096);
 
         output.push_str("[analysis]\n");
-        vize_carton::push_fmt!(output, "is_async = {}\n", self.is_async);
-        vize_carton::push_fmt!(output, "scope_count = {}\n", self.stats.scope_count);
-        vize_carton::push_fmt!(output, "binding_count = {}\n", self.stats.binding_count);
+        append!(output, "is_async = {}\n", self.is_async);
+        append!(output, "scope_count = {}\n", self.stats.scope_count);
+        append!(output, "binding_count = {}\n", self.stats.binding_count);
         output.push('\n');
 
         // Scopes
@@ -210,7 +211,7 @@ impl Croquis {
             for scope in &self.scopes {
                 let (prefix, display_id) = display_id_map.get(&scope.id).unwrap();
                 // Format: prefix+display_id kind @start:end {bindings} $ parent_refs
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "{prefix}{display_id} {} @{}:{}",
                     scope.kind.to_display(),
@@ -241,9 +242,9 @@ impl Croquis {
                             output.push_str(", ");
                         }
                         if let Some((p_prefix, p_display_id)) = display_id_map.get(parent_id) {
-                            vize_carton::push_fmt!(output, "{p_prefix}{p_display_id}");
+                            append!(output, "{p_prefix}{p_display_id}");
                         } else {
-                            vize_carton::push_fmt!(output, "#{parent_id}");
+                            append!(output, "#{parent_id}");
                         }
                         first = false;
                     }
@@ -257,7 +258,7 @@ impl Croquis {
         if !self.props.is_empty() {
             output.push_str("[props]\n");
             for prop in &self.props {
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "  {} = {{ type = {:?}, required = {} }}\n",
                     prop.name,
@@ -272,7 +273,7 @@ impl Croquis {
         if !self.emits.is_empty() {
             output.push_str("[emits]\n");
             for emit in &self.emits {
-                vize_carton::push_fmt!(output, "  {} = {:?}\n", emit.name, emit.payload_type);
+                append!(output, "  {} = {:?}\n", emit.name, emit.payload_type);
             }
             output.push('\n');
         }
@@ -281,7 +282,7 @@ impl Croquis {
         if !self.top_level_awaits.is_empty() {
             output.push_str("[top_level_await]\n");
             for await_expr in &self.top_level_awaits {
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "  {{ expression = \"{}\", span = [{}, {}] }}\n",
                     await_expr.expression,
@@ -296,7 +297,7 @@ impl Croquis {
         if !self.optimization.event_cache.is_empty() {
             output.push_str("[event_cache]\n");
             for event in &self.optimization.event_cache {
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "  _cache[{}] = {{ event = \"{}\", handler = \"{}\" }}\n",
                     event.cache_index,
@@ -311,7 +312,7 @@ impl Croquis {
         if !self.optimization.blocks.is_empty() {
             output.push_str("[blocks]\n");
             for block in &self.optimization.blocks {
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "  block_{} = {{ type = \"{}\", dynamic_children = {} }}\n",
                     block.id,
@@ -332,7 +333,7 @@ impl Croquis {
                     Severity::Info => "info",
                     Severity::Hint => "hint",
                 };
-                vize_carton::push_fmt!(
+                append!(
                     output,
                     "  {{ severity = \"{severity}\", message = \"{}\" }}\n",
                     diag.message

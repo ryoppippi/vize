@@ -6,6 +6,8 @@ use super::import_rewriter::ImportRewriter;
 use super::source_map::SfcSourceMap;
 use super::SfcBlockType;
 use vize_atelier_sfc::SfcDescriptor;
+use vize_carton::append;
+use vize_carton::cstr;
 use vize_croquis::{Analyzer, AnalyzerOptions, Croquis};
 
 /// Result of virtual TypeScript generation.
@@ -191,7 +193,7 @@ impl VirtualTsGenerator {
     fn emit_template_bindings(&self, code: &mut String, analysis: &Croquis) {
         // Emit void statements for all bindings to trigger type checking
         for (name, _binding_type) in analysis.bindings.iter() {
-            vize_carton::push_fmt!(*code, "    void {};\n", name);
+            append!(*code, "    void {name};\n");
         }
     }
 
@@ -202,7 +204,7 @@ impl VirtualTsGenerator {
         for prop in analysis.macros.props() {
             let optional = if !prop.required { "?" } else { "" };
             let prop_type = prop.prop_type.as_deref().unwrap_or("unknown");
-            vize_carton::push_fmt!(*code, "  {}{}: {};\n", prop.name, optional, prop_type);
+            append!(*code, "  {}{}: {};\n", prop.name, optional, prop_type);
         }
         code.push_str("}\n\n");
 
@@ -210,14 +212,14 @@ impl VirtualTsGenerator {
         code.push_str("export interface __Emits {\n");
         for emit in analysis.macros.emits() {
             if let Some(ref payload_type) = emit.payload_type {
-                vize_carton::push_fmt!(
+                append!(
                     *code,
                     "  (e: '{}', payload: {}): void;\n",
                     emit.name,
                     payload_type
                 );
             } else {
-                vize_carton::push_fmt!(*code, "  (e: '{}'): void;\n", emit.name);
+                append!(*code, "  (e: '{}'): void;\n", emit.name);
             }
         }
         code.push_str("}\n\n");
@@ -227,7 +229,7 @@ impl VirtualTsGenerator {
     pub fn generate_from_content(&self, content: &str) -> Result<VirtualTsResult, String> {
         let options = vize_atelier_sfc::SfcParseOptions::default();
         let descriptor = vize_atelier_sfc::parse_sfc(content, options)
-            .map_err(|e| vize_carton::new_string!("{:?}", e).to_string())?;
+            .map_err(|e| cstr!("{e:?}").to_string())?;
 
         let mut analyzer = Analyzer::with_options(AnalyzerOptions::full());
 

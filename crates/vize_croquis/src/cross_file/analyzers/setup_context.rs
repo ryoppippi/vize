@@ -11,6 +11,7 @@ use crate::cross_file::diagnostics::{
 use crate::cross_file::graph::DependencyGraph;
 use crate::cross_file::registry::{FileId, ModuleRegistry};
 use crate::setup_context::{SetupContextViolation, SetupContextViolationKind, ViolationSeverity};
+use vize_carton::cstr;
 use vize_carton::CompactString;
 
 /// A detected setup context issue with file context.
@@ -69,7 +70,7 @@ fn create_diagnostic(file_id: FileId, violation: &SetupContextViolation) -> Cros
 
     let (message, hint) = match violation.kind {
         SetupContextViolationKind::ModuleLevelState => (
-            vize_carton::new_string!(
+            cstr!(
                 "Module-level reactive state (`{}`) causes CSRP in SSR",
                 violation.api_name
             ),
@@ -78,7 +79,7 @@ fn create_diagnostic(file_id: FileId, violation: &SetupContextViolation) -> Cros
             )),
         ),
         SetupContextViolationKind::ModuleLevelWatch => (
-            vize_carton::new_string!(
+            cstr!(
                 "Module-level `{}()` is never cleaned up, causing memory leaks",
                 violation.api_name
             ),
@@ -87,7 +88,7 @@ fn create_diagnostic(file_id: FileId, violation: &SetupContextViolation) -> Cros
             )),
         ),
         SetupContextViolationKind::ModuleLevelComputed => (
-            vize_carton::new_string!(
+            cstr!(
                 "Module-level `{}()` is never cleaned up, causing memory leaks",
                 violation.api_name
             ),
@@ -112,7 +113,7 @@ fn create_diagnostic(file_id: FileId, violation: &SetupContextViolation) -> Cros
             )),
         ),
         SetupContextViolationKind::ModuleLevelLifecycle => (
-            vize_carton::new_string!(
+            cstr!(
                 "`{}()` must be called inside setup() or <script setup>",
                 violation.api_name
             ),

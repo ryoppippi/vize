@@ -1,6 +1,7 @@
 //! Benchmark for vize_patina linter.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use vize_carton::append;
 use vize_patina::rules::musea::MuseaLinter;
 use vize_patina::rules::script::{NoInternalImports, PreferImportFromVue, ScriptLinter};
 use vize_patina::Linter;
@@ -32,7 +33,7 @@ fn bench_lint_large_template(c: &mut Criterion) {
     // Generate a larger template
     let mut template = String::from("<div>\n");
     for i in 0..100 {
-        vize_carton::push_fmt!(
+        append!(
             template,
             r#"  <div v-if="show{i}">
     <span>{{ message{i} }}</span>

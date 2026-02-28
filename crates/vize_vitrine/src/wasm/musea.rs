@@ -1,6 +1,7 @@
 //! Musea (Art file) WASM bindings.
 
 use super::to_js_value;
+use vize_carton::cstr;
 use wasm_bindgen::prelude::*;
 
 /// Parse Art file (*.art.vue)
@@ -161,7 +162,7 @@ pub fn generate_art_catalog_wasm(
         let source_val = sources.get(idx);
         if let Some(source) = source_val.as_string() {
             let parse_opts = ArtParseOptions {
-                filename: vize_carton::new_string!("component_{}.art.vue", idx),
+                filename: cstr!("component_{idx}.art.vue"),
             };
 
             if let Ok(descriptor) = parse_art(&allocator, &source, parse_opts) {

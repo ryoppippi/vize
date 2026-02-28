@@ -4,6 +4,7 @@
 //! identifier conversion, and template context generation.
 
 use super::types::VirtualTsOptions;
+use vize_carton::append;
 
 /// Vue compiler macros - these are defined inside setup scope, NOT globally.
 /// This ensures they're only valid within <script setup>.
@@ -67,7 +68,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
     if !options.template_globals.is_empty() {
         ctx.push_str("    // Plugin globals (configurable via --globals)\n");
         for global in &options.template_globals {
-            vize_carton::push_fmt!(
+            append!(
                 ctx,
                 "    const {}: {} = {};\n",
                 global.name,
@@ -86,7 +87,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
             if i > 0 {
                 ctx.push(' ');
             }
-            vize_carton::push_fmt!(ctx, "void {};", global.name);
+            append!(ctx, "void {};", global.name);
         }
         ctx.push('\n');
     }

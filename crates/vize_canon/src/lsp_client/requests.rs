@@ -13,6 +13,7 @@ use std::{
 };
 
 use super::{LspDiagnostic, TsgoLspClient};
+use vize_carton::cstr;
 
 impl TsgoLspClient {
     /// Open a virtual document (waits for diagnostics - slower but convenient for single files)
@@ -180,7 +181,7 @@ impl TsgoLspClient {
             if let Some(msg_id) = msg.get("id") {
                 if msg_id.as_i64() == Some(id) {
                     if let Some(error) = msg.get("error") {
-                        return Err(vize_carton::new_string!("LSP error: {:?}", error).to_string());
+                        return Err(cstr!("LSP error: {error:?}").to_string());
                     }
                     return Ok(msg.get("result").cloned().unwrap_or(Value::Null));
                 }
@@ -204,20 +205,19 @@ impl TsgoLspClient {
 
     /// Send a message with Content-Length header
     pub(crate) fn send_message(&mut self, msg: &Value) -> Result<(), String> {
-        let content = serde_json::to_string(msg)
-            .map_err(|e| vize_carton::new_string!("JSON error: {e}").to_string())?;
-        let header =
-            vize_carton::new_string!("Content-Length: {}\r\n\r\n", content.len()).to_string();
+        let content =
+            serde_json::to_string(msg).map_err(|e| cstr!("JSON error: {e}").to_string())?;
+        let header = cstr!("Content-Length: {}\r\n\r\n", content.len()).to_string();
 
         self.stdin
             .write_all(header.as_bytes())
-            .map_err(|e| vize_carton::new_string!("Write error: {e}").to_string())?;
+            .map_err(|e| cstr!("Write error: {e}").to_string())?;
         self.stdin
             .write_all(content.as_bytes())
-            .map_err(|e| vize_carton::new_string!("Write error: {e}").to_string())?;
+            .map_err(|e| cstr!("Write error: {e}").to_string())?;
         self.stdin
             .flush()
-            .map_err(|e| vize_carton::new_string!("Flush error: {e}").to_string())?;
+            .map_err(|e| cstr!("Flush error: {e}").to_string())?;
 
         Ok(())
     }
@@ -238,15 +238,14 @@ impl TsgoLspClient {
                         thread::sleep(Duration::from_millis(1));
                         continue;
                     }
-                    Err(e) => return Err(vize_carton::new_string!("Read error: {}", e).to_string()),
+                    Err(e) => return Err(cstr!("Read error: {e}").to_string()),
                 }
             };
 
             if bytes_read == 0 {
                 // EOF - process may have exited
-                return Err(vize_carton::new_string!(
-                    "EOF while reading headers. Headers read so far: {:?}",
-                    headers_read
+                return Err(cstr!(
+                    "EOF while reading headers. Headers read so far: {headers_read:?}"
                 )
                 .to_string());
             }
@@ -259,18 +258,14 @@ impl TsgoLspClient {
             }
 
             if let Some(len_str) = line.strip_prefix("Content-Length: ") {
-                content_length = len_str.parse().map_err(|e| {
-                    vize_carton::new_string!("Invalid Content-Length: {}", e).to_string()
-                })?;
+                content_length = len_str
+                    .parse()
+                    .map_err(|e| cstr!("Invalid Content-Length: {e}").to_string())?;
             }
         }
 
         if content_length == 0 {
-            return Err(vize_carton::new_string!(
-                "No Content-Length header. Headers: {:?}",
-                headers_read
-            )
-            .to_string());
+            return Err(cstr!("No Content-Length header. Headers: {headers_read:?}").to_string());
         }
 
         // Read content (with retry on WouldBlock)
@@ -284,12 +279,12 @@ impl TsgoLspClient {
                     thread::sleep(Duration::from_millis(1));
                     continue;
                 }
-                Err(e) => return Err(vize_carton::new_string!("Read error: {}", e).to_string()),
+                Err(e) => return Err(cstr!("Read error: {e}").to_string()),
             }
         }
 
         let msg: Value = serde_json::from_slice(&content)
-            .map_err(|e| vize_carton::new_string!("JSON parse error: {}", e).to_string())?;
+            .map_err(|e| cstr!("JSON parse error: {e}").to_string())?;
 
         Ok(msg)
     }

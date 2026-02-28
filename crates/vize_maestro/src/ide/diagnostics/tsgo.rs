@@ -8,6 +8,7 @@ use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url}
 use crate::server::ServerState;
 
 use super::{DiagnosticService, SourceMapping, VirtualTsResult};
+use vize_carton::cstr;
 
 impl DiagnosticService {
     /// Collect diagnostics from tsgo LSP.
@@ -58,7 +59,7 @@ impl DiagnosticService {
         );
 
         // Create virtual document name (used by tsgo bridge to create the full URI)
-        let virtual_name = vize_carton::new_string!("{}.ts", uri.path());
+        let virtual_name = cstr!("{}.ts", uri.path());
 
         // Open or update document in tsgo (uses didChange if already open)
         tracing::info!("opening/updating virtual document: {}", virtual_name);

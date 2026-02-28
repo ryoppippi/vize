@@ -2,15 +2,16 @@
 
 use super::block::GenerateContext;
 use crate::ir::{EventModifiers, SetEventIRNode};
+use vize_carton::cstr;
 
 /// Generate SetEvent code
 pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>) {
-    let element = vize_carton::new_string!("_n{}", set_event.element);
+    let element = cstr!("_n{}", set_event.element);
     let event_name = &set_event.key.content;
 
     let handler: String = if let Some(ref value) = set_event.value {
         if value.is_static {
-            vize_carton::new_string!("\"{}\"", value.content).into()
+            cstr!("\"{}\"", value.content).into()
         } else {
             value.content.to_string()
         }
@@ -35,9 +36,9 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let keys: Vec<String> = modifiers
             .keys
             .iter()
-            .map(|k| vize_carton::new_string!("\"{k}\"").into())
+            .map(|k| cstr!("\"{k}\"").into())
             .collect();
-        result = vize_carton::new_string!("_withKeys({result}, [{}])", keys.join(", ")).into();
+        result = cstr!("_withKeys({result}, [{}])", keys.join(", ")).into();
     }
 
     // Apply non-key modifiers
@@ -45,9 +46,9 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let mods: Vec<String> = modifiers
             .non_keys
             .iter()
-            .map(|m| vize_carton::new_string!("\"{m}\"").into())
+            .map(|m| cstr!("\"{m}\"").into())
             .collect();
-        result = vize_carton::new_string!("_withModifiers({result}, [{}])", mods.join(", ")).into();
+        result = cstr!("_withModifiers({result}, [{}])", mods.join(", ")).into();
     }
 
     result
@@ -73,7 +74,7 @@ pub fn generate_event_options(modifiers: &EventModifiers) -> Option<String> {
         parts.push("passive: true");
     }
 
-    Some(vize_carton::new_string!("{{ {} }}", parts.join(", ")).into())
+    Some(cstr!("{{ {} }}", parts.join(", ")).into())
 }
 
 /// Generate delegate event handler
@@ -84,16 +85,15 @@ pub fn generate_delegate_event(
     options: Option<&str>,
 ) -> String {
     if let Some(opts) = options {
-        vize_carton::new_string!("_delegate({element_var}, \"{event_name}\", {handler}, {opts})")
-            .into()
+        cstr!("_delegate({element_var}, \"{event_name}\", {handler}, {opts})").into()
     } else {
-        vize_carton::new_string!("_delegate({element_var}, \"{event_name}\", {handler})").into()
+        cstr!("_delegate({element_var}, \"{event_name}\", {handler})").into()
     }
 }
 
 /// Generate inline event handler
 pub fn generate_inline_handler(element_var: &str, event_name: &str, handler: &str) -> String {
-    vize_carton::new_string!("{element_var}.addEventListener(\"{event_name}\", {handler})").into()
+    cstr!("{element_var}.addEventListener(\"{event_name}\", {handler})").into()
 }
 
 /// Capitalize event name for onEvent format
@@ -101,9 +101,7 @@ pub fn capitalize_event_name(event: &str) -> String {
     let mut chars = event.chars();
     match chars.next() {
         None => String::new(),
-        Some(first) => {
-            vize_carton::new_string!("on{}{}", first.to_uppercase(), chars.as_str()).into()
-        }
+        Some(first) => cstr!("on{}{}", first.to_uppercase(), chars.as_str()).into(),
     }
 }
 

@@ -7,6 +7,7 @@ use vize_atelier_sfc::SfcStyleBlock;
 use super::{
     MappingFeatures, SourceMap, SourceMapping, SourceRange, VirtualDocument, VirtualLanguage,
 };
+use vize_carton::cstr;
 
 /// Style code generator.
 pub struct StyleCodeGenerator {
@@ -51,7 +52,7 @@ impl StyleCodeGenerator {
         let extension = style.lang.as_ref().map(|l| l.as_ref()).unwrap_or("css");
 
         VirtualDocument {
-            uri: vize_carton::new_string!("__style_{index}.{extension}").to_string(),
+            uri: cstr!("__style_{index}.{extension}").to_string(),
             content: content.to_string(),
             language: VirtualLanguage::Style,
             source_map,

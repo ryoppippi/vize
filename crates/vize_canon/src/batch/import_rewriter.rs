@@ -9,6 +9,7 @@ use oxc_ast_visit::walk;
 use oxc_ast_visit::Visit;
 use oxc_parser::Parser;
 use oxc_span::SourceType;
+use vize_carton::cstr;
 
 /// Offset adjustment for source map.
 #[derive(Debug, Clone)]
@@ -160,7 +161,7 @@ impl ImportRewriter {
     fn rewrite_module_specifier(&self, path: &str) -> Option<String> {
         // Only rewrite relative .vue imports
         if path.ends_with(".vue") && (path.starts_with("./") || path.starts_with("../")) {
-            Some(vize_carton::new_string!("{}.ts", path).to_string())
+            Some(cstr!("{path}.ts").to_string())
         } else {
             None
         }

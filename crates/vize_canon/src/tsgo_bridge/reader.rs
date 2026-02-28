@@ -18,6 +18,7 @@ use super::{
     protocol::JsonRpcMessage,
     types::{LspDiagnostic, TsgoBridgeError},
 };
+use vize_carton::cstr;
 
 /// Type alias for pending requests map.
 pub(crate) type PendingMap = Arc<DashMap<u64, oneshot::Sender<Result<Value, TsgoBridgeError>>>>;
@@ -130,7 +131,7 @@ pub(crate) fn start_reader_task(
                         "result": Value::Null
                     });
                     if let Ok(response_content) = serde_json::to_string(&response) {
-                        let response_msg = vize_carton::new_string!(
+                        let response_msg = cstr!(
                             "Content-Length: {}\r\n\r\n{response_content}",
                             response_content.len(),
                         )

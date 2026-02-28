@@ -9,6 +9,7 @@
 //! - Lazy computation (only compute what's needed)
 //! - Reusable across IDE and non-IDE contexts
 
+use vize_carton::cstr;
 use vize_carton::CompactString;
 use vize_croquis::Croquis;
 use vize_relief::BindingType;
@@ -294,7 +295,7 @@ impl<'a> TypeIntelligence<'a> {
     fn add_binding_completions(&self, completions: &mut Vec<Completion>) {
         for (name, &binding_type) in self.summary.bindings.bindings.iter() {
             let kind = binding_type_to_completion_kind(binding_type);
-            let detail = Some(vize_carton::new_string!("{:?}", binding_type));
+            let detail = Some(cstr!("{binding_type:?}"));
 
             completions.push(Completion {
                 label: CompactString::new(name),
@@ -357,7 +358,7 @@ fn format_binding_hover(name: &str, binding_type: BindingType) -> CompactString 
         BindingType::VueGlobal => "vue global",
         BindingType::ExternalModule => "external module",
     };
-    vize_carton::new_string!("```typescript\n{}: {}\n```", name, type_str)
+    cstr!("```typescript\n{name}: {type_str}\n```")
 }
 
 /// Get hover for Vue template globals.

@@ -11,6 +11,7 @@ use std::{
     fs,
     sync::atomic::{AtomicUsize, Ordering},
 };
+use vize_carton::cstr;
 
 /// SFC parse options for NAPI
 #[napi(object)]
@@ -243,7 +244,7 @@ pub fn compile_sfc(
         external_scope_id
             .as_ref()
             .map(|scope_id| vize_atelier_dom::DomCompilerOptions {
-                scope_id: Some(vize_carton::new_string!("data-v-{}", scope_id).into()),
+                scope_id: Some(cstr!("data-v-{scope_id}").into()),
                 ..Default::default()
             })
     } else {
@@ -465,7 +466,7 @@ pub fn compile_sfc_batch_with_results(
             use sha2::{Digest, Sha256};
             let hash = Sha256::digest(filename.as_bytes());
             // Take first 8 hex chars of the SHA-256 hash (same as JS: hash.slice(0, 8))
-            vize_carton::new_string!(
+            cstr!(
                 "{:02x}{:02x}{:02x}{:02x}",
                 hash[0],
                 hash[1],
@@ -514,7 +515,7 @@ pub fn compile_sfc_batch_with_results(
         // Create compiler options with scope_id for scoped CSS
         let template_compiler_options = if actual_has_scoped {
             Some(vize_atelier_dom::DomCompilerOptions {
-                scope_id: Some(vize_carton::new_string!("data-v-{}", scope_id).into()),
+                scope_id: Some(cstr!("data-v-{scope_id}").into()),
                 ..Default::default()
             })
         } else {

@@ -2,7 +2,7 @@
 //!
 //! Transforms text and interpolation nodes into SetTextIRNode.
 
-use vize_carton::{Box, Bump, String, Vec};
+use vize_carton::{cstr, Box, Bump, String, Vec};
 
 use crate::ir::{OperationNode, SetTextIRNode};
 use vize_atelier_core::{ExpressionNode, InterpolationNode, SimpleExpressionNode, TextNode};
@@ -93,9 +93,9 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
     if parts.len() == 1 {
         let (is_static, content) = &parts[0];
         if *is_static {
-            return vize_carton::new_string!("\"{}\"", escape_text(content));
+            return cstr!("\"{}\"", escape_text(content));
         } else {
-            return vize_carton::new_string!("_toDisplayString({content})");
+            return cstr!("_toDisplayString({content})");
         }
     }
 
@@ -104,9 +104,9 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
         .iter()
         .map(|(is_static, content)| {
             if *is_static {
-                vize_carton::new_string!("\"{}\"", escape_text(content))
+                cstr!("\"{}\"", escape_text(content))
             } else {
-                vize_carton::new_string!("_toDisplayString({content})")
+                cstr!("_toDisplayString({content})")
             }
         })
         .collect();

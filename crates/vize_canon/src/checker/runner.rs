@@ -9,6 +9,7 @@ use crate::{
     diagnostic::{TypeDiagnostic, TypeErrorCode},
     CheckResult,
 };
+use vize_carton::cstr;
 
 /// Type checker for Vue SFC templates.
 ///
@@ -117,7 +118,7 @@ impl TypeChecker {
         ctx: &TypeContext,
         result: &mut CheckResult,
     ) {
-        let pattern = vize_carton::new_string!("{}=\"", directive).to_string();
+        let pattern = cstr!("{directive}=\"").to_string();
         let mut pos = 0;
 
         while let Some(start) = template[pos..].find(&pattern) {
@@ -234,9 +235,7 @@ impl TypeChecker {
                 let abs_start = pos + start + prefix.len();
 
                 // Find ="
-                if let Some(eq_pos) =
-                    template[abs_start..].find(&*vize_carton::new_string!("{suffix}\""))
-                {
+                if let Some(eq_pos) = template[abs_start..].find(&*cstr!("{suffix}\"")) {
                     let expr_start = abs_start + eq_pos + 2;
                     if let Some(end) = template[expr_start..].find('"') {
                         let expr = &template[expr_start..expr_start + end];
@@ -300,7 +299,7 @@ impl TypeChecker {
         if !ctx.has_binding(ident) && !ctx.globals.contains_key(ident) {
             result.add_diagnostic(TypeDiagnostic::error(
                 TypeErrorCode::UnknownIdentifier,
-                vize_carton::new_string!("Cannot find name '{}'", ident).to_string(),
+                cstr!("Cannot find name '{ident}'").to_string(),
                 start,
                 end,
             ));

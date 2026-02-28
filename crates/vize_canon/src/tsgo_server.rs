@@ -27,6 +27,7 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use vize_carton::cstr;
 
 /// JSON-RPC Request
 #[derive(Debug, Deserialize)]
@@ -235,7 +236,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32700,
-                        message: vize_carton::new_string!("Parse error: {e}").to_string(),
+                        message: cstr!("Parse error: {e}").to_string(),
                         data: None,
                     }),
                 };
@@ -259,8 +260,7 @@ impl TsgoServer {
                 result: None,
                 error: Some(JsonRpcError {
                     code: -32601,
-                    message: vize_carton::new_string!("Method not found: {}", request.method)
-                        .to_string(),
+                    message: cstr!("Method not found: {}", request.method).to_string(),
                     data: None,
                 }),
             },
@@ -278,7 +278,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32602,
-                        message: vize_carton::new_string!("Invalid params: {e}").to_string(),
+                        message: cstr!("Invalid params: {e}").to_string(),
                         data: None,
                     }),
                 };
@@ -319,9 +319,8 @@ impl TsgoServer {
             ..Default::default()
         };
 
-        let descriptor = parse_sfc(content, parse_opts).map_err(|e| {
-            vize_carton::new_string!("Failed to parse SFC: {}", e.message).to_string()
-        })?;
+        let descriptor = parse_sfc(content, parse_opts)
+            .map_err(|e| cstr!("Failed to parse SFC: {}", e.message).to_string())?;
 
         // Get script content
         let script_content = descriptor
@@ -408,7 +407,7 @@ impl TsgoServer {
             .expect("lsp_client must be initialized above");
 
         // Create virtual file URI (file:///path/to/file.vue.ts)
-        let virtual_uri = vize_carton::new_string!("file://{uri}.ts").to_string();
+        let virtual_uri = cstr!("file://{uri}.ts").to_string();
 
         // Open the virtual document
         client.did_open(&virtual_uri, content)?;
@@ -431,9 +430,9 @@ impl TsgoServer {
                     _ => "error",
                 };
                 let code = d.code.map(|c| match c {
-                    serde_json::Value::Number(n) => vize_carton::new_string!("TS{n}").to_string(),
+                    serde_json::Value::Number(n) => cstr!("TS{n}").to_string(),
                     serde_json::Value::String(s) => s,
-                    _ => vize_carton::new_string!("{:?}", c).to_string(),
+                    _ => cstr!("{c:?}").to_string(),
                 });
                 Diagnostic {
                     message: d.message,

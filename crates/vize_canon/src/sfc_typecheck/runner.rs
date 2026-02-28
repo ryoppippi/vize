@@ -3,6 +3,7 @@
 //! Orchestrates parsing, analysis, and virtual TypeScript generation
 //! for a Vue Single File Component.
 
+use vize_carton::cstr;
 use vize_carton::Bump;
 
 use super::{
@@ -45,7 +46,7 @@ pub fn type_check_sfc(source: &str, options: &SfcTypeCheckOptions) -> SfcTypeChe
         Err(e) => {
             result.add_diagnostic(SfcTypeDiagnostic {
                 severity: SfcTypeSeverity::Error,
-                message: vize_carton::new_string!("Failed to parse SFC: {}", e.message).to_string(),
+                message: cstr!("Failed to parse SFC: {}", e.message).to_string(),
                 start: 0,
                 end: 0,
                 code: Some("parse-error".to_string()),

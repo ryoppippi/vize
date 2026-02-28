@@ -3,6 +3,7 @@
 //! v-text sets the element's textContent.
 
 use vize_atelier_core::{DirectiveNode, RuntimeHelper};
+use vize_carton::cstr;
 
 /// Runtime helper for v-text
 pub const V_TEXT: RuntimeHelper = RuntimeHelper::SetBlockTracking;
@@ -16,7 +17,7 @@ pub fn is_v_text(dir: &DirectiveNode<'_>) -> bool {
 pub fn generate_text_content(dir: &DirectiveNode<'_>) -> String {
     if let Some(ref exp) = dir.exp {
         if let vize_atelier_core::ExpressionNode::Simple(simple) = exp {
-            return vize_carton::new_string!("_toDisplayString({})", simple.content).into();
+            return cstr!("_toDisplayString({})", simple.content).into();
         }
     }
     String::from("''")
@@ -26,7 +27,7 @@ pub fn generate_text_content(dir: &DirectiveNode<'_>) -> String {
 pub fn generate_text_children(dir: &DirectiveNode<'_>) -> Option<String> {
     if let Some(ref exp) = dir.exp {
         if let vize_atelier_core::ExpressionNode::Simple(simple) = exp {
-            return Some(vize_carton::new_string!("_toDisplayString({})", simple.content).into());
+            return Some(cstr!("_toDisplayString({})", simple.content).into());
         }
     }
     None
@@ -36,7 +37,7 @@ pub fn generate_text_children(dir: &DirectiveNode<'_>) -> Option<String> {
 mod tests {
     use super::{generate_text_children, generate_text_content, is_v_text};
     use vize_atelier_core::{DirectiveNode, ExpressionNode, SimpleExpressionNode, SourceLocation};
-    use vize_carton::{Box, Bump};
+    use vize_carton::{cstr, Box, Bump};
 
     fn create_test_directive<'a>(allocator: &'a Bump, name: &str, exp: &str) -> DirectiveNode<'a> {
         let mut dir = DirectiveNode::new(allocator, name, SourceLocation::STUB);

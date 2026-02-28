@@ -173,7 +173,7 @@ impl CodegenContext {
         }
     }
 
-    /// Push string to buffer (alias for `push`, compatible with `push_all!`/`push_fmt!` macros)
+    /// Push string to buffer (alias for `push`, compatible with `appends!`/`append!` macros)
     #[inline]
     #[allow(dead_code)]
     pub fn push_str(&mut self, code: &str) {

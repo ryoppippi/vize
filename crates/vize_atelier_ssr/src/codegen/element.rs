@@ -3,6 +3,7 @@
 use vize_atelier_core::ast::{ElementNode, ElementType, RuntimeHelper};
 
 use super::{helpers::escape_html_attr, SsrCodegenContext};
+use vize_carton::cstr;
 
 impl<'a> SsrCodegenContext<'a> {
     /// Process an element node
@@ -142,24 +143,22 @@ impl<'a> SsrCodegenContext<'a> {
         match arg_name.as_deref() {
             Some("class") => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderClass);
-                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderClass({exp})"));
+                self.push_string_part_dynamic(&cstr!("_ssrRenderClass({exp})"));
             }
             Some("style") => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderStyle);
                 self.push_string_part_static(" style=\"");
-                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderStyle({exp})"));
+                self.push_string_part_dynamic(&cstr!("_ssrRenderStyle({exp})"));
                 self.push_string_part_static("\"");
             }
             Some(name) => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
-                self.push_string_part_dynamic(&vize_carton::new_string!(
-                    "_ssrRenderAttr(\"{name}\", {exp})"
-                ));
+                self.push_string_part_dynamic(&cstr!("_ssrRenderAttr(\"{name}\", {exp})"));
             }
             None => {
                 // v-bind without argument - spread attributes
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttrs);
-                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttrs({exp})"));
+                self.push_string_part_dynamic(&cstr!("_ssrRenderAttrs({exp})"));
             }
         }
     }
@@ -187,7 +186,7 @@ impl<'a> SsrCodegenContext<'a> {
                     Some("checkbox") => {
                         self.use_ssr_helper(RuntimeHelper::SsrIncludeBooleanAttr);
                         self.use_ssr_helper(RuntimeHelper::SsrLooseContain);
-                        self.push_string_part_dynamic(&vize_carton::new_string!(
+                        self.push_string_part_dynamic(&cstr!(
                             "(_ssrIncludeBooleanAttr(Array.isArray({exp}) ? _ssrLooseContain({exp}, null) : {exp})) ? \" checked\" : \"\""
                         ));
                     }
@@ -196,16 +195,14 @@ impl<'a> SsrCodegenContext<'a> {
                         self.use_ssr_helper(RuntimeHelper::SsrLooseEqual);
                         let value = self.get_element_attr_value(el, "value");
                         let value_exp = value.as_deref().unwrap_or("null");
-                        self.push_string_part_dynamic(&vize_carton::new_string!(
+                        self.push_string_part_dynamic(&cstr!(
                             "(_ssrIncludeBooleanAttr(_ssrLooseEqual({exp}, {value_exp}))) ? \" checked\" : \"\""
                         ));
                     }
                     _ => {
                         // text input
                         self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
-                        self.push_string_part_dynamic(&vize_carton::new_string!(
-                            "_ssrRenderAttr(\"value\", {exp})"
-                        ));
+                        self.push_string_part_dynamic(&cstr!("_ssrRenderAttr(\"value\", {exp})"));
                     }
                 }
             }
@@ -235,7 +232,7 @@ impl<'a> SsrCodegenContext<'a> {
         };
 
         // v-show="expr" => style="display: none" if !expr
-        self.push_string_part_dynamic(&vize_carton::new_string!(
+        self.push_string_part_dynamic(&cstr!(
             "(({exp}) ? \"\" : \" style=\\\"display: none;\\\"\")"
         ));
     }
@@ -248,7 +245,7 @@ impl<'a> SsrCodegenContext<'a> {
     ) {
         self.use_ssr_helper(RuntimeHelper::SsrGetDirectiveProps);
         // Custom directives use ssrGetDirectiveProps to merge props
-        self.push_string_part_dynamic(&vize_carton::new_string!(
+        self.push_string_part_dynamic(&cstr!(
             "_ssrRenderAttrs(_ssrGetDirectiveProps(_ctx, _directives, \"{}\"))",
             dir.name
         ));

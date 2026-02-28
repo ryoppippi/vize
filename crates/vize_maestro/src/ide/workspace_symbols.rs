@@ -8,6 +8,7 @@
 use tower_lsp::lsp_types::{Location, Position, Range, SymbolInformation, SymbolKind, Url};
 
 use crate::server::ServerState;
+use vize_carton::cstr;
 
 /// Workspace symbols service.
 pub struct WorkspaceSymbolsService;
@@ -134,7 +135,7 @@ impl WorkspaceSymbolsService {
                 &style.content,
                 style.loc.start_line as u32,
                 query,
-                Some(&vize_carton::new_string!("style[{idx}]")),
+                Some(&cstr!("style[{idx}]")),
                 symbols,
             );
         }

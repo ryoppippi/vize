@@ -2,26 +2,28 @@
 //!
 //! Transforms element nodes into template strings and operations.
 
+use vize_carton::append;
+use vize_carton::cstr;
 use vize_carton::String;
 
 use vize_atelier_core::{ElementNode, ElementType, PropNode, TemplateChildNode};
 
 /// Generate static template string for an element
 pub fn generate_element_template(el: &ElementNode<'_>) -> String {
-    let mut template = vize_carton::new_string!("<{}", el.tag);
+    let mut template = cstr!("<{}", el.tag);
 
     // Add static attributes
     for prop in el.props.iter() {
         if let PropNode::Attribute(attr) = prop {
             if let Some(ref value) = attr.value {
-                vize_carton::push_fmt!(
+                append!(
                     template,
                     " {}=\"{}\"",
                     attr.name,
                     escape_attr(&value.content)
                 );
             } else {
-                vize_carton::push_fmt!(template, " {}", attr.name);
+                append!(template, " {}", attr.name);
             }
         }
     }
@@ -45,7 +47,7 @@ pub fn generate_element_template(el: &ElementNode<'_>) -> String {
             }
         }
 
-        vize_carton::push_fmt!(template, "</{}>", el.tag);
+        append!(template, "</{}>", el.tag);
     }
 
     template

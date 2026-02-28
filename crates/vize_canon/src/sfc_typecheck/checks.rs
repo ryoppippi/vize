@@ -1,6 +1,7 @@
 //! Type checking functions for Vue SFC diagnostics.
 
 use super::{SfcTypeCheckResult, SfcTypeDiagnostic, SfcTypeSeverity};
+use vize_carton::cstr;
 use vize_croquis::reactivity::ReactivityLossKind;
 use vize_croquis::setup_context::ViolationSeverity;
 
@@ -69,11 +70,7 @@ pub fn check_props_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: vize_carton::new_string!(
-                    "Prop '{}' should have a type definition",
-                    prop.name
-                )
-                .to_string(),
+                message: cstr!("Prop '{}' should have a type definition", prop.name).to_string(),
                 start,
                 end,
                 code: Some("untyped-prop".to_string()),
@@ -152,11 +149,7 @@ pub fn check_emits_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: vize_carton::new_string!(
-                    "Emit '{}' should have a type definition",
-                    emit.name
-                )
-                .to_string(),
+                message: cstr!("Emit '{}' should have a type definition", emit.name).to_string(),
                 start,
                 end,
                 code: Some("untyped-emit".to_string()),
@@ -179,7 +172,7 @@ pub fn check_template_bindings(
     for undef_ref in &summary.undefined_refs {
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: vize_carton::new_string!(
+            message: cstr!(
                 "Undefined reference '{}' in {}",
                 undef_ref.name,
                 undef_ref.context
@@ -189,7 +182,7 @@ pub fn check_template_bindings(
             end: undef_ref.offset + template_offset + undef_ref.name.len() as u32,
             code: Some("undefined-binding".to_string()),
             help: Some(
-                vize_carton::new_string!(
+                cstr!(
                     "Make sure '{}' is defined in script setup or imported",
                     undef_ref.name
                 )
@@ -216,35 +209,23 @@ pub fn check_reactivity(
     for loss in summary.reactivity.losses() {
         let message = match &loss.kind {
             ReactivityLossKind::ReactiveDestructure { source_name, .. } => {
-                vize_carton::new_string!(
-                    "Destructuring reactive object '{}' loses reactivity",
-                    source_name
-                )
-                .to_string()
+                cstr!("Destructuring reactive object '{source_name}' loses reactivity").to_string()
             }
             ReactivityLossKind::RefValueDestructure { source_name, .. } => {
-                vize_carton::new_string!("Destructuring ref '{}' loses reactivity", source_name)
-                    .to_string()
+                cstr!("Destructuring ref '{source_name}' loses reactivity").to_string()
             }
             ReactivityLossKind::RefValueExtract {
                 source_name,
                 target_name,
-            } => vize_carton::new_string!(
-                "Extracting '{}' from '{}.value' loses reactivity",
-                target_name,
-                source_name
-            )
-            .to_string(),
-            ReactivityLossKind::ReactiveSpread { source_name } => vize_carton::new_string!(
-                "Spreading reactive object '{}' loses reactivity",
-                source_name
-            )
-            .to_string(),
-            ReactivityLossKind::ReactiveReassign { source_name } => vize_carton::new_string!(
-                "Reassigning reactive variable '{}' disconnects reactivity",
-                source_name
-            )
-            .to_string(),
+            } => cstr!("Extracting '{target_name}' from '{source_name}.value' loses reactivity")
+                .to_string(),
+            ReactivityLossKind::ReactiveSpread { source_name } => {
+                cstr!("Spreading reactive object '{source_name}' loses reactivity").to_string()
+            }
+            ReactivityLossKind::ReactiveReassign { source_name } => {
+                cstr!("Reassigning reactive variable '{source_name}' disconnects reactivity")
+                    .to_string()
+            }
         };
 
         result.add_diagnostic(SfcTypeDiagnostic {
@@ -293,7 +274,7 @@ pub fn check_invalid_exports(
     for export in &summary.invalid_exports {
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: vize_carton::new_string!("Cannot export '{}' from <script setup>", export.name).to_string(),
+            message: cstr!("Cannot export '{}' from <script setup>", export.name).to_string(),
             start: export.start + script_offset,
             end: export.end + script_offset,
             code: Some("invalid-export".to_string()),

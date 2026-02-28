@@ -13,6 +13,7 @@ pub use strategy::generate_variants;
 pub use types::{AutogenConfig, AutogenOutput, GeneratedVariant, PropDefinition};
 
 use std::path::Path;
+use vize_carton::append;
 
 /// Generate an `.art.vue` file from prop definitions.
 pub fn generate_art_file(
@@ -50,7 +51,7 @@ fn render_art_file(
     let mut output = String::new();
 
     // <art> block
-    vize_carton::push_fmt!(
+    append!(
         output,
         "<art title=\"{component_name}\" component=\"{component_path}\">\n"
     );
@@ -63,14 +64,14 @@ fn render_art_file(
             format!("name=\"{}\"", variant.name)
         };
 
-        vize_carton::push_fmt!(output, "  <variant {attrs}>\n");
+        append!(output, "  <variant {attrs}>\n");
 
         // Build component tag with props
         let props_str = render_props(&variant.props);
         if props_str.is_empty() {
-            vize_carton::push_fmt!(output, "    <{component_name} />\n");
+            append!(output, "    <{component_name} />\n");
         } else {
-            vize_carton::push_fmt!(output, "    <{component_name}\n");
+            append!(output, "    <{component_name}\n");
             output.push_str(&props_str);
             output.push_str("    />\n");
         }
@@ -82,7 +83,7 @@ fn render_art_file(
 
     // Script setup
     output.push_str("<script setup lang=\"ts\">\n");
-    vize_carton::push_fmt!(output, "import {component_name} from '{component_path}'\n");
+    append!(output, "import {component_name} from '{component_path}'\n");
     output.push_str("</script>\n");
 
     output

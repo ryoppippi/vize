@@ -3,7 +3,7 @@
 //! Handles v-model on form elements: input, textarea, select.
 
 use vize_atelier_core::{DirectiveNode, ElementNode, RuntimeHelper};
-use vize_carton::String;
+use vize_carton::{cstr, String};
 
 /// v-model modifier flags
 #[derive(Debug, Default, Clone)]
@@ -105,19 +105,14 @@ pub fn generate_model_props(
             props.push((String::from("value"), model_value.clone()));
 
             // Build event handler expression
-            let mut handler =
-                vize_carton::new_string!("$event => (({model_value}) = $event.target.value)");
+            let mut handler = cstr!("$event => (({model_value}) = $event.target.value)");
 
             // Apply modifiers
             if modifiers.trim {
-                handler = vize_carton::new_string!(
-                    "$event => (({model_value}) = $event.target.value.trim())"
-                );
+                handler = cstr!("$event => (({model_value}) = $event.target.value.trim())");
             }
             if modifiers.number {
-                handler = vize_carton::new_string!(
-                    "$event => (({model_value}) = Number($event.target.value))"
-                );
+                handler = cstr!("$event => (({model_value}) = Number($event.target.value))");
             }
 
             // Add event handler
@@ -193,7 +188,7 @@ mod tests {
         use vize_atelier_core::{
             ElementNode, ExpressionNode, SimpleExpressionNode, SourceLocation,
         };
-        use vize_carton::{Box, Bump};
+        use vize_carton::{cstr, Box, Bump};
 
         let allocator = Bump::new();
         let element = ElementNode::new(&allocator, "input", SourceLocation::STUB);

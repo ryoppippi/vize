@@ -2,17 +2,18 @@
 
 use super::block::GenerateContext;
 use crate::ir::SetTextIRNode;
+use vize_carton::cstr;
 
 /// Generate SetText code
 pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
-    let element = vize_carton::new_string!("_n{}", set_text.element);
+    let element = cstr!("_n{}", set_text.element);
 
     let values: Vec<String> = set_text
         .values
         .iter()
         .map(|v| {
             if v.is_static {
-                vize_carton::new_string!("\"{}\"", escape_text(&v.content)).into()
+                cstr!("\"{}\"", escape_text(&v.content)).into()
             } else {
                 v.content.to_string()
             }
@@ -31,24 +32,24 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
 /// Generate text content assignment
 pub fn generate_text_content(element_var: &str, content: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{element_var}.textContent = \"{}\"", escape_text(content)).into()
+        cstr!("{element_var}.textContent = \"{}\"", escape_text(content)).into()
     } else {
-        vize_carton::new_string!("{element_var}.textContent = {content}").into()
+        cstr!("{element_var}.textContent = {content}").into()
     }
 }
 
 /// Generate createTextNode
 pub fn generate_create_text_node(content: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("document.createTextNode(\"{}\")", escape_text(content)).into()
+        cstr!("document.createTextNode(\"{}\")", escape_text(content)).into()
     } else {
-        vize_carton::new_string!("document.createTextNode({content})").into()
+        cstr!("document.createTextNode({content})").into()
     }
 }
 
 /// Generate toDisplayString call
 pub fn generate_to_display_string(expr: &str) -> String {
-    vize_carton::new_string!("_toDisplayString({expr})").into()
+    cstr!("_toDisplayString({expr})").into()
 }
 
 /// Escape text for JavaScript string
@@ -69,7 +70,7 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
     if parts.len() == 1 {
         let (is_static, content) = parts[0];
         if is_static {
-            return vize_carton::new_string!("\"{}\"", escape_text(content)).into();
+            return cstr!("\"{}\"", escape_text(content)).into();
         } else {
             return generate_to_display_string(content);
         }
@@ -79,7 +80,7 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
         .iter()
         .map(|(is_static, content)| {
             if *is_static {
-                vize_carton::new_string!("\"{}\"", escape_text(content)).into()
+                cstr!("\"{}\"", escape_text(content)).into()
             } else {
                 generate_to_display_string(content)
             }

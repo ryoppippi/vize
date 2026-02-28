@@ -10,7 +10,7 @@ use crate::cross_file::diagnostics::{
 };
 use crate::cross_file::graph::{DependencyEdge, DependencyGraph};
 use crate::cross_file::registry::{FileId, ModuleRegistry};
-use vize_carton::{CompactString, FxHashMap, FxHashSet};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet};
 
 /// Information about emit flow between components.
 #[derive(Debug, Clone)]
@@ -107,7 +107,7 @@ pub fn analyze_emits(
                             DiagnosticSeverity::Warning,
                             *child_id,
                             0,
-                            vize_carton::new_string!(
+                            cstr!(
                                 "Event '{}' is declared in defineEmits but never emitted",
                                 emit
                             ),
@@ -130,11 +130,9 @@ pub fn analyze_emits(
                             DiagnosticSeverity::Error,
                             *child_id,
                             child_info.emit_offsets.get(emit).copied().unwrap_or(0),
-                            vize_carton::new_string!(
-                                "Event '{emit}' is emitted but not declared in defineEmits",
-                            ),
+                            cstr!("Event '{emit}' is emitted but not declared in defineEmits",),
                         )
-                        .with_suggestion(vize_carton::new_string!("Add '{emit}' to defineEmits")),
+                        .with_suggestion(cstr!("Add '{emit}' to defineEmits")),
                     );
                 }
             }
@@ -155,14 +153,14 @@ pub fn analyze_emits(
                                     DiagnosticSeverity::Warning,
                                     node.file_id,
                                     *offset,
-                                    vize_carton::new_string!(
+                                    cstr!(
                                         "Listening for '{event}' but child component doesn't emit it",
                                     ),
                                 )
                                 .with_related(
                                     *child_id,
                                     0,
-                                    vize_carton::new_string!("'{child_name}' component"),
+                                    cstr!("'{child_name}' component"),
                                 ),
                             );
                         }

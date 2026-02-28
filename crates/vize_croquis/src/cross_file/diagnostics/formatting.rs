@@ -4,6 +4,7 @@
 //! that renders a human-readable Markdown representation of each diagnostic.
 
 use super::{CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity};
+use vize_carton::append;
 
 impl CrossFileDiagnostic {
     /// Generate rich markdown diagnostic message.
@@ -18,15 +19,15 @@ impl CrossFileDiagnostic {
             DiagnosticSeverity::Hint => "💡 **HINT**",
         };
 
-        vize_carton::push_fmt!(out, "{severity_badge} `{}`\n\n", self.code());
-        vize_carton::push_fmt!(out, "### {}\n\n", self.message);
+        append!(out, "{severity_badge} `{}`\n\n", self.code());
+        append!(out, "### {}\n\n", self.message);
 
         // Detailed explanation based on kind
         self.format_kind_details(&mut out);
 
         // Suggestion
         if let Some(suggestion) = &self.suggestion {
-            vize_carton::push_fmt!(out, "\n**💡 Suggestion**: {suggestion}\n");
+            append!(out, "\n**💡 Suggestion**: {suggestion}\n");
         }
 
         out
@@ -39,7 +40,7 @@ impl CrossFileDiagnostic {
                 api_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
                     "**Problem**: `{api_name}()` is called outside the setup context ({context_description}).\n\n",
                 );
@@ -50,7 +51,7 @@ impl CrossFileDiagnostic {
                 out.push_str("**Correct usage**:\n\n");
                 out.push_str("```vue\n");
                 out.push_str("<script setup>\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
                     "const state = {api_name}(...) // ✅ Called in setup\n",
                 );
@@ -61,7 +62,7 @@ impl CrossFileDiagnostic {
                 hook_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
                     "**Problem**: `{hook_name}` is called outside the setup context ({context_description}).\n\n",
                 );
@@ -76,7 +77,7 @@ impl CrossFileDiagnostic {
                 api_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
                     "**Problem**: `{}()` is called outside the setup context ({}).\n\n",
                     api_name,
@@ -90,7 +91,7 @@ impl CrossFileDiagnostic {
                 out.push_str("- Each component mount creates new watchers without cleanup → memory leak.\n\n");
                 out.push_str("**If you need a global watcher**, store the stop handle:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, "const stop = {}(...)\n", api_name);
+                append!(*out, "const stop = {api_name}(...)\n");
                 out.push_str("// Later: stop()\n");
                 out.push_str("```\n");
             }
@@ -98,31 +99,26 @@ impl CrossFileDiagnostic {
                 source_name,
                 source_type,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: Spreading `{}` (a `{}`) creates a **non-reactive shallow copy**.\n\n",
-                    source_name,
-                    source_type
+                    "**Problem**: Spreading `{source_name}` (a `{source_type}`) creates a **non-reactive shallow copy**.\n\n",
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "const copy = {{ ...{} }} // ❌ copy is NOT reactive\n",
-                    source_name
+                    "const copy = {{ ...{source_name} }} // ❌ copy is NOT reactive\n",
                 );
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "{}.foo = 'bar' // copy.foo is still the old value\n",
-                    source_name
+                    "{source_name}.foo = 'bar' // copy.foo is still the old value\n",
                 );
                 out.push_str("```\n\n");
                 out.push_str("**Fix**: Keep the reference, or use `toRefs()`:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "const {{ foo, bar }} = toRefs({}) // ✅ foo, bar are refs\n",
-                    source_name
+                    "const {{ foo, bar }} = toRefs({source_name}) // ✅ foo, bar are refs\n",
                 );
                 out.push_str("```\n");
             }
@@ -130,28 +126,24 @@ impl CrossFileDiagnostic {
                 variable_name,
                 original_type,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: Reassigning `{}` loses the original `{}` reference.\n\n",
-                    variable_name,
-                    original_type
+                    "**Problem**: Reassigning `{variable_name}` loses the original `{original_type}` reference.\n\n",
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, "let {} = ref(0)\n", variable_name);
-                vize_carton::push_fmt!(
+                append!(*out, "let {variable_name} = ref(0)\n");
+                append!(
                     *out,
-                    "{} = ref(1) // ❌ Template still watches the OLD ref\n",
-                    variable_name
+                    "{variable_name} = ref(1) // ❌ Template still watches the OLD ref\n",
                 );
                 out.push_str("```\n\n");
                 out.push_str("**Fix**: Mutate the `.value` instead:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, "const {} = ref(0)\n", variable_name);
-                vize_carton::push_fmt!(
+                append!(*out, "const {variable_name} = ref(0)\n");
+                append!(
                     *out,
-                    "{}.value = 1 // ✅ Same ref, new value\n",
-                    variable_name
+                    "{variable_name}.value = 1 // ✅ Same ref, new value\n",
                 );
                 out.push_str("```\n");
             }
@@ -160,10 +152,9 @@ impl CrossFileDiagnostic {
                 destructured_keys,
                 suggestion,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: Destructuring `{}` extracts plain values, losing reactivity.\n\n",
-                    source_name
+                    "**Problem**: Destructuring `{source_name}` extracts plain values, losing reactivity.\n\n",
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");
@@ -172,23 +163,16 @@ impl CrossFileDiagnostic {
                     .map(|k| k.as_str())
                     .collect::<Vec<_>>()
                     .join(", ");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "const {{ {} }} = {} // ❌ {} are plain values\n",
-                    keys,
-                    source_name,
-                    keys
+                    "const {{ {keys} }} = {source_name} // ❌ {keys} are plain values\n",
                 );
                 out.push_str("```\n\n");
-                vize_carton::push_fmt!(*out, "**Fix**: Use `{}()`:\n\n", suggestion);
+                append!(*out, "**Fix**: Use `{suggestion}()`:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "const {{ {} }} = {}({}) // ✅ {} are refs\n",
-                    keys,
-                    suggestion,
-                    source_name,
-                    keys
+                    "const {{ {keys} }} = {suggestion}({source_name}) // ✅ {keys} are refs\n",
                 );
                 out.push_str("```\n");
             }
@@ -197,35 +181,30 @@ impl CrossFileDiagnostic {
                 escaped_via,
                 target_name,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: Reactive reference `{}` escapes its scope via {}.\n\n",
-                    variable_name,
-                    escaped_via
+                    "**Problem**: Reactive reference `{variable_name}` escapes its scope via {escaped_via}.\n\n",
                 );
                 if let Some(target) = target_name {
-                    vize_carton::push_fmt!(*out, "**Escaped to**: `{}`\n\n", target);
+                    append!(*out, "**Escaped to**: `{target}`\n\n");
                 }
                 out.push_str("**Why this is implicit** (like Rust's move semantics):\n\n");
                 out.push_str("```\n");
                 out.push_str("┌─ setup() ─────────────────────────────┐\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "│  const {} = reactive({{...}})          │\n",
-                    variable_name
+                    "│  const {variable_name} = reactive({{...}})          │\n",
                 );
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "│  someFunction({})  ←── reference escapes │\n",
-                    variable_name
+                    "│  someFunction({variable_name})  ←── reference escapes │\n",
                 );
                 out.push_str("│          │                              │\n");
                 out.push_str("│          ▼                              │\n");
                 out.push_str("│  ┌─ someFunction() ─────────────────┐  │\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "│  │  // {} is now accessible here    │  │\n",
-                    variable_name
+                    "│  │  // {variable_name} is now accessible here    │  │\n",
                 );
                 out.push_str("│  │  // mutations affect original     │  │\n");
                 out.push_str("│  └────────────────────────────────────┘  │\n");
@@ -242,15 +221,13 @@ impl CrossFileDiagnostic {
                 out.push_str("**Explicit alternatives**:\n\n");
                 out.push_str("```ts\n");
                 out.push_str("// Option 1: Pass a readonly version\n");
-                vize_carton::push_fmt!(*out, "someFunction(readonly({}))\n\n", variable_name);
+                append!(*out, "someFunction(readonly({variable_name}))\n\n");
                 out.push_str("// Option 2: Pass a snapshot (non-reactive copy)\n");
-                vize_carton::push_fmt!(*out, "someFunction({{ ...{} }})\n\n", variable_name);
+                append!(*out, "someFunction({{ ...{variable_name} }})\n\n");
                 out.push_str("// Option 3: Pass specific values explicitly\n");
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "someFunction({}.id, {}.name)\n",
-                    variable_name,
-                    variable_name
+                    "someFunction({variable_name}.id, {variable_name}.name)\n",
                 );
                 out.push_str("```\n");
             }
@@ -259,25 +236,22 @@ impl CrossFileDiagnostic {
                 mutation_site,
                 escape_site,
             } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: `{}` is mutated after escaping its scope.\n\n",
-                    variable_name
+                    "**Problem**: `{variable_name}` is mutated after escaping its scope.\n\n",
                 );
-                vize_carton::push_fmt!(*out, "- Escaped at offset: {}\n", escape_site);
-                vize_carton::push_fmt!(*out, "- Mutated at offset: {}\n\n", mutation_site);
+                append!(*out, "- Escaped at offset: {escape_site}\n");
+                append!(*out, "- Mutated at offset: {mutation_site}\n\n");
                 out.push_str("**Timeline**:\n\n");
                 out.push_str("```\n");
-                vize_carton::push_fmt!(*out, "1. {} created in setup()\n", variable_name);
-                vize_carton::push_fmt!(
+                append!(*out, "1. {variable_name} created in setup()\n");
+                append!(
                     *out,
-                    "2. {} passed to external function (escape)\n",
-                    variable_name
+                    "2. {variable_name} passed to external function (escape)\n",
                 );
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "3. {} mutated ← mutations may affect escaped reference!\n",
-                    variable_name
+                    "3. {variable_name} mutated ← mutations may affect escaped reference!\n",
                 );
                 out.push_str("```\n\n");
                 out.push_str("**This is similar to Rust's borrow checker**:\n\n");
@@ -291,11 +265,11 @@ impl CrossFileDiagnostic {
                 out.push_str("```\n");
                 for (i, node) in cycle.iter().enumerate() {
                     if i == 0 {
-                        vize_carton::push_fmt!(*out, "┌─→ {}\n", node);
+                        append!(*out, "┌─→ {node}\n");
                     } else if i == cycle.len() - 1 {
-                        vize_carton::push_fmt!(*out, "│   ↓\n└── {} ───┘\n", node);
+                        append!(*out, "│   ↓\n└── {node} ───┘\n");
                     } else {
-                        vize_carton::push_fmt!(*out, "│   ↓\n│   {}\n", node);
+                        append!(*out, "│   ↓\n│   {node}\n");
                     }
                 }
                 out.push_str("```\n\n");
@@ -319,11 +293,9 @@ impl CrossFileDiagnostic {
             }
             CrossFileDiagnosticKind::ProvideInjectWithoutSymbol { key, is_provide } => {
                 let action = if *is_provide { "provide" } else { "inject" };
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: `{}('{}')` uses a string key instead of Symbol/InjectionKey.\n\n",
-                    action,
-                    key
+                    "**Problem**: `{action}('{key}')` uses a string key instead of Symbol/InjectionKey.\n\n",
                 );
                 out.push_str("**Why string keys are problematic**:\n\n");
                 out.push_str("```\n");
@@ -339,9 +311,9 @@ impl CrossFileDiagnostic {
                 out.push_str("**Name collision example**:\n\n");
                 out.push_str("```ts\n");
                 out.push_str("// ComponentA.vue\n");
-                vize_carton::push_fmt!(*out, "provide('{}', myData)\n\n", key);
+                append!(*out, "provide('{key}', myData)\n\n");
                 out.push_str("// LibraryX (unknown to you)\n");
-                vize_carton::push_fmt!(*out, "provide('{}', otherData)  // 💥 Collision!\n", key);
+                append!(*out, "provide('{key}', otherData)  // 💥 Collision!\n");
                 out.push_str("```\n\n");
                 out.push_str("**Type-safe pattern with InjectionKey**:\n\n");
                 out.push_str("```ts\n");
@@ -372,8 +344,8 @@ impl CrossFileDiagnostic {
                 out.push_str("**Problem**: This `watch` callback only mutates a reactive value based on its source.\n\n");
                 out.push_str("**Current code** (imperative, harder to trace):\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, "watch({}, (newVal) => {{\n", watch_source);
-                vize_carton::push_fmt!(*out, "  {}.value = transform(newVal)\n", mutated_target);
+                append!(*out, "watch({watch_source}, (newVal) => {{\n");
+                append!(*out, "  {mutated_target}.value = transform(newVal)\n");
                 out.push_str("})\n");
                 out.push_str("```\n\n");
                 out.push_str("**Why `computed` is better**:\n\n");
@@ -389,16 +361,14 @@ impl CrossFileDiagnostic {
                 out.push_str("```\n\n");
                 out.push_str("**Refactored code** (declarative, easier to reason about):\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, "{}\n", suggested_computed);
+                append!(*out, "{suggested_computed}\n");
                 out.push_str("```\n\n");
                 out.push_str("**Note**: Use `watch` only when you need **side effects** (API calls, logging, etc.).\n");
             }
             CrossFileDiagnosticKind::DomAccessWithoutNextTick { api, context } => {
-                vize_carton::push_fmt!(
+                append!(
                     *out,
-                    "**Problem**: `{}` is accessed in `{}` without `nextTick()`.\n\n",
-                    api,
-                    context
+                    "**Problem**: `{api}` is accessed in `{context}` without `nextTick()`.\n\n",
                 );
                 out.push_str("**Why this is dangerous**:\n\n");
                 out.push_str("```\n");
@@ -419,15 +389,15 @@ impl CrossFileDiagnostic {
                 out.push_str("```ts\n");
                 out.push_str("// Option 1: Use inside onMounted\n");
                 out.push_str("onMounted(() => {\n");
-                vize_carton::push_fmt!(*out, "  {}  // ✅ Safe - DOM exists\n", api);
+                append!(*out, "  {api}  // ✅ Safe - DOM exists\n");
                 out.push_str("})\n\n");
                 out.push_str("// Option 2: Use nextTick after state change\n");
                 out.push_str("await nextTick()\n");
-                vize_carton::push_fmt!(*out, "{}  // ✅ Safe - DOM updated\n", api);
+                append!(*out, "{api}  // ✅ Safe - DOM updated\n");
                 out.push('\n');
                 out.push_str("// Option 3: Guard for SSR\n");
                 out.push_str("if (typeof document !== 'undefined') {\n");
-                vize_carton::push_fmt!(*out, "  {}  // ✅ Safe - browser only\n", api);
+                append!(*out, "  {api}  // ✅ Safe - browser only\n");
                 out.push_str("}\n");
                 out.push_str("```\n");
             }

@@ -2,12 +2,13 @@
 
 use super::block::GenerateContext;
 use crate::ir::SlotOutletIRNode;
+use vize_carton::cstr;
 
 /// Generate SlotOutlet code
 pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'_>) {
     let temp = ctx.next_temp();
     let slot_name = if slot.name.is_static {
-        vize_carton::new_string!("\"{}\"", slot.name.content)
+        cstr!("\"{}\"", slot.name.content)
     } else {
         vize_carton::CompactString::from(slot.name.content.as_str())
     };
@@ -23,17 +24,17 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
                 let key = &p.key.content;
                 let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        vize_carton::new_string!("\"{}\"", first.content).into()
+                        cstr!("\"{}\"", first.content).into()
                     } else {
                         first.content.to_string()
                     }
                 } else {
                     String::from("undefined")
                 };
-                vize_carton::new_string!("{key}: {value}").into()
+                cstr!("{key}: {value}").into()
             })
             .collect();
-        Some(vize_carton::new_string!("{{ {} }}", prop_strs.join(", ")))
+        Some(cstr!("{{ {} }}", prop_strs.join(", ")))
     };
 
     // Generate fallback if present
@@ -72,9 +73,9 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
 /// Generate slot function for component
 pub fn generate_slot_function(name: &str, params: Option<&str>, body: &str) -> String {
     if let Some(p) = params {
-        vize_carton::new_string!("{name}: ({p}) => {body}").into()
+        cstr!("{name}: ({p}) => {body}").into()
     } else {
-        vize_carton::new_string!("{name}: () => {body}").into()
+        cstr!("{name}: () => {body}").into()
     }
 }
 
@@ -85,17 +86,17 @@ pub fn generate_scoped_slots(slots: &[(String, Option<String>, String)]) -> Stri
         .map(|(name, params, body)| generate_slot_function(name, params.as_deref(), body))
         .collect();
 
-    vize_carton::new_string!("{{ {} }}", slot_strs.join(", ")).into()
+    cstr!("{{ {} }}", slot_strs.join(", ")).into()
 }
 
 /// Generate slot props normalization
 pub fn generate_normalize_slots(slots_expr: &str) -> String {
-    vize_carton::new_string!("_normalizeSlots({slots_expr})").into()
+    cstr!("_normalizeSlots({slots_expr})").into()
 }
 
 /// Generate dynamic slot name
 pub fn generate_dynamic_slot_name(expr: &str) -> String {
-    vize_carton::new_string!("[{expr}]").into()
+    cstr!("[{expr}]").into()
 }
 
 /// Check if slot is dynamic

@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use dashmap::DashMap;
 use serde::Deserialize;
-use vize_carton::{profiler::CacheStats, CompactString, FxHashMap};
+use vize_carton::{cstr, profiler::CacheStats, CompactString, FxHashMap};
 
 /// Resolved module information
 #[derive(Debug, Clone)]
@@ -393,7 +393,7 @@ impl ImportResolver {
                 if let (Some(name), Some(body)) = (cap.get(1), cap.get(2)) {
                     definitions.insert(
                         CompactString::new(name.as_str()),
-                        vize_carton::new_string!("{{ {} }}", body.as_str().trim()),
+                        cstr!("{{ {} }}", body.as_str().trim()),
                     );
                 }
             }

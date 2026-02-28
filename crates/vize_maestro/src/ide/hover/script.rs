@@ -15,6 +15,7 @@ use vize_canon::TsgoBridge;
 
 use super::HoverService;
 use crate::ide::IdeContext;
+use vize_carton::cstr;
 
 impl HoverService {
     /// Get hover for script context.
@@ -85,12 +86,11 @@ impl HoverService {
                         let (line, character) =
                             crate::ide::offset_to_position(&script.content, vts_offset);
                         let suffix = if is_setup { "setup.ts" } else { "script.ts" };
-                        let uri =
-                            vize_carton::new_string!("vize-virtual://{}.{suffix}", ctx.uri.path());
+                        let uri = cstr!("vize-virtual://{}.{suffix}", ctx.uri.path());
 
                         // Open/update virtual document
                         if bridge.is_initialized() {
-                            let doc_path = vize_carton::new_string!("{}.{suffix}", ctx.uri.path());
+                            let doc_path = cstr!("{}.{suffix}", ctx.uri.path());
                             let _ = bridge
                                 .open_or_update_virtual_document(&doc_path, &script.content)
                                 .await;

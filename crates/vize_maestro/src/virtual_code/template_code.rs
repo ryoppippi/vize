@@ -7,6 +7,7 @@ use vize_armature::RootNode;
 use vize_relief::ast::*;
 
 use super::{MappingData, SourceMap, SourceMapping, SourceRange, VirtualDocument, VirtualLanguage};
+use vize_carton::cstr;
 
 /// Template code generator.
 pub struct TemplateCodeGenerator {
@@ -161,11 +162,10 @@ impl TemplateCodeGenerator {
             ExpressionNode::Compound(_compound) => {
                 // For compound expressions, we just track the overall location
                 // but don't emit individual parts for simplicity
-                let var_name = vize_carton::new_string!("__VIZE_{}", self.expr_counter);
+                let var_name = cstr!("__VIZE_{}", self.expr_counter);
                 self.expr_counter += 1;
 
-                let line =
-                    vize_carton::new_string!("const {var_name} = void 0; // compound expression\n");
+                let line = cstr!("const {var_name} = void 0; // compound expression\n");
                 self.write(&line);
             }
         }
@@ -177,15 +177,14 @@ impl TemplateCodeGenerator {
             return;
         }
 
-        let var_name = vize_carton::new_string!("__VIZE_{}", self.expr_counter);
+        let var_name = cstr!("__VIZE_{}", self.expr_counter);
         self.expr_counter += 1;
 
         // Generate TypeScript: const __VIZE_N = __VIZE_ctx.expr;
-        let line = vize_carton::new_string!("const {var_name} = __VIZE_ctx.{};\n", expr.content);
+        let line = cstr!("const {var_name} = __VIZE_ctx.{};\n", expr.content);
 
         // Calculate positions
-        let expr_start_in_line =
-            vize_carton::new_string!("const {var_name} = __VIZE_ctx.").len() as u32;
+        let expr_start_in_line = cstr!("const {var_name} = __VIZE_ctx.").len() as u32;
         let gen_start = self.gen_offset + expr_start_in_line;
         let gen_end = gen_start + expr.content.len() as u32;
 

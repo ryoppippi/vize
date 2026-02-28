@@ -11,7 +11,7 @@ use crate::cross_file::diagnostics::{
     CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity,
 };
 use crate::cross_file::registry::{FileId, ModuleRegistry};
-use vize_carton::{CompactString, FxHashMap};
+use vize_carton::{cstr, CompactString, FxHashMap};
 
 /// Information about a unique ID issue.
 #[derive(Debug, Clone)]
@@ -100,7 +100,7 @@ pub fn analyze_element_ids(
                     DiagnosticSeverity::Warning,
                     locations[0].0,
                     locations[0].1,
-                    vize_carton::new_string!(
+                    cstr!(
                         "Element ID '{}' is used in {} different locations across files",
                         id,
                         locations.len()
@@ -129,9 +129,7 @@ pub fn analyze_element_ids(
                         DiagnosticSeverity::Error,
                         *file_id,
                         *offset,
-                        vize_carton::new_string!(
-                            "Static ID '{id}' inside v-for will create duplicate IDs",
-                        ),
+                        cstr!("Static ID '{id}' inside v-for will create duplicate IDs",),
                     )
                     .with_suggestion("Use a dynamic ID like `:id=\"`item-${index}`\"` or useId()"),
                 );
@@ -159,9 +157,7 @@ pub fn analyze_element_ids(
                     DiagnosticSeverity::Warning,
                     file_id,
                     offset,
-                    vize_carton::new_string!(
-                        "Dynamic ID '{id_expr}' may not produce unique values",
-                    ),
+                    cstr!("Dynamic ID '{id_expr}' may not produce unique values",),
                 )
                 .with_suggestion("Include a unique identifier like index or item.id"),
             );

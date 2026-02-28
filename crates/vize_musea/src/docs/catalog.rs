@@ -5,6 +5,7 @@
 use super::{CatalogOutput, DocOptions};
 use crate::types::{ArtDescriptor, ArtStatus};
 use serde::{Deserialize, Serialize};
+use vize_carton::append;
 use vize_carton::FxHashMap;
 
 /// Entry in a component catalog.
@@ -82,7 +83,7 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
     let categories = collect_categories(entries);
     let tags = collect_tags(entries);
 
-    vize_carton::push_fmt!(
+    append!(
         md,
         "> **{}** components across **{}** categories\n\n",
         entries.len(),
@@ -94,7 +95,7 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
         md.push_str("## Categories\n\n");
         for category in &categories {
             let anchor = slugify(category);
-            vize_carton::push_fmt!(md, "- [{}](#{})\n", category, anchor);
+            append!(md, "- [{category}](#{anchor})\n");
         }
         md.push('\n');
     }
@@ -103,7 +104,7 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
     let by_category = group_by_category(entries);
 
     for category in &categories {
-        vize_carton::push_fmt!(md, "## {}\n\n", category);
+        append!(md, "## {category}\n\n");
 
         if let Some(category_entries) = by_category.get(category.as_str()) {
             md.push_str(&generate_component_table(category_entries));
@@ -144,7 +145,7 @@ pub fn generate_category_index(
     md.push_str(category);
     md.push_str("\n\n");
 
-    vize_carton::push_fmt!(md, "> **{}** components\n\n", filtered.len());
+    append!(md, "> **{}** components\n\n", filtered.len());
 
     // Component table
     md.push_str(&generate_component_table(&filtered));
@@ -154,7 +155,7 @@ pub fn generate_category_index(
     if !tags.is_empty() && options.include_metadata {
         md.push_str("## Tags\n\n");
         for tag in &tags {
-            vize_carton::push_fmt!(md, "- `{}`\n", tag);
+            append!(md, "- `{tag}`\n");
         }
         md.push('\n');
     }
@@ -179,26 +180,26 @@ pub fn generate_tags_index(entries: &[CatalogEntry], _options: &DocOptions) -> C
     let mut tags: Vec<_> = by_tag.keys().collect();
     tags.sort();
 
-    vize_carton::push_fmt!(md, "> **{}** tags\n\n", tags.len());
+    append!(md, "> **{}** tags\n\n", tags.len());
 
     // Tag cloud / list
     md.push_str("## All Tags\n\n");
     for tag in &tags {
         let count = by_tag.get(*tag).map(|v| v.len()).unwrap_or(0);
         let anchor = slugify(tag);
-        vize_carton::push_fmt!(md, "- [`{}`](#{}) ({})\n", tag, anchor, count);
+        append!(md, "- [`{tag}`](#{anchor}) ({count})\n");
     }
     md.push('\n');
 
     // Components by tag
     for tag in &tags {
-        vize_carton::push_fmt!(md, "## {}\n\n", tag);
+        append!(md, "## {tag}\n\n");
 
         if let Some(tag_entries) = by_tag.get(*tag) {
             md.push_str("| Component | Category | Variants |\n");
             md.push_str("|-----------|----------|----------|\n");
             for entry in tag_entries {
-                vize_carton::push_fmt!(
+                append!(
                     md,
                     "| [{}]({}) | {} | {} |\n",
                     entry.title,
@@ -258,7 +259,7 @@ fn generate_component_table(entries: &[&CatalogEntry]) -> String {
             ArtStatus::Deprecated => "⚠️",
         };
 
-        vize_carton::push_fmt!(
+        append!(
             md,
             "| [{}]({}) | {} | {} | {} |\n",
             entry.title,

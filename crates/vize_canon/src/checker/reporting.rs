@@ -9,6 +9,7 @@ use crate::{
 };
 
 use super::runner::TypeChecker;
+use vize_carton::cstr;
 
 impl TypeChecker {
     /// Get type information at a specific offset.
@@ -67,7 +68,7 @@ impl TypeChecker {
         directive: &str,
         offset: usize,
     ) -> Option<(String, usize)> {
-        let pattern = vize_carton::new_string!("{}=\"", directive).to_string();
+        let pattern = cstr!("{directive}=\"").to_string();
         let mut pos = 0;
 
         while let Some(start) = template[pos..].find(&pattern) {

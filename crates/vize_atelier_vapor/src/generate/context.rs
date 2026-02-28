@@ -1,5 +1,6 @@
 //! Code generation context that tracks state during Vapor code emission.
 
+use vize_carton::cstr;
 use vize_carton::FxHashMap;
 
 /// Generate context
@@ -73,7 +74,7 @@ impl<'a> GenerateContext<'a> {
         }
     }
 
-    /// Push string to buffer (alias for `push`, compatible with `push_all!`/`push_fmt!` macros)
+    /// Push string to buffer (alias for `push`, compatible with `appends!`/`append!` macros)
     #[allow(dead_code)]
     pub(crate) fn push_str(&mut self, s: &str) {
         self.code.push_str(s);
@@ -88,7 +89,7 @@ impl<'a> GenerateContext<'a> {
     }
 
     pub(crate) fn next_temp(&mut self) -> String {
-        let name = vize_carton::new_string!("_t{}", self.temp_count);
+        let name = cstr!("_t{}", self.temp_count);
         self.temp_count += 1;
         name.into()
     }

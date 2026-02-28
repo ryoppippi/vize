@@ -6,6 +6,7 @@
 use tower_lsp::lsp_types::{Location, Position, Range};
 
 use super::{IdeContext, ReferencesService};
+use vize_carton::cstr;
 
 impl ReferencesService {
     /// Find the definition location of a symbol.
@@ -200,14 +201,14 @@ impl ReferencesService {
         let search_content = &content[content_start..];
 
         let patterns = [
-            vize_carton::new_string!("const {name} "),
-            vize_carton::new_string!("const {name}="),
-            vize_carton::new_string!("let {name} "),
-            vize_carton::new_string!("let {name}="),
-            vize_carton::new_string!("var {name} "),
-            vize_carton::new_string!("var {name}="),
-            vize_carton::new_string!("function {name}("),
-            vize_carton::new_string!("function {name} ("),
+            cstr!("const {name} "),
+            cstr!("const {name}="),
+            cstr!("let {name} "),
+            cstr!("let {name}="),
+            cstr!("var {name} "),
+            cstr!("var {name}="),
+            cstr!("function {name}("),
+            cstr!("function {name} ("),
         ];
 
         for pattern in &patterns {
@@ -219,11 +220,11 @@ impl ReferencesService {
 
         // Check destructuring
         let destructure_patterns = [
-            vize_carton::new_string!("{{ {name}"),
-            vize_carton::new_string!("{{ {name}, "),
-            vize_carton::new_string!("{{ {name} }}"),
-            vize_carton::new_string!(", {name} }}"),
-            vize_carton::new_string!(", {name}, "),
+            cstr!("{{ {name}"),
+            cstr!("{{ {name}, "),
+            cstr!("{{ {name} }}"),
+            cstr!(", {name} }}"),
+            cstr!(", {name}, "),
         ];
 
         for pattern in &destructure_patterns {

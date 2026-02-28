@@ -274,7 +274,7 @@ pub fn parse_script(source: &str) -> ScriptParseResult {
 #[cfg(test)]
 mod tests {
     use super::parse_script_setup;
-    use vize_carton::CompactString;
+    use vize_carton::{append, cstr, CompactString};
 
     #[test]
     fn test_parse_define_props_type() {
@@ -561,7 +561,7 @@ const MyAlias = MyComponent
         let bindings: Vec<_> = result.bindings.iter().collect();
         let mut bindings_sorted: Vec<_> = bindings
             .iter()
-            .map(|(name, ty)| vize_carton::new_string!("{}: {:?}", name, ty))
+            .map(|(name, ty)| cstr!("{name}: {ty:?}"))
             .collect();
         bindings_sorted.sort();
 
@@ -573,22 +573,22 @@ const MyAlias = MyComponent
         }
 
         output.push_str("\n=== Macros ===\n");
-        vize_carton::push_fmt!(output, "Props count: {}\n", result.macros.props().len());
+        append!(output, "Props count: {}\n", result.macros.props().len());
         for p in result.macros.props() {
-            vize_carton::push_fmt!(output, "  - {} (required: {})\n", p.name, p.required);
+            append!(output, "  - {} (required: {})\n", p.name, p.required);
         }
-        vize_carton::push_fmt!(output, "Emits count: {}\n", result.macros.emits().len());
+        append!(output, "Emits count: {}\n", result.macros.emits().len());
         for e in result.macros.emits() {
-            vize_carton::push_fmt!(output, "  - {}\n", e.name);
+            append!(output, "  - {}\n", e.name);
         }
 
         output.push_str("\n=== Reactivity ===\n");
-        vize_carton::push_fmt!(
+        append!(
             output,
             "counter: reactive={}\n",
             result.reactivity.is_reactive("counter")
         );
-        vize_carton::push_fmt!(
+        append!(
             output,
             "doubled: reactive={}\n",
             result.reactivity.is_reactive("doubled")
@@ -615,15 +615,15 @@ const copy = { ...state }
 
         let mut output = String::new();
         output.push_str("=== Reactivity Losses ===\n");
-        vize_carton::push_fmt!(
+        append!(
             output,
             "Total losses: {}\n\n",
             result.reactivity.losses().len()
         );
 
         for (i, loss) in result.reactivity.losses().iter().enumerate() {
-            vize_carton::push_fmt!(output, "Loss #{}: {:?}\n", i + 1, loss.kind);
-            vize_carton::push_fmt!(output, "  span: {}..{}\n", loss.start, loss.end);
+            append!(output, "Loss #{}: {:?}\n", i + 1, loss.kind);
+            append!(output, "  span: {}..{}\n", loss.start, loss.end);
         }
 
         assert_snapshot!(output);
@@ -656,7 +656,7 @@ function processItem(item) {
 
         let mut output = String::new();
         output.push_str("=== Scope Structure ===\n");
-        vize_carton::push_fmt!(output, "Total scopes: {}\n\n", result.scopes.len());
+        append!(output, "Total scopes: {}\n\n", result.scopes.len());
 
         // Count scopes by kind
         let mut closure_count = 0;
@@ -680,12 +680,12 @@ function processItem(item) {
             }
         }
 
-        vize_carton::push_fmt!(output, "Closure scopes: {}\n", closure_count);
-        vize_carton::push_fmt!(output, "ClientOnly scopes: {}\n", client_only_count);
-        vize_carton::push_fmt!(output, "ExternalModule scopes: {}\n", external_module_count);
-        vize_carton::push_fmt!(output, "ScriptSetup scopes: {}\n", script_setup_count);
-        vize_carton::push_fmt!(output, "Module scopes: {}\n", module_count);
-        vize_carton::push_fmt!(output, "JsGlobal scopes: {}\n", js_global_count);
+        append!(output, "Closure scopes: {closure_count}\n");
+        append!(output, "ClientOnly scopes: {client_only_count}\n");
+        append!(output, "ExternalModule scopes: {external_module_count}\n");
+        append!(output, "ScriptSetup scopes: {script_setup_count}\n");
+        append!(output, "Module scopes: {module_count}\n");
+        append!(output, "JsGlobal scopes: {js_global_count}\n");
 
         assert_snapshot!(output);
     }

@@ -4,6 +4,7 @@
 
 use crate::context::{ElementContext, LintContext};
 use crate::rule::Rule;
+use vize_carton::cstr;
 use vize_carton::directive::{parse_level_severity, parse_vize_directive, DirectiveKind};
 use vize_carton::CompactString;
 use vize_relief::ast::{
@@ -101,7 +102,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("TODO")
                     } else {
-                        vize_carton::new_string!("TODO: {}", d.payload)
+                        cstr!("TODO: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/todo";
                     self.ctx.warn(msg, loc);
@@ -112,7 +113,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("FIXME")
                     } else {
-                        vize_carton::new_string!("FIXME: {}", d.payload)
+                        cstr!("FIXME: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/fixme";
                     self.ctx.error(msg, loc);
@@ -139,7 +140,7 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     let msg = if d.payload.is_empty() {
                         CompactString::from("Deprecated")
                     } else {
-                        vize_carton::new_string!("Deprecated: {}", d.payload)
+                        cstr!("Deprecated: {}", d.payload)
                     };
                     self.ctx.current_rule = "vize/deprecated";
                     self.ctx.warn(msg, loc);

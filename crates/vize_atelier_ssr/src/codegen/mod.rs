@@ -8,7 +8,7 @@ pub(crate) mod helpers;
 
 use crate::options::SsrCompilerOptions;
 use vize_atelier_core::ast::{RootNode, RuntimeHelper, TemplateChildNode};
-use vize_carton::{Bump, FxHashSet};
+use vize_carton::{cstr, Bump, FxHashSet};
 
 /// SSR codegen result
 #[derive(Debug, Default)]
@@ -187,7 +187,7 @@ impl<'a> SsrCodegenContext<'a> {
             let helpers: Vec<_> = self
                 .ssr_helpers
                 .iter()
-                .map(|h| vize_carton::new_string!("{} as _{}", h.name(), h.name()))
+                .map(|h| cstr!("{} as _{}", h.name(), h.name()))
                 .collect();
             preamble.push_str(&helpers.join(", "));
             preamble.push_str(" } from \"@vue/server-renderer\"\n");
@@ -199,7 +199,7 @@ impl<'a> SsrCodegenContext<'a> {
             let helpers: Vec<_> = self
                 .core_helpers
                 .iter()
-                .map(|h| vize_carton::new_string!("{} as _{}", h.name(), h.name()))
+                .map(|h| cstr!("{} as _{}", h.name(), h.name()))
                 .collect();
             preamble.push_str(&helpers.join(", "));
             preamble.push_str(" } from \"vue\"\n");

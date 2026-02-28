@@ -8,6 +8,7 @@
 #![allow(clippy::disallowed_macros)]
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
+use vize_carton::append;
 use vize_carton::Bump;
 use vize_musea::{parse_art, transform_to_csf, transform_to_vue, ArtParseOptions};
 
@@ -174,7 +175,7 @@ fn generate_massive_art() -> String {
     art.push('\n');
 
     for i in 0..50 {
-        vize_carton::push_fmt!(
+        append!(
             art,
             r#"  <variant name="Variant {}" {}args='{{"index":{}}}'>
     <Component :index="args.index">Content for variant {}</Component>

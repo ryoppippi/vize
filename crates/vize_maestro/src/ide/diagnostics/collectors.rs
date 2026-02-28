@@ -7,6 +7,7 @@ use tower_lsp::lsp_types::{
 use vize_patina::{render_help, HelpRenderTarget};
 
 use super::{offset_to_line_col, sources, DiagnosticService};
+use vize_carton::append;
 
 impl DiagnosticService {
     /// Collect diagnostics for Art files (*.art.vue) using vize_patina's MuseaLinter.
@@ -93,7 +94,7 @@ impl DiagnosticService {
                 "<art{}>\n{}\n</art>",
                 // Reconstruct attributes
                 custom.attrs.iter().fold(String::new(), |mut acc, (k, v)| {
-                    vize_carton::push_fmt!(acc, " {k}=\"{v}\"");
+                    append!(acc, " {k}=\"{v}\"");
                     acc
                 }),
                 custom.content

@@ -7,7 +7,7 @@ use crate::cross_file::diagnostics::{
 };
 use crate::cross_file::graph::DependencyGraph;
 use crate::cross_file::registry::{FileId, ModuleRegistry};
-use vize_carton::{CompactString, FxHashMap, FxHashSet};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet};
 
 /// Information about a props validation issue.
 #[derive(Debug, Clone)]
@@ -141,7 +141,7 @@ pub fn analyze_props_validation(
                     DiagnosticSeverity::Error,
                     parent_id,
                     0,
-                    vize_carton::new_string!(
+                    cstr!(
                         "**Missing Required Prop**: `{}` must be passed to `<{}>`\n\n\
                         This prop is declared as required in the component's `defineProps`.",
                         prop_name,
@@ -151,7 +151,7 @@ pub fn analyze_props_validation(
                 .with_related(
                     child_id,
                     0,
-                    vize_carton::new_string!("Prop `{prop_name}` is declared as required here"),
+                    cstr!("Prop `{prop_name}` is declared as required here"),
                 );
 
                 diagnostics.push(diagnostic);
@@ -193,14 +193,14 @@ pub fn analyze_props_validation(
                     DiagnosticSeverity::Warning, // Warning since it might be intentional $attrs
                     parent_id,
                     0,
-                    vize_carton::new_string!(
+                    cstr!(
                         "**Undeclared Prop**: `{}` is passed to `<{}>` but not declared\n\n\
                         The prop is not defined in the component's `defineProps`.\n\
                         If intentional, it will fall through to the root element via `$attrs`.",
                         passed_prop, child_component_name
                     ),
                 )
-                .with_suggestion(vize_carton::new_string!(
+                .with_suggestion(cstr!(
                     "Add to defineProps:\n```typescript\ndefineProps<{{\n  {}: unknown\n}}>()\n```\n\n\
                     Or use `v-bind=\"$attrs\"` in the child component for fallthrough.",
                     passed_prop

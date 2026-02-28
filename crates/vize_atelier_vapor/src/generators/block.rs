@@ -1,6 +1,7 @@
 //! Block code generation for Vapor mode.
 
 use crate::ir::{BlockIRNode, IREffect, OperationNode};
+use vize_carton::cstr;
 
 /// Context for code generation
 pub struct GenerateContext {
@@ -45,7 +46,7 @@ impl GenerateContext {
     }
 
     pub fn next_temp(&mut self) -> String {
-        let name = vize_carton::new_string!("_t{}", self.temp_count);
+        let name = cstr!("_t{}", self.temp_count);
         self.temp_count += 1;
         name.into()
     }
@@ -54,7 +55,7 @@ impl GenerateContext {
         self.code.push('\n');
     }
 
-    /// Push string to buffer (compatible with `push_fmt!` macro)
+    /// Push string to buffer (compatible with `append!` macro)
     pub fn push_str(&mut self, s: &str) {
         self.code.push_str(s);
     }
@@ -104,7 +105,7 @@ pub fn generate_block(
         let returns = block
             .returns
             .iter()
-            .map(|r| vize_carton::new_string!("_n{r}"))
+            .map(|r| cstr!("_n{r}"))
             .collect::<Vec<_>>()
             .join(", ");
 

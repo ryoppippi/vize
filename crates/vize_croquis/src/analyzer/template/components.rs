@@ -4,7 +4,7 @@
 //! during template traversal.
 
 use crate::analysis::{ComponentUsage, EventListener, PassedProp};
-use vize_carton::{CompactString, SmallVec};
+use vize_carton::{cstr, CompactString, SmallVec};
 use vize_relief::ast::{ElementNode, ExpressionNode, PropNode};
 
 use super::super::Analyzer;
@@ -106,7 +106,7 @@ impl Analyzer {
                         });
 
                         usage.events.push(EventListener {
-                            name: vize_carton::new_string!("update:{model_name}"),
+                            name: cstr!("update:{model_name}"),
                             handler: value,
                             modifiers: SmallVec::new(),
                             start: dir.loc.start.offset,

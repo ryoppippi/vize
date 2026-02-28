@@ -2,6 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::{BlockIRNode, IfIRNode, NegativeBranch};
+use vize_carton::cstr;
 
 /// Generate if node code
 pub fn generate_if<F>(ctx: &mut GenerateContext, if_node: &IfIRNode<'_>, generate_block: F)
@@ -9,7 +10,7 @@ where
     F: Fn(&mut GenerateContext, &BlockIRNode<'_>) + Copy,
 {
     let condition = if if_node.condition.is_static {
-        vize_carton::new_string!("\"{}\"", if_node.condition.content)
+        cstr!("\"{}\"", if_node.condition.content)
     } else {
         vize_carton::CompactString::from(if_node.condition.content.as_str())
     };
@@ -35,9 +36,9 @@ where
 /// Generate simple if expression (for inline conditionals)
 pub fn generate_if_expression(condition: &str, then_expr: &str, else_expr: Option<&str>) -> String {
     if let Some(else_val) = else_expr {
-        vize_carton::new_string!("{condition} ? {then_expr} : {else_val}").into()
+        cstr!("{condition} ? {then_expr} : {else_val}").into()
     } else {
-        vize_carton::new_string!("{condition} ? {then_expr} : null").into()
+        cstr!("{condition} ? {then_expr} : null").into()
     }
 }
 

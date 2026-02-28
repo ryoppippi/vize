@@ -6,6 +6,7 @@ use super::{
     ReactivityFlowKind, ReactivityLossReason,
 };
 use insta::assert_snapshot;
+use vize_carton::append;
 
 #[test]
 fn test_reactive_value_id() {
@@ -87,7 +88,7 @@ fn test_snapshot_reactive_value_types() {
 
     output.push_str("-- Reactive Exposures --\n");
     for (i, exposure) in exposures.iter().enumerate() {
-        vize_carton::push_fmt!(output, "{}. {:?}\n", i + 1, exposure);
+        append!(output, "{}. {:?}\n", i + 1, exposure);
     }
 
     // Test various ReactiveConsumption types
@@ -113,7 +114,7 @@ fn test_snapshot_reactive_value_types() {
 
     output.push_str("\n-- Reactive Consumptions --\n");
     for (i, consumption) in consumptions.iter().enumerate() {
-        vize_carton::push_fmt!(output, "{}. {:?}\n", i + 1, consumption);
+        append!(output, "{}. {:?}\n", i + 1, consumption);
     }
 
     assert_snapshot!(output);
@@ -205,25 +206,25 @@ fn test_snapshot_reactivity_flows() {
     ];
 
     for (name, flow) in &flows {
-        vize_carton::push_fmt!(output, "-- {name} --\n");
-        vize_carton::push_fmt!(
+        append!(output, "-- {name} --\n");
+        append!(
             output,
             "Source: file={:?}, name={}, offset={}\n",
             flow.source.file_id,
             flow.source.name,
             flow.source.offset
         );
-        vize_carton::push_fmt!(
+        append!(
             output,
             "Target: file={:?}, name={}, offset={}\n",
             flow.target.file_id,
             flow.target.name,
             flow.target.offset
         );
-        vize_carton::push_fmt!(output, "Flow Kind: {:?}\n", flow.flow_kind);
-        vize_carton::push_fmt!(output, "Preserved: {}\n", flow.preserved);
+        append!(output, "Flow Kind: {:?}\n", flow.flow_kind);
+        append!(output, "Preserved: {}\n", flow.preserved);
         if let Some(ref reason) = flow.loss_reason {
-            vize_carton::push_fmt!(output, "Loss Reason: {:?}\n", reason);
+            append!(output, "Loss Reason: {reason:?}\n");
         }
         output.push('\n');
     }
@@ -294,17 +295,17 @@ fn test_snapshot_cross_file_reactivity_issue() {
     ];
 
     for (i, issue) in issues.iter().enumerate() {
-        vize_carton::push_fmt!(output, "Issue {} - {:?}\n", i + 1, issue.kind);
-        vize_carton::push_fmt!(
+        append!(output, "Issue {} - {:?}\n", i + 1, issue.kind);
+        append!(
             output,
             "  File: {:?}, offset={}\n",
             issue.file_id,
             issue.offset
         );
         if let Some(ref related) = issue.related_file {
-            vize_carton::push_fmt!(output, "  Related file: {:?}\n", related);
+            append!(output, "  Related file: {related:?}\n");
         }
-        vize_carton::push_fmt!(output, "  Severity: {:?}\n\n", issue.severity);
+        append!(output, "  Severity: {:?}\n\n", issue.severity);
     }
 
     assert_snapshot!(output);
@@ -331,7 +332,7 @@ fn test_snapshot_loss_reasons() {
     ];
 
     for (i, reason) in reasons.iter().enumerate() {
-        vize_carton::push_fmt!(output, "{}. {:?}\n", i + 1, reason);
+        append!(output, "{}. {:?}\n", i + 1, reason);
     }
 
     assert_snapshot!(output);

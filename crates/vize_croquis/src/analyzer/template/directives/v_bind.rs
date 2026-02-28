@@ -6,6 +6,7 @@
 //! - Inline callback parameter scope creation
 
 use crate::scope::CallbackScopeData;
+use vize_carton::cstr;
 use vize_carton::CompactString;
 use vize_relief::ast::{ElementNode, ExpressionNode};
 
@@ -60,10 +61,10 @@ impl Analyzer {
                         .as_ref()
                         .map(|arg| match arg {
                             ExpressionNode::Simple(s) => {
-                                vize_carton::new_string!(":{}callback", s.content)
+                                cstr!(":{}callback", s.content)
                             }
                             ExpressionNode::Compound(c) => {
-                                vize_carton::new_string!(":{}callback", c.loc.source)
+                                cstr!(":{}callback", c.loc.source)
                             }
                         })
                         .unwrap_or_else(|| CompactString::const_new(":bind callback"));

@@ -8,6 +8,7 @@ use super::{
     CallEdge, CallGraph, ComposableCallInfo, FunctionDef, FunctionId, SetupContextKind, SmallVec,
     VueApiCall, VueApiCategory,
 };
+use vize_carton::append;
 
 impl CallGraph {
     /// Check if a function (or None for top-level) is in setup context.
@@ -190,7 +191,7 @@ impl CallGraph {
         // Setup function
         if let Some(setup_id) = self.setup_function {
             if let Some(func) = self.get_function(setup_id) {
-                vize_carton::push_fmt!(
+                append!(
                     out,
                     "**Setup Function**: `{}` (offset: {}..{})\n\n",
                     func.name.as_deref().unwrap_or("<anonymous>"),
@@ -211,7 +212,7 @@ impl CallGraph {
                 } else {
                     "📦"
                 };
-                vize_carton::push_fmt!(
+                append!(
                     out,
                     "- {} `{}` ({}..{})\n",
                     marker,
@@ -228,7 +229,7 @@ impl CallGraph {
         out.push_str("|-----|----------|----------|--------|\n");
         for call in &self.vue_api_calls {
             let in_setup = if call.in_setup_context { "✅" } else { "❌" };
-            vize_carton::push_fmt!(
+            append!(
                 out,
                 "| `{}` | {:?} | {} | {}..{} |\n",
                 call.name,
@@ -247,7 +248,7 @@ impl CallGraph {
             for call in &self.composable_calls {
                 let in_setup = if call.in_setup_context { "✅" } else { "❌" };
                 let source = call.source.as_deref().unwrap_or("-");
-                vize_carton::push_fmt!(
+                append!(
                     out,
                     "| `{}` | `{}` | {} | {}..{} |\n",
                     call.name,
@@ -264,7 +265,7 @@ impl CallGraph {
         if !issues.is_empty() {
             out.push_str("\n### ⚠️ Issues: Vue APIs Outside Setup Context\n\n");
             for call in issues {
-                vize_carton::push_fmt!(
+                append!(
                     out,
                     "- `{}` at {}..{} - Vue {} API called outside setup context\n",
                     call.name,

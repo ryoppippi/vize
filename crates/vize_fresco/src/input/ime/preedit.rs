@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 
 use crate::text::{SegmentedText, TextWidth};
+use vize_carton::cstr;
 
 /// Preedit text with cursor and segments.
 #[derive(Debug, Clone, Default)]
@@ -140,7 +141,7 @@ impl Preedit {
             // Get the text without the character before cursor
             let before = st.slice(0, self.cursor - 1);
             let after = st.slice(self.cursor, st.grapheme_count);
-            self.text = vize_carton::new_string!("{}{}", before, after);
+            self.text = cstr!("{before}{after}");
             self.cursor -= 1;
         }
     }
@@ -154,7 +155,7 @@ impl Preedit {
 
         let before = st.slice(0, self.cursor);
         let after = st.slice(self.cursor + 1, st.grapheme_count);
-        self.text = vize_carton::new_string!("{}{}", before, after);
+        self.text = cstr!("{before}{after}");
     }
 
     /// Move cursor left.

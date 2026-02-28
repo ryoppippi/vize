@@ -1,6 +1,7 @@
 //! Error types for batch type checking.
 
 use std::path::{Path, PathBuf};
+use vize_carton::append;
 
 /// Error type for tsgo operations.
 #[derive(Debug, thiserror::Error)]
@@ -81,25 +82,25 @@ impl TsgoNotFoundError {
 
         if let Some(pm) = self.detected_pm {
             msg.push_str("To install, run:\n\n");
-            vize_carton::push_fmt!(msg, "  {}\n", self.install_command(pm));
+            append!(msg, "  {}\n", self.install_command(pm));
         } else {
             msg.push_str("To install, run one of the following:\n\n");
-            vize_carton::push_fmt!(
+            append!(
                 msg,
                 "  {}  # npm\n",
                 self.install_command(PackageManager::Npm)
             );
-            vize_carton::push_fmt!(
+            append!(
                 msg,
                 "  {}  # pnpm\n",
                 self.install_command(PackageManager::Pnpm)
             );
-            vize_carton::push_fmt!(
+            append!(
                 msg,
                 "  {}  # yarn\n",
                 self.install_command(PackageManager::Yarn)
             );
-            vize_carton::push_fmt!(
+            append!(
                 msg,
                 "  {}  # bun\n",
                 self.install_command(PackageManager::Bun)

@@ -7,7 +7,7 @@ use crate::cross_file::diagnostics::{
 };
 use crate::cross_file::graph::DependencyGraph;
 use crate::cross_file::registry::{FileId, ModuleRegistry};
-use vize_carton::{CompactString, FxHashSet};
+use vize_carton::{cstr, CompactString, FxHashSet};
 
 /// Information about a component resolution issue.
 #[derive(Debug, Clone)]
@@ -96,13 +96,13 @@ pub fn analyze_component_resolution(
                     DiagnosticSeverity::Error,
                     file_id,
                     0,
-                    vize_carton::new_string!(
+                    cstr!(
                         "**Unregistered Component**: `<{}>` is used in template but not imported\n\n\
                         The component must be imported in `<script setup>` or registered globally.",
                         component_name
                     ),
                 )
-                .with_suggestion(vize_carton::new_string!(
+                .with_suggestion(cstr!(
                     "```typescript\nimport {} from './{}.vue'\n```",
                     component_name, component_name
                 ));
@@ -150,7 +150,7 @@ pub fn analyze_component_resolution(
                             DiagnosticSeverity::Error,
                             file_id,
                             scope.span.start,
-                            vize_carton::new_string!(
+                            cstr!(
                                 "**Unresolved Import**: Cannot find module `{}`\n\n\
                                 - Check if the file exists at the specified path\n\
                                 - Verify the import path is correct (relative paths start with `./` or `../`)\n\

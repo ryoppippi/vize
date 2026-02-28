@@ -2,6 +2,7 @@
 
 use super::context::GenerateContext;
 use crate::ir::{BlockIRNode, OperationNode};
+use vize_carton::cstr;
 
 /// Collect delegate events from block
 pub(crate) fn collect_delegate_events(ctx: &mut GenerateContext, block: &BlockIRNode<'_>) {
@@ -50,11 +51,11 @@ pub(crate) fn generate_imports(ctx: &GenerateContext) -> String {
 
     let imports = helpers
         .iter()
-        .map(|h| vize_carton::new_string!("{h} as _{h}"))
+        .map(|h| cstr!("{h} as _{h}"))
         .collect::<std::vec::Vec<_>>()
         .join(", ");
 
-    vize_carton::new_string!("import {{ {imports} }} from 'vue';\n").into()
+    cstr!("import {{ {imports} }} from 'vue';\n").into()
 }
 
 /// Escape template string for JavaScript

@@ -5,6 +5,7 @@ use vize_atelier_core::ast::{
 };
 
 use super::SsrCodegenContext;
+use vize_carton::cstr;
 
 impl<'a> SsrCodegenContext<'a> {
     /// Process a list of children nodes
@@ -91,7 +92,7 @@ impl<'a> SsrCodegenContext<'a> {
             ExpressionNode::Compound(_) => "_ctx.value", // placeholder
         };
 
-        self.push_string_part_dynamic(&vize_carton::new_string!("_ssrInterpolate({exp})"));
+        self.push_string_part_dynamic(&cstr!("_ssrInterpolate({exp})"));
     }
 
     /// Process an if node

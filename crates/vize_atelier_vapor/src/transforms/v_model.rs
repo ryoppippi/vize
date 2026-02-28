@@ -2,7 +2,7 @@
 //!
 //! Transforms v-model directives for two-way binding.
 
-use vize_carton::{Box, Bump, String};
+use vize_carton::{cstr, Box, Bump, String};
 
 use crate::ir::{DirectiveIRNode, OperationNode};
 use vize_atelier_core::{DirectiveNode, ElementNode, ExpressionNode};
@@ -94,16 +94,16 @@ pub fn generate_model_handler(value_expr: &str, modifiers: &[String]) -> String 
     for modifier in modifiers {
         match modifier.as_str() {
             "number" => {
-                event_value = vize_carton::new_string!("Number({event_value})").into();
+                event_value = cstr!("Number({event_value})").into();
             }
             "trim" => {
-                event_value = vize_carton::new_string!("{event_value}.trim()").into();
+                event_value = cstr!("{event_value}.trim()").into();
             }
             _ => {}
         }
     }
 
-    vize_carton::new_string!("$event => {{ {value_expr} = {event_value} }}")
+    cstr!("$event => {{ {value_expr} = {event_value} }}")
 }
 
 #[cfg(test)]

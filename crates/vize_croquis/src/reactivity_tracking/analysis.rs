@@ -5,6 +5,7 @@
 
 use super::tracker::ReactivityTracker;
 use super::{BindingState, ViolationKind, ViolationSeverity};
+use vize_carton::append;
 
 impl ReactivityTracker {
     /// Generate markdown report.
@@ -31,8 +32,8 @@ impl ReactivityTracker {
             .count();
 
         md.push_str("## Summary\n\n");
-        vize_carton::push_fmt!(md, "- **Tracked Bindings**: {}\n", self.bindings.len());
-        vize_carton::push_fmt!(
+        append!(md, "- **Tracked Bindings**: {}\n", self.bindings.len());
+        append!(
             md,
             "- **Violations**: {error_count} errors, {warning_count} warnings, {info_count} info\n\n",
         );
@@ -51,7 +52,7 @@ impl ReactivityTracker {
                     BindingState::Escaped => "↗ Escaped",
                     BindingState::Reassigned => "⟲ Reassigned",
                 };
-                vize_carton::push_fmt!(
+                append!(
                     md,
                     "| `{}` | {:?} | {} | {} |\n",
                     binding.name,
@@ -75,8 +76,8 @@ impl ReactivityTracker {
                     ViolationSeverity::Hint => "💡",
                 };
 
-                vize_carton::push_fmt!(md, "### {icon} {}\n\n", violation.message);
-                vize_carton::push_fmt!(
+                append!(md, "### {icon} {}\n\n", violation.message);
+                append!(
                     md,
                     "**Location**: offset {}..{}\n\n",
                     violation.start,
@@ -84,7 +85,7 @@ impl ReactivityTracker {
                 );
 
                 if let Some(ref suggestion) = violation.suggestion {
-                    vize_carton::push_fmt!(md, "**Suggestion**: {suggestion}\n\n");
+                    append!(md, "**Suggestion**: {suggestion}\n\n");
                 }
 
                 // Add detailed explanation for specific violation kinds
@@ -92,13 +93,13 @@ impl ReactivityTracker {
                     ViolationKind::DestructuringLoss { extracted_props } => {
                         md.push_str("```\n");
                         md.push_str("// ❌ Reactivity is lost:\n");
-                        vize_carton::push_fmt!(
+                        append!(
                             md,
                             "const {{ {} }} = reactiveObj\n",
                             extracted_props.join(", ")
                         );
                         md.push_str("\n// ✓ Keep reactivity:\n");
-                        vize_carton::push_fmt!(
+                        append!(
                             md,
                             "const {{ {} }} = toRefs(reactiveObj)\n",
                             extracted_props.join(", ")

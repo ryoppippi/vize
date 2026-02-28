@@ -1,6 +1,7 @@
 //! CrossFileAnalyzer WASM bindings.
 
 use super::{to_js_value, utf8_byte_to_char_offset};
+use vize_carton::cstr;
 use vize_carton::Bump;
 use wasm_bindgen::prelude::*;
 
@@ -27,7 +28,7 @@ pub fn analyze_cross_file_wasm(files: JsValue, options: JsValue) -> Result<JsVal
         let path = js_sys::Reflect::get(&file_obj, &JsValue::from_str("path"))
             .ok()
             .and_then(|v| v.as_string())
-            .unwrap_or_else(|| vize_carton::new_string!("file_{}.vue", i));
+            .unwrap_or_else(|| cstr!("file_{i}.vue"));
         let source = js_sys::Reflect::get(&file_obj, &JsValue::from_str("source"))
             .ok()
             .and_then(|v| v.as_string())

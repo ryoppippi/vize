@@ -5,6 +5,8 @@ use super::types::{CrossFileReactivityIssueKind, ReactivityFlowKind};
 use crate::cross_file::diagnostics::{
     CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity,
 };
+use vize_carton::append;
+use vize_carton::cstr;
 use vize_carton::CompactString;
 
 impl<'a> CrossFileReactivityAnalyzer<'a> {
@@ -26,13 +28,13 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     issue.severity,
                     issue.file_id,
                     issue.offset,
-                    vize_carton::new_string!(
+                    cstr!(
                         "Destructuring {} return loses reactivity for: {}",
                         composable_name,
                         destructured_props.join(", ")
                     ),
                 )
-                .with_suggestion(vize_carton::new_string!(
+                .with_suggestion(cstr!(
                     "const result = {}(); then access result.prop or use toRefs(result)",
                     composable_name
                 )),
@@ -49,13 +51,13 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     issue.severity,
                     issue.file_id,
                     issue.offset,
-                    vize_carton::new_string!(
+                    cstr!(
                         "Destructuring inject('{}') loses reactivity for: {}",
                         key,
                         destructured_props.join(", ")
                     ),
                 )
-                .with_suggestion(vize_carton::new_string!(
+                .with_suggestion(cstr!(
                     "const injected = inject('{}'); access injected.prop directly",
                     key
                 )),
@@ -72,12 +74,12 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     issue.severity,
                     issue.file_id,
                     issue.offset,
-                    vize_carton::new_string!(
+                    cstr!(
                         "Destructuring {} loses reactivity for state/getters",
                         store_name
                     ),
                 )
-                .with_suggestion(vize_carton::new_string!(
+                .with_suggestion(cstr!(
                     "const {{ ... }} = storeToRefs({})",
                     store_name
                 )),
@@ -92,7 +94,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                         issue.severity,
                         issue.file_id,
                         issue.offset,
-                        vize_carton::new_string!(
+                        cstr!(
                             "Destructuring props: {} (Vue compiler handles this, but explicit toRefs is clearer)",
                             destructured_props.join(", ")
                         ),
@@ -109,7 +111,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                         issue.severity,
                         issue.file_id,
                         issue.offset,
-                        vize_carton::new_string!(
+                        cstr!(
                             "provide('{}') value is not reactive - consumers won't see updates",
                             key
                         ),
@@ -125,7 +127,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                         issue.severity,
                         issue.file_id,
                         issue.offset,
-                        vize_carton::new_string!("Circular reactive dependency: {} \u{2192} ...", cycle.join(" \u{2192} ")),
+                        cstr!("Circular reactive dependency: {} \u{2192} ...", cycle.join(" \u{2192} ")),
                     )
                     .with_suggestion("Break the cycle by using computed() or reorganizing data flow")
                 }
@@ -137,7 +139,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     issue.severity,
                     issue.file_id,
                     issue.offset,
-                    vize_carton::new_string!("{:?}", issue.kind),
+                    cstr!("{:?}", issue.kind),
                 ),
             };
 
@@ -155,13 +157,13 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
 
         // Summary
         md.push_str("## Summary\n\n");
-        vize_carton::push_fmt!(
+        append!(
             md,
             "- **Tracked Reactive Values**: {}\n",
             self.reactive_values.len()
         );
-        vize_carton::push_fmt!(md, "- **Cross-File Flows**: {}\n", self.flows.len());
-        vize_carton::push_fmt!(md, "- **Issues Detected**: {}\n\n", self.issues.len());
+        append!(md, "- **Cross-File Flows**: {}\n", self.flows.len());
+        append!(md, "- **Issues Detected**: {}\n\n", self.issues.len());
 
         // Flows
         if !self.flows.is_empty() {
@@ -182,7 +184,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     ReactivityFlowKind::ModuleImport => "import",
                 };
 
-                vize_carton::push_fmt!(
+                append!(
                     md,
                     "{status} [{flow_type}] {} \u{2192} {}\n",
                     flow.source.name,
@@ -190,7 +192,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 );
 
                 if let Some(ref reason) = flow.loss_reason {
-                    vize_carton::push_fmt!(md, "   \u{2514}\u{2500} Loss: {:?}\n", reason);
+                    append!(md, "   \u{2514}\u{2500} Loss: {:?}\n", reason);
                 }
             }
 
@@ -209,11 +211,11 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     DiagnosticSeverity::Hint => "\u{1f4a1}",
                 };
 
-                vize_carton::push_fmt!(md, "### {icon} {:?}\n\n", issue.kind);
-                vize_carton::push_fmt!(md, "- **File**: {:?}\n", issue.file_id);
-                vize_carton::push_fmt!(md, "- **Offset**: {}\n", issue.offset);
+                append!(md, "### {icon} {:?}\n\n", issue.kind);
+                append!(md, "- **File**: {:?}\n", issue.file_id);
+                append!(md, "- **Offset**: {}\n", issue.offset);
                 if let Some(related) = issue.related_file {
-                    vize_carton::push_fmt!(md, "- **Related File**: {:?}\n", related);
+                    append!(md, "- **Related File**: {:?}\n", related);
                 }
                 md.push('\n');
             }

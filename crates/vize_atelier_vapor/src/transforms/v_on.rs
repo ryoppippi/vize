@@ -2,7 +2,7 @@
 //!
 //! Transforms v-on (@ shorthand) directives into SetEventIRNode.
 
-use vize_carton::{Box, Bump};
+use vize_carton::{cstr, Box, Bump};
 
 use crate::ir::{EventModifiers, EventOptions, OperationNode, SetEventIRNode};
 use vize_atelier_core::{DirectiveNode, ExpressionNode, SimpleExpressionNode};
@@ -133,10 +133,10 @@ pub fn generate_event_handler(
 
     if !modifiers.keys.is_empty() {
         let keys: Vec<&str> = modifiers.keys.iter().map(|k| k.as_str()).collect();
-        result = vize_carton::new_string!(
+        result = cstr!(
             "_withKeys({result}, [{}])",
             keys.iter()
-                .map(|k| vize_carton::new_string!("\"{k}\""))
+                .map(|k| cstr!("\"{k}\""))
                 .collect::<Vec<_>>()
                 .join(", ")
         )
@@ -145,10 +145,10 @@ pub fn generate_event_handler(
 
     if !modifiers.non_keys.is_empty() {
         let mods: Vec<&str> = modifiers.non_keys.iter().map(|m| m.as_str()).collect();
-        result = vize_carton::new_string!(
+        result = cstr!(
             "_withModifiers({result}, [{}])",
             mods.iter()
-                .map(|m| vize_carton::new_string!("\"{m}\""))
+                .map(|m| cstr!("\"{m}\""))
                 .collect::<Vec<_>>()
                 .join(", ")
         )

@@ -3,6 +3,8 @@
 //! Generates `Props` type definitions and template-level prop variable
 //! declarations from Vue SFC macro analysis.
 
+use vize_carton::append;
+use vize_carton::cstr;
 use vize_croquis::Croquis;
 
 /// Generate Props type definition at module level.
@@ -38,14 +40,14 @@ pub(crate) fn generate_props_type(ts: &mut String, summary: &Croquis) {
         {
             // Type arg references existing type
         } else {
-            vize_carton::push_fmt!(*ts, "export type Props = {inner_type};\n");
+            append!(*ts, "export type Props = {inner_type};\n");
         }
     } else if has_props {
         ts.push_str("export type Props = {\n");
         for prop in props {
             let prop_type = prop.prop_type.as_deref().unwrap_or("unknown");
             let optional = if prop.required { "" } else { "?" };
-            vize_carton::push_fmt!(*ts, "  {}{optional}: {prop_type};\n", prop.name);
+            append!(*ts, "  {}{optional}: {prop_type};\n", prop.name);
         }
         ts.push_str("};\n");
     } else {
@@ -77,8 +79,8 @@ pub(crate) fn generate_props_variables(
         if has_props {
             // Runtime-declared props: generate individual variables
             for prop in props {
-                vize_carton::push_fmt!(*ts, "  const {} = props[\"{}\"];\n", prop.name, prop.name);
-                vize_carton::push_fmt!(*ts, "  void {};\n", prop.name);
+                append!(*ts, "  const {} = props[\"{}\"];\n", prop.name, prop.name);
+                append!(*ts, "  void {};\n", prop.name);
             }
         } else if let Some(type_args) = define_props_type_args {
             // Type-only defineProps<TypeName>(): extract fields
@@ -93,20 +95,15 @@ pub(crate) fn generate_props_variables(
             let type_properties = summary.types.extract_properties(type_name);
             if !type_properties.is_empty() {
                 for prop in &type_properties {
-                    vize_carton::push_fmt!(
-                        *ts,
-                        "  const {} = props[\"{}\"];\n",
-                        prop.name,
-                        prop.name
-                    );
-                    vize_carton::push_fmt!(*ts, "  void {};\n", prop.name);
+                    append!(*ts, "  const {} = props[\"{}\"];\n", prop.name, prop.name);
+                    append!(*ts, "  void {};\n", prop.name);
                 }
             } else if let Some(script) = script_content {
                 // Fallback: extract field names from script text (for local interfaces)
                 let field_names = extract_interface_fields(script, type_name);
                 for field in &field_names {
-                    vize_carton::push_fmt!(*ts, "  const {field} = props[\"{field}\"];\n");
-                    vize_carton::push_fmt!(*ts, "  void {field};\n");
+                    append!(*ts, "  const {field} = props[\"{field}\"];\n");
+                    append!(*ts, "  void {field};\n");
                 }
             }
         }
@@ -163,9 +160,9 @@ pub(crate) fn extract_interface_fields(script: &str, type_name: &str) -> Vec<Str
 /// Find the body of an interface or type declaration in script content.
 fn find_type_body<'a>(script: &'a str, type_name: &str) -> Option<&'a str> {
     for pattern in &[
-        vize_carton::new_string!("interface {type_name} ").to_string(),
-        vize_carton::new_string!("interface {type_name}{{").to_string(),
-        vize_carton::new_string!("type {type_name} ").to_string(),
+        cstr!("interface {type_name} ").to_string(),
+        cstr!("interface {type_name}{{").to_string(),
+        cstr!("type {type_name} ").to_string(),
     ] {
         if let Some(pos) = script.find(pattern.as_str()) {
             let rest = &script[pos..];

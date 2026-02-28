@@ -3,6 +3,7 @@
 //! Handles event modifiers and key modifiers.
 
 use vize_atelier_core::DirectiveNode;
+use vize_carton::cstr;
 use vize_carton::String;
 
 /// Parsed event modifiers
@@ -147,9 +148,7 @@ pub fn generate_modifier_guard(modifiers: &EventModifiers) -> String {
             exact_checks.push("$event.metaKey");
         }
         if !exact_checks.is_empty() {
-            guards.push(
-                vize_carton::new_string!("if ({}) return", exact_checks.join(" || ")).to_string(),
-            );
+            guards.push(cstr!("if ({}) return", exact_checks.join(" || ")).to_string());
         }
     } else {
         if modifiers.system.ctrl {
@@ -209,11 +208,11 @@ pub fn generate_key_guard(keys: &[String]) -> String {
             let resolved = resolve_key_alias(key.as_str())
                 .map(|k| k.to_string())
                 .unwrap_or_else(|| vize_carton::capitalize(key.as_str()).to_string());
-            vize_carton::new_string!("$event.key !== \"{resolved}\"").into()
+            cstr!("$event.key !== \"{resolved}\"").into()
         })
         .collect();
 
-    vize_carton::new_string!("if ({}) return", checks.join(" && "))
+    cstr!("if ({}) return", checks.join(" && "))
 }
 
 #[cfg(test)]

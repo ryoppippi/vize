@@ -17,6 +17,7 @@ use vize_canon::{LspCompletionItem, LspDocumentation, TsgoBridge};
 use super::{is_inside_html_comment, script, style, template};
 use crate::ide::IdeContext;
 use crate::virtual_code::BlockType;
+use vize_carton::cstr;
 
 impl super::CompletionService {
     /// Get completions for the given context.
@@ -121,13 +122,12 @@ impl super::CompletionService {
                 {
                     let (line, character) =
                         crate::ide::offset_to_position(&tmpl.content, vts_offset);
-                    let uri =
-                        vize_carton::new_string!("vize-virtual://{}.template.ts", ctx.uri.path());
+                    let uri = cstr!("vize-virtual://{}.template.ts", ctx.uri.path());
 
                     if bridge.is_initialized() {
                         let _ = bridge
                             .open_or_update_virtual_document(
-                                &vize_carton::new_string!("{}.template.ts", ctx.uri.path()),
+                                &cstr!("{}.template.ts", ctx.uri.path()),
                                 &tmpl.content,
                             )
                             .await;
@@ -168,13 +168,12 @@ impl super::CompletionService {
                 {
                     let (line, character) = crate::ide::offset_to_position(&s.content, vts_offset);
                     let suffix = if is_setup { "setup.ts" } else { "script.ts" };
-                    let uri =
-                        vize_carton::new_string!("vize-virtual://{}.{suffix}", ctx.uri.path());
+                    let uri = cstr!("vize-virtual://{}.{suffix}", ctx.uri.path());
 
                     if bridge.is_initialized() {
                         let _ = bridge
                             .open_or_update_virtual_document(
-                                &vize_carton::new_string!("{}.{suffix}", ctx.uri.path()),
+                                &cstr!("{}.{suffix}", ctx.uri.path()),
                                 &s.content,
                             )
                             .await;

@@ -2,6 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::CreateComponentIRNode;
+use vize_carton::cstr;
 
 /// Generate CreateComponent code
 pub fn generate_create_component(ctx: &mut GenerateContext, component: &CreateComponentIRNode<'_>) {
@@ -19,17 +20,17 @@ pub fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCo
                 let key = &p.key.content;
                 let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        vize_carton::new_string!("\"{}\"", first.content).into()
+                        cstr!("\"{}\"", first.content).into()
                     } else {
                         first.content.to_string()
                     }
                 } else {
                     String::from("undefined")
                 };
-                vize_carton::new_string!("{key}: {value}").into()
+                cstr!("{key}: {value}").into()
             })
             .collect();
-        vize_carton::new_string!("{{ {} }}", prop_strs.join(", ")).into()
+        cstr!("{{ {} }}", prop_strs.join(", ")).into()
     };
 
     // Generate slots if present
@@ -59,7 +60,7 @@ fn generate_slots_object(component: &CreateComponentIRNode<'_>) -> String {
             let name: String = if slot.name.is_static {
                 slot.name.content.to_string()
             } else {
-                vize_carton::new_string!("[{}]", slot.name.content).into()
+                cstr!("[{}]", slot.name.content).into()
             };
 
             let params = slot
@@ -68,16 +69,16 @@ fn generate_slots_object(component: &CreateComponentIRNode<'_>) -> String {
                 .map(|p| p.content.to_string())
                 .unwrap_or_default();
 
-            vize_carton::new_string!("{name}: ({params}) => {{ /* slot content */ }}").into()
+            cstr!("{name}: ({params}) => {{ /* slot content */ }}").into()
         })
         .collect();
 
-    vize_carton::new_string!("{{ {} }}", slot_strs.join(", ")).into()
+    cstr!("{{ {} }}", slot_strs.join(", ")).into()
 }
 
 /// Generate component resolution
 pub fn generate_resolve_component(name: &str) -> String {
-    vize_carton::new_string!("_resolveComponent(\"{name}\")").into()
+    cstr!("_resolveComponent(\"{name}\")").into()
 }
 
 /// Generate dynamic component
@@ -87,22 +88,22 @@ pub fn generate_dynamic_component(
     slots: Option<&str>,
 ) -> String {
     if let Some(slots_code) = slots {
-        vize_carton::new_string!("_createComponent({component_expr}, {props}, {slots_code})").into()
+        cstr!("_createComponent({component_expr}, {props}, {slots_code})").into()
     } else {
-        vize_carton::new_string!("_createComponent({component_expr}, {props})").into()
+        cstr!("_createComponent({component_expr}, {props})").into()
     }
 }
 
 /// Generate async component wrapper
 pub fn generate_async_component(component_expr: &str) -> String {
-    vize_carton::new_string!("_defineAsyncComponent(() => {component_expr})").into()
+    cstr!("_defineAsyncComponent(() => {component_expr})").into()
 }
 
 /// Generate suspense boundary
 pub fn generate_suspense(fallback: Option<&str>) -> (String, String) {
     if let Some(fb) = fallback {
         (
-            vize_carton::new_string!("_createSuspense({{ fallback: () => {fb} }})").into(),
+            cstr!("_createSuspense({{ fallback: () => {fb} }})").into(),
             String::from("})"),
         )
     } else {
@@ -119,19 +120,19 @@ pub fn generate_keep_alive(
     let mut options: Vec<vize_carton::CompactString> = Vec::new();
 
     if let Some(inc) = include {
-        options.push(vize_carton::new_string!("include: {inc}"));
+        options.push(cstr!("include: {inc}"));
     }
     if let Some(exc) = exclude {
-        options.push(vize_carton::new_string!("exclude: {exc}"));
+        options.push(cstr!("exclude: {exc}"));
     }
     if let Some(m) = max {
-        options.push(vize_carton::new_string!("max: {m}"));
+        options.push(cstr!("max: {m}"));
     }
 
     if options.is_empty() {
         String::from("_createKeepAlive({})")
     } else {
-        vize_carton::new_string!("_createKeepAlive({{ {} }})", options.join(", ")).into()
+        cstr!("_createKeepAlive({{ {} }})", options.join(", ")).into()
     }
 }
 

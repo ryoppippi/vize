@@ -2,15 +2,16 @@
 
 use super::block::GenerateContext;
 use crate::ir::{SetDynamicPropsIRNode, SetPropIRNode};
+use vize_carton::cstr;
 
 /// Generate SetProp code
 pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
-    let element = vize_carton::new_string!("_n{}", set_prop.element);
+    let element = cstr!("_n{}", set_prop.element);
     let key = &set_prop.prop.key.content;
 
     let value: String = if let Some(first) = set_prop.prop.values.first() {
         if first.is_static {
-            vize_carton::new_string!("\"{}\"", first.content).into()
+            cstr!("\"{}\"", first.content).into()
         } else {
             first.content.to_string()
         }
@@ -36,11 +37,11 @@ pub fn generate_set_dynamic_props(
     ctx: &mut GenerateContext,
     set_props: &SetDynamicPropsIRNode<'_>,
 ) {
-    let element = vize_carton::new_string!("_n{}", set_props.element);
+    let element = cstr!("_n{}", set_props.element);
 
     for prop in set_props.props.iter() {
         let expr: String = if prop.is_static {
-            vize_carton::new_string!("\"{}\"", prop.content).into()
+            cstr!("\"{}\"", prop.content).into()
         } else {
             prop.content.to_string()
         };
@@ -67,29 +68,29 @@ fn is_dom_prop(key: &str) -> bool {
 /// Generate class binding
 pub fn generate_class_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{element_var}.className = \"{value}\"").into()
+        cstr!("{element_var}.className = \"{value}\"").into()
     } else {
-        vize_carton::new_string!("_setClass({element_var}, {value})").into()
+        cstr!("_setClass({element_var}, {value})").into()
     }
 }
 
 /// Generate style binding
 pub fn generate_style_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{element_var}.style.cssText = \"{value}\"").into()
+        cstr!("{element_var}.style.cssText = \"{value}\"").into()
     } else {
-        vize_carton::new_string!("_setStyle({element_var}, {value})").into()
+        cstr!("_setStyle({element_var}, {value})").into()
     }
 }
 
 /// Generate attribute binding
 pub fn generate_attribute(element_var: &str, name: &str, value: &str) -> String {
-    vize_carton::new_string!("{element_var}.setAttribute(\"{name}\", {value})").into()
+    cstr!("{element_var}.setAttribute(\"{name}\", {value})").into()
 }
 
 /// Generate prop binding for component
 pub fn generate_component_prop(component_var: &str, key: &str, value: &str) -> String {
-    vize_carton::new_string!("{component_var}.$props.{key} = {value}").into()
+    cstr!("{component_var}.$props.{key} = {value}").into()
 }
 
 /// Normalize prop key for components

@@ -10,7 +10,7 @@ use crate::cross_file::diagnostics::{
 };
 use crate::cross_file::graph::DependencyGraph;
 use crate::cross_file::registry::{FileId, ModuleRegistry};
-use vize_carton::{CompactString, FxHashMap, FxHashSet};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet};
 
 /// Information about fallthrough attributes for a component.
 #[derive(Debug, Clone)]
@@ -208,7 +208,7 @@ pub fn analyze_fallthrough(
                     info.file_id,
                     0,
                     info.template_end - info.template_start,
-                    vize_carton::new_string!(
+                    cstr!(
                         "Attributes {:?} are passed but not used (component has multiple roots)",
                         unused_attrs
                     ),

@@ -4,7 +4,7 @@
 //! slots, and template elements. Also provides template string generation
 //! and static analysis helpers.
 
-use vize_carton::{Box, String, Vec};
+use vize_carton::{append, cstr, Box, String, Vec};
 
 use crate::ir::{BlockIRNode, CreateComponentIRNode, IRProp, OperationNode, SlotOutletIRNode};
 use vize_atelier_core::{
@@ -248,15 +248,15 @@ pub(crate) fn transform_element<'a>(
 
 /// Generate element template string (recursively includes static children)
 pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
-    let mut template = vize_carton::new_string!("<{}", el.tag);
+    let mut template = cstr!("<{}", el.tag);
 
     // Add static attributes
     for prop in el.props.iter() {
         if let PropNode::Attribute(attr) = prop {
             if let Some(ref value) = attr.value {
-                vize_carton::push_fmt!(template, " {}=\"{}\"", attr.name, value.content);
+                append!(template, " {}=\"{}\"", attr.name, value.content);
             } else {
-                vize_carton::push_fmt!(template, " {}", attr.name);
+                append!(template, " {}", attr.name);
             }
         }
     }
@@ -293,7 +293,7 @@ pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
             }
         }
 
-        vize_carton::push_fmt!(template, "</{}>", el.tag);
+        append!(template, "</{}>", el.tag);
     }
 
     template

@@ -1,6 +1,6 @@
 //! The main `ReactivityTracker` implementation.
 
-use vize_carton::{CompactString, FxHashMap, FxHashSet, SmallVec};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet, SmallVec};
 
 use super::{
     BindingState, ReactiveBinding, ReactiveBindingId, ReactiveOrigin, ReactiveScope,
@@ -215,7 +215,7 @@ impl ReactivityTracker {
                         kind: violation_kind,
                         start,
                         end,
-                        message: vize_carton::new_string!(
+                        message: cstr!(
                             "Destructuring '{}' loses reactivity for: {}",
                             binding.name,
                             extracted_props.join(", ")
@@ -233,7 +233,7 @@ impl ReactivityTracker {
                         kind: ViolationKind::SpreadLoss,
                         start,
                         end,
-                        message: vize_carton::new_string!(
+                        message: cstr!(
                             "Spreading '{}' creates a non-reactive copy",
                             binding.name
                         ),
@@ -252,7 +252,7 @@ impl ReactivityTracker {
                         kind: ViolationKind::ReactiveConst,
                         start,
                         end,
-                        message: vize_carton::new_string!(
+                        message: cstr!(
                             "Cannot reassign '{}' declared with const",
                             binding.name
                         ),
@@ -268,7 +268,7 @@ impl ReactivityTracker {
                         kind: ViolationKind::Reassignment,
                         start,
                         end,
-                        message: vize_carton::new_string!(
+                        message: cstr!(
                             "Reassigning '{}' breaks reactivity tracking",
                             binding.name
                         ),
@@ -286,7 +286,7 @@ impl ReactivityTracker {
                     kind: ViolationKind::ExternalMutation,
                     start,
                     end,
-                    message: vize_carton::new_string!(
+                    message: cstr!(
                         "Reactive object '{}' assigned to external target '{target}' - external code may mutate state",
                         binding.name
                     ),
@@ -305,7 +305,7 @@ impl ReactivityTracker {
                     kind: ViolationKind::UnsafeClosureCapture,
                     start,
                     end,
-                    message: vize_carton::new_string!(
+                    message: cstr!(
                         "Reactive reference '{}' captured in closure",
                         binding.name
                     ),
@@ -326,7 +326,7 @@ impl ReactivityTracker {
                         kind: ViolationKind::MissingValueAccess,
                         start,
                         end,
-                        message: vize_carton::new_string!(
+                        message: cstr!(
                             "Ref '{}' used without .value - did you mean {}.value?",
                             binding.name, binding.name
                         ),

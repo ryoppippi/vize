@@ -4,6 +4,7 @@
 //! v-if narrowing) and component prop value type assertions.
 
 use super::types::VizeMapping;
+use vize_carton::append;
 use vize_croquis::analysis::ComponentUsage;
 
 /// Generate a template expression with optional v-if narrowing.
@@ -27,9 +28,9 @@ pub(crate) fn generate_expression(
 
     if let Some(ref guard) = expr.vif_guard {
         // Wrap in if block for type narrowing
-        vize_carton::push_fmt!(*ts, "{indent}if ({guard}) {{\n");
+        append!(*ts, "{indent}if ({guard}) {{\n");
         let gen_expr_start = ts.len();
-        vize_carton::push_fmt!(
+        append!(
             *ts,
             "{indent}  void ({}); // {}\n",
             expr.content,
@@ -40,14 +41,14 @@ pub(crate) fn generate_expression(
             gen_range: gen_expr_start..gen_expr_end,
             src_range: src_start..src_end,
         });
-        vize_carton::push_fmt!(
+        append!(
             *ts,
             "{indent}  // @vize-map: expr -> {src_start}:{src_end}\n",
         );
-        vize_carton::push_fmt!(*ts, "{indent}}}\n");
+        append!(*ts, "{indent}}}\n");
     } else {
         let gen_expr_start = ts.len();
-        vize_carton::push_fmt!(
+        append!(
             *ts,
             "{indent}void ({}); // {}\n",
             expr.content,
@@ -58,7 +59,7 @@ pub(crate) fn generate_expression(
             gen_range: gen_expr_start..gen_expr_end,
             src_range: src_start..src_end,
         });
-        vize_carton::push_fmt!(*ts, "{indent}// @vize-map: expr -> {src_start}:{src_end}\n",);
+        append!(*ts, "{indent}// @vize-map: expr -> {src_start}:{src_end}\n",);
     }
 }
 
@@ -80,7 +81,7 @@ pub(crate) fn generate_component_prop_checks(
             if prop.is_dynamic {
                 let prop_src_start = (template_offset + prop.start) as usize;
                 let prop_src_end = (template_offset + prop.end) as usize;
-                vize_carton::push_fmt!(
+                append!(
                     *ts,
                     "{indent}// @vize-map: prop -> {prop_src_start}:{prop_src_end}\n",
                 );
@@ -88,7 +89,7 @@ pub(crate) fn generate_component_prop_checks(
                 let safe_prop_name = prop.name.replace('-', "_");
 
                 let gen_prop_start = ts.len();
-                vize_carton::push_fmt!(
+                append!(
                     *ts,
                     "{indent}({value}) as __{component_name}_{idx}_prop_{safe_prop_name};\n",
                 );

@@ -11,6 +11,7 @@ use super::source_map::CompositeSourceMap;
 use super::virtual_ts::VirtualTsGenerator;
 use super::SfcBlockType;
 use oxc_span::SourceType;
+use vize_carton::cstr;
 
 /// A virtual file in the project.
 #[derive(Debug)]
@@ -96,7 +97,7 @@ impl VirtualProject {
         let file_name = virtual_path
             .file_name()
             .and_then(|n| n.to_str())
-            .map(|n| vize_carton::new_string!("{}.ts", n).to_string())
+            .map(|n| cstr!("{n}.ts").to_string())
             .ok_or_else(|| TsgoError::PathError {
                 path: path.to_path_buf(),
             })?;

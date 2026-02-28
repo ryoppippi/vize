@@ -11,6 +11,7 @@ use tower_lsp::lsp_types::{
 use crate::ide::DiagnosticService;
 
 use super::MaestroServer;
+use vize_carton::append;
 
 impl MaestroServer {
     /// Publish diagnostics for a document.
@@ -119,7 +120,7 @@ impl MaestroServer {
             };
 
             if let Some(NumberOrString::String(ref rule)) = diag.code {
-                vize_carton::push_fmt!(markdown, "### {severity_icon} {rule}\n\n");
+                append!(markdown, "### {severity_icon} {rule}\n\n");
             }
 
             let parts: Vec<&str> = diag.message.split("\n\nHelp: ").collect();
@@ -127,11 +128,11 @@ impl MaestroServer {
             markdown.push_str("\n\n");
 
             if parts.len() > 1 {
-                vize_carton::push_fmt!(markdown, "**Help:** {}\n\n", parts[1]);
+                append!(markdown, "**Help:** {}\n\n", parts[1]);
             }
 
             if let Some(ref code_desc) = diag.code_description {
-                vize_carton::push_fmt!(
+                append!(
                     markdown,
                     "[📖 View rule documentation]({})\n\n",
                     code_desc.href

@@ -24,7 +24,7 @@ pub fn hash_str(data: &str) -> u64 {
 /// Convert a hash to a hex string (16 characters).
 #[inline]
 pub fn hash_to_hex(hash: u64) -> String {
-    crate::new_string!("{:016x}", hash)
+    crate::cstr!("{hash:016x}")
 }
 
 /// Compute hash of a string and return as hex.

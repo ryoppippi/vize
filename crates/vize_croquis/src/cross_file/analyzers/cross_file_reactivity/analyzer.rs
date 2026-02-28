@@ -11,7 +11,7 @@ use crate::cross_file::diagnostics::{CrossFileDiagnostic, DiagnosticSeverity};
 use crate::cross_file::graph::{DependencyEdge, DependencyGraph};
 use crate::cross_file::registry::{FileId, ModuleRegistry};
 use crate::reactivity::ReactiveKind;
-use vize_carton::{CompactString, FxHashMap, FxHashSet, SmallVec};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet, SmallVec};
 
 /// The cross-file reactivity analyzer.
 pub struct CrossFileReactivityAnalyzer<'a> {
@@ -177,7 +177,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &provide.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        vize_carton::new_string!("Symbol:{s}")
+                        cstr!("Symbol:{s}")
                     }
                 };
 
@@ -304,7 +304,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &inject.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        vize_carton::new_string!("Symbol:{s}")
+                        cstr!("Symbol:{s}")
                     }
                 };
 
