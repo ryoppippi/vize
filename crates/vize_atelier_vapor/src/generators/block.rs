@@ -104,7 +104,7 @@ pub fn generate_block(
         let returns = block
             .returns
             .iter()
-            .map(|r| vize_carton::new_string!("_n{}", r))
+            .map(|r| vize_carton::new_string!("_n{r}"))
             .collect::<Vec<_>>()
             .join(", ");
 

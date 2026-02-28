@@ -121,7 +121,7 @@ impl ScriptRule for NoOptionsApi {
 
 #[cfg(test)]
 mod tests {
-    use super::NoOptionsApi;
+    use super::{NoOptionsApi, ScriptLintResult, ScriptRule};
 
     #[test]
     fn test_valid_composition_api() {

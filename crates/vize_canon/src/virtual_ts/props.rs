@@ -45,7 +45,7 @@ pub(crate) fn generate_props_type(ts: &mut String, summary: &Croquis) {
         for prop in props {
             let prop_type = prop.prop_type.as_deref().unwrap_or("unknown");
             let optional = if prop.required { "" } else { "?" };
-            vize_carton::push_fmt!(*ts, "  {}{}: {};\n", prop.name, optional, prop_type);
+            vize_carton::push_fmt!(*ts, "  {}{optional}: {prop_type};\n", prop.name);
         }
         ts.push_str("};\n");
     } else {
@@ -108,8 +108,8 @@ pub(crate) fn generate_props_variables(
                 // Fallback: extract field names from script text (for local interfaces)
                 let field_names = extract_interface_fields(script, type_name);
                 for field in &field_names {
-                    vize_carton::push_fmt!(*ts, "  const {} = props[\"{}\"];\n", field, field);
-                    vize_carton::push_fmt!(*ts, "  void {};\n", field);
+                    vize_carton::push_fmt!(*ts, "  const {field} = props[\"{field}\"];\n");
+                    vize_carton::push_fmt!(*ts, "  void {field};\n");
                 }
             }
         }

@@ -256,9 +256,10 @@ onUnmounted(() => {
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search rules..."
+                aria-label="Search rules"
                 class="search-input"
               />
-              <select v-model="selectedCategory" class="category-select">
+              <select v-model="selectedCategory" aria-label="Category filter" class="category-select">
                 <option v-for="cat in categories" :key="cat" :value="cat">
                   {{ cat === "all" ? "All Categories" : cat }}
                 </option>
@@ -272,8 +273,8 @@ onUnmounted(() => {
                   type="checkbox"
                   :checked="isCategoryFullyEnabled(selectedCategory)"
                   :indeterminate="isCategoryPartiallyEnabled(selectedCategory)"
-                  @change="toggleCategory(selectedCategory, $event.target.checked)"
                   class="rule-checkbox"
+                  @change="toggleCategory(selectedCategory, $event.target.checked)"
                 />
                 <span class="category-label">{{ selectedCategory }}</span>
                 <span class="category-count">{{ filteredRules.length }} rules</span>
@@ -291,8 +292,8 @@ onUnmounted(() => {
                     <input
                       type="checkbox"
                       :checked="enabledRules.has(rule.name)"
-                      @change="toggleRule(rule.name)"
                       class="rule-checkbox"
+                      @change="toggleRule(rule.name)"
                     />
                     <code class="rule-id">{{ rule.name }}</code>
                   </label>

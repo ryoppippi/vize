@@ -80,20 +80,20 @@ pub fn generate_class_binding(element_var: &str, value: &str, is_static: bool) -
 /// Generate style binding
 pub fn generate_style_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{}.style.cssText = \"{}\"", element_var, value).into()
+        vize_carton::new_string!("{element_var}.style.cssText = \"{value}\"").into()
     } else {
-        vize_carton::new_string!("_setStyle({}, {})", element_var, value).into()
+        vize_carton::new_string!("_setStyle({element_var}, {value})").into()
     }
 }
 
 /// Generate attribute binding
 pub fn generate_attribute(element_var: &str, name: &str, value: &str) -> String {
-    vize_carton::new_string!("{}.setAttribute(\"{}\", {})", element_var, name, value).into()
+    vize_carton::new_string!("{element_var}.setAttribute(\"{name}\", {value})").into()
 }
 
 /// Generate prop binding for component
 pub fn generate_component_prop(component_var: &str, key: &str, value: &str) -> String {
-    vize_carton::new_string!("{}.$props.{} = {}", component_var, key, value).into()
+    vize_carton::new_string!("{component_var}.$props.{key} = {value}").into()
 }
 
 /// Normalize prop key for components

@@ -188,7 +188,7 @@ impl ImportResolver {
     ) -> Result<ResolvedModule, ImportResolveError> {
         // Create cache key
         #[allow(clippy::disallowed_macros)]
-        let cache_key = format!("{}:{}", from_file.display(), specifier);
+        let cache_key = format!("{}:{specifier}", from_file.display());
 
         // Check cache first
         if let Some(cached) = self.cache.get(&cache_key) {
@@ -220,8 +220,7 @@ impl ImportResolver {
             return Err(ImportResolveError::NotFound({
                 #[allow(clippy::disallowed_macros)]
                 let s = format!(
-                    "Node module resolution not supported: {}",
-                    specifier
+                    "Node module resolution not supported: {specifier}"
                 );
                 s
             }));
@@ -275,7 +274,7 @@ impl ImportResolver {
                         let replacement_prefix = &replacement[..replacement.len() - 1];
                         let base = self.base_url.as_ref().unwrap_or(&self.project_root);
                         #[allow(clippy::disallowed_macros)]
-                        let target = base.join(format!("{}{}", replacement_prefix, suffix));
+                        let target = base.join(format!("{replacement_prefix}{suffix}"));
                         if let Ok(resolved) = self.try_resolve_file(&target) {
                             return Ok(Some(resolved));
                         }
