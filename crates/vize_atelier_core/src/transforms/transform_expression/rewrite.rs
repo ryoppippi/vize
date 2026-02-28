@@ -13,9 +13,11 @@ use std::string::String as StdString;
 
 use crate::transform::TransformContext;
 
-use super::collector::IdentifierCollector;
-use super::prefix::{get_identifier_prefix, is_ref_binding_simple, is_simple_identifier};
-use super::typescript::strip_typescript_from_expression;
+use super::{
+    collector::IdentifierCollector,
+    prefix::{get_identifier_prefix, is_ref_binding_simple, is_simple_identifier},
+    typescript::strip_typescript_from_expression,
+};
 
 /// Result of expression rewriting
 pub(crate) struct RewriteResult {

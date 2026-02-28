@@ -1,8 +1,13 @@
 use vize_relief::ErrorCode;
 
-use super::char_codes::*;
-use super::types::*;
-use super::Tokenizer;
+use super::{
+    char_codes::{
+        AT, COLON, DASH, DOT, DOUBLE_QUOTE, EQ, EXCLAMATION_MARK, GT, LEFT_SQUARE, LOWER_V, LT,
+        NUMBER, QUESTION_MARK, RIGHT_SQUARE, SINGLE_QUOTE, SLASH,
+    },
+    types::{is_end_of_tag_section, is_tag_start_char, is_whitespace, Callbacks, QuoteType, State},
+    Tokenizer,
+};
 
 impl<'a, C: Callbacks> Tokenizer<'a, C> {
     pub(super) fn cleanup(&mut self) {

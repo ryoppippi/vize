@@ -7,8 +7,7 @@ use tower_lsp::lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 use vize_croquis::{Analyzer, AnalyzerOptions};
 use vize_relief::BindingType;
 
-use super::helpers;
-use super::IdeContext;
+use super::{helpers, IdeContext};
 use crate::ide::{is_component_tag, kebab_to_pascal};
 
 /// Find definition for a symbol in template context.

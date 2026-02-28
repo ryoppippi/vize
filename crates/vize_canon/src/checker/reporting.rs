@@ -3,8 +3,10 @@
 //! Contains methods for type lookup at positions, completion generation,
 //! identifier extraction, and helper predicates.
 
-use crate::context::TypeContext;
-use crate::types::{CompletionItem, CompletionKind, TypeInfo};
+use crate::{
+    context::TypeContext,
+    types::{CompletionItem, CompletionKind, TypeInfo},
+};
 
 use super::runner::TypeChecker;
 

@@ -10,7 +10,7 @@ mod text;
 
 use vize_carton::{Bump, String, Vec};
 
-use crate::ir::*;
+use crate::ir::{BlockIRNode, RootIRNode};
 use vize_atelier_core::{RootNode, TemplateChildNode};
 
 use context::TransformContext;
@@ -78,8 +78,9 @@ fn transform_children<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::transform_to_ir;
     use vize_atelier_core::parser::parse;
+    use vize_carton::Bump;
 
     #[test]
     fn test_transform_simple_element() {

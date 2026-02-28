@@ -16,9 +16,11 @@ mod whitespace;
 mod tests;
 
 use vize_carton::{Box, Bump, String, Vec};
-use vize_relief::ast::*;
-use vize_relief::errors::{CompilerError, ErrorCode};
-use vize_relief::options::{ParserOptions, WhitespaceStrategy};
+use vize_relief::{
+    ast::*,
+    errors::{CompilerError, ErrorCode},
+    options::{ParserOptions, WhitespaceStrategy},
+};
 
 use crate::tokenizer::Tokenizer;
 

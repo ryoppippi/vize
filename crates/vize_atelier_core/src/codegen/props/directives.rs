@@ -2,11 +2,11 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::super::expression::{
-    generate_event_handler, generate_expression, generate_simple_expression,
+use super::super::{
+    context::CodegenContext,
+    expression::{generate_event_handler, generate_expression, generate_simple_expression},
+    helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier},
 };
-use super::super::helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier};
 
 /// Check if a directive will produce valid output
 pub fn is_supported_directive(dir: &DirectiveNode<'_>) -> bool {

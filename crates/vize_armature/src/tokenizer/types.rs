@@ -1,6 +1,8 @@
 use vize_relief::ErrorCode;
 
-use super::char_codes::*;
+use super::char_codes::{
+    CARRIAGE_RETURN, FORM_FEED, GT, LOWER_A, LOWER_Z, NEWLINE, SLASH, SPACE, TAB, UPPER_A, UPPER_Z,
+};
 
 /// All the states the tokenizer can be in
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

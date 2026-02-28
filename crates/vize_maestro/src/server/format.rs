@@ -38,7 +38,7 @@ pub(crate) fn format_document(
 
 #[cfg(all(test, feature = "glyph"))]
 mod tests {
-    use super::*;
+    use super::format_document;
     use crate::server::ServerState;
     use tower_lsp::lsp_types::Position;
 

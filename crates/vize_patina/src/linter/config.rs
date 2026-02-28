@@ -3,10 +3,11 @@
 //! Defines the `LintResult` output type and the `Linter` struct with its
 //! builder-pattern configuration methods.
 
-use crate::diagnostic::{HelpLevel, LintDiagnostic};
-use crate::rule::RuleRegistry;
-use vize_carton::i18n::Locale;
-use vize_carton::FxHashSet;
+use crate::{
+    diagnostic::{HelpLevel, LintDiagnostic},
+    rule::RuleRegistry,
+};
+use vize_carton::{i18n::Locale, FxHashSet};
 
 /// Lint result for a single file.
 #[derive(Debug, Clone)]

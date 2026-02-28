@@ -13,8 +13,7 @@ mod directives;
 mod formatter;
 mod helpers;
 
-use crate::error::FormatError;
-use crate::options::FormatOptions;
+use crate::{error::FormatError, options::FormatOptions};
 
 use formatter::TemplateFormatter;
 use helpers::is_whitespace;
@@ -38,9 +37,9 @@ pub fn format_template_content(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::options::AttributeSortOrder;
-    use attributes::{attribute_priority, render_attribute, ParsedAttribute};
+    use super::{attributes, directives, format_template_content, formatter, helpers};
+    use crate::options::{AttributeSortOrder, FormatOptions};
+    use attributes::attribute_priority;
     use directives::{custom_attribute_priority, format_v_for_expression, matches_attr_pattern};
     use formatter::format_interpolations;
     use helpers::{is_tag_name_char, is_void_element_str};

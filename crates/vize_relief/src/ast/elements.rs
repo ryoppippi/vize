@@ -3,13 +3,14 @@
 //! Contains element, attribute, directive, text, comment,
 //! and interpolation node definitions.
 
-use vize_carton::directive::DirectiveKind;
-use vize_carton::{Box, Bump, String, Vec};
+use vize_carton::{directive::DirectiveKind, Box, Bump, String, Vec};
 
-use super::codegen::{CacheExpression, VNodeCall};
-use super::control_flow::ForParseResult;
-use super::core::{ElementType, Namespace, NodeType, SourceLocation};
-use super::expressions::{ExpressionNode, SimpleExpressionNode};
+use super::{
+    codegen::{CacheExpression, VNodeCall},
+    control_flow::ForParseResult,
+    core::{ElementType, Namespace, NodeType, SourceLocation},
+    expressions::{ExpressionNode, SimpleExpressionNode},
+};
 
 /// Element node
 #[derive(Debug)]

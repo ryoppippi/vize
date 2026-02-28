@@ -4,7 +4,10 @@
 //! through call edges, querying setup context status, and generating
 //! markdown visualizations.
 
-use super::*;
+use super::{
+    CallEdge, CallGraph, ComposableCallInfo, FunctionDef, FunctionId, SetupContextKind, SmallVec,
+    VueApiCall, VueApiCategory,
+};
 
 impl CallGraph {
     /// Check if a function (or None for top-level) is in setup context.
@@ -273,7 +276,7 @@ impl CallGraph {
 #[cfg(test)]
 mod tests {
     use super::builder::{categorize_vue_api, is_composable_name, is_vue_api};
-    use super::*;
+    use super::{CallGraph, CompactString, FunctionId, ScopeId, SetupContextKind, VueApiCategory};
 
     #[test]
     fn test_categorize_vue_api() {

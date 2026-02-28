@@ -14,10 +14,7 @@ use tower_lsp::lsp_types::{
 #[cfg(feature = "native")]
 use vize_canon::{LspCompletionItem, LspDocumentation, TsgoBridge};
 
-use super::is_inside_html_comment;
-use super::script;
-use super::style;
-use super::template;
+use super::{is_inside_html_comment, script, style, template};
 use crate::ide::IdeContext;
 use crate::virtual_code::BlockType;
 

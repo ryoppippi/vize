@@ -8,9 +8,9 @@ pub(crate) mod helpers;
 
 use crate::ast::*;
 
-use super::children::generate_children;
-use super::context::CodegenContext;
-use super::expression::generate_expression;
+use super::{
+    children::generate_children, context::CodegenContext, expression::generate_expression,
+};
 
 use generate::generate_for_item;
 use helpers::extract_for_params;

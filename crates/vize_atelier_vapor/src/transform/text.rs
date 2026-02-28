@@ -4,7 +4,7 @@
 
 use vize_carton::{Box, Vec};
 
-use crate::ir::*;
+use crate::ir::{BlockIRNode, IREffect, OperationNode, SetTextIRNode};
 use vize_atelier_core::{
     ExpressionNode, InterpolationNode, SimpleExpressionNode, SourceLocation, TemplateChildNode,
     TextNode,

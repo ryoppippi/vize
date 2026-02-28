@@ -3,7 +3,7 @@
 //! Handles converting between Croquis and legacy binding formats,
 //! and registering bindings from normal `<script>` blocks.
 
-use crate::types::*;
+use crate::types::{BindingMetadata, BindingType};
 
 /// Convert Croquis BindingMetadata (CompactString keys) to legacy BindingMetadata (String keys)
 pub(super) fn croquis_to_legacy_bindings(

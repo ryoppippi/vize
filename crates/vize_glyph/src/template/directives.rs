@@ -3,8 +3,7 @@
 //! Handles Vue directive shorthand normalization (`v-bind:` -> `:`, `v-on:` -> `@`,
 //! `v-slot:` -> `#`) and JS expression formatting in directive values.
 
-use crate::options::FormatOptions;
-use crate::script;
+use crate::{options::FormatOptions, script};
 
 use super::attributes::attribute_priority;
 

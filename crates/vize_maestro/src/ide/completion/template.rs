@@ -9,9 +9,10 @@ use tower_lsp::lsp_types::{
 };
 use vize_croquis::{Analyzer, AnalyzerOptions};
 
-use super::items;
-use super::{is_inside_art_tag, is_inside_html_comment, is_inside_variant_tag};
-use super::{should_suggest_art_block, should_suggest_variant_block};
+use super::{
+    is_inside_art_tag, is_inside_html_comment, is_inside_variant_tag, items,
+    should_suggest_art_block, should_suggest_variant_block,
+};
 use crate::ide::IdeContext;
 
 /// Get completions for template context.

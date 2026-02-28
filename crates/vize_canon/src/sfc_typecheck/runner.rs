@@ -5,14 +5,14 @@
 
 use vize_carton::Bump;
 
-use super::analysis::{
-    SfcTypeCheckOptions, SfcTypeCheckResult, SfcTypeDiagnostic, SfcTypeSeverity,
+use super::{
+    analysis::{SfcTypeCheckOptions, SfcTypeCheckResult, SfcTypeDiagnostic, SfcTypeSeverity},
+    checks::{
+        check_emits_typing, check_fallthrough_attrs, check_invalid_exports, check_props_typing,
+        check_reactivity, check_setup_context, check_template_bindings,
+    },
+    virtual_ts::generate_virtual_ts_with_scopes,
 };
-use super::checks::{
-    check_emits_typing, check_fallthrough_attrs, check_invalid_exports, check_props_typing,
-    check_reactivity, check_setup_context, check_template_bindings,
-};
-use super::virtual_ts::generate_virtual_ts_with_scopes;
 
 /// Perform type checking on a Vue SFC.
 ///

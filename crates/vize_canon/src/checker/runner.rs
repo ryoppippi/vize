@@ -4,9 +4,11 @@
 //! methods: interpolation checking, directive checking, event handler
 //! checking, and v-bind expression checking.
 
-use crate::context::TypeContext;
-use crate::diagnostic::{TypeDiagnostic, TypeErrorCode};
-use crate::CheckResult;
+use crate::{
+    context::TypeContext,
+    diagnostic::{TypeDiagnostic, TypeErrorCode},
+    CheckResult,
+};
 
 /// Type checker for Vue SFC templates.
 ///

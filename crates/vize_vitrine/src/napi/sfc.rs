@@ -7,8 +7,10 @@ use glob::glob;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use rayon::prelude::*;
-use std::fs;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{
+    fs,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 /// SFC parse options for NAPI
 #[napi(object)]

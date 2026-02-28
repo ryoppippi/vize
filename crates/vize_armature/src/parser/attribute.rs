@@ -4,7 +4,10 @@
 //! attribute data (values), and finalization of attribute and directive nodes.
 
 use vize_carton::{Box, String, Vec};
-use vize_relief::ast::*;
+use vize_relief::ast::{
+    AttributeNode, ConstantType, DirectiveNode, ExpressionNode, PropNode, SimpleExpressionNode,
+    TextNode,
+};
 
 use crate::tokenizer::QuoteType;
 

@@ -1,4 +1,7 @@
-use super::*;
+use super::{
+    types::{is_end_of_tag_section, is_tag_start_char, is_whitespace, Callbacks, QuoteType},
+    Tokenizer,
+};
 use vize_relief::ErrorCode;
 
 // ========================================================================

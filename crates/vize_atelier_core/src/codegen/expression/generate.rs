@@ -5,9 +5,10 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::generate_simple_expression;
-use super::helpers::prefix_identifiers_with_context;
+use super::{
+    super::context::CodegenContext, generate_simple_expression,
+    helpers::prefix_identifiers_with_context,
+};
 
 /// Generate a simple expression with appropriate prefix.
 /// Used for ref attribute values that need `$setup.` prefix in function mode.

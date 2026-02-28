@@ -5,13 +5,15 @@
 
 use vize_croquis::{Croquis, ScopeData, ScopeKind};
 
-use super::helpers::{
-    generate_template_context, is_type_decl_complete, is_type_declaration_start,
-    IMPORT_META_AUGMENTATION, VUE_SETUP_COMPILER_MACROS,
+use super::{
+    helpers::{
+        generate_template_context, is_type_decl_complete, is_type_declaration_start,
+        IMPORT_META_AUGMENTATION, VUE_SETUP_COMPILER_MACROS,
+    },
+    props::{generate_props_type, generate_props_variables},
+    scope::generate_scope_closures,
+    types::{VirtualTsOptions, VirtualTsOutput, VizeMapping},
 };
-use super::props::{generate_props_type, generate_props_variables};
-use super::scope::generate_scope_closures;
-use super::types::{VirtualTsOptions, VirtualTsOutput, VizeMapping};
 
 /// Generate virtual TypeScript from Vue SFC analysis.
 ///

@@ -97,7 +97,7 @@ impl ReferencesService {
         children: &[vize_relief::ast::TemplateChildNode<'a>],
         expressions: &mut Vec<(String, usize)>,
     ) {
-        use vize_relief::ast::*;
+        use vize_relief::ast::{PropNode, TemplateChildNode};
 
         for child in children {
             match child {
@@ -151,7 +151,7 @@ impl ReferencesService {
 
     /// Get expression text and offset from ExpressionNode.
     fn get_expression_info(expr: &vize_relief::ast::ExpressionNode) -> Option<(String, usize)> {
-        use vize_relief::ast::*;
+        use vize_relief::ast::ExpressionNode;
 
         match expr {
             ExpressionNode::Simple(simple) => {

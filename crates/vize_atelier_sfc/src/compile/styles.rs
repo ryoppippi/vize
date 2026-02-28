@@ -3,7 +3,7 @@
 //! Compiles all `<style>` blocks in an SFC, applying scoped CSS
 //! transformations when needed.
 
-use crate::types::*;
+use crate::types::{SfcError, SfcStyleBlock, StyleCompileOptions};
 
 /// Helper to compile all style blocks
 pub(super) fn compile_styles(

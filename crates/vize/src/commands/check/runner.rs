@@ -3,20 +3,22 @@
 //! Contains the direct tsgo LSP runner, Unix socket runner, file collection,
 //! and globals parsing.
 
-use std::fs;
-use std::path::PathBuf;
-use std::time::Instant;
+use std::{fs, path::PathBuf, time::Instant};
 
 use ignore::WalkBuilder;
 
-use super::reporting::{JsonFileResult, JsonOutput};
-use super::{CheckArgs, GeneratedFile};
+use super::{
+    reporting::{JsonFileResult, JsonOutput},
+    CheckArgs, GeneratedFile,
+};
 
 /// Run type checking via Unix socket connection to check-server.
 #[cfg(unix)]
 pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
-    use std::io::{BufRead, BufReader, Write};
-    use std::os::unix::net::UnixStream;
+    use std::{
+        io::{BufRead, BufReader, Write},
+        os::unix::net::UnixStream,
+    };
 
     use super::{JsonRpcResponse, ServerCheckResult};
 
@@ -172,8 +174,10 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     use rayon::prelude::*;
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};
-    use vize_canon::lsp_client::TsgoLspClient;
-    use vize_canon::virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions};
+    use vize_canon::{
+        lsp_client::TsgoLspClient,
+        virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions},
+    };
     use vize_carton::Bump;
     use vize_croquis::{Analyzer, AnalyzerOptions};
 
@@ -425,8 +429,10 @@ pub(crate) fn run_direct(args: &CheckArgs) {
         .collect();
 
     // Run type checking in parallel across multiple LSP servers
-    use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
-    use std::sync::Mutex;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering as AtomicOrdering},
+        Mutex,
+    };
     let total_errors = AtomicUsize::new(0);
     let all_diagnostics: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
 

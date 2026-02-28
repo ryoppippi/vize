@@ -2,8 +2,10 @@
 //!
 //! Handles CSS `v-bind()` expressions in `<style>` blocks.
 
-use super::encoding::offset_to_line_col;
-use super::types::{AbsoluteToken, TokenType};
+use super::{
+    encoding::offset_to_line_col,
+    types::{AbsoluteToken, TokenType},
+};
 
 /// Collect tokens from style content.
 pub(crate) fn collect_style_tokens(style: &str, base_line: u32, tokens: &mut Vec<AbsoluteToken>) {

@@ -3,10 +3,11 @@
 //! Contains internal data types used during the compilation pipeline:
 //! statistics tracking, per-file profiling, error collection, and output formats.
 
-use std::path::PathBuf;
-use std::sync::atomic::AtomicUsize;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::{
+    path::PathBuf,
+    sync::{atomic::AtomicUsize, Mutex},
+    time::Duration,
+};
 
 use super::ScriptExtension;
 

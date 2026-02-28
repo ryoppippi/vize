@@ -6,16 +6,18 @@
 
 use vize_carton::{Box, String, Vec};
 
-use crate::ir::*;
+use crate::ir::{BlockIRNode, CreateComponentIRNode, IRProp, OperationNode, SlotOutletIRNode};
 use vize_atelier_core::{
     ElementNode, ElementType, ExpressionNode, PropNode, SimpleExpressionNode, SourceLocation,
     TemplateChildNode,
 };
 
-use super::context::TransformContext;
-use super::control::{transform_for_node, transform_if_node};
-use super::directive::transform_directive;
-use super::text::{transform_interpolation, transform_text, transform_text_children};
+use super::{
+    context::TransformContext,
+    control::{transform_for_node, transform_if_node},
+    directive::transform_directive,
+    text::{transform_interpolation, transform_text, transform_text_children},
+};
 /// Transform element node
 pub(crate) fn transform_element<'a>(
     ctx: &mut TransformContext<'a>,

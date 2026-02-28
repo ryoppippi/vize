@@ -1,6 +1,5 @@
-use super::helpers;
-use super::normal_script;
-use super::*;
+use super::{compile_sfc, helpers, normal_script};
+use crate::types::{BindingType, ScriptCompileOptions, SfcCompileOptions, TemplateCompileOptions};
 use crate::{parse_sfc, SfcParseOptions};
 
 #[test]

@@ -6,8 +6,7 @@ mod generate;
 
 use crate::ast::*;
 
-use super::context::CodegenContext;
-use super::expression::generate_expression;
+use super::{context::CodegenContext, expression::generate_expression};
 
 pub use directives::{generate_directive_prop_with_static, is_supported_directive};
 pub use generate::generate_props;

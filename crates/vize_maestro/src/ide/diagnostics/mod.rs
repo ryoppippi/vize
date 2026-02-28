@@ -276,7 +276,8 @@ pub(super) fn offset_to_line_col(source: &str, offset: usize) -> (u32, u32) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{DiagnosticBuilder, Severity};
+    use tower_lsp::lsp_types::{DiagnosticSeverity, NumberOrString};
 
     #[test]
     fn test_diagnostic_builder() {

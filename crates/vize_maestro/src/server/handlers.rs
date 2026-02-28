@@ -3,9 +3,23 @@
 //! Implements the `LanguageServer` trait for `MaestroServer`, dispatching
 //! requests to the appropriate IDE services.
 
-use tower_lsp::jsonrpc::Result;
-use tower_lsp::lsp_types::*;
-use tower_lsp::LanguageServer;
+use tower_lsp::{
+    jsonrpc::Result,
+    lsp_types::{
+        CodeActionParams, CodeActionResponse, CodeLens, CodeLensParams, CompletionItem,
+        CompletionParams, CompletionResponse, DidChangeTextDocumentParams,
+        DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+        DocumentFormattingParams, DocumentLink, DocumentLinkParams, DocumentRangeFormattingParams,
+        DocumentSymbol, DocumentSymbolParams, DocumentSymbolResponse, FoldingRange,
+        FoldingRangeKind, FoldingRangeParams, GotoDefinitionParams, GotoDefinitionResponse, Hover,
+        HoverParams, InitializeParams, InitializeResult, InitializedParams, InlayHint,
+        InlayHintParams, Location, MessageType, Position, PrepareRenameResponse, Range,
+        ReferenceParams, RenameParams, SemanticTokensParams, SemanticTokensResult, ServerInfo,
+        SymbolInformation, SymbolKind, TextDocumentPositionParams, TextEdit, WorkspaceEdit,
+        WorkspaceSymbolParams,
+    },
+    LanguageServer,
+};
 
 use super::{server_capabilities, MaestroServer};
 use crate::ide::{

@@ -4,14 +4,14 @@
 //! template formatting pipeline, including tag parsing, attribute layout,
 //! and interpolation formatting.
 
-use crate::error::FormatError;
-use crate::options::FormatOptions;
-use crate::script;
+use crate::{error::FormatError, options::FormatOptions, script};
 
-use super::attributes::{render_attribute, sort_attributes, ParsedAttribute};
-use super::directives::normalize_attribute;
-use super::helpers::{
-    find_bytes, is_tag_name_char, is_void_element_str, is_whitespace, parse_closing_tag,
+use super::{
+    attributes::{render_attribute, sort_attributes, ParsedAttribute},
+    directives::normalize_attribute,
+    helpers::{
+        find_bytes, is_tag_name_char, is_void_element_str, is_whitespace, parse_closing_tag,
+    },
 };
 
 /// High-performance template formatter.

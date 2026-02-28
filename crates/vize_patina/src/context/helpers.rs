@@ -6,11 +6,9 @@
 
 use crate::diagnostic::LintDiagnostic;
 use vize_carton::CompactString;
-use vize_relief::ast::SourceLocation;
-use vize_relief::BindingType;
+use vize_relief::{ast::SourceLocation, BindingType};
 
-use super::state::ElementContext;
-use super::LintContext;
+use super::{state::ElementContext, LintContext};
 
 impl<'a> LintContext<'a> {
     /// Report an error at a location.

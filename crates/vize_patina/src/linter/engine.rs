@@ -3,9 +3,7 @@
 //! Contains the core linting methods: single-file template linting,
 //! full SFC linting with template extraction, and batch file processing.
 
-use crate::context::LintContext;
-use crate::diagnostic::LintSummary;
-use crate::visitor::LintVisitor;
+use crate::{context::LintContext, diagnostic::LintSummary, visitor::LintVisitor};
 use vize_armature::Parser;
 use vize_carton::Allocator;
 

@@ -5,10 +5,12 @@
 
 use vize_carton::{Box, Bump, PatchFlags, String, Vec};
 
-use super::core::{NodeType, SourceLocation};
-use super::expressions::{CompoundExpressionNode, ExpressionNode, SimpleExpressionNode};
-use super::nodes::TemplateChildNode;
-use super::RuntimeHelper;
+use super::{
+    core::{NodeType, SourceLocation},
+    expressions::{CompoundExpressionNode, ExpressionNode, SimpleExpressionNode},
+    nodes::TemplateChildNode,
+    RuntimeHelper,
+};
 
 /// VNode call expression
 #[derive(Debug)]

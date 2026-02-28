@@ -2,9 +2,9 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::super::expression::generate_event_handler;
-use super::super::helpers::camelize;
+use super::super::{
+    context::CodegenContext, expression::generate_event_handler, helpers::camelize,
+};
 
 /// Get the event key for a v-on directive (e.g., "onClick", "onKeyupEnter")
 pub(super) fn get_von_event_key(dir: &DirectiveNode<'_>) -> Option<String> {

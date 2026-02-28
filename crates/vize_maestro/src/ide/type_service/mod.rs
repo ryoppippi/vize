@@ -128,7 +128,7 @@ impl TypeService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::TypeService;
 
     #[test]
     fn test_extract_identifier() {

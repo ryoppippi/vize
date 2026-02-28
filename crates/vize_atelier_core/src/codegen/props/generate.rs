@@ -2,11 +2,13 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::super::helpers::{escape_js_string, is_valid_js_identifier};
-use super::directives::{generate_directive_prop_with_static, is_supported_directive};
-use super::events::{count_event_names, generate_merged_event_handlers, get_von_event_key};
 use super::{
+    super::{
+        context::CodegenContext,
+        helpers::{escape_js_string, is_valid_js_identifier},
+    },
+    directives::{generate_directive_prop_with_static, is_supported_directive},
+    events::{count_event_names, generate_merged_event_handlers, get_von_event_key},
     generate_vbind_object_exp, generate_von_object_exp, has_dynamic_key, has_dynamic_vmodel,
     has_other_props, has_vbind_object, has_von_object,
 };

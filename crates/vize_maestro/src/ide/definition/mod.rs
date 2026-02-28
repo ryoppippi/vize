@@ -21,7 +21,7 @@ pub struct DefinitionService;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{bindings, helpers, script, BindingKind};
 
     #[test]
     fn test_find_binding_location_const() {

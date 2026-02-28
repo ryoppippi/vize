@@ -83,7 +83,7 @@ pub fn is_keyword(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{is_builtin_directive, is_component_tag};
 
     #[test]
     fn test_is_component_tag() {

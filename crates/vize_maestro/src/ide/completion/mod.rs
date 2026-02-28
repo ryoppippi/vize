@@ -88,7 +88,7 @@ fn should_suggest_variant_block(before: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{is_inside_html_comment, items, script, style, template, trigger_characters};
     use tower_lsp::lsp_types::{CompletionItemKind, InsertTextFormat};
     use vize_relief::BindingType;
 

@@ -1,11 +1,9 @@
 //! Effect generation and inline operation helpers.
 
-use crate::ir::*;
+use crate::ir::{IREffect, OperationNode};
 use vize_carton::FxHashMap;
 
-use super::context::GenerateContext;
-use super::operations::generate_operation;
-use super::setup::is_svg_tag;
+use super::{context::GenerateContext, operations::generate_operation, setup::is_svg_tag};
 
 /// Generate effect
 pub(crate) fn generate_effect(

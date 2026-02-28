@@ -3,19 +3,25 @@
 //! Generates elements that are not block roots, using `createElementVNode()`
 //! and `createVNode()` instead of their block counterparts.
 
-use crate::ast::*;
-use crate::transforms::v_memo::{get_memo_exp, has_v_memo};
+use crate::{
+    ast::*,
+    transforms::v_memo::{get_memo_exp, has_v_memo},
+};
 
-use super::super::children::generate_children;
-use super::super::context::CodegenContext;
-use super::super::expression::generate_expression;
-use super::super::helpers::is_builtin_component;
-use super::super::node::generate_node;
-use super::super::patch_flag::{calculate_element_patch_info, patch_flag_name};
-use super::super::props::generate_props;
-use super::super::slots::{generate_slots, has_slot_children};
-use super::directives::{generate_vmodel_closing, generate_vshow_closing};
-use super::helpers::{has_vmodel_directive, has_vshow_directive, is_is_prop, is_renderable_prop};
+use super::{
+    super::{
+        children::generate_children,
+        context::CodegenContext,
+        expression::generate_expression,
+        helpers::is_builtin_component,
+        node::generate_node,
+        patch_flag::{calculate_element_patch_info, patch_flag_name},
+        props::generate_props,
+        slots::{generate_slots, has_slot_children},
+    },
+    directives::{generate_vmodel_closing, generate_vshow_closing},
+    helpers::{has_vmodel_directive, has_vshow_directive, is_is_prop, is_renderable_prop},
+};
 
 /// Generate element code (non-block)
 pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {

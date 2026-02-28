@@ -2,13 +2,16 @@
 //!
 //! Each function emits JavaScript code for a specific IR operation node.
 
-use crate::ir::*;
+use crate::ir::{
+    CreateComponentIRNode, DirectiveIRNode, ForIRNode, GetTextChildIRNode, IfIRNode,
+    InsertNodeIRNode, NegativeBranch, OperationNode, PrependNodeIRNode, SetDynamicPropsIRNode,
+    SetEventIRNode, SetHtmlIRNode, SetPropIRNode, SetTemplateRefIRNode, SetTextIRNode,
+    SlotOutletIRNode,
+};
 use vize_atelier_core::ExpressionNode;
 use vize_carton::FxHashMap;
 
-use super::context::GenerateContext;
-use super::generate_block;
-use super::setup::is_svg_tag;
+use super::{context::GenerateContext, generate_block, setup::is_svg_tag};
 
 /// Generate operation
 pub(crate) fn generate_operation(

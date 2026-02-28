@@ -4,13 +4,15 @@
 
 use vize_carton::{Box, Vec};
 
-use crate::ir::*;
+use crate::ir::{
+    BlockIRNode, DirectiveIRNode, ForIRNode, IREffect, IRProp, IfIRNode, OperationNode,
+    SetEventIRNode, SetHtmlIRNode, SetPropIRNode, SetTextIRNode,
+};
 use vize_atelier_core::{
     DirectiveNode, ElementNode, ElementType, ExpressionNode, SimpleExpressionNode,
 };
 
-use super::context::TransformContext;
-use super::transform_children;
+use super::{context::TransformContext, transform_children};
 
 /// Transform directive
 pub(crate) fn transform_directive<'a>(

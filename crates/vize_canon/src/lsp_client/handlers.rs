@@ -5,10 +5,12 @@
 //! with timeouts, and non-blocking message reading.
 
 use serde_json::Value;
-use std::io::{BufRead, ErrorKind};
-use std::sync::mpsc;
-use std::thread;
-use std::time::Duration;
+use std::{
+    io::{BufRead, ErrorKind},
+    sync::mpsc,
+    thread,
+    time::Duration,
+};
 
 use super::TsgoLspClient;
 

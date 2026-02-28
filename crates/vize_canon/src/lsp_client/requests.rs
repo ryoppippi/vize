@@ -5,10 +5,12 @@
 //! (open, close, diagnostics).
 
 use serde_json::Value;
-use std::io::{BufRead, ErrorKind, Read, Write};
-use std::sync::atomic::Ordering;
-use std::thread;
-use std::time::Duration;
+use std::{
+    io::{BufRead, ErrorKind, Read, Write},
+    sync::atomic::Ordering,
+    thread,
+    time::Duration,
+};
 
 use super::{LspDiagnostic, TsgoLspClient};
 

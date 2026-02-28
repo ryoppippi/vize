@@ -3,7 +3,7 @@
 use vize_atelier_vapor::{compile_vapor, VaporCompilerOptions};
 use vize_carton::Bump;
 
-use crate::types::*;
+use crate::types::{SfcError, SfcTemplateBlock};
 
 /// Compile template block using Vapor mode
 pub(crate) fn compile_template_block_vapor(

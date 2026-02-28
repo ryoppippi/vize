@@ -5,12 +5,14 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::super::expression::generate_expression;
-use super::super::helpers::escape_js_string;
-use super::super::node::generate_node;
-use super::super::patch_flag::{calculate_element_patch_info, patch_flag_name};
-use super::super::props::is_supported_directive;
+use super::super::{
+    context::CodegenContext,
+    expression::generate_expression,
+    helpers::escape_js_string,
+    node::generate_node,
+    patch_flag::{calculate_element_patch_info, patch_flag_name},
+    props::is_supported_directive,
+};
 
 /// Generate v-once element with cache wrapper
 pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {

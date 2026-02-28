@@ -8,12 +8,16 @@ use std::sync::Arc;
 
 use dashmap::DashMap;
 use serde_json::{json, Value};
-use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
-use tokio::process::ChildStdout as TokioChildStdout;
-use tokio::sync::oneshot;
+use tokio::{
+    io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
+    process::ChildStdout as TokioChildStdout,
+    sync::oneshot,
+};
 
-use super::protocol::JsonRpcMessage;
-use super::types::{LspDiagnostic, TsgoBridgeError};
+use super::{
+    protocol::JsonRpcMessage,
+    types::{LspDiagnostic, TsgoBridgeError},
+};
 
 /// Type alias for pending requests map.
 pub(crate) type PendingMap = Arc<DashMap<u64, oneshot::Sender<Result<Value, TsgoBridgeError>>>>;

@@ -13,12 +13,14 @@ mod requests;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::io::BufReader;
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
-use std::sync::atomic::{AtomicI64, Ordering};
-use std::thread;
-use std::time::Duration;
+use std::{
+    collections::HashMap,
+    io::BufReader,
+    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    sync::atomic::{AtomicI64, Ordering},
+    thread,
+    time::Duration,
+};
 
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;

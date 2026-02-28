@@ -123,7 +123,7 @@ pub struct Croquis {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{BindingMetadata, Croquis};
     use crate::BindingType;
 
     #[test]

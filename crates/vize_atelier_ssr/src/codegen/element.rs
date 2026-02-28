@@ -2,8 +2,7 @@
 
 use vize_atelier_core::ast::{ElementNode, ElementType, RuntimeHelper};
 
-use super::helpers::escape_html_attr;
-use super::SsrCodegenContext;
+use super::{helpers::escape_html_attr, SsrCodegenContext};
 
 impl<'a> SsrCodegenContext<'a> {
     /// Process an element node

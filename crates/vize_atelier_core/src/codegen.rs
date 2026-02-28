@@ -16,8 +16,10 @@ mod slots;
 mod v_for;
 mod v_if;
 
-use crate::ast::*;
-use crate::options::CodegenOptions;
+use crate::{
+    ast::{RootNode, RuntimeHelper, TemplateChildNode},
+    options::CodegenOptions,
+};
 
 pub use context::{CodegenContext, CodegenResult};
 use element::generate_root_node;

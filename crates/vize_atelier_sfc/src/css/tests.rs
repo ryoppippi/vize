@@ -6,7 +6,9 @@ use super::scoped::{
     add_scope_to_element, apply_scoped_css, transform_deep, transform_global, transform_slotted,
 };
 use super::transform::extract_and_transform_v_bind;
-use super::*;
+#[cfg(feature = "native")]
+use super::CssTargets;
+use super::{compile_css, CssCompileOptions};
 
 #[test]
 fn test_compile_simple_css() {

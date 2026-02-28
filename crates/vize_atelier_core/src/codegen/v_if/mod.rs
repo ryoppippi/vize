@@ -9,9 +9,7 @@ mod generate;
 
 use crate::ast::*;
 
-use super::context::CodegenContext;
-use super::expression::generate_expression;
-use super::helpers::escape_js_string;
+use super::{context::CodegenContext, expression::generate_expression, helpers::escape_js_string};
 
 use branch::generate_if_branch;
 

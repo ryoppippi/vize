@@ -472,7 +472,8 @@ impl Default for HoverBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{HoverBuilder, HoverContents, HoverService};
+    use vize_relief::BindingType;
 
     #[test]
     fn test_get_word_at_offset() {

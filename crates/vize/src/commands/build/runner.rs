@@ -3,11 +3,12 @@
 //! Contains the main compilation pipeline, file collection, pattern matching,
 //! and per-file compilation with profiling.
 
-use std::fs;
-use std::path::PathBuf;
-use std::sync::atomic::Ordering;
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{atomic::Ordering, Mutex},
+    time::{Duration, Instant},
+};
 
 use ignore::Walk;
 use rayon::prelude::*;
@@ -16,10 +17,12 @@ use vize_atelier_sfc::{
     StyleCompileOptions, TemplateCompileOptions,
 };
 
-use super::config::{
-    get_output_extension, CompileError, CompileOutput, CompileStats, ErrorPhase, FileProfile,
+use super::{
+    config::{
+        get_output_extension, CompileError, CompileOutput, CompileStats, ErrorPhase, FileProfile,
+    },
+    BuildArgs, OutputFormat, ScriptExtension,
 };
-use super::{BuildArgs, OutputFormat, ScriptExtension};
 
 /// Main entry point for the build command.
 pub(crate) fn run(args: BuildArgs) {

@@ -11,9 +11,11 @@ use vize_croquis::{
     ScopeData, ScopeId, ScopeKind,
 };
 
-use super::expressions::{generate_component_prop_checks, generate_expression};
-use super::helpers::{get_dom_event_type, strip_as_assertion, to_camel_case, to_safe_identifier};
-use super::types::VizeMapping;
+use super::{
+    expressions::{generate_component_prop_checks, generate_expression},
+    helpers::{get_dom_event_type, strip_as_assertion, to_camel_case, to_safe_identifier},
+    types::VizeMapping,
+};
 
 /// Context for recursive scope generation, bundling shared parameters.
 pub(crate) struct ScopeGenContext<'a> {

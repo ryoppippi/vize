@@ -3,7 +3,10 @@
 //! Provides block snippet completions, lint hover info, and
 //! diagnostic publishing utilities.
 
-use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_types::{
+    CompletionItem, CompletionItemKind, DiagnosticSeverity, Hover, HoverContents, InsertTextFormat,
+    MarkupContent, MarkupKind, NumberOrString, Position, Url,
+};
 
 use crate::ide::DiagnosticService;
 

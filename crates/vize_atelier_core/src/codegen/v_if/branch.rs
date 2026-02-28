@@ -5,18 +5,22 @@
 
 use crate::ast::*;
 
-use super::super::children::generate_children;
-use super::super::context::CodegenContext;
-use super::super::element::is_whitespace_or_comment;
-use super::super::expression::generate_expression;
-use super::super::helpers::{escape_js_string, is_builtin_component};
-use super::super::node::generate_node;
-use super::super::slots::{generate_slots, has_slot_children};
-use super::generate::{
-    extract_static_class_style, generate_if_branch_props_object, has_dynamic_class,
-    has_dynamic_style, has_vbind_spread, has_von_spread,
+use super::{
+    super::{
+        children::generate_children,
+        context::CodegenContext,
+        element::is_whitespace_or_comment,
+        expression::generate_expression,
+        helpers::{escape_js_string, is_builtin_component},
+        node::generate_node,
+        slots::{generate_slots, has_slot_children},
+    },
+    generate::{
+        extract_static_class_style, generate_if_branch_props_object, has_dynamic_class,
+        has_dynamic_style, has_vbind_spread, has_von_spread,
+    },
+    generate_if_branch_key,
 };
-use super::generate_if_branch_key;
 
 /// Generate a single if branch.
 pub(super) fn generate_if_branch(

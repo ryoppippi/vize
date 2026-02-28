@@ -5,10 +5,12 @@
 
 use vize_carton::{Box, Bump, String, Vec};
 
-use super::codegen::JsChildNode;
-use super::core::{ConstantType, NodeType, SourceLocation};
-use super::elements::{InterpolationNode, TextNode};
-use super::RuntimeHelper;
+use super::{
+    codegen::JsChildNode,
+    core::{ConstantType, NodeType, SourceLocation},
+    elements::{InterpolationNode, TextNode},
+    RuntimeHelper,
+};
 
 /// Expression node types
 #[derive(Debug)]

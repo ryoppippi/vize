@@ -3,9 +3,11 @@
 //! Handles Vue template constructs: directives, interpolations,
 //! event handlers, and v-bind shorthand.
 
-use super::encoding::{is_ident_char, offset_to_line_col};
-use super::expressions::tokenize_expression;
-use super::types::{AbsoluteToken, TokenType};
+use super::{
+    encoding::{is_ident_char, offset_to_line_col},
+    expressions::tokenize_expression,
+    types::{AbsoluteToken, TokenType},
+};
 
 /// Collect tokens from template content.
 pub(crate) fn collect_template_tokens(

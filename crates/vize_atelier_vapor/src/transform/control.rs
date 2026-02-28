@@ -4,11 +4,10 @@
 
 use vize_carton::Box;
 
-use crate::ir::*;
+use crate::ir::{BlockIRNode, ForIRNode, IfIRNode, NegativeBranch, OperationNode};
 use vize_atelier_core::{ExpressionNode, ForNode, IfNode, SimpleExpressionNode, SourceLocation};
 
-use super::context::TransformContext;
-use super::transform_children;
+use super::{context::TransformContext, transform_children};
 
 /// Transform IfNode (from compiler-core v-if transform)
 pub(crate) fn transform_if_node<'a>(

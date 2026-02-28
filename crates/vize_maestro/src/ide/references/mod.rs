@@ -118,7 +118,7 @@ impl ReferencesService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ReferencesService;
 
     #[test]
     fn test_find_word_occurrences() {

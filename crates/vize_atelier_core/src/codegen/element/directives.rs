@@ -3,11 +3,12 @@
 //! Generates the closing portions of `withDirectives()` calls for
 //! v-model, v-show, and custom directives on elements.
 
-use crate::ast::*;
-use crate::transforms::v_model::{get_vmodel_helper, parse_model_modifiers};
+use crate::{
+    ast::*,
+    transforms::v_model::{get_vmodel_helper, parse_model_modifiers},
+};
 
-use super::super::context::CodegenContext;
-use super::super::expression::generate_expression;
+use super::super::{context::CodegenContext, expression::generate_expression};
 use super::helpers::{get_custom_directives, get_vmodel_directive, has_vshow_directive};
 
 /// Generate v-model directive closing

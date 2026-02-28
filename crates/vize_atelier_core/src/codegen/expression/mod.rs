@@ -9,8 +9,7 @@ pub(crate) mod helpers;
 
 use crate::ast::*;
 
-use super::context::CodegenContext;
-use super::helpers::escape_js_string;
+use super::{context::CodegenContext, helpers::escape_js_string};
 
 use helpers::{convert_line_comments_to_block, strip_ctx_for_slot_params};
 

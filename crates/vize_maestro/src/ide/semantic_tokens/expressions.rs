@@ -3,8 +3,10 @@
 //! Handles tokenization of JavaScript/TypeScript expressions found in
 //! template interpolations, directive values, and event handlers.
 
-use super::encoding::{is_ident_char, is_ident_start, offset_to_line_col};
-use super::types::{AbsoluteToken, TokenType};
+use super::{
+    encoding::{is_ident_char, is_ident_start, offset_to_line_col},
+    types::{AbsoluteToken, TokenType},
+};
 
 /// Tokenize a JavaScript/TypeScript expression for syntax highlighting.
 pub(crate) fn tokenize_expression(

@@ -4,22 +4,30 @@
 //! communicating with, and shutting down the tsgo process. Also includes
 //! the `BatchTypeChecker` for efficient multi-document checking.
 
-use std::path::PathBuf;
-use std::process::Stdio;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::Arc;
+use std::{
+    path::PathBuf,
+    process::Stdio,
+    sync::{
+        atomic::{AtomicBool, AtomicU64, Ordering},
+        Arc,
+    },
+};
 
 use dashmap::DashMap;
 use serde_json::{json, Value};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
-use tokio::process::{Child as TokioChild, Command as TokioCommand};
-use tokio::sync::{oneshot, Mutex};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter},
+    process::{Child as TokioChild, Command as TokioCommand},
+    sync::{oneshot, Mutex},
+};
 
 use vize_carton::profiler::{CacheStats, Profiler};
 
-use super::protocol::{JsonRpcNotification, JsonRpcRequest};
-use super::reader::{self, DiagnosticsCache, OpenDocuments, PendingMap, SharedStdin};
-use super::types::*;
+use super::{
+    protocol::{JsonRpcNotification, JsonRpcRequest},
+    reader::{self, DiagnosticsCache, OpenDocuments, PendingMap, SharedStdin},
+    types::*,
+};
 
 /// Bridge to tsgo for type checking via LSP.
 pub struct TsgoBridge {

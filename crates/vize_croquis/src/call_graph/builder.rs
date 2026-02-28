@@ -4,7 +4,10 @@
 //! Vue API calls, composable calls, and call edges. Also contains
 //! free functions for categorizing Vue APIs and identifying composables.
 
-use super::*;
+use super::{
+    CallEdge, CallGraph, CompactString, ComposableCallInfo, FunctionDef, FunctionId, FxHashMap,
+    FxHashSet, ScopeId, SmallVec, VueApiCall, VueApiCategory,
+};
 
 impl CallGraph {
     /// Create a new empty call graph.

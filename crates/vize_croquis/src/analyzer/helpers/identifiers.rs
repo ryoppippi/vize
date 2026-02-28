@@ -440,7 +440,7 @@ fn extract_identifiers_oxc_slow(expr: &str) -> Vec<CompactString> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::extract_identifiers_oxc;
 
     #[test]
     fn test_extract_identifiers_oxc() {

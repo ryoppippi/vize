@@ -116,8 +116,8 @@ impl InlayHintService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tower_lsp::lsp_types::InlayHintLabel;
+    use super::InlayHintService;
+    use tower_lsp::lsp_types::{InlayHintLabel, Position, Range, Url};
 
     #[test]
     fn test_props_destructure_analysis() {

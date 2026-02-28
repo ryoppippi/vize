@@ -1,4 +1,4 @@
-use super::*;
+use super::{CrossFileAnalyzer, CrossFileOptions};
 use std::path::Path;
 
 #[test]

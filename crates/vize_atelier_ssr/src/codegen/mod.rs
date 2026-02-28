@@ -212,7 +212,7 @@ impl<'a> SsrCodegenContext<'a> {
 #[cfg(test)]
 mod tests {
     use super::helpers::{escape_html, escape_html_attr};
-    use super::*;
+    use super::SsrCodegenResult;
 
     #[test]
     fn test_escape_html() {

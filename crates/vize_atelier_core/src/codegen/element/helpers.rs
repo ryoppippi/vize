@@ -6,11 +6,10 @@
 use crate::ast::*;
 use vize_carton::is_builtin_directive;
 
-use super::super::context::CodegenContext;
-use super::super::node::generate_node;
-use super::super::props::is_supported_directive;
-use super::super::v_for::generate_for;
-use super::super::v_if::generate_if;
+use super::super::{
+    context::CodegenContext, node::generate_node, props::is_supported_directive,
+    v_for::generate_for, v_if::generate_if,
+};
 
 /// Check if element has v-once directive
 pub fn has_v_once(el: &ElementNode<'_>) -> bool {

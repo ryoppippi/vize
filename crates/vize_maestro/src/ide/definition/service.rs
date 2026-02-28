@@ -14,10 +14,7 @@ use tower_lsp::lsp_types::Url;
 #[cfg(feature = "native")]
 use vize_canon::TsgoBridge;
 
-use super::helpers;
-use super::script;
-use super::template;
-use super::IdeContext;
+use super::{helpers, script, template, IdeContext};
 use crate::ide::is_component_tag;
 use crate::virtual_code::BlockType;
 

@@ -15,7 +15,7 @@ pub(crate) use vapor::compile_template_block_vapor;
 
 use vize_carton::Bump;
 
-use crate::types::*;
+use crate::types::{BindingMetadata, SfcError, SfcTemplateBlock, TemplateCompileOptions};
 
 /// Compile template block
 pub(crate) fn compile_template_block(

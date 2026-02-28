@@ -5,8 +5,7 @@
 
 use crate::ast::*;
 
-use super::context::CodegenContext;
-use super::helpers::escape_js_string;
+use super::{context::CodegenContext, helpers::escape_js_string};
 
 /// Generate hoisted variable declarations.
 pub(super) fn generate_hoists(ctx: &CodegenContext, root: &RootNode<'_>) -> String {

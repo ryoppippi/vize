@@ -1,7 +1,11 @@
 //! Tests for the Vue template parser.
 
-use super::*;
+use super::parse;
 use vize_carton::Bump;
+use vize_relief::{
+    ast::{ElementType, ExpressionNode, PropNode, TemplateChildNode},
+    errors::ErrorCode,
+};
 
 #[test]
 fn test_parse_simple_element() {

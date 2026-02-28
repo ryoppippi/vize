@@ -1,7 +1,7 @@
 //! Import generation, delegate event collection, and template escaping.
 
 use super::context::GenerateContext;
-use crate::ir::*;
+use crate::ir::{BlockIRNode, OperationNode};
 
 /// Collect delegate events from block
 pub(crate) fn collect_delegate_events(ctx: &mut GenerateContext, block: &BlockIRNode<'_>) {

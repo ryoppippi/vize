@@ -3,16 +3,20 @@
 //! Generates code for individual items within a v-for loop,
 //! including props merging, key handling, and block wrapping.
 
-use crate::ast::*;
-use crate::transforms::v_memo::{get_memo_exp, has_v_memo};
+use crate::{
+    ast::*,
+    transforms::v_memo::{get_memo_exp, has_v_memo},
+};
 
-use super::super::children::generate_children;
-use super::super::context::CodegenContext;
-use super::super::element::{generate_vshow_closing, has_vshow_directive};
-use super::super::expression::generate_expression;
-use super::super::helpers::{escape_js_string, is_builtin_component};
-use super::super::node::generate_node;
-use super::super::patch_flag::{calculate_element_patch_info, patch_flag_name};
+use super::super::{
+    children::generate_children,
+    context::CodegenContext,
+    element::{generate_vshow_closing, has_vshow_directive},
+    expression::generate_expression,
+    helpers::{escape_js_string, is_builtin_component},
+    node::generate_node,
+    patch_flag::{calculate_element_patch_info, patch_flag_name},
+};
 use super::helpers::{get_element_key, has_other_props, should_skip_prop};
 
 /// Generate item for v-for (as block, not regular vnode)

@@ -9,7 +9,7 @@ mod types;
 
 pub use types::*;
 
-use char_codes::*;
+use char_codes::NEWLINE;
 use vize_relief::Position;
 
 /// HTML tokenizer

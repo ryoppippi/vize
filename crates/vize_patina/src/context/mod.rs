@@ -11,9 +11,11 @@ pub use state::{DisabledRange, ElementContext, SsrMode};
 
 use crate::diagnostic::{HelpLevel, LintDiagnostic, Severity};
 use std::borrow::Cow;
-use vize_carton::directive::DirectiveSeverity;
-use vize_carton::i18n::{t, t_fmt, Locale};
-use vize_carton::{Allocator, CompactString, FxHashMap, FxHashSet};
+use vize_carton::{
+    directive::DirectiveSeverity,
+    i18n::{t, t_fmt, Locale},
+    Allocator, CompactString, FxHashMap, FxHashSet,
+};
 use vize_croquis::Croquis;
 
 /// Lint context provides utilities for rules during execution.

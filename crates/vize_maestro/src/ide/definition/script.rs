@@ -4,9 +4,10 @@
 
 use tower_lsp::lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 
-use super::bindings::{BindingKind, BindingLocation};
-use super::helpers;
-use super::IdeContext;
+use super::{
+    bindings::{BindingKind, BindingLocation},
+    helpers, IdeContext,
+};
 use crate::virtual_code::BlockType;
 
 /// Find definition for a symbol in script context.

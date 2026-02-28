@@ -5,13 +5,17 @@
 
 use vize_carton::{Box, String};
 
-use crate::ast::{ConstantType, ExpressionNode, SimpleExpressionNode};
-use crate::transform::TransformContext;
+use crate::{
+    ast::{ConstantType, ExpressionNode, SimpleExpressionNode},
+    transform::TransformContext,
+};
 
-use super::clone_expression;
-use super::prefix::{get_identifier_prefix, is_simple_identifier};
-use super::rewrite::rewrite_expression;
-use super::typescript::strip_typescript_from_expression;
+use super::{
+    clone_expression,
+    prefix::{get_identifier_prefix, is_simple_identifier},
+    rewrite::rewrite_expression,
+    typescript::strip_typescript_from_expression,
+};
 
 /// Process inline handler expression
 pub fn process_inline_handler<'a>(

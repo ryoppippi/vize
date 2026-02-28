@@ -566,7 +566,11 @@ impl SemanticTokensService {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        encoding::offset_to_line_col, expressions, template, SemanticTokensService, TokenModifier,
+        TokenType,
+    };
+    use tower_lsp::lsp_types::SemanticTokensResult;
 
     #[test]
     fn test_extract_identifiers() {

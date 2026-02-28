@@ -5,9 +5,11 @@
 
 use crate::ast::*;
 
-use super::super::context::CodegenContext;
-use super::super::helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier};
-use super::super::props::{generate_directive_prop_with_static, is_supported_directive};
+use super::super::{
+    context::CodegenContext,
+    helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier},
+    props::{generate_directive_prop_with_static, is_supported_directive},
+};
 use super::generate_if_branch_key;
 use vize_carton::FxHashSet;
 

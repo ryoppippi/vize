@@ -11,8 +11,10 @@ mod typescript;
 
 use vize_carton::{Box, Bump, String};
 
-use crate::ast::{CompoundExpressionNode, ExpressionNode, SimpleExpressionNode};
-use crate::transform::TransformContext;
+use crate::{
+    ast::{CompoundExpressionNode, ExpressionNode, SimpleExpressionNode},
+    transform::TransformContext,
+};
 
 pub use inline_handler::process_inline_handler;
 pub use prefix::{is_simple_identifier, prefix_identifiers_in_expression};

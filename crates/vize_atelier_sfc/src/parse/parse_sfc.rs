@@ -1,4 +1,7 @@
-use crate::types::*;
+use crate::types::{
+    BlockLocation, SfcCustomBlock, SfcDescriptor, SfcError, SfcParseOptions, SfcScriptBlock,
+    SfcStyleBlock, SfcTemplateBlock,
+};
 use memchr::memchr;
 use std::borrow::Cow;
 

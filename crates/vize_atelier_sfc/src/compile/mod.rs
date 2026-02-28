@@ -18,7 +18,7 @@ use crate::compile_template::{
 };
 use crate::rewrite_default::rewrite_default;
 use crate::script::ScriptCompileContext;
-use crate::types::*;
+use crate::types::{BindingType, SfcCompileOptions, SfcCompileResult, SfcDescriptor, SfcError};
 
 use self::bindings::{croquis_to_legacy_bindings, register_normal_script_bindings};
 use self::helpers::{extract_component_name, generate_scope_id};

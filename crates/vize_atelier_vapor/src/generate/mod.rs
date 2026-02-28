@@ -9,7 +9,7 @@ mod setup;
 
 use std::fmt::Write;
 
-use crate::ir::*;
+use crate::ir::{BlockIRNode, OperationNode, RootIRNode};
 use vize_carton::FxHashMap;
 
 use context::GenerateContext;
@@ -158,7 +158,7 @@ fn generate_block(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{generate_vapor, setup::escape_template};
     use crate::transform::transform_to_ir;
     use vize_atelier_core::parser::parse;
     use vize_carton::Bump;
