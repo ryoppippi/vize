@@ -279,7 +279,7 @@ impl UseUniqueElementIds {
 
 #[cfg(test)]
 mod tests {
-    use super::UseUniqueElementIds;
+    use super::{classify_element, IdWarningTier, UseUniqueElementIds};
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

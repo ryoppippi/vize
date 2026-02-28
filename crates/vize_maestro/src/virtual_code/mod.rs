@@ -33,11 +33,15 @@ mod source_map;
 mod style_code;
 mod template_code;
 
-pub use generator::{find_block_at_offset, BatchVirtualCodeGenerator, BlockType, VirtualCodeGenerator};
+pub use generator::{
+    find_block_at_offset, BatchVirtualCodeGenerator, BlockType, VirtualCodeGenerator,
+};
 pub use script_code::{extract_simple_bindings, ScriptCodeGenerator};
 pub use source_map::{MappingData, MappingFeatures, SourceMap, SourceMapping};
 pub use style_code::{StyleCodeGenerator, StyleMetadata};
-pub use template_code::{extract_expressions, ExpressionKind, TemplateCodeGenerator, TemplateExpression};
+pub use template_code::{
+    extract_expressions, ExpressionKind, TemplateCodeGenerator, TemplateExpression,
+};
 
 /// Virtual language types supported by the LSP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

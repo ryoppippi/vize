@@ -266,11 +266,11 @@ pub fn generate_storybook_argtypes(palette: &Palette) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        generate_palette, generate_storybook_argtypes, generate_typescript_interface, to_pascal_case,
-        Palette, PropControl,
-    };
     use super::super::PaletteOptions;
+    use super::{
+        generate_palette, generate_storybook_argtypes, generate_typescript_interface,
+        to_pascal_case, Palette, PropControl,
+    };
     use crate::{parse_art, ArtParseOptions, Bump};
 
     #[test]

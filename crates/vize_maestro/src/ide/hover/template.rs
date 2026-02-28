@@ -38,7 +38,7 @@ impl HoverService {
         // Try to get type information from vize_canon
         if let Some(type_info) = crate::ide::TypeService::get_type_at(ctx) {
             #[allow(clippy::disallowed_macros)]
-        let mut value = format!("**{}**\n\n```typescript\n{}\n```", word, type_info.display);
+            let mut value = format!("**{}**\n\n```typescript\n{}\n```", word, type_info.display);
 
             if let Some(ref doc) = type_info.documentation {
                 vize_carton::push_fmt!(value, "\n\n{doc}");
@@ -115,10 +115,7 @@ impl HoverService {
                             #[allow(clippy::disallowed_macros)]
                             let vdoc_uri = format!("{}.template.ts", ctx.uri.path());
                             let _ = bridge
-                                .open_or_update_virtual_document(
-                                    &vdoc_uri,
-                                    &template.content,
-                                )
+                                .open_or_update_virtual_document(&vdoc_uri, &template.content)
                                 .await;
 
                             // Request hover from tsgo

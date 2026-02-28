@@ -22,8 +22,7 @@ pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<
     let final_handler = apply_modifiers(&handler, &set_event.modifiers);
 
     ctx.push_line_fmt(format_args!(
-        "_on({}, \"{}\", {})",
-        element, event_name, final_handler
+        "_on({element}, \"{event_name}\", {final_handler})"
     ));
 }
 
@@ -36,9 +35,9 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let keys: Vec<String> = modifiers
             .keys
             .iter()
-            .map(|k| vize_carton::new_string!("\"{}\"", k).into())
+            .map(|k| vize_carton::new_string!("\"{k}\"").into())
             .collect();
-        result = vize_carton::new_string!("_withKeys({}, [{}])", result, keys.join(", ")).into();
+        result = vize_carton::new_string!("_withKeys({result}, [{}])", keys.join(", ")).into();
     }
 
     // Apply non-key modifiers
@@ -46,10 +45,10 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let mods: Vec<String> = modifiers
             .non_keys
             .iter()
-            .map(|m| vize_carton::new_string!("\"{}\"", m).into())
+            .map(|m| vize_carton::new_string!("\"{m}\"").into())
             .collect();
         result =
-            vize_carton::new_string!("_withModifiers({}, [{}])", result, mods.join(", ")).into();
+            vize_carton::new_string!("_withModifiers({result}, [{}])", mods.join(", ")).into();
     }
 
     result
@@ -87,26 +86,21 @@ pub fn generate_delegate_event(
 ) -> String {
     if let Some(opts) = options {
         vize_carton::new_string!(
-            "_delegate({}, \"{}\", {}, {})",
-            element_var,
-            event_name,
-            handler,
-            opts
+            "_delegate({element_var}, \"{event_name}\", {handler}, {opts})"
         )
         .into()
     } else {
-        vize_carton::new_string!("_delegate({}, \"{}\", {})", element_var, event_name, handler)
-            .into()
+        vize_carton::new_string!(
+            "_delegate({element_var}, \"{event_name}\", {handler})"
+        )
+        .into()
     }
 }
 
 /// Generate inline event handler
 pub fn generate_inline_handler(element_var: &str, event_name: &str, handler: &str) -> String {
     vize_carton::new_string!(
-        "{}.addEventListener(\"{}\", {})",
-        element_var,
-        event_name,
-        handler
+        "{element_var}.addEventListener(\"{event_name}\", {handler})"
     )
     .into()
 }

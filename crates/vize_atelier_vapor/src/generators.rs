@@ -21,8 +21,8 @@ pub use component::{
     generate_keep_alive, generate_resolve_component, generate_suspense,
 };
 pub use directive::{
-    generate_directive, generate_directive_array, generate_resolve_directive, generate_v_cloak_removal,
-    generate_v_show, generate_with_directives, is_v_pre_element,
+    generate_directive, generate_directive_array, generate_resolve_directive,
+    generate_v_cloak_removal, generate_v_show, generate_with_directives, is_v_pre_element,
 };
 pub use event::{
     capitalize_event_name, generate_delegate_event, generate_event_options,

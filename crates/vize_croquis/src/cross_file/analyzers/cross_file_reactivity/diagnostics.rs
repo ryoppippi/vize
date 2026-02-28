@@ -155,7 +155,8 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
 
         // Summary
         md.push_str("## Summary\n\n");
-        vize_carton::push_fmt!(md, 
+        vize_carton::push_fmt!(
+            md,
             "- **Tracked Reactive Values**: {}\n",
             self.reactive_values.len()
         );
@@ -181,9 +182,11 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     ReactivityFlowKind::ModuleImport => "import",
                 };
 
-                vize_carton::push_fmt!(md, 
-                    "{} [{}] {} \u{2192} {}\n",
-                    status, flow_type, flow.source.name, flow.target.name
+                vize_carton::push_fmt!(
+                    md,
+                    "{status} [{flow_type}] {} \u{2192} {}\n",
+                    flow.source.name,
+                    flow.target.name
                 );
 
                 if let Some(ref reason) = flow.loss_reason {
@@ -206,7 +209,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                     DiagnosticSeverity::Hint => "\u{1f4a1}",
                 };
 
-                vize_carton::push_fmt!(md, "### {} {:?}\n\n", icon, issue.kind);
+                vize_carton::push_fmt!(md, "### {icon} {:?}\n\n", issue.kind);
                 vize_carton::push_fmt!(md, "- **File**: {:?}\n", issue.file_id);
                 vize_carton::push_fmt!(md, "- **Offset**: {}\n", issue.offset);
                 if let Some(related) = issue.related_file {

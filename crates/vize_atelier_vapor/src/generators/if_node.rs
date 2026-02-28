@@ -14,9 +14,7 @@ where
         vize_carton::CompactString::from(if_node.condition.content.as_str())
     };
 
-    ctx.push_line_fmt(format_args!(
-        "_createIf(() => {condition}, () => {{"
-    ));
+    ctx.push_line_fmt(format_args!("_createIf(() => {condition}, () => {{"));
     ctx.indent();
     generate_block(ctx, &if_node.positive);
     ctx.deindent();
@@ -35,11 +33,7 @@ where
 }
 
 /// Generate simple if expression (for inline conditionals)
-pub fn generate_if_expression(
-    condition: &str,
-    then_expr: &str,
-    else_expr: Option<&str>,
-) -> String {
+pub fn generate_if_expression(condition: &str, then_expr: &str, else_expr: Option<&str>) -> String {
     if let Some(else_val) = else_expr {
         vize_carton::new_string!("{condition} ? {then_expr} : {else_val}").into()
     } else {

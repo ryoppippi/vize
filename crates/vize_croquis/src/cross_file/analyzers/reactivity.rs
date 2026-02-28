@@ -245,7 +245,7 @@ fn analyze_component_reactivity(analysis: &crate::Croquis) -> Vec<InternalIssue>
             } => {
                 issues.push(InternalIssue {
                     kind: ReactivityIssueKind::ReactiveToPlain {
-                        source_name: vize_carton::new_string!("{}.value", source_name),
+                        source_name: vize_carton::new_string!("{source_name}.value"),
                         target_name: target_name.clone(),
                     },
                     offset: loss.start,
@@ -385,7 +385,8 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
             )
             .with_suggestion(vize_carton::new_string!(
                 "Use toRefs({}) or access properties directly as {}.prop",
-                source_name, source_name
+                source_name,
+                source_name
             ));
             if let Some(end) = issue.end_offset {
                 diag = diag.with_end_offset(end);
@@ -410,7 +411,8 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
             )
             .with_suggestion(vize_carton::new_string!(
                 "Access {}.value directly or use computed(() => {}.value.prop)",
-                ref_name, ref_name
+                ref_name,
+                ref_name
             ));
             if let Some(end) = issue.end_offset {
                 diag = diag.with_end_offset(end);
@@ -445,7 +447,9 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
                     DiagnosticSeverity::Warning,
                     file_id,
                     issue.offset,
-                    vize_carton::new_string!("Reassigning '{}' breaks reactivity tracking", value_name),
+                    vize_carton::new_string!(
+                        "Reassigning '{value_name}' breaks reactivity tracking",
+                    ),
                 )
                 .with_suggestion(
                     "Mutate the object's properties instead, or use ref() for replaceable values",
@@ -458,16 +462,14 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
                 CrossFileDiagnostic::new(
                     CrossFileDiagnosticKind::HydrationMismatchRisk {
                         reason: vize_carton::new_string!(
-                            "'{}' loses reactivity in {}",
-                            value_name, context
+                            "'{value_name}' loses reactivity in {context}",
                         ),
                     },
                     DiagnosticSeverity::Warning,
                     file_id,
                     issue.offset,
                     vize_carton::new_string!(
-                        "Reactive value '{}' loses reactivity when passed to {}",
-                        value_name, context
+                        "Reactive value '{value_name}' loses reactivity when passed to {context}",
                     ),
                 )
             }
@@ -475,17 +477,18 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
 
         ReactivityIssueKind::MissingValueAccess { ref_name } => CrossFileDiagnostic::new(
             CrossFileDiagnosticKind::HydrationMismatchRisk {
-                reason: vize_carton::new_string!("Ref '{}' used without .value", ref_name),
+                reason: vize_carton::new_string!("Ref '{ref_name}' used without .value"),
             },
             DiagnosticSeverity::Error,
             file_id,
             issue.offset,
             vize_carton::new_string!(
-                "Ref '{}' should be accessed with .value in script context",
-                ref_name
+                "Ref '{ref_name}' should be accessed with .value in script context",
             ),
         )
-        .with_suggestion(vize_carton::new_string!("Use {}.value instead of {}", ref_name, ref_name)),
+        .with_suggestion(vize_carton::new_string!(
+            "Use {ref_name}.value instead of {ref_name}",
+        )),
 
         ReactivityIssueKind::ShouldUseToRefs { source_name } => {
             let mut diag = CrossFileDiagnostic::new(
@@ -496,11 +499,10 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
                 DiagnosticSeverity::Warning,
                 file_id,
                 issue.offset,
-                vize_carton::new_string!("Spreading '{}' creates a non-reactive copy", source_name),
+                vize_carton::new_string!("Spreading '{source_name}' creates a non-reactive copy"),
             )
             .with_suggestion(vize_carton::new_string!(
-                "Use toRefs({}) to maintain reactivity, or toRaw({}) for intentional copy",
-                source_name, source_name
+                "Use toRefs({source_name}) to maintain reactivity, or toRaw({source_name}) for intentional copy",
             ));
             if let Some(end) = issue.end_offset {
                 diag = diag.with_end_offset(end);
@@ -522,7 +524,8 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
                 issue.offset,
                 vize_carton::new_string!(
                     "Assigning reactive '{}' to '{}' creates a non-reactive copy",
-                    source_name, target_name
+                    source_name,
+                    target_name
                 ),
             )
             .with_suggestion("Use computed() or keep the reactive reference");
@@ -603,7 +606,8 @@ fn create_diagnostic(file_id: FileId, issue: &InternalIssue) -> CrossFileDiagnos
         )
         .with_suggestion(vize_carton::new_string!(
             "Use toRef(props, '{}') or computed(() => props.{})",
-            prop_name, prop_name
+            prop_name,
+            prop_name
         )),
     }
 }

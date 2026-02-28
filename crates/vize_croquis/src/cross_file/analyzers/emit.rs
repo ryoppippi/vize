@@ -131,11 +131,10 @@ pub fn analyze_emits(
                             *child_id,
                             child_info.emit_offsets.get(emit).copied().unwrap_or(0),
                             vize_carton::new_string!(
-                                "Event '{}' is emitted but not declared in defineEmits",
-                                emit
+                                "Event '{emit}' is emitted but not declared in defineEmits",
                             ),
                         )
-                        .with_suggestion(vize_carton::new_string!("Add '{}' to defineEmits", emit)),
+                        .with_suggestion(vize_carton::new_string!("Add '{emit}' to defineEmits")),
                     );
                 }
             }
@@ -157,14 +156,13 @@ pub fn analyze_emits(
                                     node.file_id,
                                     *offset,
                                     vize_carton::new_string!(
-                                        "Listening for '{}' but child component doesn't emit it",
-                                        event
+                                        "Listening for '{event}' but child component doesn't emit it",
                                     ),
                                 )
                                 .with_related(
                                     *child_id,
                                     0,
-                                    vize_carton::new_string!("'{}' component", child_name),
+                                    vize_carton::new_string!("'{child_name}' component"),
                                 ),
                             );
                         }

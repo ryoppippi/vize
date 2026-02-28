@@ -148,6 +148,7 @@ impl Rule for RequireTypedProps {
 #[cfg(test)]
 mod tests {
     use super::RequireTypedProps;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

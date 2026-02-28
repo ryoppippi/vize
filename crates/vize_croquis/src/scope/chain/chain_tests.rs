@@ -773,7 +773,10 @@ fn test_snapshot_complex_nested_scopes() {
             vize_carton::push_fmt!(
                 output,
                 "{}  • {}: {:?} at offset {}\n",
-                indent, name, binding.binding_type, binding.declaration_offset
+                indent,
+                name,
+                binding.binding_type,
+                binding.declaration_offset
             );
         }
     }

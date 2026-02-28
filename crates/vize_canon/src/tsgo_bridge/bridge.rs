@@ -105,7 +105,10 @@ impl TsgoBridge {
 
         tracing::info!("tsgo_bridge: spawning process...");
         let mut child = cmd.spawn().map_err(|e| {
-            TsgoBridgeError::SpawnFailed(vize_carton::new_string!("Failed to spawn tsgo at {:?}: {}", tsgo_path, e).to_string())
+            TsgoBridgeError::SpawnFailed(
+                vize_carton::new_string!("Failed to spawn tsgo at {:?}: {}", tsgo_path, e)
+                    .to_string(),
+            )
         })?;
         tracing::info!("tsgo_bridge: process spawned");
 
@@ -341,7 +344,9 @@ impl TsgoBridge {
         let content = serde_json::to_string(&request)
             .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
 
-        let message = vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
+        let message =
+            vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content)
+                .to_string();
 
         // Create response channel
         let (tx, rx) = oneshot::channel();
@@ -394,7 +399,9 @@ impl TsgoBridge {
         let content = serde_json::to_string(&notification)
             .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
 
-        let message = vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
+        let message =
+            vize_carton::new_string!("Content-Length: {}\r\n\r\n{}", content.len(), content)
+                .to_string();
 
         let mut stdin_guard = self.stdin.lock().await;
         if let Some(ref mut stdin) = *stdin_guard {
@@ -753,7 +760,9 @@ impl TsgoBridge {
         }
 
         let hover: LspHover = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse hover: {}", e).to_string())
+            TsgoBridgeError::CommunicationError(
+                vize_carton::new_string!("Failed to parse hover: {}", e).to_string(),
+            )
         })?;
 
         Ok(Some(hover))
@@ -799,7 +808,9 @@ impl TsgoBridge {
 
         // Try parsing as definition response (can be location, array, or links)
         let response: LspDefinitionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse definition: {}", e).to_string())
+            TsgoBridgeError::CommunicationError(
+                vize_carton::new_string!("Failed to parse definition: {}", e).to_string(),
+            )
         })?;
 
         Ok(response.into_locations())
@@ -848,7 +859,9 @@ impl TsgoBridge {
 
         // Try parsing as completion response (can be array or list)
         let response: LspCompletionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(vize_carton::new_string!("Failed to parse completion: {}", e).to_string())
+            TsgoBridgeError::CommunicationError(
+                vize_carton::new_string!("Failed to parse completion: {}", e).to_string(),
+            )
         })?;
 
         Ok(response.items())

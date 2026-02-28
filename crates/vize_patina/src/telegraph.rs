@@ -340,7 +340,7 @@ pub struct OxlintBridge {
 
 #[cfg(test)]
 mod tests {
-    use super::{LintResult, LspEmitter, Telegraph, offset_to_line_col};
+    use super::{offset_to_line_col, LintResult, LspEmitter, Telegraph};
     use crate::diagnostic::LintDiagnostic;
 
     #[test]

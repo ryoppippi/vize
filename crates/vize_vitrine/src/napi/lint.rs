@@ -82,7 +82,10 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
 
     if files.is_empty() {
         return Ok(LintResultNapi {
-            output: vize_carton::new_string!("No .vue files found matching patterns: {:?}", patterns),
+            output: vize_carton::new_string!(
+                "No .vue files found matching patterns: {:?}",
+                patterns
+            ),
             error_count: 0,
             warning_count: 0,
             file_count: 0,

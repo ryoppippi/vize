@@ -132,7 +132,9 @@ pub fn process_v_for(ctx: &mut TransformContext<'_>) {
 
 #[cfg(test)]
 mod tests {
-    use super::{has_v_for, parse_for_expression, ExpressionNode, SourceLocation, TemplateChildNode};
+    use super::{
+        has_v_for, parse_for_expression, ExpressionNode, SourceLocation, TemplateChildNode,
+    };
     use crate::parser::parse;
     use bumpalo::Bump;
 

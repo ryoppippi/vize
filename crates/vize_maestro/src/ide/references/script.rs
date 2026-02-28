@@ -200,14 +200,14 @@ impl ReferencesService {
         let search_content = &content[content_start..];
 
         let patterns = [
-            vize_carton::new_string!("const {} ", name),
-            vize_carton::new_string!("const {}=", name),
-            vize_carton::new_string!("let {} ", name),
-            vize_carton::new_string!("let {}=", name),
-            vize_carton::new_string!("var {} ", name),
-            vize_carton::new_string!("var {}=", name),
-            vize_carton::new_string!("function {}(", name),
-            vize_carton::new_string!("function {} (", name),
+            vize_carton::new_string!("const {name} "),
+            vize_carton::new_string!("const {name}="),
+            vize_carton::new_string!("let {name} "),
+            vize_carton::new_string!("let {name}="),
+            vize_carton::new_string!("var {name} "),
+            vize_carton::new_string!("var {name}="),
+            vize_carton::new_string!("function {name}("),
+            vize_carton::new_string!("function {name} ("),
         ];
 
         for pattern in &patterns {
@@ -219,11 +219,11 @@ impl ReferencesService {
 
         // Check destructuring
         let destructure_patterns = [
-            vize_carton::new_string!("{{ {}", name),
-            vize_carton::new_string!("{{ {}, ", name),
-            vize_carton::new_string!("{{ {} }}", name),
-            vize_carton::new_string!(", {} }}", name),
-            vize_carton::new_string!(", {}, ", name),
+            vize_carton::new_string!("{{ {name}"),
+            vize_carton::new_string!("{{ {name}, "),
+            vize_carton::new_string!("{{ {name} }}"),
+            vize_carton::new_string!(", {name} }}"),
+            vize_carton::new_string!(", {name}, "),
         ];
 
         for pattern in &destructure_patterns {

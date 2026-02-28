@@ -1,9 +1,5 @@
 import { ref, computed, watch, type Ref } from "vue";
-import type {
-  WasmModule,
-  ArtDescriptor,
-  CsfOutput,
-} from "../../wasm/index";
+import type { WasmModule, ArtDescriptor, CsfOutput } from "../../wasm/index";
 
 export interface Diagnostic {
   message: string;
@@ -21,9 +17,7 @@ export interface DesignToken {
 }
 
 export function isColorValue(value: string): boolean {
-  return /^(#[0-9a-fA-F]{3,8}|rgb|rgba|hsl|hsla|transparent|currentColor|inherit)/i.test(
-    value,
-  );
+  return /^(#[0-9a-fA-F]{3,8}|rgb|rgba|hsl|hsla|transparent|currentColor|inherit)/i.test(value);
 }
 
 export function isSizeValue(value: string): boolean {
@@ -75,26 +69,16 @@ export function useArtParsing(
       tokens.push({
         name,
         value,
-        type: isColorValue(value)
-          ? "color"
-          : isSizeValue(value)
-            ? "size"
-            : "other",
+        type: isColorValue(value) ? "color" : isSizeValue(value) ? "size" : "other",
       });
     }
 
     return tokens;
   });
 
-  const colorTokens = computed(() =>
-    designTokens.value.filter((t) => t.type === "color"),
-  );
-  const sizeTokens = computed(() =>
-    designTokens.value.filter((t) => t.type === "size"),
-  );
-  const otherTokens = computed(() =>
-    designTokens.value.filter((t) => t.type === "other"),
-  );
+  const colorTokens = computed(() => designTokens.value.filter((t) => t.type === "color"));
+  const sizeTokens = computed(() => designTokens.value.filter((t) => t.type === "size"));
+  const otherTokens = computed(() => designTokens.value.filter((t) => t.type === "other"));
 
   function getCompiler(): WasmModule | null {
     return typeof compiler === "function" ? compiler() : compiler.value;

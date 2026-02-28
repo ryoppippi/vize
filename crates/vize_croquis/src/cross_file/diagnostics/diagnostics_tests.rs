@@ -490,7 +490,7 @@ fn test_snapshot_diagnostic_with_related_files() {
 
     output.push_str("\nRelated files:\n");
     for (file_id, offset, msg) in &diag.related_files {
-        vize_carton::push_fmt!(output, "  - {:?} at {}: {}\n", file_id, offset, msg);
+        vize_carton::push_fmt!(output, "  - {:?} at {offset}: {msg}\n", file_id);
     }
 
     output.push_str("\nMarkdown Output:\n");
@@ -526,11 +526,7 @@ fn test_snapshot_severity_levels() {
             "Example diagnostic",
         );
 
-        vize_carton::push_fmt!(
-            output,
-            "== {} ==\n",
-            severity.display_name().to_uppercase()
-        );
+        vize_carton::push_fmt!(output, "== {} ==\n", severity.display_name().to_uppercase());
         vize_carton::push_fmt!(output, "is_error: {}\n", diag.is_error());
         vize_carton::push_fmt!(output, "is_warning: {}\n", diag.is_warning());
         output.push_str("\nMarkdown:\n");

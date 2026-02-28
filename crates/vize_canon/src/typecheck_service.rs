@@ -121,7 +121,8 @@ impl TypeCheckService {
             Ok(d) => d,
             Err(e) => {
                 result.diagnostics.push(SfcDiagnostic {
-                    message: vize_carton::new_string!("Failed to parse SFC: {}", e.message).to_string(),
+                    message: vize_carton::new_string!("Failed to parse SFC: {}", e.message)
+                        .to_string(),
                     severity: SfcDiagnosticSeverity::Error,
                     start: 0,
                     end: 0,
@@ -182,7 +183,8 @@ impl TypeCheckService {
 
         // Check with tsgo
         if !virtual_ts_output.content.is_empty() {
-            let virtual_uri = vize_carton::new_string!("vize-virtual://{}.ts", filename).to_string();
+            let virtual_uri =
+                vize_carton::new_string!("vize-virtual://{filename}.ts").to_string();
 
             // Open virtual document
             self.bridge
@@ -223,7 +225,9 @@ impl TypeCheckService {
                     severity,
                     start,
                     end,
-                    code: diag.code.map(|c| vize_carton::new_string!("TS{}", c).to_string()),
+                    code: diag
+                        .code
+                        .map(|c| vize_carton::new_string!("TS{c}").to_string()),
                     related: diag
                         .related_information
                         .unwrap_or_default()

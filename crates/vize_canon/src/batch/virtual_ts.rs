@@ -213,7 +213,8 @@ impl VirtualTsGenerator {
                 vize_carton::push_fmt!(
                     *code,
                     "  (e: '{}', payload: {}): void;\n",
-                    emit.name, payload_type
+                    emit.name,
+                    payload_type
                 );
             } else {
                 vize_carton::push_fmt!(*code, "  (e: '{}'): void;\n", emit.name);
@@ -225,8 +226,8 @@ impl VirtualTsGenerator {
     /// Generate virtual TypeScript from SFC content string.
     pub fn generate_from_content(&self, content: &str) -> Result<VirtualTsResult, String> {
         let options = vize_atelier_sfc::SfcParseOptions::default();
-        let descriptor =
-            vize_atelier_sfc::parse_sfc(content, options).map_err(|e| vize_carton::new_string!("{:?}", e).to_string())?;
+        let descriptor = vize_atelier_sfc::parse_sfc(content, options)
+            .map_err(|e| vize_carton::new_string!("{:?}", e).to_string())?;
 
         let mut analyzer = Analyzer::with_options(AnalyzerOptions::full());
 

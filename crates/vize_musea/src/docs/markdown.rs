@@ -93,11 +93,7 @@ pub fn generate_variant_doc(variant: &ArtVariant<'_>, options: &DocOptions) -> S
 
     // Viewport info
     if let Some(ref viewport) = variant.viewport {
-        vize_carton::push_fmt!(
-            md,
-            "**Viewport:** {}x{}",
-            viewport.width, viewport.height
-        );
+        vize_carton::push_fmt!(md, "**Viewport:** {}x{}", viewport.width, viewport.height);
         if let Some(scale) = viewport.device_scale_factor {
             vize_carton::push_fmt!(md, " @{:.1}x", scale);
         }

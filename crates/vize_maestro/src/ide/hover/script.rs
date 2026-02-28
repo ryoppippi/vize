@@ -85,16 +85,14 @@ impl HoverService {
                         let (line, character) =
                             crate::ide::offset_to_position(&script.content, vts_offset);
                         let suffix = if is_setup { "setup.ts" } else { "script.ts" };
-                        let uri = vize_carton::new_string!("vize-virtual://{}.{}", ctx.uri.path(), suffix);
+                        let uri =
+                            vize_carton::new_string!("vize-virtual://{}.{suffix}", ctx.uri.path());
 
                         // Open/update virtual document
                         if bridge.is_initialized() {
-                            let doc_path = vize_carton::new_string!("{}.{}", ctx.uri.path(), suffix);
+                            let doc_path = vize_carton::new_string!("{}.{suffix}", ctx.uri.path());
                             let _ = bridge
-                                .open_or_update_virtual_document(
-                                    &doc_path,
-                                    &script.content,
-                                )
+                                .open_or_update_virtual_document(&doc_path, &script.content)
                                 .await;
 
                             // Request hover from tsgo

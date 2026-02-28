@@ -155,6 +155,7 @@ impl Rule for NoUnusedVars {
 #[cfg(test)]
 mod tests {
     use super::NoUnusedVars;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

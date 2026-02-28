@@ -467,7 +467,10 @@ pub fn compile_sfc_batch_with_results(
             // Take first 8 hex chars of the SHA-256 hash (same as JS: hash.slice(0, 8))
             vize_carton::new_string!(
                 "{:02x}{:02x}{:02x}{:02x}",
-                hash[0], hash[1], hash[2], hash[3]
+                hash[0],
+                hash[1],
+                hash[2],
+                hash[3]
             )
         };
 

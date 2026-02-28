@@ -261,7 +261,11 @@ fn generate_component_table(entries: &[&CatalogEntry]) -> String {
         vize_carton::push_fmt!(
             md,
             "| [{}]({}) | {} | {} | {} |\n",
-            entry.title, entry.doc_path, desc, entry.variant_count, status
+            entry.title,
+            entry.doc_path,
+            desc,
+            entry.variant_count,
+            status
         );
     }
 
@@ -336,7 +340,8 @@ fn slugify(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        collect_categories, generate_catalog, generate_tags_index, slugify, CatalogEntry, DocOptions,
+        collect_categories, generate_catalog, generate_tags_index, slugify, CatalogEntry,
+        DocOptions,
     };
     use crate::types::ArtStatus;
 

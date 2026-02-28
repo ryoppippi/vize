@@ -195,10 +195,7 @@ pub fn generate_virtual_ts_with_offsets(
     let generic_params = generic_param
         .map(|g| vize_carton::new_string!("<{g}>").to_string())
         .unwrap_or_default();
-    vize_carton::push_fmt!(
-        ts,
-        "{async_prefix}function __setup{generic_params}() {{\n",
-    );
+    vize_carton::push_fmt!(ts, "{async_prefix}function __setup{generic_params}() {{\n",);
 
     // Compiler macros (only valid inside setup scope)
     ts.push_str(VUE_SETUP_COMPILER_MACROS);
@@ -240,7 +237,9 @@ pub fn generate_virtual_ts_with_offsets(
             {
                 let leading_ws = &output_line[..output_line.len() - trimmed_line.len()];
                 let rest = trimmed_line.strip_prefix("export ").unwrap();
-                output_line = std::borrow::Cow::Owned(vize_carton::new_string!("{leading_ws}{rest}").to_string());
+                output_line = std::borrow::Cow::Owned(
+                    vize_carton::new_string!("{leading_ws}{rest}").to_string(),
+                );
             }
 
             // Replace import.meta with polyfill variable to avoid TS1343
@@ -417,10 +416,7 @@ pub fn generate_virtual_ts_with_offsets(
                 .unwrap_or(type_args.as_str());
             vize_carton::push_fmt!(ts, "export type Exposed = {inner_type};\n");
         } else if let Some(ref runtime_args) = expose.runtime_args {
-            vize_carton::push_fmt!(
-                ts,
-                "export type Exposed = typeof ({runtime_args});\n",
-            );
+            vize_carton::push_fmt!(ts, "export type Exposed = typeof ({runtime_args});\n",);
         }
     }
     ts.push('\n');

@@ -129,7 +129,9 @@ pub fn analyze_element_ids(
                         DiagnosticSeverity::Error,
                         *file_id,
                         *offset,
-                        vize_carton::new_string!("Static ID '{}' inside v-for will create duplicate IDs", id),
+                        vize_carton::new_string!(
+                            "Static ID '{id}' inside v-for will create duplicate IDs",
+                        ),
                     )
                     .with_suggestion("Use a dynamic ID like `:id=\"`item-${index}`\"` or useId()"),
                 );
@@ -157,7 +159,9 @@ pub fn analyze_element_ids(
                     DiagnosticSeverity::Warning,
                     file_id,
                     offset,
-                    vize_carton::new_string!("Dynamic ID '{}' may not produce unique values", id_expr),
+                    vize_carton::new_string!(
+                        "Dynamic ID '{id_expr}' may not produce unique values",
+                    ),
                 )
                 .with_suggestion("Include a unique identifier like index or item.id"),
             );

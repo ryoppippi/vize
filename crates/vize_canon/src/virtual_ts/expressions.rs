@@ -58,10 +58,7 @@ pub(crate) fn generate_expression(
             gen_range: gen_expr_start..gen_expr_end,
             src_range: src_start..src_end,
         });
-        vize_carton::push_fmt!(
-            *ts,
-            "{indent}// @vize-map: expr -> {src_start}:{src_end}\n",
-        );
+        vize_carton::push_fmt!(*ts, "{indent}// @vize-map: expr -> {src_start}:{src_end}\n",);
     }
 }
 

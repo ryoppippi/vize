@@ -84,22 +84,24 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
     if key.as_str() == "class" {
         if is_svg {
             ctx.use_helper("setAttr");
-            ctx.push_line_fmt(format_args!("_setAttr({}, \"class\", {})", element, value));
+            ctx.push_line_fmt(format_args!("_setAttr({element}, \"class\", {value})"));
         } else {
             ctx.use_helper("setClass");
-            ctx.push_line_fmt(format_args!("_setClass({}, {})", element, value));
+            ctx.push_line_fmt(format_args!("_setClass({element}, {value})"));
         }
     } else if key.as_str() == "style" {
         if is_svg {
             ctx.use_helper("setAttr");
-            ctx.push_line_fmt(format_args!("_setAttr({}, \"style\", {})", element, value));
+            ctx.push_line_fmt(format_args!("_setAttr({element}, \"style\", {value})"));
         } else {
             ctx.use_helper("setStyle");
-            ctx.push_line_fmt(format_args!("_setStyle({}, {})", element, value));
+            ctx.push_line_fmt(format_args!("_setStyle({element}, {value})"));
         }
     } else {
         ctx.use_helper("setProp");
-        ctx.push_line_fmt(format_args!("_setProp({}, \"{}\", {})", element, key, value));
+        ctx.push_line_fmt(format_args!(
+            "_setProp({element}, \"{key}\", {value})"
+        ));
     }
 }
 
@@ -144,7 +146,11 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
     if values.len() == 1 {
         ctx.push_line_fmt(format_args!("_setText({}, {})", text_ref, values[0]));
     } else {
-        ctx.push_line_fmt(format_args!("_setText({}, {})", text_ref, values.join(" + ")));
+        ctx.push_line_fmt(format_args!(
+            "_setText({}, {})",
+            text_ref,
+            values.join(" + ")
+        ));
     }
 }
 
@@ -222,7 +228,10 @@ fn generate_insert_node(ctx: &mut GenerateContext, insert: &InsertNodeIRNode) {
         .join(", ");
 
     if let Some(anchor) = insert.anchor {
-        ctx.push_line_fmt(format_args!("_insert({}, [{}], n{})", parent, elements, anchor));
+        ctx.push_line_fmt(format_args!(
+            "_insert({}, [{}], n{})",
+            parent, elements, anchor
+        ));
     } else {
         ctx.push_line_fmt(format_args!("_insert({}, [{}])", parent, elements));
     }

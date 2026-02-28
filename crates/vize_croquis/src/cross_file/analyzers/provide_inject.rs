@@ -131,7 +131,7 @@ impl ProvideInjectTree {
                 let type_str = p
                     .value_type
                     .as_deref()
-                    .map(|t| vize_carton::new_string!(": `{}`", t))
+                    .map(|t| vize_carton::new_string!(": `{t}`"))
                     .unwrap_or_default();
                 let consumers = if p.consumer_count > 0 {
                     vize_carton::new_string!(" → {} consumer(s)", p.consumer_count)

@@ -143,6 +143,7 @@ impl Rule for NoUnusedComponents {
 #[cfg(test)]
 mod tests {
     use super::NoUnusedComponents;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

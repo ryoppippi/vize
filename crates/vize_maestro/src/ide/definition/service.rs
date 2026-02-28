@@ -105,10 +105,7 @@ impl super::DefinitionService {
                             #[allow(clippy::disallowed_macros)]
                             let vdoc_uri = format!("{}.template.ts", ctx.uri.path());
                             let _ = bridge
-                                .open_or_update_virtual_document(
-                                    &vdoc_uri,
-                                    &tmpl.content,
-                                )
+                                .open_or_update_virtual_document(&vdoc_uri, &tmpl.content)
                                 .await;
 
                             if let Ok(locations) = bridge.definition(&uri, line, character).await {
@@ -165,10 +162,7 @@ impl super::DefinitionService {
                             #[allow(clippy::disallowed_macros)]
                             let vdoc_uri = format!("{}.{}", ctx.uri.path(), suffix);
                             let _ = bridge
-                                .open_or_update_virtual_document(
-                                    &vdoc_uri,
-                                    &s.content,
-                                )
+                                .open_or_update_virtual_document(&vdoc_uri, &s.content)
                                 .await;
 
                             if let Ok(locations) = bridge.definition(&uri, line, character).await {

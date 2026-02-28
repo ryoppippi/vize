@@ -3,10 +3,7 @@ import type { LintRule } from "../../wasm/index";
 
 const STORAGE_KEY = "vize-patina-rules-config";
 
-export function useRuleManagement(
-  rules: Ref<LintRule[]>,
-  lint: () => void,
-) {
+export function useRuleManagement(rules: Ref<LintRule[]>, lint: () => void) {
   const enabledRules = ref<Set<string>>(new Set());
   const severityOverrides = ref<Map<string, "error" | "warning" | "off">>(new Map());
 

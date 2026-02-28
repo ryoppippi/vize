@@ -82,7 +82,8 @@ pub fn analyze_event_bubbling(
                         *offset,
                         vize_carton::new_string!(
                             "Event '{}' propagates {} levels without being handled",
-                            event_name, bubble.depth
+                            event_name,
+                            bubble.depth
                         ),
                     )
                     .with_suggestion("Add an event handler or consider if this event is needed"),

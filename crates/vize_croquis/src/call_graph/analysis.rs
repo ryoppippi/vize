@@ -231,7 +231,11 @@ impl CallGraph {
             vize_carton::push_fmt!(
                 out,
                 "| `{}` | {:?} | {} | {}..{} |\n",
-                call.name, call.category, in_setup, call.start, call.end
+                call.name,
+                call.category,
+                in_setup,
+                call.start,
+                call.end
             );
         }
 
@@ -246,7 +250,11 @@ impl CallGraph {
                 vize_carton::push_fmt!(
                     out,
                     "| `{}` | `{}` | {} | {}..{} |\n",
-                    call.name, source, in_setup, call.start, call.end
+                    call.name,
+                    source,
+                    in_setup,
+                    call.start,
+                    call.end
                 );
             }
         }

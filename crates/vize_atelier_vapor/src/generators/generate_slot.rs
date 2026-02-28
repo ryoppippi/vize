@@ -30,7 +30,7 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
                 } else {
                     String::from("undefined")
                 };
-                vize_carton::new_string!("{}: {}", key, value).into()
+                vize_carton::new_string!("{key}: {value}").into()
             })
             .collect();
         Some(vize_carton::new_string!("{{ {} }}", prop_strs.join(", ")))
@@ -42,8 +42,7 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
     if let Some(props_str) = props {
         if has_fallback {
             ctx.push_line_fmt(format_args!(
-                "const {} = _renderSlot($slots, {}, {}, () => {{",
-                temp, slot_name, props_str
+                "const {temp} = _renderSlot($slots, {slot_name}, {props_str}, () => {{"
             ));
             ctx.indent();
             // Fallback content would be generated here
@@ -52,14 +51,12 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
             ctx.push_line("})");
         } else {
             ctx.push_line_fmt(format_args!(
-                "const {} = _renderSlot($slots, {}, {})",
-                temp, slot_name, props_str
+                "const {temp} = _renderSlot($slots, {slot_name}, {props_str})"
             ));
         }
     } else if has_fallback {
         ctx.push_line_fmt(format_args!(
-            "const {} = _renderSlot($slots, {}, {{}}, () => {{",
-            temp, slot_name
+            "const {temp} = _renderSlot($slots, {slot_name}, {{}}, () => {{"
         ));
         ctx.indent();
         ctx.push_line("/* fallback content */");
@@ -67,8 +64,7 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
         ctx.push_line("})");
     } else {
         ctx.push_line_fmt(format_args!(
-            "const {} = _renderSlot($slots, {})",
-            temp, slot_name
+            "const {temp} = _renderSlot($slots, {slot_name})"
         ));
     }
 }
@@ -76,9 +72,9 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
 /// Generate slot function for component
 pub fn generate_slot_function(name: &str, params: Option<&str>, body: &str) -> String {
     if let Some(p) = params {
-        vize_carton::new_string!("{}: ({}) => {}", name, p, body).into()
+        vize_carton::new_string!("{name}: ({p}) => {body}").into()
     } else {
-        vize_carton::new_string!("{}: () => {}", name, body).into()
+        vize_carton::new_string!("{name}: () => {body}").into()
     }
 }
 
@@ -94,12 +90,12 @@ pub fn generate_scoped_slots(slots: &[(String, Option<String>, String)]) -> Stri
 
 /// Generate slot props normalization
 pub fn generate_normalize_slots(slots_expr: &str) -> String {
-    vize_carton::new_string!("_normalizeSlots({})", slots_expr).into()
+    vize_carton::new_string!("_normalizeSlots({slots_expr})").into()
 }
 
 /// Generate dynamic slot name
 pub fn generate_dynamic_slot_name(expr: &str) -> String {
-    vize_carton::new_string!("[{}]", expr).into()
+    vize_carton::new_string!("[{expr}]").into()
 }
 
 /// Check if slot is dynamic

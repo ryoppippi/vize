@@ -31,15 +31,10 @@ impl ReactivityTracker {
             .count();
 
         md.push_str("## Summary\n\n");
+        vize_carton::push_fmt!(md, "- **Tracked Bindings**: {}\n", self.bindings.len());
         vize_carton::push_fmt!(
             md,
-            "- **Tracked Bindings**: {}\n",
-            self.bindings.len()
-        );
-        vize_carton::push_fmt!(
-            md,
-            "- **Violations**: {} errors, {} warnings, {} info\n\n",
-            error_count, warning_count, info_count
+            "- **Violations**: {error_count} errors, {warning_count} warnings, {info_count} info\n\n",
         );
 
         // Bindings table
@@ -59,7 +54,10 @@ impl ReactivityTracker {
                 vize_carton::push_fmt!(
                     md,
                     "| `{}` | {:?} | {} | {} |\n",
-                    binding.name, binding.origin, state, binding.scope_depth
+                    binding.name,
+                    binding.origin,
+                    state,
+                    binding.scope_depth
                 );
             }
             md.push('\n');
@@ -81,7 +79,8 @@ impl ReactivityTracker {
                 vize_carton::push_fmt!(
                     md,
                     "**Location**: offset {}..{}\n\n",
-                    violation.start, violation.end
+                    violation.start,
+                    violation.end
                 );
 
                 if let Some(ref suggestion) = violation.suggestion {

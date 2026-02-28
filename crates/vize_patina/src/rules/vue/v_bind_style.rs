@@ -171,7 +171,7 @@ impl Rule for VBindStyle {
 
 #[cfg(test)]
 mod tests {
-    use super::VBindStyle;
+    use super::{VBindStyle, VBindStyleOption};
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 

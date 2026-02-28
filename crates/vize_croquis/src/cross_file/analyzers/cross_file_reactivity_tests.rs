@@ -1,7 +1,7 @@
 //! Tests for cross-file reactivity tracking.
 
 use super::{
-    CrossFileReactivityIssue, CrossFileReactivityIssueKind, CompactString, DiagnosticSeverity,
+    CompactString, CrossFileReactivityIssue, CrossFileReactivityIssueKind, DiagnosticSeverity,
     FileId, ReactiveConsumption, ReactiveExposure, ReactiveValueId, ReactivityFlow,
     ReactivityFlowKind, ReactivityLossReason,
 };
@@ -205,16 +205,20 @@ fn test_snapshot_reactivity_flows() {
     ];
 
     for (name, flow) in &flows {
-        vize_carton::push_fmt!(output, "-- {} --\n", name);
+        vize_carton::push_fmt!(output, "-- {name} --\n");
         vize_carton::push_fmt!(
             output,
             "Source: file={:?}, name={}, offset={}\n",
-            flow.source.file_id, flow.source.name, flow.source.offset
+            flow.source.file_id,
+            flow.source.name,
+            flow.source.offset
         );
         vize_carton::push_fmt!(
             output,
             "Target: file={:?}, name={}, offset={}\n",
-            flow.target.file_id, flow.target.name, flow.target.offset
+            flow.target.file_id,
+            flow.target.name,
+            flow.target.offset
         );
         vize_carton::push_fmt!(output, "Flow Kind: {:?}\n", flow.flow_kind);
         vize_carton::push_fmt!(output, "Preserved: {}\n", flow.preserved);
@@ -294,7 +298,8 @@ fn test_snapshot_cross_file_reactivity_issue() {
         vize_carton::push_fmt!(
             output,
             "  File: {:?}, offset={}\n",
-            issue.file_id, issue.offset
+            issue.file_id,
+            issue.offset
         );
         if let Some(ref related) = issue.related_file {
             vize_carton::push_fmt!(output, "  Related file: {:?}\n", related);

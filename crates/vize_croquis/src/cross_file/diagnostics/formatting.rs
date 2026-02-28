@@ -18,7 +18,7 @@ impl CrossFileDiagnostic {
             DiagnosticSeverity::Hint => "💡 **HINT**",
         };
 
-        vize_carton::push_fmt!(out, "{} `{}`\n\n", severity_badge, self.code());
+        vize_carton::push_fmt!(out, "{severity_badge} `{}`\n\n", self.code());
         vize_carton::push_fmt!(out, "### {}\n\n", self.message);
 
         // Detailed explanation based on kind
@@ -26,7 +26,7 @@ impl CrossFileDiagnostic {
 
         // Suggestion
         if let Some(suggestion) = &self.suggestion {
-            vize_carton::push_fmt!(out, "\n**💡 Suggestion**: {}\n", suggestion);
+            vize_carton::push_fmt!(out, "\n**💡 Suggestion**: {suggestion}\n");
         }
 
         out
@@ -39,9 +39,9 @@ impl CrossFileDiagnostic {
                 api_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(*out, 
-                    "**Problem**: `{}()` is called outside the setup context ({}).\n\n",
-                    api_name, context_description
+                vize_carton::push_fmt!(
+                    *out,
+                    "**Problem**: `{api_name}()` is called outside the setup context ({context_description}).\n\n",
                 );
                 out.push_str("**Why this is dangerous**:\n\n");
                 out.push_str("- 🔄 **State Pollution (CSRP)**: In SSR, module-level state is shared across requests, causing data leaks between users.\n");
@@ -50,9 +50,9 @@ impl CrossFileDiagnostic {
                 out.push_str("**Correct usage**:\n\n");
                 out.push_str("```vue\n");
                 out.push_str("<script setup>\n");
-                vize_carton::push_fmt!(*out, 
-                    "const state = {}(...) // ✅ Called in setup\n",
-                    api_name
+                vize_carton::push_fmt!(
+                    *out,
+                    "const state = {api_name}(...) // ✅ Called in setup\n",
                 );
                 out.push_str("</script>\n");
                 out.push_str("```\n");
@@ -61,9 +61,9 @@ impl CrossFileDiagnostic {
                 hook_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(*out, 
-                    "**Problem**: `{}` is called outside the setup context ({}).\n\n",
-                    hook_name, context_description
+                vize_carton::push_fmt!(
+                    *out,
+                    "**Problem**: `{hook_name}` is called outside the setup context ({context_description}).\n\n",
                 );
                 out.push_str("**Why this fails**:\n\n");
                 out.push_str(
@@ -76,9 +76,11 @@ impl CrossFileDiagnostic {
                 api_name,
                 context_description,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: `{}()` is called outside the setup context ({}).\n\n",
-                    api_name, context_description
+                    api_name,
+                    context_description
                 );
                 out.push_str("**Why this causes memory leaks**:\n\n");
                 out.push_str("- Watchers created in setup are **automatically stopped** when the component unmounts.\n");
@@ -102,18 +104,21 @@ impl CrossFileDiagnostic {
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "const copy = {{ ...{} }} // ❌ copy is NOT reactive\n",
                     source_name
                 );
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "{}.foo = 'bar' // copy.foo is still the old value\n",
                     source_name
                 );
                 out.push_str("```\n\n");
                 out.push_str("**Fix**: Keep the reference, or use `toRefs()`:\n\n");
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "const {{ foo, bar }} = toRefs({}) // ✅ foo, bar are refs\n",
                     source_name
                 );
@@ -123,14 +128,17 @@ impl CrossFileDiagnostic {
                 variable_name,
                 original_type,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: Reassigning `{}` loses the original `{}` reference.\n\n",
-                    variable_name, original_type
+                    variable_name,
+                    original_type
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");
                 vize_carton::push_fmt!(*out, "let {} = ref(0)\n", variable_name);
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "{} = ref(1) // ❌ Template still watches the OLD ref\n",
                     variable_name
                 );
@@ -138,7 +146,8 @@ impl CrossFileDiagnostic {
                 out.push_str("**Fix**: Mutate the `.value` instead:\n\n");
                 out.push_str("```ts\n");
                 vize_carton::push_fmt!(*out, "const {} = ref(0)\n", variable_name);
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "{}.value = 1 // ✅ Same ref, new value\n",
                     variable_name
                 );
@@ -149,7 +158,8 @@ impl CrossFileDiagnostic {
                 destructured_keys,
                 suggestion,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: Destructuring `{}` extracts plain values, losing reactivity.\n\n",
                     source_name
                 );
@@ -160,16 +170,23 @@ impl CrossFileDiagnostic {
                     .map(|k| k.as_str())
                     .collect::<Vec<_>>()
                     .join(", ");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "const {{ {} }} = {} // ❌ {} are plain values\n",
-                    keys, source_name, keys
+                    keys,
+                    source_name,
+                    keys
                 );
                 out.push_str("```\n\n");
                 vize_carton::push_fmt!(*out, "**Fix**: Use `{}()`:\n\n", suggestion);
                 out.push_str("```ts\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "const {{ {} }} = {}({}) // ✅ {} are refs\n",
-                    keys, suggestion, source_name, keys
+                    keys,
+                    suggestion,
+                    source_name,
+                    keys
                 );
                 out.push_str("```\n");
             }
@@ -178,9 +195,11 @@ impl CrossFileDiagnostic {
                 escaped_via,
                 target_name,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: Reactive reference `{}` escapes its scope via {}.\n\n",
-                    variable_name, escaped_via
+                    variable_name,
+                    escaped_via
                 );
                 if let Some(target) = target_name {
                     vize_carton::push_fmt!(*out, "**Escaped to**: `{}`\n\n", target);
@@ -188,18 +207,21 @@ impl CrossFileDiagnostic {
                 out.push_str("**Why this is implicit** (like Rust's move semantics):\n\n");
                 out.push_str("```\n");
                 out.push_str("┌─ setup() ─────────────────────────────┐\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "│  const {} = reactive({{...}})          │\n",
                     variable_name
                 );
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "│  someFunction({})  ←── reference escapes │\n",
                     variable_name
                 );
                 out.push_str("│          │                              │\n");
                 out.push_str("│          ▼                              │\n");
                 out.push_str("│  ┌─ someFunction() ─────────────────┐  │\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "│  │  // {} is now accessible here    │  │\n",
                     variable_name
                 );
@@ -222,9 +244,11 @@ impl CrossFileDiagnostic {
                 out.push_str("// Option 2: Pass a snapshot (non-reactive copy)\n");
                 vize_carton::push_fmt!(*out, "someFunction({{ ...{} }})\n\n", variable_name);
                 out.push_str("// Option 3: Pass specific values explicitly\n");
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "someFunction({}.id, {}.name)\n",
-                    variable_name, variable_name
+                    variable_name,
+                    variable_name
                 );
                 out.push_str("```\n");
             }
@@ -233,7 +257,8 @@ impl CrossFileDiagnostic {
                 mutation_site,
                 escape_site,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: `{}` is mutated after escaping its scope.\n\n",
                     variable_name
                 );
@@ -242,11 +267,13 @@ impl CrossFileDiagnostic {
                 out.push_str("**Timeline**:\n\n");
                 out.push_str("```\n");
                 vize_carton::push_fmt!(*out, "1. {} created in setup()\n", variable_name);
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "2. {} passed to external function (escape)\n",
                     variable_name
                 );
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "3. {} mutated ← mutations may affect escaped reference!\n",
                     variable_name
                 );
@@ -290,9 +317,11 @@ impl CrossFileDiagnostic {
             }
             CrossFileDiagnosticKind::ProvideInjectWithoutSymbol { key, is_provide } => {
                 let action = if *is_provide { "provide" } else { "inject" };
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: `{}('{}')` uses a string key instead of Symbol/InjectionKey.\n\n",
-                    action, key
+                    action,
+                    key
                 );
                 out.push_str("**Why string keys are problematic**:\n\n");
                 out.push_str("```\n");
@@ -310,10 +339,7 @@ impl CrossFileDiagnostic {
                 out.push_str("// ComponentA.vue\n");
                 vize_carton::push_fmt!(*out, "provide('{}', myData)\n\n", key);
                 out.push_str("// LibraryX (unknown to you)\n");
-                vize_carton::push_fmt!(*out, 
-                    "provide('{}', otherData)  // 💥 Collision!\n",
-                    key
-                );
+                vize_carton::push_fmt!(*out, "provide('{}', otherData)  // 💥 Collision!\n", key);
                 out.push_str("```\n\n");
                 out.push_str("**Type-safe pattern with InjectionKey**:\n\n");
                 out.push_str("```ts\n");
@@ -366,9 +392,11 @@ impl CrossFileDiagnostic {
                 out.push_str("**Note**: Use `watch` only when you need **side effects** (API calls, logging, etc.).\n");
             }
             CrossFileDiagnosticKind::DomAccessWithoutNextTick { api, context } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: `{}` is accessed in `{}` without `nextTick()`.\n\n",
-                    api, context
+                    api,
+                    context
                 );
                 out.push_str("**Why this is dangerous**:\n\n");
                 out.push_str("```\n");

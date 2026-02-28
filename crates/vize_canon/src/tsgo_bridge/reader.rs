@@ -131,10 +131,10 @@ pub(crate) fn start_reader_task(
                     });
                     if let Ok(response_content) = serde_json::to_string(&response) {
                         let response_msg = vize_carton::new_string!(
-                            "Content-Length: {}\r\n\r\n{}",
+                            "Content-Length: {}\r\n\r\n{response_content}",
                             response_content.len(),
-                            response_content
-                        ).to_string();
+                        )
+                        .to_string();
                         let mut stdin_guard = stdin.lock().await;
                         if let Some(ref mut writer) = *stdin_guard {
                             let _ = writer.write_all(response_msg.as_bytes()).await;

@@ -182,7 +182,7 @@ pub fn line_col_to_offset(content: &str, line: u32, col: u32) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::{
-        offset_to_line_col, line_col_to_offset, CompositeSourceMap, ImportSourceMap, SfcBlockType,
+        line_col_to_offset, offset_to_line_col, CompositeSourceMap, ImportSourceMap, SfcBlockType,
         SfcSourceMap,
     };
 

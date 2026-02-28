@@ -17,7 +17,7 @@ pub(crate) fn generate_effect(
     if effect.operations.len() == 1 {
         let op = &effect.operations[0];
         let op_code = generate_operation_inline(ctx, op);
-        ctx.push_line_fmt(format_args!("_renderEffect(() => {})", op_code));
+        ctx.push_line_fmt(format_args!("_renderEffect(() => {op_code})"));
     } else {
         ctx.push_line("_renderEffect(() => {");
         ctx.indent();
@@ -54,22 +54,22 @@ pub(crate) fn generate_operation_inline(
             if key.as_str() == "class" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    vize_carton::new_string!("_setAttr({}, \"class\", {})", element, value).into()
+                    vize_carton::new_string!("_setAttr({element}, \"class\", {value})").into()
                 } else {
                     ctx.use_helper("setClass");
-                    vize_carton::new_string!("_setClass({}, {})", element, value).into()
+                    vize_carton::new_string!("_setClass({element}, {value})").into()
                 }
             } else if key.as_str() == "style" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    vize_carton::new_string!("_setAttr({}, \"style\", {})", element, value).into()
+                    vize_carton::new_string!("_setAttr({element}, \"style\", {value})").into()
                 } else {
                     ctx.use_helper("setStyle");
-                    vize_carton::new_string!("_setStyle({}, {})", element, value).into()
+                    vize_carton::new_string!("_setStyle({element}, {value})").into()
                 }
             } else {
                 ctx.use_helper("setProp");
-                vize_carton::new_string!("_setProp({}, \"{}\", {})", element, key, value).into()
+                vize_carton::new_string!("_setProp({element}, \"{key}\", {value})").into()
             }
         }
         OperationNode::SetText(set_text) => {
@@ -94,9 +94,9 @@ pub(crate) fn generate_operation_inline(
                 .collect();
 
             if values.len() == 1 {
-                vize_carton::new_string!("_setText({}, {})", text_ref, values[0]).into()
+                vize_carton::new_string!("_setText({text_ref}, {})", values[0]).into()
             } else {
-                vize_carton::new_string!("_setText({}, {})", text_ref, values.join(" + ")).into()
+                vize_carton::new_string!("_setText({text_ref}, {})", values.join(" + ")).into()
             }
         }
         _ => String::from("/* unsupported */"),

@@ -219,9 +219,7 @@ impl ImportResolver {
         {
             return Err(ImportResolveError::NotFound({
                 #[allow(clippy::disallowed_macros)]
-                let s = format!(
-                    "Node module resolution not supported: {specifier}"
-                );
+                let s = format!("Node module resolution not supported: {specifier}");
                 s
             }));
         }

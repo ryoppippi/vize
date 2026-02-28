@@ -147,13 +147,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div class="editor-container">
-        <MonacoEditor
-          ref="editorRef"
-          v-model="source"
-          language="vue"
-          :diagnostics
-          :theme
-        />
+        <MonacoEditor ref="editorRef" v-model="source" language="vue" :diagnostics :theme />
       </div>
     </div>
 
@@ -199,7 +193,11 @@ onUnmounted(() => {
             <div class="output-header-bar">
               <span class="output-title">Issues</span>
               <div class="locale-selector">
-                <select v-model="currentLocale" aria-label="Locale" @change="setLocale(currentLocale)">
+                <select
+                  v-model="currentLocale"
+                  aria-label="Locale"
+                  @change="setLocale(currentLocale)"
+                >
                   <option v-for="locale in locales" :key="locale.code" :value="locale.code">
                     {{ locale.name }}
                   </option>
@@ -259,7 +257,11 @@ onUnmounted(() => {
                 aria-label="Search rules"
                 class="search-input"
               />
-              <select v-model="selectedCategory" aria-label="Category filter" class="category-select">
+              <select
+                v-model="selectedCategory"
+                aria-label="Category filter"
+                class="category-select"
+              >
                 <option v-for="cat in categories" :key="cat" :value="cat">
                   {{ cat === "all" ? "All Categories" : cat }}
                 </option>

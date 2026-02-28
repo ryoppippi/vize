@@ -332,7 +332,7 @@ fn find_pattern(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{CompactString, ExpressionNode, parse_v_for_variables};
+    use super::{parse_v_for_variables, CompactString, ExpressionNode};
     use vize_carton::Bump;
     use vize_relief::ast::SimpleExpressionNode;
 

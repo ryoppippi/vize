@@ -69,7 +69,11 @@ pub fn check_props_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: vize_carton::new_string!("Prop '{}' should have a type definition", prop.name).to_string(),
+                message: vize_carton::new_string!(
+                    "Prop '{}' should have a type definition",
+                    prop.name
+                )
+                .to_string(),
                 start,
                 end,
                 code: Some("untyped-prop".to_string()),
@@ -148,7 +152,11 @@ pub fn check_emits_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: vize_carton::new_string!("Emit '{}' should have a type definition", emit.name).to_string(),
+                message: vize_carton::new_string!(
+                    "Emit '{}' should have a type definition",
+                    emit.name
+                )
+                .to_string(),
                 start,
                 end,
                 code: Some("untyped-emit".to_string()),
@@ -173,15 +181,20 @@ pub fn check_template_bindings(
             severity: SfcTypeSeverity::Error,
             message: vize_carton::new_string!(
                 "Undefined reference '{}' in {}",
-                undef_ref.name, undef_ref.context
-            ).to_string(),
+                undef_ref.name,
+                undef_ref.context
+            )
+            .to_string(),
             start: undef_ref.offset + template_offset,
             end: undef_ref.offset + template_offset + undef_ref.name.len() as u32,
             code: Some("undefined-binding".to_string()),
-            help: Some(vize_carton::new_string!(
-                "Make sure '{}' is defined in script setup or imported",
-                undef_ref.name
-            ).to_string()),
+            help: Some(
+                vize_carton::new_string!(
+                    "Make sure '{}' is defined in script setup or imported",
+                    undef_ref.name
+                )
+                .to_string(),
+            ),
             related: Vec::new(),
         });
     }
@@ -206,32 +219,32 @@ pub fn check_reactivity(
                 vize_carton::new_string!(
                     "Destructuring reactive object '{}' loses reactivity",
                     source_name
-                ).to_string()
+                )
+                .to_string()
             }
             ReactivityLossKind::RefValueDestructure { source_name, .. } => {
-                vize_carton::new_string!("Destructuring ref '{}' loses reactivity", source_name).to_string()
+                vize_carton::new_string!("Destructuring ref '{}' loses reactivity", source_name)
+                    .to_string()
             }
             ReactivityLossKind::RefValueExtract {
                 source_name,
                 target_name,
-            } => {
-                vize_carton::new_string!(
-                    "Extracting '{}' from '{}.value' loses reactivity",
-                    target_name, source_name
-                ).to_string()
-            }
-            ReactivityLossKind::ReactiveSpread { source_name } => {
-                vize_carton::new_string!(
-                    "Spreading reactive object '{}' loses reactivity",
-                    source_name
-                ).to_string()
-            }
-            ReactivityLossKind::ReactiveReassign { source_name } => {
-                vize_carton::new_string!(
-                    "Reassigning reactive variable '{}' disconnects reactivity",
-                    source_name
-                ).to_string()
-            }
+            } => vize_carton::new_string!(
+                "Extracting '{}' from '{}.value' loses reactivity",
+                target_name,
+                source_name
+            )
+            .to_string(),
+            ReactivityLossKind::ReactiveSpread { source_name } => vize_carton::new_string!(
+                "Spreading reactive object '{}' loses reactivity",
+                source_name
+            )
+            .to_string(),
+            ReactivityLossKind::ReactiveReassign { source_name } => vize_carton::new_string!(
+                "Reassigning reactive variable '{}' disconnects reactivity",
+                source_name
+            )
+            .to_string(),
         };
 
         result.add_diagnostic(SfcTypeDiagnostic {

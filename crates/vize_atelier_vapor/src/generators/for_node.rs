@@ -26,8 +26,7 @@ where
     let params = build_params(value_name, key_name, index_name);
 
     ctx.push_line_fmt(format_args!(
-        "_createFor(() => {}, ({}) => {{",
-        source, params
+        "_createFor(() => {source}, ({params}) => {{"
     ));
     ctx.indent();
     generate_block(ctx, &for_node.render);
@@ -40,7 +39,7 @@ where
         } else {
             vize_carton::CompactString::from(key_prop.content.as_str())
         };
-        ctx.push_line_fmt(format_args!("}}, ({}) => {})", params, key_expr));
+        ctx.push_line_fmt(format_args!("}}, ({params}) => {key_expr})"));
     } else {
         ctx.push_line("})");
     }
@@ -49,8 +48,8 @@ where
 /// Build parameter string for for callback
 fn build_params(value: &str, key: Option<&str>, index: Option<&str>) -> String {
     match (key, index) {
-        (Some(k), Some(i)) => vize_carton::new_string!("{}, {}, {}", value, k, i).into(),
-        (Some(k), None) => vize_carton::new_string!("{}, {}", value, k).into(),
+        (Some(k), Some(i)) => vize_carton::new_string!("{value}, {k}, {i}").into(),
+        (Some(k), None) => vize_carton::new_string!("{value}, {k}").into(),
         _ => value.to_string(),
     }
 }
@@ -81,13 +80,11 @@ where
     if for_node.once {
         // Non-reactive for loop
         ctx.push_line_fmt(format_args!(
-            "_createForStatic(() => {}, ({}) => {{",
-            source, params
+            "_createForStatic(() => {source}, ({params}) => {{"
         ));
     } else {
         ctx.push_line_fmt(format_args!(
-            "_createFor(() => {}, ({}) => {{",
-            source, params
+            "_createFor(() => {source}, ({params}) => {{"
         ));
     }
 

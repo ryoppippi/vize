@@ -59,12 +59,10 @@ export function useCrossFileAnalysis({
     }
     croquisResults.value = results;
 
-    const crossFileInputs: CrossFileInput[] = Object.entries(files.value).map(
-      ([path, source]) => ({
-        path,
-        source,
-      }),
-    );
+    const crossFileInputs: CrossFileInput[] = Object.entries(files.value).map(([path, source]) => ({
+      path,
+      source,
+    }));
 
     const wasmOptions: WasmCrossFileOptions = {
       all: true,

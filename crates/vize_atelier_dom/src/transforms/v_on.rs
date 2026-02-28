@@ -147,7 +147,9 @@ pub fn generate_modifier_guard(modifiers: &EventModifiers) -> String {
             exact_checks.push("$event.metaKey");
         }
         if !exact_checks.is_empty() {
-            guards.push(vize_carton::new_string!("if ({}) return", exact_checks.join(" || ")).to_string());
+            guards.push(
+                vize_carton::new_string!("if ({}) return", exact_checks.join(" || ")).to_string(),
+            );
         }
     } else {
         if modifiers.system.ctrl {
@@ -216,9 +218,7 @@ pub fn generate_key_guard(keys: &[String]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        generate_key_guard, generate_modifier_guard, resolve_key_alias, EventModifiers,
-    };
+    use super::{generate_key_guard, generate_modifier_guard, resolve_key_alias, EventModifiers};
     use vize_carton::String;
 
     #[test]

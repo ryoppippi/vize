@@ -152,7 +152,9 @@ impl<'a> SsrCodegenContext<'a> {
             }
             Some(name) => {
                 self.use_ssr_helper(RuntimeHelper::SsrRenderAttr);
-                self.push_string_part_dynamic(&vize_carton::new_string!("_ssrRenderAttr(\"{name}\", {exp})"));
+                self.push_string_part_dynamic(&vize_carton::new_string!(
+                    "_ssrRenderAttr(\"{name}\", {exp})"
+                ));
             }
             None => {
                 // v-bind without argument - spread attributes

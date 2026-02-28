@@ -171,6 +171,7 @@ impl Rule for NoFloatingPromises {
 #[cfg(test)]
 mod tests {
     use super::NoFloatingPromises;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

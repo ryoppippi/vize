@@ -147,7 +147,7 @@ fn skip_whitespace(bytes: &[u8]) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::PreferImportFromVue;
+    use super::{PreferImportFromVue, ScriptLintResult, ScriptRule};
 
     #[test]
     fn test_valid_vue_import() {

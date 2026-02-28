@@ -490,7 +490,7 @@ fn test_snapshot_diagnostic_with_related_files() {
 
     output.push_str("\nRelated files:\n");
     for (file_id, offset, msg) in &diag.related_files {
-        vize_carton::push_fmt!(output, "  - {:?} at {}: {}\n", file_id, offset, msg);
+        vize_carton::push_fmt!(output, "  - {:?} at {offset}: {msg}\n", file_id);
     }
 
     output.push_str("\nMarkdown Output:\n");

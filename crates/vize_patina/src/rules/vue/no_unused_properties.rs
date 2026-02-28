@@ -164,6 +164,7 @@ impl Rule for NoUnusedProperties {
 #[cfg(test)]
 mod tests {
     use super::NoUnusedProperties;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

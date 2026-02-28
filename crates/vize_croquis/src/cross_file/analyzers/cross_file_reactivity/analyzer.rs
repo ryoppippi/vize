@@ -177,7 +177,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &provide.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        vize_carton::new_string!("Symbol:{}", s)
+                        vize_carton::new_string!("Symbol:{s}")
                     }
                 };
 
@@ -304,7 +304,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
                 let key_str = match &inject.key {
                     crate::provide::ProvideKey::String(s) => s.clone(),
                     crate::provide::ProvideKey::Symbol(s) => {
-                        vize_carton::new_string!("Symbol:{}", s)
+                        vize_carton::new_string!("Symbol:{s}")
                     }
                 };
 

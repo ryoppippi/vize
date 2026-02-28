@@ -77,11 +77,7 @@ pub(crate) fn generate_props_variables(
         if has_props {
             // Runtime-declared props: generate individual variables
             for prop in props {
-                vize_carton::push_fmt!(
-                    *ts,
-                    "  const {} = props[\"{}\"];\n",
-                    prop.name, prop.name
-                );
+                vize_carton::push_fmt!(*ts, "  const {} = props[\"{}\"];\n", prop.name, prop.name);
                 vize_carton::push_fmt!(*ts, "  void {};\n", prop.name);
             }
         } else if let Some(type_args) = define_props_type_args {
@@ -100,7 +96,8 @@ pub(crate) fn generate_props_variables(
                     vize_carton::push_fmt!(
                         *ts,
                         "  const {} = props[\"{}\"];\n",
-                        prop.name, prop.name
+                        prop.name,
+                        prop.name
                     );
                     vize_carton::push_fmt!(*ts, "  void {};\n", prop.name);
                 }
@@ -166,9 +163,9 @@ pub(crate) fn extract_interface_fields(script: &str, type_name: &str) -> Vec<Str
 /// Find the body of an interface or type declaration in script content.
 fn find_type_body<'a>(script: &'a str, type_name: &str) -> Option<&'a str> {
     for pattern in &[
-        vize_carton::new_string!("interface {} ", type_name).to_string(),
-        vize_carton::new_string!("interface {}{}", type_name, '{').to_string(),
-        vize_carton::new_string!("type {} ", type_name).to_string(),
+        vize_carton::new_string!("interface {type_name} ").to_string(),
+        vize_carton::new_string!("interface {type_name}{{").to_string(),
+        vize_carton::new_string!("type {type_name} ").to_string(),
     ] {
         if let Some(pos) = script.find(pattern.as_str()) {
             let rest = &script[pos..];

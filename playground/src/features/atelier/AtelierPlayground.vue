@@ -553,18 +553,13 @@ watch(
     <div class="panel-header">
       <h2>
         Output
-        <span v-if="compileTime !== null" class="compile-time"
-          >{{ compileTime.toFixed(4) }}ms</span
-        >
+        <span v-if="compileTime !== null" class="compile-time">{{ compileTime.toFixed(4) }}ms</span>
       </h2>
       <div class="panel-actions">
         <button @click="copyFullOutput" class="btn-ghost">Copy All Output</button>
       </div>
       <div class="tabs">
-        <button
-          :class="['tab', { active: activeTab === 'code' }]"
-          @click="activeTab = 'code'"
-        >
+        <button :class="['tab', { active: activeTab === 'code' }]" @click="activeTab = 'code'">
           Code
         </button>
         <button :class="['tab', { active: activeTab === 'ast' }]" @click="activeTab = 'ast'">
@@ -577,10 +572,7 @@ watch(
         >
           Bindings
         </button>
-        <button
-          :class="['tab', { active: activeTab === 'tokens' }]"
-          @click="activeTab = 'tokens'"
-        >
+        <button :class="['tab', { active: activeTab === 'tokens' }]" @click="activeTab = 'tokens'">
           Tokens ({{ tokenStats.total }})
         </button>
         <button
@@ -590,16 +582,10 @@ watch(
           Helpers
         </button>
         <template v-if="inputMode === 'sfc'">
-          <button
-            :class="['tab', { active: activeTab === 'sfc' }]"
-            @click="activeTab = 'sfc'"
-          >
+          <button :class="['tab', { active: activeTab === 'sfc' }]" @click="activeTab = 'sfc'">
             SFC
           </button>
-          <button
-            :class="['tab', { active: activeTab === 'css' }]"
-            @click="activeTab = 'css'"
-          >
+          <button :class="['tab', { active: activeTab === 'css' }]" @click="activeTab = 'css'">
             CSS
           </button>
         </template>
@@ -684,17 +670,10 @@ watch(
                 <input type="checkbox" v-model="astCollapsed" />
                 <span>Compact</span>
               </label>
-              <button @click="copyToClipboard(astJson)" class="btn-ghost btn-small">
-                Copy
-              </button>
+              <button @click="copyToClipboard(astJson)" class="btn-ghost btn-small">Copy</button>
             </div>
           </div>
-          <CodeHighlight
-            :code="astJson"
-            language="json"
-            :theme="theme"
-            show-line-numbers
-          />
+          <CodeHighlight :code="astJson" language="json" :theme="theme" show-line-numbers />
         </div>
 
         <!-- Helpers Tab -->
@@ -716,9 +695,7 @@ watch(
             <h5>
               Template
               {{
-                sfcResult.descriptor.template.lang
-                  ? `(${sfcResult.descriptor.template.lang})`
-                  : ""
+                sfcResult.descriptor.template.lang ? `(${sfcResult.descriptor.template.lang})` : ""
               }}
             </h5>
             <CodeHighlight
@@ -747,11 +724,7 @@ watch(
           <div v-if="sfcResult.descriptor.script" class="sfc-block">
             <h5>
               Script
-              {{
-                sfcResult.descriptor.script.lang
-                  ? `(${sfcResult.descriptor.script.lang})`
-                  : ""
-              }}
+              {{ sfcResult.descriptor.script.lang ? `(${sfcResult.descriptor.script.lang})` : "" }}
             </h5>
             <CodeHighlight
               :code="sfcResult.descriptor.script.content"
@@ -762,11 +735,7 @@ watch(
 
           <div v-if="sfcResult.descriptor.styles?.length > 0" class="sfc-block">
             <h5>Styles ({{ sfcResult.descriptor.styles?.length }})</h5>
-            <div
-              v-for="(style, i) in sfcResult.descriptor.styles"
-              :key="i"
-              class="style-block"
-            >
+            <div v-for="(style, i) in sfcResult.descriptor.styles" :key="i" class="style-block">
               <span class="style-meta">
                 <span v-if="style.scoped" class="badge">scoped</span>
                 <span v-if="style.lang" class="badge">{{ style.lang }}</span>
@@ -795,10 +764,7 @@ watch(
             <div class="css-compiled">
               <h5>Compiled CSS</h5>
               <div class="code-actions">
-                <button
-                  @click="copyToClipboard(formattedCss || cssResult.code)"
-                  class="btn-ghost"
-                >
+                <button @click="copyToClipboard(formattedCss || cssResult.code)" class="btn-ghost">
                   Copy
                 </button>
               </div>
@@ -891,10 +857,7 @@ watch(
               class="token-item"
               :style="{ '--token-color': getTokenTypeColor(token.type) }"
             >
-              <span
-                class="token-badge"
-                :style="{ background: getTokenTypeColor(token.type) }"
-              >
+              <span class="token-badge" :style="{ background: getTokenTypeColor(token.type) }">
                 {{ getTokenTypeIcon(token.type) }}
               </span>
               <div class="token-content">

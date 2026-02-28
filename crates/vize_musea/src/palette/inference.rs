@@ -226,7 +226,9 @@ fn humanize_label(s: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{humanize_label, infer_control_from_values, infer_control_type, ControlKind, PaletteOptions};
+    use super::{
+        humanize_label, infer_control_from_values, infer_control_type, ControlKind, PaletteOptions,
+    };
 
     #[test]
     fn test_infer_boolean() {

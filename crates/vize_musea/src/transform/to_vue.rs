@@ -41,11 +41,7 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
 
     // Import target component
     if let Some(ref component_path) = art.metadata.component {
-        vize_carton::push_fmt!(
-            code,
-            "import TargetComponent from '{}';\n",
-            component_path
-        );
+        vize_carton::push_fmt!(code, "import TargetComponent from '{}';\n", component_path);
     }
 
     // Re-export script imports if present
@@ -200,11 +196,7 @@ fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
     }
 
     if let Some(component) = art.metadata.component {
-        vize_carton::push_fmt!(
-            json,
-            "  component: '{}',\n",
-            escape_js_string(component)
-        );
+        vize_carton::push_fmt!(json, "  component: '{}',\n", escape_js_string(component));
     }
 
     if let Some(category) = art.metadata.category {
@@ -251,11 +243,7 @@ fn generate_metadata_module(art: &ArtDescriptor<'_>) -> String {
     code.push_str("export const variants = [\n");
     for variant in &art.variants {
         code.push_str("  {\n");
-        vize_carton::push_fmt!(
-            code,
-            "    name: '{}',\n",
-            escape_js_string(variant.name)
-        );
+        vize_carton::push_fmt!(code, "    name: '{}',\n", escape_js_string(variant.name));
         vize_carton::push_fmt!(code, "    isDefault: {},\n", variant.is_default);
         vize_carton::push_fmt!(code, "    skipVrt: {},\n", variant.skip_vrt);
 
@@ -263,7 +251,8 @@ fn generate_metadata_module(art: &ArtDescriptor<'_>) -> String {
             vize_carton::push_fmt!(
                 code,
                 "    viewport: {{ width: {}, height: {} }},\n",
-                viewport.width, viewport.height
+                viewport.width,
+                viewport.height
             );
         }
 

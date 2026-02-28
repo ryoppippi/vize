@@ -57,45 +57,41 @@ pub fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode
         match name.as_str() {
             "show" => {
                 ctx.push_line_fmt(format_args!(
-                    "_withDirectives({}, [[_vShow, {}]])",
-                    element, value
+                    "_withDirectives({element}, [[_vShow, {value}]])"
                 ));
             }
             "model" => {
                 ctx.push_line_fmt(format_args!(
-                    "_withDirectives({}, [[_vModel, {}, {}, {}]])",
-                    element, value, arg, modifiers
+                    "_withDirectives({element}, [[_vModel, {value}, {arg}, {modifiers}]])"
                 ));
             }
             _ => {
                 ctx.push_line_fmt(format_args!(
-                    "_withDirectives({}, [[_{}, {}, {}, {}]])",
-                    element, name, value, arg, modifiers
+                    "_withDirectives({element}, [[_{name}, {value}, {arg}, {modifiers}]])"
                 ));
             }
         }
     } else {
         // Custom directive
         ctx.push_line_fmt(format_args!(
-            "_withDirectives({}, [[_directive_{}, {}, {}, {}]])",
-            element, name, value, arg, modifiers
+            "_withDirectives({element}, [[_directive_{name}, {value}, {arg}, {modifiers}]])"
         ));
     }
 }
 
 /// Generate directive resolution
 pub fn generate_resolve_directive(name: &str) -> String {
-    vize_carton::new_string!("_resolveDirective(\"{}\")", name).into()
+    vize_carton::new_string!("_resolveDirective(\"{name}\")").into()
 }
 
 /// Generate v-show directive
 pub fn generate_v_show(element_var: &str, value: &str) -> String {
-    vize_carton::new_string!("{}.style.display = {} ? '' : 'none'", element_var, value).into()
+    vize_carton::new_string!("{element_var}.style.display = {value} ? '' : 'none'").into()
 }
 
 /// Generate v-cloak removal
 pub fn generate_v_cloak_removal(element_var: &str) -> String {
-    vize_carton::new_string!("{}.removeAttribute('v-cloak')", element_var).into()
+    vize_carton::new_string!("{element_var}.removeAttribute('v-cloak')").into()
 }
 
 /// Generate v-pre handling (skip compilation marker)
@@ -107,8 +103,7 @@ pub fn is_v_pre_element(_element: &str) -> bool {
 /// Generate withDirectives call
 pub fn generate_with_directives(element_var: &str, directives: &[String]) -> String {
     vize_carton::new_string!(
-        "_withDirectives({}, [{}])",
-        element_var,
+        "_withDirectives({element_var}, [{}])",
         directives.join(", ")
     )
     .into()

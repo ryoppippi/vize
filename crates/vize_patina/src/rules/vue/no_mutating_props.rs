@@ -193,6 +193,8 @@ impl Rule for NoMutatingProps {
 #[cfg(test)]
 mod tests {
     use super::NoMutatingProps;
+    use crate::diagnostic::Severity;
+    use crate::rule::{Rule, RuleCategory};
 
     #[test]
     fn test_meta() {

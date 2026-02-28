@@ -42,9 +42,7 @@ pub fn needs_transition(_el: &vize_atelier_core::ElementNode<'_>) -> bool {
 
 /// Generate v-show effect code
 pub fn generate_v_show_effect(element_var: &str, condition: &str) -> String {
-    vize_carton::new_string!(
-        "{element_var}.style.display = {condition} ? '' : 'none'"
-    )
+    vize_carton::new_string!("{element_var}.style.display = {condition} ? '' : 'none'")
 }
 
 #[cfg(test)]

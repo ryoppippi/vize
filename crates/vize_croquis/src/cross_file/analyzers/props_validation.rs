@@ -144,13 +144,14 @@ pub fn analyze_props_validation(
                     vize_carton::new_string!(
                         "**Missing Required Prop**: `{}` must be passed to `<{}>`\n\n\
                         This prop is declared as required in the component's `defineProps`.",
-                        prop_name, child_component_name
+                        prop_name,
+                        child_component_name
                     ),
                 )
                 .with_related(
                     child_id,
                     0,
-                    vize_carton::new_string!("Prop `{}` is declared as required here", prop_name),
+                    vize_carton::new_string!("Prop `{prop_name}` is declared as required here"),
                 );
 
                 diagnostics.push(diagnostic);

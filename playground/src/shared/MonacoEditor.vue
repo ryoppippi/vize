@@ -587,6 +587,5 @@ function getOverviewRulerColor(kind: string): string {
    See: styles.css -> Monaco Container section */
 </style>
 
-
 <!-- Global styles for Monaco decorations (must not be scoped) -->
 <style src="./MonacoEditor.css"></style>

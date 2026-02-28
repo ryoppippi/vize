@@ -24,14 +24,10 @@ pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>
         ctx.push_line_fmt(format_args!("{element}.{key} = {value}"));
     } else if key.starts_with("on") {
         // Event handler as prop (component)
-        ctx.push_line_fmt(format_args!(
-            "_setEventProp({element}, \"{key}\", {value})"
-        ));
+        ctx.push_line_fmt(format_args!("_setEventProp({element}, \"{key}\", {value})"));
     } else {
         // Attribute
-        ctx.push_line_fmt(format_args!(
-            "_setAttribute({element}, \"{key}\", {value})"
-        ));
+        ctx.push_line_fmt(format_args!("_setAttribute({element}, \"{key}\", {value})"));
     }
 }
 

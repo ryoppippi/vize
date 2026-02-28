@@ -109,9 +109,9 @@ pub fn generate_block(
             .join(", ");
 
         if block.returns.len() == 1 {
-            ctx.push_line_fmt(format_args!("return {}", returns));
+            ctx.push_line_fmt(format_args!("return {returns}"));
         } else {
-            ctx.push_line_fmt(format_args!("return [{}]", returns));
+            ctx.push_line_fmt(format_args!("return [{returns}]"));
         }
     }
 }
@@ -135,8 +135,7 @@ pub fn generate_template_instantiation(
     template_index: usize,
 ) {
     ctx.push_line_fmt(format_args!(
-        "const _n{} = _tmpl${}()",
-        element_id, template_index
+        "const _n{element_id} = _tmpl${template_index}()"
     ));
 }
 
@@ -147,8 +146,7 @@ pub fn generate_template_declaration(
     template: &str,
 ) {
     ctx.push_line_fmt(format_args!(
-        "const _tmpl${} = _template(\"{}\")",
-        template_index,
+        "const _tmpl${template_index} = _template(\"{}\")",
         escape_template(template)
     ));
 }

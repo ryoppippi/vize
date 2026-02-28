@@ -82,10 +82,7 @@ fn render_art_file(
 
     // Script setup
     output.push_str("<script setup lang=\"ts\">\n");
-    vize_carton::push_fmt!(
-        output,
-        "import {component_name} from '{component_path}'\n"
-    );
+    vize_carton::push_fmt!(output, "import {component_name} from '{component_path}'\n");
     output.push_str("</script>\n");
 
     output
@@ -120,7 +117,9 @@ fn render_props(props: &serde_json::Map<String, serde_json::Value>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{extract_component_name, generate_art_file, render_props, AutogenConfig, PropDefinition};
+    use super::{
+        extract_component_name, generate_art_file, render_props, AutogenConfig, PropDefinition,
+    };
     use serde_json::json;
 
     #[test]

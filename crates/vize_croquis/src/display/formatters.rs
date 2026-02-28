@@ -212,9 +212,7 @@ impl Croquis {
                 // Format: prefix+display_id kind @start:end {bindings} $ parent_refs
                 vize_carton::push_fmt!(
                     output,
-                    "{}{} {} @{}:{}",
-                    prefix,
-                    display_id,
+                    "{prefix}{display_id} {} @{}:{}",
                     scope.kind.to_display(),
                     scope.start,
                     scope.end
@@ -243,9 +241,9 @@ impl Croquis {
                             output.push_str(", ");
                         }
                         if let Some((p_prefix, p_display_id)) = display_id_map.get(parent_id) {
-                            vize_carton::push_fmt!(output, "{}{}", p_prefix, p_display_id);
+                            vize_carton::push_fmt!(output, "{p_prefix}{p_display_id}");
                         } else {
-                            vize_carton::push_fmt!(output, "#{}", parent_id);
+                            vize_carton::push_fmt!(output, "#{parent_id}");
                         }
                         first = false;
                     }
@@ -286,7 +284,9 @@ impl Croquis {
                 vize_carton::push_fmt!(
                     output,
                     "  {{ expression = \"{}\", span = [{}, {}] }}\n",
-                    await_expr.expression, await_expr.start, await_expr.end
+                    await_expr.expression,
+                    await_expr.start,
+                    await_expr.end
                 );
             }
             output.push('\n');
@@ -299,7 +299,9 @@ impl Croquis {
                 vize_carton::push_fmt!(
                     output,
                     "  _cache[{}] = {{ event = \"{}\", handler = \"{}\" }}\n",
-                    event.cache_index, event.event_name, event.handler
+                    event.cache_index,
+                    event.event_name,
+                    event.handler
                 );
             }
             output.push('\n');
@@ -312,7 +314,9 @@ impl Croquis {
                 vize_carton::push_fmt!(
                     output,
                     "  block_{} = {{ type = \"{}\", dynamic_children = {} }}\n",
-                    block.id, block.block_type, block.dynamic_children
+                    block.id,
+                    block.block_type,
+                    block.dynamic_children
                 );
             }
             output.push('\n');
@@ -330,8 +334,8 @@ impl Croquis {
                 };
                 vize_carton::push_fmt!(
                     output,
-                    "  {{ severity = \"{}\", message = \"{}\" }}\n",
-                    severity, diag.message
+                    "  {{ severity = \"{severity}\", message = \"{}\" }}\n",
+                    diag.message
                 );
             }
         }

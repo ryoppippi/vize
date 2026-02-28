@@ -230,7 +230,6 @@ mod tests {
 
     #[test]
     fn test_has_v_slot() {
-
         let allocator = Bump::new();
         let (root, _) = parse(&allocator, r#"<template v-slot:header>content</template>"#);
 

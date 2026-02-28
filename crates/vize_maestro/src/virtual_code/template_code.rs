@@ -164,7 +164,8 @@ impl TemplateCodeGenerator {
                 let var_name = vize_carton::new_string!("__VIZE_{}", self.expr_counter);
                 self.expr_counter += 1;
 
-                let line = vize_carton::new_string!("const {var_name} = void 0; // compound expression\n");
+                let line =
+                    vize_carton::new_string!("const {var_name} = void 0; // compound expression\n");
                 self.write(&line);
             }
         }
@@ -183,7 +184,8 @@ impl TemplateCodeGenerator {
         let line = vize_carton::new_string!("const {var_name} = __VIZE_ctx.{};\n", expr.content);
 
         // Calculate positions
-        let expr_start_in_line = vize_carton::new_string!("const {var_name} = __VIZE_ctx.").len() as u32;
+        let expr_start_in_line =
+            vize_carton::new_string!("const {var_name} = __VIZE_ctx.").len() as u32;
         let gen_start = self.gen_offset + expr_start_in_line;
         let gen_end = gen_start + expr.content.len() as u32;
 

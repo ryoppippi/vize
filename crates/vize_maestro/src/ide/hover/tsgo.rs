@@ -120,7 +120,9 @@ impl HoverService {
                         LspMarkedString::String(s) => Self::wrap_type_info_in_codeblock(&s),
                         LspMarkedString::LanguageString { language, value } => {
                             #[allow(clippy::disallowed_macros)]
-                            { format!("```{}\n{}\n```", language, value) }
+                            {
+                                format!("```{}\n{}\n```", language, value)
+                            }
                         }
                     })
                     .collect::<Vec<_>>()
@@ -172,7 +174,9 @@ impl HoverService {
 
         if looks_like_type_info {
             #[allow(clippy::disallowed_macros)]
-            { format!("```typescript\n{}\n```", text) }
+            {
+                format!("```typescript\n{}\n```", text)
+            }
         } else {
             text.to_string()
         }

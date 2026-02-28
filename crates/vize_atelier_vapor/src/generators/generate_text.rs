@@ -24,18 +24,14 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
     } else if values.is_empty() {
         ctx.push_line_fmt(format_args!("_setText({element}, \"\")"));
     } else {
-        ctx.push_line_fmt(format_args!(
-            "_setText({element}, {})",
-            values.join(" + ")
-        ));
+        ctx.push_line_fmt(format_args!("_setText({element}, {})", values.join(" + ")));
     }
 }
 
 /// Generate text content assignment
 pub fn generate_text_content(element_var: &str, content: &str, is_static: bool) -> String {
     if is_static {
-        vize_carton::new_string!("{element_var}.textContent = \"{}\"", escape_text(content))
-            .into()
+        vize_carton::new_string!("{element_var}.textContent = \"{}\"", escape_text(content)).into()
     } else {
         vize_carton::new_string!("{element_var}.textContent = {content}").into()
     }
