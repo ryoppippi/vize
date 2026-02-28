@@ -296,14 +296,28 @@ onUnmounted(() => {
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Print Width</span>
-                      <input v-model.number="options.printWidth" type="number" min="40" max="200" aria-label="Print Width" class="option-input" />
+                      <input
+                        v-model.number="options.printWidth"
+                        type="number"
+                        min="40"
+                        max="200"
+                        aria-label="Print Width"
+                        class="option-input"
+                      />
                     </div>
                     <span class="option-desc">Maximum line length before wrapping</span>
                   </div>
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Tab Width</span>
-                      <input v-model.number="options.tabWidth" type="number" min="1" max="8" aria-label="Tab Width" class="option-input" />
+                      <input
+                        v-model.number="options.tabWidth"
+                        type="number"
+                        min="1"
+                        max="8"
+                        aria-label="Tab Width"
+                        class="option-input"
+                      />
                     </div>
                     <span class="option-desc">Number of spaces per indentation level</span>
                   </div>
@@ -315,42 +329,74 @@ onUnmounted(() => {
                 <div class="toggle-grid">
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.useTabs" type="checkbox" aria-label="Use Tabs" class="toggle-checkbox" />
+                      <input
+                        v-model="options.useTabs"
+                        type="checkbox"
+                        aria-label="Use Tabs"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Use Tabs</span>
                     </div>
                     <span class="toggle-desc">Indent with tabs instead of spaces</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.semi" type="checkbox" aria-label="Semicolons" class="toggle-checkbox" />
+                      <input
+                        v-model="options.semi"
+                        type="checkbox"
+                        aria-label="Semicolons"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Semicolons</span>
                     </div>
                     <span class="toggle-desc">Add semicolons at the end of statements</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.singleQuote" type="checkbox" aria-label="Single Quotes" class="toggle-checkbox" />
+                      <input
+                        v-model="options.singleQuote"
+                        type="checkbox"
+                        aria-label="Single Quotes"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Single Quotes</span>
                     </div>
                     <span class="toggle-desc">Use single quotes instead of double quotes</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.bracketSpacing" type="checkbox" aria-label="Bracket Spacing" class="toggle-checkbox" />
+                      <input
+                        v-model="options.bracketSpacing"
+                        type="checkbox"
+                        aria-label="Bracket Spacing"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Bracket Spacing</span>
                     </div>
-                    <span class="toggle-desc">Print spaces between brackets in object literals</span>
+                    <span class="toggle-desc"
+                      >Print spaces between brackets in object literals</span
+                    >
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.bracketSameLine" type="checkbox" aria-label="Bracket Same Line" class="toggle-checkbox" />
+                      <input
+                        v-model="options.bracketSameLine"
+                        type="checkbox"
+                        aria-label="Bracket Same Line"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Bracket Same Line</span>
                     </div>
                     <span class="toggle-desc">Put closing bracket on the same line</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.jsxSingleQuote" type="checkbox" aria-label="JSX Single Quotes" class="toggle-checkbox" />
+                      <input
+                        v-model="options.jsxSingleQuote"
+                        type="checkbox"
+                        aria-label="JSX Single Quotes"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">JSX Single Quotes</span>
                     </div>
                     <span class="toggle-desc">Use single quotes in JSX</span>
@@ -364,7 +410,11 @@ onUnmounted(() => {
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Trailing Comma</span>
-                      <select v-model="options.trailingComma" aria-label="Trailing Comma" class="option-select">
+                      <select
+                        v-model="options.trailingComma"
+                        aria-label="Trailing Comma"
+                        class="option-select"
+                      >
                         <option value="all">All</option>
                         <option value="es5">ES5</option>
                         <option value="none">None</option>
@@ -375,17 +425,27 @@ onUnmounted(() => {
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Arrow Parens</span>
-                      <select v-model="options.arrowParens" aria-label="Arrow Parens" class="option-select">
+                      <select
+                        v-model="options.arrowParens"
+                        aria-label="Arrow Parens"
+                        class="option-select"
+                      >
                         <option value="always">Always</option>
                         <option value="avoid">Avoid</option>
                       </select>
                     </div>
-                    <span class="option-desc">Parentheses around a sole arrow function parameter</span>
+                    <span class="option-desc"
+                      >Parentheses around a sole arrow function parameter</span
+                    >
                   </div>
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Quote Props</span>
-                      <select v-model="options.quoteProps" aria-label="Quote Props" class="option-select">
+                      <select
+                        v-model="options.quoteProps"
+                        aria-label="Quote Props"
+                        class="option-select"
+                      >
                         <option value="as-needed">As Needed</option>
                         <option value="consistent">Consistent</option>
                         <option value="preserve">Preserve</option>
@@ -396,7 +456,11 @@ onUnmounted(() => {
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">End of Line</span>
-                      <select v-model="options.endOfLine" aria-label="End of Line" class="option-select">
+                      <select
+                        v-model="options.endOfLine"
+                        aria-label="End of Line"
+                        class="option-select"
+                      >
                         <option value="lf">LF</option>
                         <option value="crlf">CRLF</option>
                         <option value="cr">CR</option>
@@ -413,17 +477,28 @@ onUnmounted(() => {
                 <div class="toggle-grid" style="margin-bottom: 0.75rem">
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.sortBlocks" type="checkbox" aria-label="Sort Blocks" class="toggle-checkbox" />
+                      <input
+                        v-model="options.sortBlocks"
+                        type="checkbox"
+                        aria-label="Sort Blocks"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Sort Blocks</span>
                     </div>
-                    <span class="toggle-desc">Reorder blocks: script → setup → template → style</span>
+                    <span class="toggle-desc"
+                      >Reorder blocks: script → setup → template → style</span
+                    >
                   </div>
                 </div>
                 <div class="options-grid">
                   <div class="option-card">
                     <div class="option-header">
                       <span class="option-name">Attribute Sort Order</span>
-                      <select v-model="options.attributeSortOrder" aria-label="Attribute Sort Order" class="option-select">
+                      <select
+                        v-model="options.attributeSortOrder"
+                        aria-label="Attribute Sort Order"
+                        class="option-select"
+                      >
                         <option value="alphabetical">Alphabetical</option>
                         <option value="as-written">As Written</option>
                       </select>
@@ -455,35 +530,60 @@ onUnmounted(() => {
                 <div class="toggle-grid" style="margin-top: 0.75rem">
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.sortAttributes" type="checkbox" aria-label="Sort Attributes" class="toggle-checkbox" />
+                      <input
+                        v-model="options.sortAttributes"
+                        type="checkbox"
+                        aria-label="Sort Attributes"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Sort Attributes</span>
                     </div>
                     <span class="toggle-desc">Sort HTML attributes in template</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.normalizeDirectiveShorthands" type="checkbox" aria-label="Normalize Directives" class="toggle-checkbox" />
+                      <input
+                        v-model="options.normalizeDirectiveShorthands"
+                        type="checkbox"
+                        aria-label="Normalize Directives"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Normalize Directives</span>
                     </div>
                     <span class="toggle-desc">Normalize v-bind/v-on/v-slot to shorthand</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.singleAttributePerLine" type="checkbox" aria-label="Single Attribute Per Line" class="toggle-checkbox" />
+                      <input
+                        v-model="options.singleAttributePerLine"
+                        type="checkbox"
+                        aria-label="Single Attribute Per Line"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Single Attribute Per Line</span>
                     </div>
                     <span class="toggle-desc">Enforce single attribute per line in templates</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.vueIndentScriptAndStyle" type="checkbox" aria-label="Indent Script/Style" class="toggle-checkbox" />
+                      <input
+                        v-model="options.vueIndentScriptAndStyle"
+                        type="checkbox"
+                        aria-label="Indent Script/Style"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Indent Script/Style</span>
                     </div>
                     <span class="toggle-desc">Indent code inside script and style tags</span>
                   </div>
                   <div class="toggle-card">
                     <div class="toggle-main">
-                      <input v-model="options.mergeBindAndNonBindAttrs" type="checkbox" aria-label="Merge Bind Attrs" class="toggle-checkbox" />
+                      <input
+                        v-model="options.mergeBindAndNonBindAttrs"
+                        type="checkbox"
+                        aria-label="Merge Bind Attrs"
+                        class="toggle-checkbox"
+                      />
                       <span class="toggle-name">Merge Bind Attrs</span>
                     </div>
                     <span class="toggle-desc">Merge bind and non-bind attrs for sorting</span>

@@ -87,10 +87,7 @@ pub fn generate_dynamic_component(
     slots: Option<&str>,
 ) -> String {
     if let Some(slots_code) = slots {
-        vize_carton::new_string!(
-            "_createComponent({component_expr}, {props}, {slots_code})"
-        )
-        .into()
+        vize_carton::new_string!("_createComponent({component_expr}, {props}, {slots_code})").into()
     } else {
         vize_carton::new_string!("_createComponent({component_expr}, {props})").into()
     }

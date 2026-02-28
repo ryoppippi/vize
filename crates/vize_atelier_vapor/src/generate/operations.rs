@@ -99,9 +99,7 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
         }
     } else {
         ctx.use_helper("setProp");
-        ctx.push_line_fmt(format_args!(
-            "_setProp({element}, \"{key}\", {value})"
-        ));
+        ctx.push_line_fmt(format_args!("_setProp({element}, \"{key}\", {value})"));
     }
 }
 

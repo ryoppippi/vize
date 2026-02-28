@@ -1,9 +1,9 @@
 import type { CrossFileIssue } from "./types";
 
-let issueIdCounter = 0;
+let _issueIdCounter = 0;
 
 export function resetIssueIdCounter() {
-  issueIdCounter = 0;
+  _issueIdCounter = 0;
 }
 
 export function offsetToLineColumn(

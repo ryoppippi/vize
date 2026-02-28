@@ -1,7 +1,5 @@
-import type { BindingSource } from "../../wasm/index";
-
 /** Map a binding source to a human-readable label for display. */
-export function getSourceLabel(source: BindingSource | string): string {
+export function getSourceLabel(source: string): string {
   const labels: Record<string, string> = {
     props: "Props",
     emits: "Emits",
@@ -21,7 +19,7 @@ export function getSourceLabel(source: BindingSource | string): string {
 }
 
 /** Map a binding source to a CSS class name for styling. */
-export function getSourceClass(source: BindingSource | string): string {
+export function getSourceClass(source: string): string {
   const classes: Record<string, string> = {
     props: "src-props",
     emits: "src-emits",

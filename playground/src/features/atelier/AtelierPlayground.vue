@@ -1,531 +1,56 @@
 <script setup lang="ts">
-import { ref, computed, watch, shallowRef } from "vue";
+import { watch } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import CodeHighlight from "../../shared/CodeHighlight.vue";
-import { PRESETS, type PresetKey, type InputMode } from "../../presets";
-import {
-  type CompilerOptions,
-  type CompileResult,
-  type SfcCompileResult,
-  type CssCompileResult,
-  type CssCompileOptions,
-} from "../../wasm/index";
-import * as prettier from "prettier/standalone";
-import * as parserBabel from "prettier/plugins/babel";
-import * as parserEstree from "prettier/plugins/estree";
-import * as parserTypescript from "prettier/plugins/typescript";
-import * as parserCss from "prettier/plugins/postcss";
-import ts from "typescript";
 import { useTheme } from "../../utils/useTheme";
 import { useClipboard } from "../../utils/useClipboard";
+import { useAtelierCompiler } from "./useAtelierCompiler";
+import {
+  useTokenAnalysis,
+  getTokenTypeIcon,
+  getTokenTypeLabel,
+  getTokenTypeColor,
+} from "./useTokenAnalysis";
+import { getBindingIcon, getBindingLabel } from "./bindingHelpers";
+import type { loadWasm } from "../../wasm/index";
 
 const props = defineProps<{
-  compiler: Awaited<ReturnType<typeof import("../../wasm/index").loadWasm>> | null;
+  compiler: Awaited<ReturnType<typeof loadWasm>> | null;
 }>();
 
 const { theme } = useTheme();
 const { copyToClipboard } = useClipboard();
 
-// Convert Map objects to plain objects recursively (for serde_wasm_bindgen output)
-function mapToObject(value: unknown): unknown {
-  if (value instanceof Map) {
-    const obj: Record<string, unknown> = {};
-    value.forEach((v, k) => {
-      obj[String(k)] = mapToObject(v);
-    });
-    return obj;
-  }
-  if (Array.isArray(value)) {
-    return value.map(mapToObject);
-  }
-  if (value !== null && typeof value === "object") {
-    const obj: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(value)) {
-      obj[k] = mapToObject(v);
-    }
-    return obj;
-  }
-  return value;
-}
-
-type TabType = "code" | "ast" | "bindings" | "tokens" | "helpers" | "sfc" | "css";
-
-// State
-const inputMode = ref<InputMode>("sfc");
-const source = ref(PRESETS.propsDestructure.code);
-const output = ref<CompileResult | null>(null);
-const sfcResult = ref<SfcCompileResult | null>(null);
-const error = ref<string | null>(null);
-const options = ref<CompilerOptions>({
-  mode: "module",
-  ssr: false,
-  scriptExt: "preserve",
-});
-const activeTab = ref<TabType>("code");
-const isCompiling = ref(false);
-const selectedPreset = ref<PresetKey>("propsDestructure");
-const compileTime = ref<number | null>(null);
-const cssResult = ref<CssCompileResult | null>(null);
-const cssOptions = ref<CssCompileOptions>({
-  scoped: false,
-  scopeId: "data-v-12345678",
-  minify: false,
-});
-const formattedCode = ref<string>("");
-const formattedCss = ref<string>("");
-const formattedJsCode = ref<string>("");
-const codeViewMode = ref<"ts" | "js">("ts");
-
-// AST display options
-const astHideLoc = ref(true);
-const astHideSource = ref(true);
-const astCollapsed = ref(false);
-
-function filterAstProperties(obj: unknown, hideLoc: boolean, hideSource: boolean): unknown {
-  if (obj === null || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) {
-    return obj.map((item) => filterAstProperties(item, hideLoc, hideSource));
-  }
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (hideLoc && key === "loc") continue;
-    if (hideSource && key === "source") continue;
-    result[key] = filterAstProperties(value, hideLoc, hideSource);
-  }
-  return result;
-}
-
-async function formatCode(code: string, parser: "babel" | "typescript"): Promise<string> {
-  try {
-    return await prettier.format(code, {
-      parser,
-      plugins: [parserBabel, parserEstree, parserTypescript],
-      semi: false,
-      singleQuote: true,
-      printWidth: 80,
-    });
-  } catch {
-    return code;
-  }
-}
-
-async function formatCss(code: string): Promise<string> {
-  try {
-    return await prettier.format(code, {
-      parser: "css",
-      plugins: [parserCss],
-      printWidth: 80,
-    });
-  } catch {
-    return code;
-  }
-}
-
-function transpileToJs(code: string): string {
-  try {
-    const result = ts.transpileModule(code, {
-      compilerOptions: {
-        module: ts.ModuleKind.ESNext,
-        target: ts.ScriptTarget.ESNext,
-        jsx: ts.JsxEmit.Preserve,
-        removeComments: false,
-      },
-    });
-    return result.outputText;
-  } catch {
-    return code;
-  }
-}
-
-// Computed
-const editorLanguage = computed(() => (inputMode.value === "sfc" ? "vue" : "html"));
-const astJson = computed(() => {
-  if (!output.value) return "{}";
-  const ast = mapToObject(output.value.ast);
-  const filtered = filterAstProperties(ast, astHideLoc.value, astHideSource.value);
-  return JSON.stringify(filtered, null, astCollapsed.value ? 0 : 2);
-});
-
-const isTypeScript = computed(() => {
-  if (!sfcResult.value?.descriptor) return false;
-  const scriptSetup = sfcResult.value.descriptor.scriptSetup;
-  const script = sfcResult.value.descriptor.script;
-  const lang = scriptSetup?.lang || script?.lang;
-  return lang === "ts" || lang === "tsx";
-});
-
-const bindingsSummary = computed(() => {
-  const bindings = sfcResult.value?.script?.bindings?.bindings;
-  if (!bindings) return {};
-  const summary: Record<string, number> = {};
-  for (const type of Object.values(bindings)) {
-    summary[type as string] = (summary[type as string] || 0) + 1;
-  }
-  return summary;
-});
-
-const groupedBindings = computed(() => {
-  const bindings = sfcResult.value?.script?.bindings?.bindings;
-  if (!bindings) return {};
-  const groups: Record<string, string[]> = {};
-  for (const [name, type] of Object.entries(bindings)) {
-    if (!groups[type as string]) groups[type as string] = [];
-    groups[type as string].push(name);
-  }
-  return groups;
-});
-
-function getBindingIcon(type: string): string {
-  const icons: Record<string, string> = {
-    "setup-const": "C",
-    "setup-let": "L",
-    "setup-reactive-const": "R",
-    "setup-maybe-ref": "?",
-    "setup-ref": "r",
-    props: "P",
-    "props-aliased": "A",
-    data: "D",
-    options: "O",
-  };
-  return icons[type] || type[0]?.toUpperCase() || "?";
-}
-
-function getBindingLabel(type: string): string {
-  const labels: Record<string, string> = {
-    "setup-const": "Constants",
-    "setup-let": "Let Variables",
-    "setup-reactive-const": "Reactive",
-    "setup-maybe-ref": "Maybe Ref",
-    "setup-ref": "Refs",
-    props: "Props",
-    "props-aliased": "Aliased Props",
-    data: "Data",
-    options: "Options",
-  };
-  return labels[type] || type;
-}
-
-// Lexical tokens extraction
-interface LexicalToken {
-  type:
-    | "tag-open"
-    | "tag-close"
-    | "tag-self-close"
-    | "attribute"
-    | "text"
-    | "directive"
-    | "interpolation"
-    | "comment";
-  name?: string;
-  value?: string;
-  line: number;
-  column: number;
-  raw: string;
-}
-
-const lexicalTokens = computed((): LexicalToken[] => {
-  const tokens: LexicalToken[] = [];
-  const src = source.value;
-  const lines = src.split("\n");
-
-  let lineNo = 1;
-  let inTemplate = false;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    if (trimmed.startsWith("<template")) inTemplate = true;
-    if (trimmed === "</template>") inTemplate = false;
-
-    if (!trimmed) {
-      lineNo++;
-      continue;
-    }
-
-    if (trimmed.startsWith("<!--")) {
-      tokens.push({
-        type: "comment",
-        value: trimmed.replace(/<!--(.*)-->/, "$1").trim(),
-        line: lineNo,
-        column: line.indexOf("<!--") + 1,
-        raw: trimmed,
-      });
-      lineNo++;
-      continue;
-    }
-
-    const interpRegex = /\{\{([^}]+)\}\}/g;
-    let interpMatch;
-    while ((interpMatch = interpRegex.exec(line)) !== null) {
-      tokens.push({
-        type: "interpolation",
-        value: interpMatch[1].trim(),
-        line: lineNo,
-        column: interpMatch.index + 1,
-        raw: interpMatch[0],
-      });
-    }
-
-    const directiveRegex = /(v-[\w-]+|@[\w.-]+|:[\w.-]+)(?:="([^"]*)")?/g;
-    let dirMatch;
-    while ((dirMatch = directiveRegex.exec(line)) !== null) {
-      tokens.push({
-        type: "directive",
-        name: dirMatch[1],
-        value: dirMatch[2] || "",
-        line: lineNo,
-        column: dirMatch.index + 1,
-        raw: dirMatch[0],
-      });
-    }
-
-    const selfCloseMatch = trimmed.match(/^<([\w-]+)([^>]*)\s*\/>/);
-    if (selfCloseMatch) {
-      tokens.push({
-        type: "tag-self-close",
-        name: selfCloseMatch[1],
-        line: lineNo,
-        column: line.indexOf("<") + 1,
-        raw: selfCloseMatch[0],
-      });
-      lineNo++;
-      continue;
-    }
-
-    const openMatch = trimmed.match(/^<([\w-]+)([^>]*)>/);
-    if (openMatch) {
-      tokens.push({
-        type: "tag-open",
-        name: openMatch[1],
-        line: lineNo,
-        column: line.indexOf("<") + 1,
-        raw: openMatch[0],
-      });
-      const attrRegex = /\s([\w-]+)(?:="([^"]*)")?/g;
-      let attrMatch;
-      while ((attrMatch = attrRegex.exec(openMatch[2])) !== null) {
-        if (
-          !attrMatch[1].startsWith("v-") &&
-          !attrMatch[1].startsWith("@") &&
-          !attrMatch[1].startsWith(":")
-        ) {
-          tokens.push({
-            type: "attribute",
-            name: attrMatch[1],
-            value: attrMatch[2] ?? "true",
-            line: lineNo,
-            column: line.indexOf(attrMatch[0]) + 1,
-            raw: attrMatch[0].trim(),
-          });
-        }
-      }
-      lineNo++;
-      continue;
-    }
-
-    const closeMatch = trimmed.match(/^<\/([\w-]+)>/);
-    if (closeMatch) {
-      tokens.push({
-        type: "tag-close",
-        name: closeMatch[1],
-        line: lineNo,
-        column: line.indexOf("<") + 1,
-        raw: closeMatch[0],
-      });
-    }
-
-    lineNo++;
-  }
-
-  return tokens;
-});
-
-const tokensByType = computed(() => {
-  const grouped: Record<string, LexicalToken[]> = {};
-  for (const token of lexicalTokens.value) {
-    if (!grouped[token.type]) grouped[token.type] = [];
-    grouped[token.type].push(token);
-  }
-  return grouped;
-});
-
-const tokenStats = computed(() => ({
-  total: lexicalTokens.value.length,
-  tags:
-    (tokensByType.value["tag-open"]?.length || 0) +
-    (tokensByType.value["tag-close"]?.length || 0) +
-    (tokensByType.value["tag-self-close"]?.length || 0),
-  directives: tokensByType.value["directive"]?.length || 0,
-  interpolations: tokensByType.value["interpolation"]?.length || 0,
-}));
-
-function getTokenTypeIcon(type: string): string {
-  const icons: Record<string, string> = {
-    "tag-open": "<>",
-    "tag-close": "</>",
-    "tag-self-close": "/>",
-    attribute: "A",
-    directive: "v",
-    interpolation: "{ }",
-    text: "T",
-    comment: "//",
-  };
-  return icons[type] || "?";
-}
-
-function getTokenTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    "tag-open": "Opening Tags",
-    "tag-close": "Closing Tags",
-    "tag-self-close": "Self-Closing",
-    attribute: "Attributes",
-    directive: "Directives",
-    interpolation: "Interpolations",
-    text: "Text",
-    comment: "Comments",
-  };
-  return labels[type] || type;
-}
-
-function getTokenTypeColor(type: string): string {
-  const colors: Record<string, string> = {
-    "tag-open": "#61afef",
-    "tag-close": "#61afef",
-    "tag-self-close": "#61afef",
-    attribute: "#d19a66",
-    directive: "#c678dd",
-    interpolation: "#98c379",
-    text: "#abb2bf",
-    comment: "#5c6370",
-  };
-  return colors[type] || "#abb2bf";
-}
-
-// Methods
-async function compile() {
-  if (!props.compiler) return;
-
-  isCompiling.value = true;
-  error.value = null;
-
-  try {
-    const startTime = performance.now();
-
-    if (inputMode.value === "sfc") {
-      try {
-        const result = props.compiler.compileSfc(source.value, options.value);
-        compileTime.value = performance.now() - startTime;
-        sfcResult.value = result;
-
-        if (result?.descriptor?.styles?.length > 0) {
-          const allCss = result.descriptor.styles.map((s) => s.content).join("\n");
-          const hasScoped = result.descriptor.styles.some((s) => s.scoped);
-          const css = props.compiler.compileCss(allCss, {
-            ...cssOptions.value,
-            scoped: hasScoped || cssOptions.value.scoped,
-          });
-          cssResult.value = css;
-          formattedCss.value = await formatCss(css.code);
-        } else {
-          cssResult.value = null;
-          formattedCss.value = "";
-        }
-
-        if (result?.script?.code) {
-          output.value = {
-            code: result.script.code,
-            preamble: result.template?.preamble || "",
-            ast: result.template?.ast || {},
-            helpers: result.template?.helpers || [],
-          };
-          const scriptLang = result.descriptor.scriptSetup?.lang || result.descriptor.script?.lang;
-          const usesTs = scriptLang === "ts" || scriptLang === "tsx";
-          formattedCode.value = await formatCode(
-            result.script.code,
-            usesTs ? "typescript" : "babel",
-          );
-          if (usesTs) {
-            const jsCode = transpileToJs(result.script.code);
-            formattedJsCode.value = await formatCode(jsCode, "babel");
-          } else {
-            formattedJsCode.value = "";
-          }
-        } else if (result?.template) {
-          output.value = result.template;
-          formattedCode.value = await formatCode(result.template.code, "babel");
-          formattedJsCode.value = "";
-        } else {
-          output.value = null;
-          formattedCode.value = "";
-          formattedJsCode.value = "";
-        }
-      } catch (sfcError) {
-        console.error("SFC compile error:", sfcError);
-        throw sfcError;
-      }
-    } else {
-      const result = props.compiler.compile(source.value, options.value);
-      compileTime.value = performance.now() - startTime;
-      output.value = result;
-      sfcResult.value = null;
-      formattedCode.value = await formatCode(result.code, "babel");
-      formattedCss.value = "";
-    }
-  } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : String(e);
-    error.value = errorMessage;
-  } finally {
-    isCompiling.value = false;
-  }
-}
-
-function handlePresetChange(key: string) {
-  const preset = PRESETS[key];
-  selectedPreset.value = key;
-  inputMode.value = preset.mode;
-  source.value = preset.code;
-  if (preset.mode === "sfc") {
-    activeTab.value = "code";
-  }
-}
-
-function copyFullOutput() {
-  if (!output.value) return;
-  const fullOutput = `
-=== COMPILER OUTPUT ===
-Compile Time: ${compileTime?.value?.toFixed(4) ?? "N/A"}ms
-
-=== CODE ===
-${output.value.code}
-
-=== HELPERS ===
-${output.value.helpers?.join("\n") || "None"}
-`.trim();
-  copyToClipboard(fullOutput);
-}
-
-// Watchers
-let compileTimer: ReturnType<typeof setTimeout> | null = null;
-
-watch(
-  [source, options, inputMode],
-  () => {
-    if (!props.compiler) return;
-    if (compileTimer) clearTimeout(compileTimer);
-    compileTimer = setTimeout(compile, 300);
-  },
-  { deep: true },
-);
-
-watch(
+const {
+  inputMode,
+  source,
+  output,
+  sfcResult,
+  error,
+  activeTab,
+  isCompiling,
+  selectedPreset,
+  compileTime,
+  cssResult,
   cssOptions,
-  () => {
-    if (sfcResult.value?.descriptor?.styles?.length) {
-      compile();
-    }
-  },
-  { deep: true },
-);
+  formattedCode,
+  formattedCss,
+  formattedJsCode,
+  codeViewMode,
+  astHideLoc,
+  astHideSource,
+  astCollapsed,
+  editorLanguage,
+  astJson,
+  isTypeScript,
+  bindingsSummary,
+  groupedBindings,
+  compile,
+  handlePresetChange,
+  copyFullOutput,
+} = useAtelierCompiler(() => props.compiler);
+
+const { lexicalTokens, tokensByType, tokenStats } = useTokenAnalysis(source);
 
 watch(
   () => props.compiler,
@@ -812,8 +337,8 @@ watch(
           <div class="bindings-groups">
             <div v-for="(vars, type) in groupedBindings" :key="type" class="binding-group">
               <div :class="['group-header', `type-${type}`]">
-                <span class="group-icon">{{ getBindingIcon(type) }}</span>
-                <span class="group-title">{{ getBindingLabel(type) }}</span>
+                <span class="group-icon">{{ getBindingIcon(type as string) }}</span>
+                <span class="group-title">{{ getBindingLabel(type as string) }}</span>
                 <span class="group-count">{{ vars.length }}</span>
               </div>
               <div class="group-vars">

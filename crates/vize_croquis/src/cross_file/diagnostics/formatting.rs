@@ -98,9 +98,11 @@ impl CrossFileDiagnostic {
                 source_name,
                 source_type,
             } => {
-                vize_carton::push_fmt!(*out, 
+                vize_carton::push_fmt!(
+                    *out,
                     "**Problem**: Spreading `{}` (a `{}`) creates a **non-reactive shallow copy**.\n\n",
-                    source_name, source_type
+                    source_name,
+                    source_type
                 );
                 out.push_str("**What happens**:\n\n");
                 out.push_str("```ts\n");

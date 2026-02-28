@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, shallowRef, inject, type ComputedRef } from "vue";
 import * as monaco from "monaco-editor";
+import { configureMonaco, addVueCommentAction } from "./monacoConfig";
+import {
+  getScopeDecorationClass,
+  offsetToPosition,
+  getOverviewRulerColor,
+} from "./scopeDecorations";
 
 export interface Diagnostic {
   message: string;
@@ -35,223 +41,9 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const editorInstance = shallowRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 const _injectedTheme = inject<ComputedRef<"dark" | "light">>("theme", undefined as any);
 const resolvedTheme = () => _injectedTheme?.value ?? props.theme ?? "light";
-let isConfigured = false;
 
-function configureMonaco() {
-  if (isConfigured) return;
-  isConfigured = true;
+let scopeDecorationIds: string[] = [];
 
-  // Register Vue language
-  monaco.languages.register({ id: "vue", extensions: [".vue"] });
-
-  // Set monarch tokenizer for Vue (HTML-based with Vue extensions)
-  monaco.languages.setMonarchTokensProvider("vue", {
-    defaultToken: "",
-    tokenPostfix: ".vue",
-    keywords: [
-      "v-if",
-      "v-else",
-      "v-else-if",
-      "v-for",
-      "v-show",
-      "v-model",
-      "v-bind",
-      "v-on",
-      "v-slot",
-      "v-pre",
-      "v-once",
-      "v-memo",
-      "v-cloak",
-    ],
-    tokenizer: {
-      root: [
-        [/<!--/, { token: "comment", next: "@htmlComment" }],
-        [/<script\s+setup\s+vapor[^>]*>/, { token: "tag", next: "@script" }],
-        [/<script\s+setup[^>]*>/, { token: "tag", next: "@script" }],
-        [/<script[^>]*>/, { token: "tag", next: "@script" }],
-        [/<style[^>]*>/, { token: "tag", next: "@style" }],
-        [/<template[^>]*>/, { token: "tag", next: "@template" }],
-        [/<\/?[\w-]+/, { token: "tag", next: "@tag" }],
-        [/\{\{/, { token: "delimiter.bracket", next: "@interpolation" }],
-      ],
-      tag: [
-        [/\s+/, ""],
-        [/(v-[\w-]+|@[\w.-]+|:[\w.-]+|#[\w.-]+)/, "attribute.name.vue"],
-        [/[\w-]+/, "attribute.name"],
-        [/=/, "delimiter"],
-        [/"[^"]*"/, "attribute.value"],
-        [/'[^']*'/, "attribute.value"],
-        [/>/, { token: "tag", next: "@pop" }],
-        [/\/>/, { token: "tag", next: "@pop" }],
-      ],
-      template: [
-        [/<\/template>/, { token: "tag", next: "@pop" }],
-        [/<!--/, { token: "comment", next: "@htmlComment" }],
-        [/\{\{/, { token: "delimiter.bracket", next: "@interpolation" }],
-        [/<\/?[\w-]+/, { token: "tag", next: "@tag" }],
-        [/./, ""],
-      ],
-      htmlComment: [
-        [/-->/, { token: "comment", next: "@pop" }],
-        [/./, "comment"],
-      ],
-      interpolation: [
-        [/\}\}/, { token: "delimiter.bracket", next: "@pop" }],
-        [/[\w.]+/, "variable"],
-        [/./, ""],
-      ],
-      script: [
-        [/<\/script>/, { token: "tag", next: "@pop" }],
-        [
-          /(import|export|from|const|let|var|function|return|if|else|for|while|class|interface|type|extends|implements)(?=\s)/,
-          "keyword",
-        ],
-        [
-          /(defineProps|defineEmits|defineExpose|defineOptions|defineSlots|defineModel|withDefaults)/,
-          "keyword.control.vue",
-        ],
-        [
-          /(ref|reactive|computed|watch|watchEffect|onMounted|onUnmounted|toRef|toRefs)/,
-          "support.function.vue",
-        ],
-        [/"[^"]*"/, "string"],
-        [/'[^']*'/, "string"],
-        [/`[^`]*`/, "string"],
-        [/\/\/.*$/, "comment"],
-        [/\/\*/, { token: "comment", next: "@comment" }],
-        [/[{}()[\]]/, "delimiter.bracket"],
-        [/[<>]=?|[!=]=?=?|&&|\|\|/, "operator"],
-        [/\d+/, "number"],
-        [/[\w$]+/, "identifier"],
-        [/./, ""],
-      ],
-      comment: [
-        [/\*\//, { token: "comment", next: "@pop" }],
-        [/./, "comment"],
-      ],
-      style: [
-        [/<\/style>/, { token: "tag", next: "@pop" }],
-        [/\/\*/, { token: "comment", next: "@cssComment" }],
-        [/[\w-]+(?=\s*:)/, "attribute.name"],
-        [/:/, "delimiter"],
-        [/[{}]/, "delimiter.bracket"],
-        [/"[^"]*"/, "string"],
-        [/'[^']*'/, "string"],
-        [/#[\da-fA-F]+/, "number.hex"],
-        [/\d+[\w%]*/, "number"],
-        [/[\w-]+/, "attribute.value"],
-        [/./, ""],
-      ],
-      cssComment: [
-        [/\*\//, { token: "comment", next: "@pop" }],
-        [/./, "comment"],
-      ],
-    },
-  });
-
-  // Set Vue language configuration
-  // Note: Vue has different comment styles in different sections (template: HTML, script: JS, style: CSS)
-  // We use HTML comments as default since template is common, but script comments are handled via custom keybinding
-  monaco.languages.setLanguageConfiguration("vue", {
-    comments: {
-      // Use HTML comments for template sections (most common case for quick commenting)
-      blockComment: ["<!--", "-->"],
-    },
-    brackets: [
-      ["<!--", "-->"],
-      ["<", ">"],
-      ["{", "}"],
-      ["[", "]"],
-      ["(", ")"],
-    ],
-    autoClosingPairs: [
-      { open: "{", close: "}" },
-      { open: "[", close: "]" },
-      { open: "(", close: ")" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-      { open: "`", close: "`" },
-      { open: "<", close: ">" },
-      { open: "<!--", close: "-->" },
-    ],
-    surroundingPairs: [
-      { open: "{", close: "}" },
-      { open: "[", close: "]" },
-      { open: "(", close: ")" },
-      { open: '"', close: '"' },
-      { open: "'", close: "'" },
-      { open: "<", close: ">" },
-    ],
-  });
-
-  // Define custom theme matching project CSS (Rust/Metal theme)
-  monaco.editor.defineTheme("vue-dark", {
-    base: "vs-dark",
-    inherit: true,
-    rules: [
-      { token: "keyword", foreground: "D4BA92" },
-      { token: "keyword.control.vue", foreground: "E2CBA6", fontStyle: "bold" },
-      { token: "support.function.vue", foreground: "D4BA92" },
-      { token: "attribute.name.vue", foreground: "D0BA9E" },
-      { token: "variable", foreground: "E6E2D6" },
-      { token: "tag", foreground: "D0BA9E" },
-      { token: "attribute.name", foreground: "9C9488" },
-      { token: "attribute.value", foreground: "A8B5A0" },
-      { token: "string", foreground: "A8B5A0" },
-      { token: "number", foreground: "DABA8C" },
-      { token: "comment", foreground: "6B6560" },
-      { token: "delimiter.bracket", foreground: "8A8478" },
-      { token: "identifier", foreground: "E6E2D6" },
-    ],
-    colors: {
-      "editor.background": "#1a1a1a",
-      "editor.foreground": "#E6E2D6",
-      "editor.lineHighlightBackground": "#242424",
-      "editor.selectionBackground": "#E6E2D630",
-      "editorCursor.foreground": "#E6E2D6",
-      "editorLineNumber.foreground": "#5a5850",
-      "editorLineNumber.activeForeground": "#8a8880",
-      "editorIndentGuide.background": "#242424",
-      "editorIndentGuide.activeBackground": "#E6E2D620",
-      "editor.inactiveSelectionBackground": "#E6E2D615",
-    },
-  });
-
-  // Define light theme
-  monaco.editor.defineTheme("vue-light", {
-    base: "vs",
-    inherit: true,
-    rules: [
-      { token: "keyword", foreground: "73603E" },
-      { token: "keyword.control.vue", foreground: "655232", fontStyle: "bold" },
-      { token: "support.function.vue", foreground: "73603E" },
-      { token: "attribute.name.vue", foreground: "65573E" },
-      { token: "variable", foreground: "121212" },
-      { token: "tag", foreground: "65573E" },
-      { token: "attribute.name", foreground: "6B6050" },
-      { token: "attribute.value", foreground: "5A6B50" },
-      { token: "string", foreground: "5A6B50" },
-      { token: "number", foreground: "735C2E" },
-      { token: "comment", foreground: "9A9590" },
-      { token: "delimiter.bracket", foreground: "6B6560" },
-      { token: "identifier", foreground: "121212" },
-    ],
-    colors: {
-      "editor.background": "#ddd9cd",
-      "editor.foreground": "#121212",
-      "editor.lineHighlightBackground": "#d4d0c4",
-      "editor.selectionBackground": "#12121220",
-      "editorCursor.foreground": "#121212",
-      "editorLineNumber.foreground": "#9a9590",
-      "editorLineNumber.activeForeground": "#6b6b6b",
-      "editorIndentGuide.background": "#c8c4b8",
-      "editorIndentGuide.activeBackground": "#12121220",
-      "editor.inactiveSelectionBackground": "#12121210",
-    },
-  });
-}
-
-// Apply scope decorations (called from watch and after mount)
 function applyScopeDecorations(scopes: ScopeDecoration[] | undefined) {
   if (!editorInstance.value) return;
   const model = editorInstance.value.getModel();
@@ -289,6 +81,39 @@ function applyScopeDecorations(scopes: ScopeDecoration[] | undefined) {
   scopeDecorationIds = editorInstance.value.deltaDecorations(scopeDecorationIds, newDecorations);
 }
 
+function applyDiagnostics(diagnostics: Diagnostic[] | undefined) {
+  if (!editorInstance.value) return;
+  const model = editorInstance.value.getModel();
+  if (!model) return;
+
+  if (!diagnostics || diagnostics.length === 0) {
+    monaco.editor.setModelMarkers(model, "vize", []);
+    return;
+  }
+
+  const markers: monaco.editor.IMarkerData[] = diagnostics.map((d) => ({
+    severity:
+      d.severity === "error"
+        ? monaco.MarkerSeverity.Error
+        : d.severity === "warning"
+          ? monaco.MarkerSeverity.Warning
+          : monaco.MarkerSeverity.Info,
+    message: d.message,
+    startLineNumber: d.startLine,
+    startColumn: d.startColumn,
+    endLineNumber: d.endLine ?? d.startLine,
+    endColumn: d.endColumn ?? d.startColumn + 1,
+  }));
+
+  monaco.editor.setModelMarkers(model, "vize", markers);
+}
+
+function setValue(value: string) {
+  if (editorInstance.value) {
+    editorInstance.value.setValue(value);
+  }
+}
+
 onMounted(() => {
   if (!containerRef.value) return;
 
@@ -316,85 +141,14 @@ onMounted(() => {
     emit("update:modelValue", value);
   });
 
-  // Custom comment toggle for Vue files - context-aware comments
   if (props.language === "vue") {
-    editorInstance.value.addAction({
-      id: "vue-toggle-line-comment",
-      label: "Toggle Line Comment (Vue-aware)",
-      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash],
-      run: (editor) => {
-        const model = editor.getModel();
-        const selection = editor.getSelection();
-        if (!model || !selection) return;
-
-        const content = model.getValue();
-        const lineNumber = selection.startLineNumber;
-        const lineContent = model.getLineContent(lineNumber);
-
-        // Determine which section we're in by scanning backwards for section tags
-        const beforeCursor = content.substring(0, model.getOffsetAt({ lineNumber, column: 1 }));
-        // Use string concatenation to avoid Vue template parser interpreting these as tags
-        const scriptOpen = "<" + "script";
-        const scriptClose = "</" + "script>";
-        const templateOpen = "<" + "template";
-        const styleOpen = "<" + "style";
-        const styleClose = "</" + "style>";
-        const isInScript =
-          beforeCursor.lastIndexOf(scriptOpen) > beforeCursor.lastIndexOf(scriptClose) &&
-          beforeCursor.lastIndexOf(scriptOpen) > beforeCursor.lastIndexOf(templateOpen);
-        const isInStyle =
-          beforeCursor.lastIndexOf(styleOpen) > beforeCursor.lastIndexOf(styleClose) &&
-          beforeCursor.lastIndexOf(styleOpen) > beforeCursor.lastIndexOf(scriptClose);
-
-        // Apply appropriate comment style
-        const trimmedLine = lineContent.trim();
-        let newLine: string;
-
-        if (isInScript) {
-          // JS-style comments for script section
-          if (trimmedLine.startsWith("//")) {
-            // Remove comment
-            newLine = lineContent.replace(/^(\s*)\/\/\s?/, "$1");
-          } else {
-            // Add comment
-            const leadingWhitespace = lineContent.match(/^(\s*)/)?.[1] || "";
-            newLine = leadingWhitespace + "// " + lineContent.trimStart();
-          }
-        } else if (isInStyle) {
-          // CSS-style comments for style section
-          if (trimmedLine.startsWith("/*") && trimmedLine.endsWith("*/")) {
-            newLine = lineContent.replace(/^(\s*)\/\*\s?/, "$1").replace(/\s?\*\/$/, "");
-          } else {
-            const leadingWhitespace = lineContent.match(/^(\s*)/)?.[1] || "";
-            newLine = leadingWhitespace + "/* " + lineContent.trimStart() + " */";
-          }
-        } else {
-          // HTML-style comments for template section
-          if (trimmedLine.startsWith("<!--") && trimmedLine.endsWith("-->")) {
-            newLine = lineContent.replace(/^(\s*)<!--\s?/, "$1").replace(/\s?-->$/, "");
-          } else {
-            const leadingWhitespace = lineContent.match(/^(\s*)/)?.[1] || "";
-            newLine = leadingWhitespace + "<!-- " + lineContent.trimStart() + " -->";
-          }
-        }
-
-        // Apply the edit
-        editor.executeEdits("vue-comment", [
-          {
-            range: new monaco.Range(lineNumber, 1, lineNumber, lineContent.length + 1),
-            text: newLine,
-          },
-        ]);
-      },
-    });
+    addVueCommentAction(editorInstance.value);
   }
 
-  // Apply scopes if they were already set before mount
   if (props.scopes && props.scopes.length > 0) {
     applyScopeDecorations(props.scopes);
   }
 
-  // Apply diagnostics if they were already set before mount
   if (props.diagnostics && props.diagnostics.length > 0) {
     applyDiagnostics(props.diagnostics);
   }
@@ -434,35 +188,6 @@ watch(
   },
 );
 
-// Apply diagnostics to editor
-function applyDiagnostics(diagnostics: Diagnostic[] | undefined) {
-  if (!editorInstance.value) return;
-  const model = editorInstance.value.getModel();
-  if (!model) return;
-
-  if (!diagnostics || diagnostics.length === 0) {
-    monaco.editor.setModelMarkers(model, "vize", []);
-    return;
-  }
-
-  const markers: monaco.editor.IMarkerData[] = diagnostics.map((d) => ({
-    severity:
-      d.severity === "error"
-        ? monaco.MarkerSeverity.Error
-        : d.severity === "warning"
-          ? monaco.MarkerSeverity.Warning
-          : monaco.MarkerSeverity.Info,
-    message: d.message,
-    startLineNumber: d.startLine,
-    startColumn: d.startColumn,
-    endLineNumber: d.endLine ?? d.startLine,
-    endColumn: d.endColumn ?? d.startColumn + 1,
-  }));
-
-  monaco.editor.setModelMarkers(model, "vize", markers);
-}
-
-// Update diagnostics markers
 watch(
   () => props.diagnostics,
   (diagnostics) => {
@@ -471,80 +196,6 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Set editor value programmatically (workaround for vite-plugin-vize v-model issue)
-function setValue(value: string) {
-  if (editorInstance.value) {
-    editorInstance.value.setValue(value);
-  }
-}
-
-// Expose methods for direct calls (workaround for vite-plugin-vize reactivity issue)
-defineExpose({
-  applyDiagnostics,
-  applyScopeDecorations,
-  setValue,
-});
-
-// Scope decoration IDs
-let scopeDecorationIds: string[] = [];
-
-// Scope kind to CSS class mapping (O(1) lookup for exact matches)
-const SCOPE_CLASS_MAP: Record<string, string> = {
-  setup: "scope-decoration-setup",
-  plain: "scope-decoration-plain",
-  extern: "scope-decoration-extern",
-  extmod: "scope-decoration-extern",
-  vue: "scope-decoration-vue",
-  universal: "scope-decoration-universal",
-  server: "scope-decoration-server",
-  client: "scope-decoration-client",
-  vfor: "scope-decoration-vFor",
-  "v-for": "scope-decoration-vFor",
-  vslot: "scope-decoration-vSlot",
-  "v-slot": "scope-decoration-vSlot",
-  function: "scope-decoration-function",
-  arrowfunction: "scope-decoration-function",
-  block: "scope-decoration-block",
-  mod: "scope-decoration-mod",
-  closure: "scope-decoration-closure",
-  event: "scope-decoration-event",
-  callback: "scope-decoration-callback",
-};
-
-// Get scope decoration class based on kind
-function getScopeDecorationClass(kind: string): string {
-  const kindLower = kind.toLowerCase();
-  // Fast path: exact match
-  const exact = SCOPE_CLASS_MAP[kindLower];
-  if (exact) return exact;
-  // Fallback: pattern matching for compound kinds
-  if (kindLower.includes("clientonly") || kindLower.includes("mounted"))
-    return "scope-decoration-client";
-  if (kindLower.includes("computed")) return "scope-decoration-computed";
-  if (kindLower.includes("watch")) return "scope-decoration-watch";
-  return "scope-decoration-default";
-}
-
-// Convert offset to position
-function offsetToPosition(model: monaco.editor.ITextModel, offset: number): monaco.IPosition {
-  const content = model.getValue();
-  const safeOffset = Math.min(offset, content.length);
-  let line = 1;
-  let column = 1;
-
-  for (let i = 0; i < safeOffset; i++) {
-    if (content[i] === "\n") {
-      line++;
-      column = 1;
-    } else {
-      column++;
-    }
-  }
-
-  return { lineNumber: line, column };
-}
-
-// Update scope decorations when scopes prop changes
 watch(
   () => props.scopes,
   (scopes) => {
@@ -553,28 +204,11 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Overview ruler color mapping (O(1) lookup)
-const RULER_COLOR_MAP: Record<string, string> = {
-  setup: "#22c55e40",
-  vue: "#42b88340",
-  client: "#f97316a0",
-  server: "#3b82f6a0",
-  universal: "#8b5cf640",
-  vfor: "#a78bfa40",
-  "v-for": "#a78bfa40",
-  vslot: "#f472b640",
-  "v-slot": "#f472b640",
-  closure: "#fbbf2440",
-  block: "#94a3b830",
-  event: "#f472b640",
-  callback: "#fb923c40",
-};
-
-// Get overview ruler color based on scope kind
-function getOverviewRulerColor(kind: string): string {
-  const kindLower = kind.toLowerCase();
-  return RULER_COLOR_MAP[kindLower] || "#9ca3b020";
-}
+defineExpose({
+  applyDiagnostics,
+  applyScopeDecorations,
+  setValue,
+});
 </script>
 
 <template>

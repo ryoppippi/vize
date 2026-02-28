@@ -145,7 +145,7 @@ export function useArtParsing(
   watch(
     () => getCompiler(),
     () => {
-      if (getCompiler()) compile();
+      if (getCompiler()) void compile();
     },
   );
 

@@ -13,7 +13,7 @@ export function useFileManagement() {
   const activeFile = ref<string>(Object.keys(currentPresetData.value.files)[0]);
 
   // Monaco editor ref (for direct setValue calls - vite-plugin-vize workaround)
-  const monacoEditorRef = ref<InstanceType<typeof MonacoEditor> | null>(null);
+  const monacoEditorRef = ref<InstanceType<typeof MonacoEditor>>(null);
 
   // File names array for v-for (workaround for vite-plugin-vize object iteration issue)
   const fileNames = ref<string[]>(Object.keys(files.value));
@@ -124,7 +124,7 @@ export function useFileManagement() {
       activeFile.value = Object.keys(preset.files)[0];
       crossFileIssues.value = [];
       selectedIssue.value = null;
-      nextTick(() => analyzeAll());
+      void nextTick(() => analyzeAll());
     }
   }
 

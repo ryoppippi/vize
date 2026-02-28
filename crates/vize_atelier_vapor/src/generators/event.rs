@@ -47,8 +47,7 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
             .iter()
             .map(|m| vize_carton::new_string!("\"{m}\"").into())
             .collect();
-        result =
-            vize_carton::new_string!("_withModifiers({result}, [{}])", mods.join(", ")).into();
+        result = vize_carton::new_string!("_withModifiers({result}, [{}])", mods.join(", ")).into();
     }
 
     result
@@ -85,24 +84,16 @@ pub fn generate_delegate_event(
     options: Option<&str>,
 ) -> String {
     if let Some(opts) = options {
-        vize_carton::new_string!(
-            "_delegate({element_var}, \"{event_name}\", {handler}, {opts})"
-        )
-        .into()
+        vize_carton::new_string!("_delegate({element_var}, \"{event_name}\", {handler}, {opts})")
+            .into()
     } else {
-        vize_carton::new_string!(
-            "_delegate({element_var}, \"{event_name}\", {handler})"
-        )
-        .into()
+        vize_carton::new_string!("_delegate({element_var}, \"{event_name}\", {handler})").into()
     }
 }
 
 /// Generate inline event handler
 pub fn generate_inline_handler(element_var: &str, event_name: &str, handler: &str) -> String {
-    vize_carton::new_string!(
-        "{element_var}.addEventListener(\"{event_name}\", {handler})"
-    )
-    .into()
+    vize_carton::new_string!("{element_var}.addEventListener(\"{event_name}\", {handler})").into()
 }
 
 /// Capitalize event name for onEvent format

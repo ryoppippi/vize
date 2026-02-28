@@ -183,8 +183,7 @@ impl TypeCheckService {
 
         // Check with tsgo
         if !virtual_ts_output.content.is_empty() {
-            let virtual_uri =
-                vize_carton::new_string!("vize-virtual://{filename}.ts").to_string();
+            let virtual_uri = vize_carton::new_string!("vize-virtual://{filename}.ts").to_string();
 
             // Open virtual document
             self.bridge

@@ -212,10 +212,7 @@ fn generate_component_props(
         let src_start = (template_offset + usage.start) as usize;
         let src_end = (template_offset + usage.end) as usize;
 
-        vize_carton::push_fmt!(
-            *ts,
-            "  // @vize-map: component -> {src_start}:{src_end}\n",
-        );
+        vize_carton::push_fmt!(*ts, "  // @vize-map: component -> {src_start}:{src_end}\n",);
         vize_carton::push_fmt!(
             *ts,
             "  type __{component_name}_Props_{idx} = typeof {component_name} extends {{ new (): {{ $props: infer __P }} }} ? __P : (typeof {component_name} extends (props: infer __P) => any ? __P : {{}});\n",
@@ -493,10 +490,7 @@ fn generate_event_handler_expressions(
 
             let gen_start = ts.len();
             if data.has_implicit_event && is_simple_identifier && !content.is_empty() {
-                vize_carton::push_fmt!(
-                    *ts,
-                    "{indent}{content}($event);  // handler expression\n",
-                );
+                vize_carton::push_fmt!(*ts, "{indent}{content}($event);  // handler expression\n",);
             } else {
                 vize_carton::push_fmt!(*ts, "{indent}{content};  // handler expression\n");
             }

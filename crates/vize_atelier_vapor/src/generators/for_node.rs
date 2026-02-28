@@ -25,9 +25,7 @@ where
 
     let params = build_params(value_name, key_name, index_name);
 
-    ctx.push_line_fmt(format_args!(
-        "_createFor(() => {source}, ({params}) => {{"
-    ));
+    ctx.push_line_fmt(format_args!("_createFor(() => {source}, ({params}) => {{"));
     ctx.indent();
     generate_block(ctx, &for_node.render);
     ctx.deindent();
@@ -83,9 +81,7 @@ where
             "_createForStatic(() => {source}, ({params}) => {{"
         ));
     } else {
-        ctx.push_line_fmt(format_args!(
-            "_createFor(() => {source}, ({params}) => {{"
-        ));
+        ctx.push_line_fmt(format_args!("_createFor(() => {source}, ({params}) => {{"));
     }
 
     ctx.indent();
