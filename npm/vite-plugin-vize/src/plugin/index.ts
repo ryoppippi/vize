@@ -15,7 +15,6 @@ import fs from "node:fs";
 
 import type { VizeOptions, ConfigEnv } from "../types.js";
 import { createFilter } from "../utils/index.js";
-import { type CssAliasRule } from "../utils/css.js";
 import { toBrowserImportPrefix } from "../virtual.js";
 import { isBuiltinDefine, createLogger } from "../transform.js";
 import { loadConfig, vizeConfigStore } from "../config.js";
