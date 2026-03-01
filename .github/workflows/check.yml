@@ -83,8 +83,13 @@ jobs:
 
   playground-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ github.token }}
 
       # Rust is always needed for @vizejs/native (used by vite-plugin-vize)
       - name: Setup Rust
