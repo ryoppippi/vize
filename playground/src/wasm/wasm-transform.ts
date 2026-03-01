@@ -13,7 +13,7 @@ import type {
   EmitDisplay,
   ProvideDisplay,
   InjectDisplay,
-} from './types';
+} from "./types";
 
 // Raw WASM scope type
 interface RawWasmScope {
@@ -52,7 +52,7 @@ export function createTransformAnalyzeSfc(
     }
 
     // Convert to ScopeDisplay format
-    const scopes: ScopeDisplay[] = rawScopes.map(scope => ({
+    const scopes: ScopeDisplay[] = rawScopes.map((scope) => ({
       id: scope.id,
       parentIds: scope.parentIds || [],
       kind: scope.kind as ScopeKind,
@@ -65,45 +65,51 @@ export function createTransformAnalyzeSfc(
     }));
 
     // Transform bindings to match BindingDisplay interface
-    const bindings: BindingDisplay[] = (croquis.bindings || []).map((b: { name: string; type: string }, i: number) => ({
-      name: b.name,
-      kind: b.type,
-      source: 'script' as BindingSource,
-      metadata: {
-        isExported: false,
-        isImported: false,
-        isComponent: false,
-        isDirective: false,
-        needsValue: true,
+    const bindings: BindingDisplay[] = (croquis.bindings || []).map(
+      (b: { name: string; type: string }, i: number) => ({
+        name: b.name,
+        kind: b.type,
+        source: "script" as BindingSource,
+        metadata: {
+          isExported: false,
+          isImported: false,
+          isComponent: false,
+          isDirective: false,
+          needsValue: true,
+          usedInTemplate: true,
+          usedInScript: true,
+          scopeDepth: 0,
+        },
+        typeAnnotation: undefined,
+        start: i * 10,
+        end: i * 10 + 5,
+        isUsed: true,
+        isMutated: false,
+        referenceCount: 1,
+        bindable: true,
         usedInTemplate: true,
-        usedInScript: true,
-        scopeDepth: 0,
-      },
-      typeAnnotation: undefined,
-      start: i * 10,
-      end: i * 10 + 5,
-      isUsed: true,
-      isMutated: false,
-      referenceCount: 1,
-      bindable: true,
-      usedInTemplate: true,
-      fromScriptSetup: croquis.is_setup || false,
-    }));
+        fromScriptSetup: croquis.is_setup || false,
+      }),
+    );
 
     // Transform macros from WASM
-    const macros: MacroDisplay[] = (croquis.macros || []).map((m: { name: string; kind: string; start: number; end: number; typeArgs?: string }) => ({
-      name: m.name,
-      start: m.start,
-      end: m.end,
-      type_args: m.typeArgs,
-    }));
+    const macros: MacroDisplay[] = (croquis.macros || []).map(
+      (m: { name: string; kind: string; start: number; end: number; typeArgs?: string }) => ({
+        name: m.name,
+        start: m.start,
+        end: m.end,
+        type_args: m.typeArgs,
+      }),
+    );
 
     // Transform props from WASM
-    const props: PropDisplay[] = (croquis.props || []).map((p: { name: string; required: boolean; hasDefault: boolean }) => ({
-      name: p.name,
-      required: p.required,
-      has_default: p.hasDefault,
-    }));
+    const props: PropDisplay[] = (croquis.props || []).map(
+      (p: { name: string; required: boolean; hasDefault: boolean }) => ({
+        name: p.name,
+        required: p.required,
+        has_default: p.hasDefault,
+      }),
+    );
 
     // Transform emits from WASM
     const emits: EmitDisplay[] = (croquis.emits || []).map((e: { name: string }) => ({
@@ -141,7 +147,7 @@ export function createTransformAnalyzeSfc(
       },
       diagnostics: rawResult.diagnostics || [],
       // VIR (Vize Intermediate Representation) text from WASM
-      vir: rawResult.vir || '',
+      vir: rawResult.vir || "",
     };
 
     return result;

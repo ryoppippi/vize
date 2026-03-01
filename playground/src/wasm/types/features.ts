@@ -11,7 +11,7 @@ export interface ArtMetadata {
   component?: string;
   category?: string;
   tags: string[];
-  status: 'draft' | 'ready' | 'deprecated';
+  status: "draft" | "ready" | "deprecated";
   order?: number;
 }
 
@@ -49,9 +49,9 @@ export interface LintOptions {
   /** Rules to enable (if not set, all rules are enabled) */
   enabledRules?: string[];
   /** Override severity for specific rules */
-  severityOverrides?: Record<string, 'error' | 'warning' | 'off'>;
+  severityOverrides?: Record<string, "error" | "warning" | "off">;
   /** Locale for i18n messages (default: 'en') */
-  locale?: 'en' | 'ja' | 'zh';
+  locale?: "en" | "ja" | "zh";
 }
 
 export interface LocaleInfo {
@@ -61,7 +61,7 @@ export interface LocaleInfo {
 
 export interface LintDiagnostic {
   rule: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   message: string;
   location: {
     start: { line: number; column: number; offset: number };
@@ -82,7 +82,7 @@ export interface LintRule {
   description: string;
   category: string;
   fixable: boolean;
-  defaultSeverity: 'error' | 'warning';
+  defaultSeverity: "error" | "warning";
 }
 
 // Glyph (Formatter) types
@@ -93,16 +93,16 @@ export interface FormatOptions {
   semi?: boolean;
   singleQuote?: boolean;
   jsxSingleQuote?: boolean;
-  trailingComma?: 'none' | 'es5' | 'all';
+  trailingComma?: "none" | "es5" | "all";
   bracketSpacing?: boolean;
   bracketSameLine?: boolean;
-  arrowParens?: 'always' | 'avoid';
-  endOfLine?: 'lf' | 'crlf' | 'cr' | 'auto';
-  quoteProps?: 'as-needed' | 'consistent' | 'preserve';
+  arrowParens?: "always" | "avoid";
+  endOfLine?: "lf" | "crlf" | "cr" | "auto";
+  quoteProps?: "as-needed" | "consistent" | "preserve";
   singleAttributePerLine?: boolean;
   vueIndentScriptAndStyle?: boolean;
   sortAttributes?: boolean;
-  attributeSortOrder?: 'alphabetical' | 'as-written';
+  attributeSortOrder?: "alphabetical" | "as-written";
   mergeBindAndNonBindAttrs?: boolean;
   maxAttributesPerLine?: number | null;
   attributeGroups?: string[][] | null;

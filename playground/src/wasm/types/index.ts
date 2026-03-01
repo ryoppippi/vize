@@ -1,8 +1,8 @@
 // Re-export all types
-export type * from './compiler';
-export type * from './croquis';
-export type * from './features';
-export type * from './analysis';
+export type * from "./compiler";
+export type * from "./croquis";
+export type * from "./features";
+export type * from "./analysis";
 
 import type {
   CompilerOptions,
@@ -11,11 +11,8 @@ import type {
   CssCompileResult,
   SfcDescriptor,
   SfcCompileResult,
-} from './compiler';
-import type {
-  CroquisOptions,
-  CroquisResult,
-} from './croquis';
+} from "./compiler";
+import type { CroquisOptions, CroquisResult } from "./croquis";
 import type {
   ArtParseOptions,
   ArtDescriptor,
@@ -26,7 +23,7 @@ import type {
   LocaleInfo,
   FormatOptions,
   FormatResult,
-} from './features';
+} from "./features";
 import type {
   TypeCheckOptions,
   TypeCheckResult,
@@ -34,7 +31,7 @@ import type {
   CrossFileInput,
   CrossFileOptions,
   CrossFileResult,
-} from './analysis';
+} from "./analysis";
 
 export interface WasmModule {
   compile: (template: string, options: CompilerOptions) => CompileResult;

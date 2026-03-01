@@ -2,19 +2,19 @@
 
 // Binding source (where it comes from)
 export type BindingSource =
-  | 'props'
-  | 'emits'
-  | 'model'
-  | 'slots'
-  | 'ref'
-  | 'reactive'
-  | 'computed'
-  | 'import'
-  | 'local'
-  | 'function'
-  | 'class'
-  | 'templateRef'
-  | 'unknown';
+  | "props"
+  | "emits"
+  | "model"
+  | "slots"
+  | "ref"
+  | "reactive"
+  | "computed"
+  | "import"
+  | "local"
+  | "function"
+  | "class"
+  | "templateRef"
+  | "unknown";
 
 // Binding metadata
 export interface BindingMetadata {
@@ -41,33 +41,33 @@ export interface BindingDisplay {
   isMutated: boolean;
   referenceCount: number;
   // Template binding info
-  bindable: boolean;  // Can be referenced from template
-  usedInTemplate: boolean;  // Actually used in template
-  fromScriptSetup: boolean;  // Comes from <script setup>
+  bindable: boolean; // Can be referenced from template
+  usedInTemplate: boolean; // Actually used in template
+  fromScriptSetup: boolean; // Comes from <script setup>
 }
 
 // Scope kind (abbreviated)
 export type ScopeKind =
-  | 'mod'        // module
-  | 'setup'      // scriptSetup
-  | 'plain'      // nonScriptSetup
-  | 'extern'     // externalModule
-  | 'vue'        // vueGlobal
-  | 'universal'  // runs on both server and client
-  | 'server'     // server only (Node.js)
-  | 'client'     // client only (browser)
-  | 'function'
-  | 'arrowFunction'
-  | 'block'
-  | 'vFor'
-  | 'vSlot'
-  | 'class'
-  | 'staticBlock'
-  | 'catch';
+  | "mod" // module
+  | "setup" // scriptSetup
+  | "plain" // nonScriptSetup
+  | "extern" // externalModule
+  | "vue" // vueGlobal
+  | "universal" // runs on both server and client
+  | "server" // server only (Node.js)
+  | "client" // client only (browser)
+  | "function"
+  | "arrowFunction"
+  | "block"
+  | "vFor"
+  | "vSlot"
+  | "class"
+  | "staticBlock"
+  | "catch";
 
 export interface ScopeDisplay {
   id: number;
-  parentIds?: number[];  // Multiple parent scopes (e.g., setup can access mod, universal, etc.)
+  parentIds?: number[]; // Multiple parent scopes (e.g., setup can access mod, universal, etc.)
   kind: ScopeKind;
   kindStr: string;
   start: number;
@@ -89,16 +89,16 @@ export interface MacroDisplay {
 // Type export (hoisted from script setup)
 export interface TypeExportDisplay {
   name: string;
-  kind: 'type' | 'interface';
+  kind: "type" | "interface";
   start: number;
   end: number;
-  hoisted: boolean;  // true if hoisted from script setup to module level
+  hoisted: boolean; // true if hoisted from script setup to module level
 }
 
 // Invalid export in script setup
 export interface InvalidExportDisplay {
   name: string;
-  kind: 'const' | 'let' | 'var' | 'function' | 'class' | 'default';
+  kind: "const" | "let" | "var" | "function" | "class" | "default";
   start: number;
   end: number;
   message: string;
@@ -118,7 +118,7 @@ export interface EmitDisplay {
 
 // Provide key (string or symbol)
 export interface ProvideKey {
-  type: 'string' | 'symbol';
+  type: "string" | "symbol";
   value: string;
 }
 
@@ -133,7 +133,7 @@ export interface ProvideDisplay {
 }
 
 // Inject pattern
-export type InjectPattern = 'simple' | 'objectDestructure' | 'arrayDestructure';
+export type InjectPattern = "simple" | "objectDestructure" | "arrayDestructure";
 
 // Inject entry from Rust analysis
 export interface InjectDisplay {
@@ -167,7 +167,7 @@ export interface CroquisStats {
 }
 
 export interface CroquisDiagnostic {
-  severity: 'error' | 'warning' | 'info' | 'hint';
+  severity: "error" | "warning" | "info" | "hint";
   message: string;
   start: number;
   end: number;

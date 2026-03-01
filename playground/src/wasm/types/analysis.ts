@@ -18,7 +18,7 @@ export interface TypeCheckRelatedLocation {
 }
 
 export interface TypeCheckDiagnostic {
-  severity: 'error' | 'warning' | 'info' | 'hint';
+  severity: "error" | "warning" | "info" | "hint";
   message: string;
   start: number;
   end: number;
@@ -69,7 +69,7 @@ export interface CrossFileOptions {
 export interface CrossFileDiagnostic {
   type: string;
   code: string;
-  severity: 'error' | 'warning' | 'info' | 'hint';
+  severity: "error" | "warning" | "info" | "hint";
   message: string;
   file: string;
   offset: number;

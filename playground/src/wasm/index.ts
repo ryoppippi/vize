@@ -56,10 +56,10 @@ export type {
   CrossFileResult,
   CrossFileInput,
   WasmModule,
-} from './types';
+} from "./types";
 
-import type { WasmModule } from './types';
-import { createTransformAnalyzeSfc } from './wasm-transform';
+import type { WasmModule } from "./types";
+import { createTransformAnalyzeSfc } from "./wasm-transform";
 
 let wasmModule: WasmModule | null = null;
 let loadPromise: Promise<WasmModule> | null = null;
@@ -74,7 +74,7 @@ export async function loadWasm(): Promise<WasmModule> {
   }
 
   loadPromise = (async () => {
-    const wasm = await import('./vize_vitrine.js');
+    const wasm = await import("./vize_vitrine.js");
 
     if (wasm.default) {
       await wasm.default();
@@ -102,7 +102,7 @@ export async function loadWasm(): Promise<WasmModule> {
       formatScript: wasm.formatScript,
       typeCheck: wasm.typeCheck,
       getTypeCheckCapabilities: wasm.getTypeCheckCapabilities,
-      Compiler: wasm.Compiler as unknown as WasmModule['Compiler'],
+      Compiler: wasm.Compiler as unknown as WasmModule["Compiler"],
     };
     wasmModule = module;
     return module;

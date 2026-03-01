@@ -1,14 +1,14 @@
 // Compiler-related type definitions
 
 export interface CompilerOptions {
-  mode?: 'function' | 'module';
+  mode?: "function" | "module";
   ssr?: boolean;
   scopeId?: string | null;
   filename?: string;
   // Internal mock-only property for vapor mode detection
-  outputMode?: 'vdom' | 'vapor';
+  outputMode?: "vdom" | "vapor";
   // Script extension: 'preserve' keeps TypeScript, 'downcompile' (default) transpiles to JS
-  scriptExt?: 'preserve' | 'downcompile';
+  scriptExt?: "preserve" | "downcompile";
 }
 
 export interface CompileResult {
