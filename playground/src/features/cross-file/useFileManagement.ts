@@ -120,11 +120,19 @@ export function useFileManagement() {
     currentPreset.value = presetId;
     const preset = PRESETS.find((p) => p.id === presetId);
     if (preset) {
+      const firstFile = Object.keys(preset.files)[0];
+      const newSource = preset.files[firstFile] || "";
+      // Update currentSource BEFORE files to prevent the currentSource watcher
+      // from overwriting new files with stale editor content
+      currentSource.value = newSource;
       files.value = { ...preset.files };
-      activeFile.value = Object.keys(preset.files)[0];
+      activeFile.value = firstFile;
       crossFileIssues.value = [];
       selectedIssue.value = null;
-      void nextTick(() => analyzeAll());
+      void nextTick(() => {
+        monacoEditorRef.value?.setValue(newSource);
+        analyzeAll();
+      });
     }
   }
 

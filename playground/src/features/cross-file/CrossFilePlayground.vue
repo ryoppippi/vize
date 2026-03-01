@@ -163,6 +163,11 @@ function handleSelectIssue(issue: (typeof crossFileIssues.value)[0]) {
   setEditorValue(files.value[issue.file] ?? "");
 }
 
+function handleSelectPreset(presetId: string) {
+  selectPreset(presetId, analyzeAll);
+  setEditorValue(currentSource.value);
+}
+
 // Workaround for vite-plugin-vize prop reactivity issue
 // Use getWasm() directly with polling instead of props.compiler
 let hasCompilerInitialized = false;
@@ -220,7 +225,7 @@ onUnmounted(() => {
             v-for="preset in PRESETS"
             :key="preset.id"
             :class="['preset-item', { active: currentPreset === preset.id }]"
-            @click="selectPreset(preset.id, analyzeAll)"
+            @click="handleSelectPreset(preset.id)"
             :title="preset.description"
           >
             <svg class="preset-icon" viewBox="0 0 24 24">
