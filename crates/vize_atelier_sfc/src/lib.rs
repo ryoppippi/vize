@@ -49,10 +49,14 @@ pub mod style;
 pub mod types;
 
 // Re-exports for public API
-pub use compile::*;
+pub use compile::{compile_sfc, ScriptCompileResult};
 pub use css::{compile_css, compile_style_block, CssCompileOptions, CssCompileResult, CssTargets};
-pub use parse::*;
-pub use types::*;
+pub use parse::parse_sfc;
+pub use types::{
+    BindingMetadata, BindingType, BlockLocation, PadOption, PropsDestructure, ScriptCompileOptions,
+    SfcCompileOptions, SfcCompileResult, SfcCustomBlock, SfcDescriptor, SfcError, SfcParseOptions,
+    SfcScriptBlock, SfcStyleBlock, SfcTemplateBlock, StyleCompileOptions, TemplateCompileOptions,
+};
 
 // Re-export key types from dependencies
 pub use vize_atelier_core::CompilerError;
@@ -63,7 +67,7 @@ mod snapshot_tests;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{compile_sfc, parse_sfc, SfcCompileOptions};
 
     #[test]
     fn test_parse_simple_sfc() {
@@ -159,6 +163,47 @@ function onClick() {
         assert!(
             result.code.contains("const emit = __emit"),
             "emit should be bound to __emit"
+        );
+    }
+
+    #[test]
+    fn test_compile_sfc_define_model_with_type_args_preserves_body() {
+        // Regression test: defineModel<Type>('name', { opts }); was wrongly detected
+        // as a multi-line macro call because the line ends with `;` not `)`.
+        // This caused all subsequent setup code to be swallowed by the macro tracker.
+        let source = r#"
+<template>
+  <div>{{ fx }}</div>
+</template>
+
+<script setup lang="ts">
+interface Layer { fxId: string }
+const layer = defineModel<Layer>('layer', { required: true });
+
+const fx = layer.value.fxId;
+if (fx == null) {
+  throw new Error('not found');
+}
+</script>
+"#;
+        let descriptor = parse_sfc(source, Default::default()).unwrap();
+        let result = compile_sfc(&descriptor, SfcCompileOptions::default()).unwrap();
+
+        println!("defineModel output:\n{}", result.code);
+
+        // defineModel should be transformed to _useModel
+        assert!(
+            result.code.contains("_useModel(__props,"),
+            "defineModel should become _useModel"
+        );
+        // Code after defineModel must be preserved
+        assert!(
+            result.code.contains("const fx = layer.value.fxId"),
+            "setup body after defineModel must be preserved"
+        );
+        assert!(
+            result.code.contains("throw new Error"),
+            "throw statement after defineModel must be preserved"
         );
     }
 }

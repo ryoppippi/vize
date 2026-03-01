@@ -61,7 +61,7 @@ impl Rule for PreferPropsShorthand {
 
         for attr in &element.props {
             if let vize_relief::ast::PropNode::Directive(dir) = attr {
-                if dir.name == "bind" {
+                if dir.name == "bind" && !dir.shorthand {
                     if let Some(arg) = &dir.arg {
                         // Get the prop name
                         let prop_name = match arg {
@@ -97,7 +97,7 @@ impl Rule for PreferPropsShorthand {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::PreferPropsShorthand;
     use crate::linter::Linter;
     use crate::rule::RuleRegistry;
 
