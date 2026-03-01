@@ -50,7 +50,9 @@ pub(super) fn infer_binding_type(
                 // defineProps binding is the props OBJECT, not a prop - treat as SetupReactiveConst
                 // Individual prop names are registered separately as Props bindings
                 "defineProps" => return BindingType::SetupReactiveConst,
-                "ref" | "shallowRef" | "customRef" | "toRef" => return BindingType::SetupRef,
+                "ref" | "shallowRef" | "customRef" | "toRef" | "useTemplateRef" => {
+                    return BindingType::SetupRef
+                }
                 "computed" | "toRefs" => return BindingType::SetupRef,
                 "reactive" | "shallowReactive" => return BindingType::SetupReactiveConst,
                 "defineModel" => return BindingType::SetupRef,

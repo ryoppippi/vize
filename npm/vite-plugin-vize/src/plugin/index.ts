@@ -52,7 +52,36 @@ export function vize(options: VizeOptions = {}): Plugin[] {
     name: "vite-plugin-vize",
     enforce: "pre",
 
-    config(_, env) {
+    config(userConfig, env) {
+      // Wrap custom generateScopedName to clean up virtual module filenames.
+      // Must be done here (not configResolved) because the resolved config is frozen.
+      // When Vize delegates CSS module processing to Vite, the virtual module ID
+      // (e.g., \0/abs/path/Comp.vue?vue&type=style&...module.scss) is passed as
+      // the "filename" parameter. Strip the \0 prefix and appended suffixes so
+      // that user-defined generateScopedName receives the real .vue file path.
+      const cssModules = userConfig.css?.modules;
+      if (cssModules && typeof cssModules.generateScopedName === "function") {
+        const origFn = cssModules.generateScopedName;
+        cssModules.generateScopedName = function (name: string, filename: string, css: string) {
+          let clean = filename;
+          // Vite's postcss-modules resolves the virtual module ID against root,
+          // producing paths like: /project/root/\0/abs/path/Comp.vue?...module.scss
+          // The \0 (NUL byte) may be in the middle, not at the start.
+          // Extract the real path after the NUL marker.
+          const nulIdx = clean.indexOf("\0");
+          if (nulIdx >= 0) {
+            clean = clean.slice(nulIdx + 1);
+          }
+          // Remove .module.{lang} and .{lang} suffixes appended by resolveId
+          clean = clean.replace(/\.module\.\w+$/, "").replace(/\.\w+$/, "");
+          // Extract just the file path (before query params)
+          if (clean.includes("?")) {
+            clean = clean.split("?")[0];
+          }
+          return origFn.call(this, name, clean, css);
+        };
+      }
+
       return {
         // Vue 3 ESM bundler build requires these compile-time feature flags.
         // @vitejs/plugin-vue normally provides them; vize must do so as its replacement.
@@ -70,6 +99,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
     async configResolved(resolvedConfig: ResolvedConfig) {
       state.root = options.root ?? resolvedConfig.root;
       state.isProduction = options.isProduction ?? resolvedConfig.isProduction;
+
       const isSsrBuild = !!resolvedConfig.build?.ssr;
       if (isSsrBuild) {
         state.serverViteBase = resolvedConfig.base ?? "/";

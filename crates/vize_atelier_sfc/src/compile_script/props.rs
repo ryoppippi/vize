@@ -369,6 +369,19 @@ fn ts_type_to_js_type(ts_type: &str) -> String {
                     | "URL" | "URLSearchParams" | "FormData" | "Blob" | "File" => {
                         type_name.to_compact_string()
                     }
+                    // Vue reactive types that are objects at runtime
+                    "Ref"
+                    | "ShallowRef"
+                    | "ComputedRef"
+                    | "WritableComputedRef"
+                    | "MaybeRef"
+                    | "MaybeRefOrGetter"
+                    | "Readonly"
+                    | "UnwrapRef"
+                    | "Reactive"
+                    | "ShallowReactive"
+                    | "ToRef"
+                    | "ToRefs" => "Object".to_compact_string(),
                     // User-defined interface/type or generic type parameter
                     // - Single uppercase letter (T, U, K, V) = generic param → null
                     // - Otherwise = user-defined type → null (types don't exist at runtime)
