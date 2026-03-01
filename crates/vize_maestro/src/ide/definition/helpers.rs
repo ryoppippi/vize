@@ -2,6 +2,11 @@
 //!
 //! Provides word extraction, position conversion, import resolution,
 //! and attribute inspection helpers.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use std::path::PathBuf;
 

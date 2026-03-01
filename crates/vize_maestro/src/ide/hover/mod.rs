@@ -7,6 +7,11 @@
 //! - CSS properties and Vue-specific selectors
 //! - TypeScript type information from croquis analysis
 //! - Real type information from tsgo (when available)
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 mod script;
 mod template;

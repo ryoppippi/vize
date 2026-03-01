@@ -8,6 +8,8 @@
 use std::{fs, path::PathBuf, time::Instant};
 
 use ignore::WalkBuilder;
+use vize_carton::cstr;
+use vize_carton::ToCompactString;
 
 use super::{
     reporting::{JsonFileResult, JsonOutput},
@@ -55,9 +57,11 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     }
 
     let mut total_errors = 0;
-    let mut results: Vec<(String, ServerCheckResult)> = Vec::new();
+    #[allow(clippy::disallowed_types, clippy::disallowed_methods)]
+    let mut results: Vec<(std::string::String, ServerCheckResult)> = Vec::new();
 
     for path in &files {
+        #[allow(clippy::disallowed_types)]
         let source = match fs::read_to_string(path) {
             Ok(s) => s,
             Err(e) => {
@@ -66,6 +70,7 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
             }
         };
 
+        #[allow(clippy::disallowed_methods)]
         let filename = path.to_string_lossy().to_string();
 
         // Send request
@@ -90,7 +95,8 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
 
         // Read response
         let mut reader = BufReader::new(&stream);
-        let mut response_line = String::new();
+        #[allow(clippy::disallowed_types)]
+        let mut response_line = std::string::String::new();
         if reader.read_line(&mut response_line).is_err() {
             eprintln!("Failed to read response");
             break;
@@ -235,32 +241,34 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             let original_content = source.clone();
             // Use absolute path for proper file:// URI
             let abs_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+            #[allow(clippy::disallowed_methods)]
             let filename = abs_path.to_string_lossy().to_string();
 
             // Parse SFC
             let parse_opts = SfcParseOptions {
-                filename: filename.clone(),
+                filename: filename.clone().into(),
                 ..Default::default()
             };
             let descriptor = parse_sfc(&source, parse_opts).ok()?;
 
             // Get script content (combine both script and script setup if both exist)
-            let (script_content, script_offset): (Option<String>, u32) =
+            let (script_content, script_offset): (Option<vize_carton::String>, u32) =
                 match (descriptor.script.as_ref(), descriptor.script_setup.as_ref()) {
                     (Some(script), Some(script_setup)) => {
                         // Both exist: combine them (plain script first, then script setup)
                         (
-                            Some(format!("{}\n{}", script.content, script_setup.content)),
+                            Some(cstr!("{}\n{}", script.content, script_setup.content)),
                             script.loc.start as u32,
                         )
                     }
                     (None, Some(script_setup)) => (
-                        Some(script_setup.content.to_string()),
+                        Some(script_setup.content.to_compact_string()),
                         script_setup.loc.start as u32,
                     ),
-                    (Some(script), None) => {
-                        (Some(script.content.to_string()), script.loc.start as u32)
-                    }
+                    (Some(script), None) => (
+                        Some(script.content.to_compact_string()),
+                        script.loc.start as u32,
+                    ),
                     (None, None) => (None, 0),
                 };
             let script_content_ref = script_content.as_deref();
@@ -309,7 +317,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
             Some(GeneratedFile {
                 original: filename,
-                virtual_ts: output.code,
+                virtual_ts: output.code.into(),
                 source_map: output.mappings,
                 original_content,
             })
@@ -339,8 +347,8 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             for g in &generated {
                 let file_name = PathBuf::from(&g.original)
                     .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| "unknown".to_string());
+                    .map(|n| n.to_string_lossy().to_compact_string())
+                    .unwrap_or_else(|| "unknown".into());
                 let ts_path = profile_dir.join(format!("{}.ts", file_name));
                 if let Err(e) = fs::write(&ts_path, &g.virtual_ts) {
                     eprintln!("Failed to write {}: {}", ts_path.display(), e);
@@ -385,7 +393,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                         }
                     } else {
                         // Found a tsconfig in a non-generated directory - use it
-                        return Some(d.to_string_lossy().to_string());
+                        return Some(d.to_string_lossy().to_compact_string());
                     }
                 }
                 dir = d.parent();
@@ -393,15 +401,16 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
             // Use the best found tsconfig (even if in generated dir) or fallback
             if let Some(d) = best_tsconfig {
-                return Some(d.to_string_lossy().to_string());
+                return Some(d.to_string_lossy().to_compact_string());
             }
 
             // Fallback: use directory of the first file
-            p.parent().map(|d| d.to_string_lossy().to_string())
+            p.parent().map(|d| d.to_string_lossy().to_compact_string())
         });
 
     // Build shared URI map for all files (so imports can be resolved across servers)
-    let uri_map: Vec<(String, String)> = generated
+    #[allow(clippy::disallowed_types)]
+    let uri_map: Vec<(std::string::String, std::string::String)> = generated
         .iter()
         .map(|g| {
             let virtual_uri = format!("file://{}.mts", g.original);
@@ -436,7 +445,9 @@ pub(crate) fn run_direct(args: &CheckArgs) {
         Mutex,
     };
     let total_errors = AtomicUsize::new(0);
-    let all_diagnostics: Mutex<Vec<(String, Vec<String>)>> = Mutex::new(Vec::new());
+    #[allow(clippy::disallowed_types)]
+    let all_diagnostics: Mutex<Vec<(std::string::String, Vec<std::string::String>)>> =
+        Mutex::new(Vec::new());
 
     std::thread::scope(|s| {
         let handles: Vec<_> = index_chunks
@@ -478,28 +489,36 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
                     // PHASE 2: Request diagnostics in batch (pipelined)
                     // tsgo doesn't publish diagnostics automatically - we must request them
-                    let uris: Vec<String> = indices
+                    let uris: Vec<vize_carton::String> = indices
                         .iter()
-                        .map(|i| format!("file://{}.mts", generated[*i].original))
+                        .map(|i| cstr!("file://{}.mts", generated[*i].original))
                         .collect();
 
                     let batch_results = lsp_client.request_diagnostics_batch(&uris);
 
                     // Build a map from URI to diagnostics
-                    let diag_map: std::collections::HashMap<_, _> =
+                    let diag_map: vize_carton::FxHashMap<_, _> =
                         batch_results.into_iter().collect();
 
-                    let mut chunk_diagnostics: Vec<(String, Vec<String>)> = Vec::new();
+                    #[allow(clippy::disallowed_types)]
+                    let mut chunk_diagnostics: Vec<(
+                        std::string::String,
+                        Vec<std::string::String>,
+                    )> = Vec::new();
 
                     for idx in &indices {
                         let g = &generated[*idx];
-                        let virtual_uri = format!("file://{}.mts", g.original);
+                        let virtual_uri = cstr!("file://{}.mts", g.original);
 
                         // Get diagnostics from batch result
-                        let diagnostics = diag_map.get(&virtual_uri).cloned().unwrap_or_default();
+                        let diagnostics = diag_map
+                            .get(virtual_uri.as_str())
+                            .cloned()
+                            .unwrap_or_default();
 
                         // Filter and format diagnostics
-                        let mut file_diags: Vec<String> = Vec::new();
+                        #[allow(clippy::disallowed_types)]
+                        let mut file_diags: Vec<std::string::String> = Vec::new();
                         for diag in &diagnostics {
                             let code_num = diag.code.as_ref().and_then(|c| match c {
                                 serde_json::Value::Number(n) => n.as_u64(),
@@ -529,13 +548,14 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                                     "error"
                                 }
                             };
+                            #[allow(clippy::disallowed_types)]
                             let code_str = diag
                                 .code
                                 .as_ref()
                                 .map(|c| match c {
                                     serde_json::Value::Number(n) => format!(" [TS{}]", n),
                                     serde_json::Value::String(s) => format!(" [{}]", s),
-                                    _ => String::new(),
+                                    _ => std::string::String::new(),
                                 })
                                 .unwrap_or_default();
                             // Map virtual TS position -> SFC position
@@ -688,7 +708,8 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 }
 
 /// Collect .vue files from patterns.
-pub(crate) fn collect_vue_files(patterns: &[String]) -> Vec<PathBuf> {
+#[allow(clippy::disallowed_types)]
+pub(crate) fn collect_vue_files(patterns: &[std::string::String]) -> Vec<PathBuf> {
     patterns
         .iter()
         .flat_map(|pattern| {
@@ -740,15 +761,15 @@ pub(crate) fn parse_global_entry(entry: &str) -> vize_canon::virtual_ts::Templat
     use vize_canon::virtual_ts::TemplateGlobal;
     if let Some((name, type_ann)) = entry.split_once(':') {
         TemplateGlobal {
-            name: name.trim().to_string(),
-            type_annotation: type_ann.trim().to_string(),
-            default_value: "{} as any".to_string(),
+            name: name.trim().to_compact_string(),
+            type_annotation: type_ann.trim().to_compact_string(),
+            default_value: "{} as any".into(),
         }
     } else {
         TemplateGlobal {
-            name: entry.trim().to_string(),
-            type_annotation: "any".to_string(),
-            default_value: "{} as any".to_string(),
+            name: entry.trim().to_compact_string(),
+            type_annotation: "any".into(),
+            default_value: "{} as any".into(),
         }
     }
 }

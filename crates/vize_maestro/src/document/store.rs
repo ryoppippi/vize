@@ -1,4 +1,5 @@
 //! Document store implementation using Rope for efficient text operations.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use dashmap::DashMap;
 use ropey::Rope;

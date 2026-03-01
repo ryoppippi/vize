@@ -14,7 +14,6 @@ mod requests;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
-    collections::HashMap,
     io::BufReader,
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
     sync::atomic::{AtomicI64, Ordering},
@@ -25,6 +24,9 @@ use std::{
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
 use vize_carton::cstr;
+use vize_carton::FxHashMap;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// LSP Client for tsgo
 pub struct TsgoLspClient {
@@ -33,7 +35,7 @@ pub struct TsgoLspClient {
     pub(crate) stdout: BufReader<ChildStdout>,
     pub(crate) request_id: AtomicI64,
     /// Pending diagnostics received via publishDiagnostics
-    pub(crate) diagnostics: HashMap<String, Vec<LspDiagnostic>>,
+    pub(crate) diagnostics: FxHashMap<String, Vec<LspDiagnostic>>,
     /// Temporary directory for tsconfig.json (cleaned up on drop)
     temp_dir: Option<std::path::PathBuf>,
 }
@@ -72,14 +74,14 @@ impl TsgoLspClient {
     /// 4. Common npm global install locations
     /// 5. "tsgo" in PATH
     pub fn new(tsgo_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
-        let tsgo = tsgo_path
+        let tsgo: String = tsgo_path
             .map(String::from)
-            .or_else(|| std::env::var("TSGO_PATH").ok())
+            .or_else(|| std::env::var("TSGO_PATH").ok().map(String::from))
             .or_else(|| Self::find_tsgo_in_local_node_modules(working_dir))
             .or_else(Self::find_tsgo_in_common_locations)
-            .unwrap_or_else(|| "tsgo".to_string());
+            .unwrap_or_else(|| "tsgo".into());
 
-        eprintln!("\x1b[90m[tsgo] Using: {}\x1b[0m", tsgo);
+        eprintln!("\x1b[90m[tsgo] Using: {tsgo}\x1b[0m");
 
         // Determine project root (for tsgo binary search)
         let _project_root = working_dir
@@ -92,7 +94,7 @@ impl TsgoLspClient {
         // regardless of the project's tsconfig.json state.
         let temp_dir_path = std::env::temp_dir().join(&*cstr!("vize-tsgo-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir_path)
-            .map_err(|e| cstr!("Failed to create temp directory: {e}").to_string())?;
+            .map_err(|e| cstr!("Failed to create temp directory: {e}"))?;
         let tsconfig_content = serde_json::json!({
             "compilerOptions": {
                 "target": "ES2022",
@@ -106,11 +108,11 @@ impl TsgoLspClient {
         });
         std::fs::write(
             temp_dir_path.join("tsconfig.json"),
-            tsconfig_content.to_string(),
+            tsconfig_content.to_compact_string(),
         )
-        .map_err(|e| cstr!("Failed to write temp tsconfig.json: {e}").to_string())?;
+        .map_err(|e| cstr!("Failed to write temp tsconfig.json: {e}"))?;
 
-        let mut cmd = Command::new(tsgo);
+        let mut cmd = Command::new(tsgo.as_str());
         cmd.arg("--lsp")
             .arg("--stdio")
             .stdin(Stdio::piped())
@@ -122,7 +124,7 @@ impl TsgoLspClient {
 
         let mut process = cmd
             .spawn()
-            .map_err(|e| cstr!("Failed to start tsgo lsp: {e}").to_string())?;
+            .map_err(|e| cstr!("Failed to start tsgo lsp: {e}"))?;
 
         let stdin = process
             .stdin
@@ -151,7 +153,7 @@ impl TsgoLspClient {
             stdin,
             stdout: BufReader::new(stdout),
             request_id: AtomicI64::new(1),
-            diagnostics: HashMap::new(),
+            diagnostics: FxHashMap::default(),
             temp_dir: Some(temp_dir_path),
         };
 
@@ -164,7 +166,7 @@ impl TsgoLspClient {
     /// Initialize LSP connection
     fn initialize(&mut self, project_root: Option<&std::path::PathBuf>) -> Result<(), String> {
         // Convert project root to file:// URI
-        let root_uri = project_root.map(|p| cstr!("file://{}", p.display()).to_string());
+        let root_uri = project_root.map(|p| cstr!("file://{}", p.display()));
 
         let workspace_folders = root_uri.as_ref().map(|uri| {
             serde_json::json!([{
@@ -264,7 +266,7 @@ impl TsgoLspClient {
                                 platform_suffix
                             ));
                             if native_path.exists() {
-                                return Some(native_path.to_string_lossy().to_string());
+                                return Some(native_path.to_string_lossy().into());
                             }
                         }
                     }
@@ -282,7 +284,7 @@ impl TsgoLspClient {
 
             for candidate in &native_candidates {
                 if candidate.exists() {
-                    return Some(candidate.to_string_lossy().to_string());
+                    return Some(candidate.to_string_lossy().into());
                 }
             }
 
@@ -294,7 +296,7 @@ impl TsgoLspClient {
 
             for candidate in &candidates {
                 if candidate.exists() {
-                    return Some(candidate.to_string_lossy().to_string());
+                    return Some(candidate.to_string_lossy().into());
                 }
             }
 
@@ -323,29 +325,29 @@ impl TsgoLspClient {
         let home = std::env::var("HOME").ok()?;
 
         // Common npm global binary locations
-        let candidates = [
+        let candidates: [String; 10] = [
             // npm global (custom prefix)
-            cstr!("{home}/.npm-global/bin/tsgo").to_string(),
+            cstr!("{home}/.npm-global/bin/tsgo"),
             // npm global (default)
-            cstr!("{home}/.npm/bin/tsgo").to_string(),
+            cstr!("{home}/.npm/bin/tsgo"),
             // pnpm global
-            cstr!("{home}/.local/share/pnpm/tsgo").to_string(),
+            cstr!("{home}/.local/share/pnpm/tsgo"),
             // volta
-            cstr!("{home}/.volta/bin/tsgo").to_string(),
+            cstr!("{home}/.volta/bin/tsgo"),
             // mise/asdf shims
-            cstr!("{home}/.local/share/mise/shims/tsgo").to_string(),
-            cstr!("{home}/.asdf/shims/tsgo").to_string(),
+            cstr!("{home}/.local/share/mise/shims/tsgo"),
+            cstr!("{home}/.asdf/shims/tsgo"),
             // fnm
-            cstr!("{home}/.local/share/fnm/node-versions/current/bin/tsgo").to_string(),
+            cstr!("{home}/.local/share/fnm/node-versions/current/bin/tsgo"),
             // nvm (check current version)
-            cstr!("{home}/.nvm/versions/node/current/bin/tsgo").to_string(),
+            cstr!("{home}/.nvm/versions/node/current/bin/tsgo"),
             // Homebrew (macOS)
-            "/opt/homebrew/bin/tsgo".to_string(),
-            "/usr/local/bin/tsgo".to_string(),
+            "/opt/homebrew/bin/tsgo".into(),
+            "/usr/local/bin/tsgo".into(),
         ];
 
         for path in candidates {
-            if std::path::Path::new(&path).exists() {
+            if std::path::Path::new(path.as_str()).exists() {
                 return Some(path);
             }
         }
@@ -356,13 +358,14 @@ impl TsgoLspClient {
             .output()
         {
             if output.status.success() {
-                let npm_root = String::from_utf8_lossy(&output.stdout);
+                #[allow(clippy::disallowed_types)]
+                let npm_root = std::string::String::from_utf8_lossy(&output.stdout);
                 let npm_root = npm_root.trim();
                 // npm root -g returns lib path, bin is sibling
                 if let Some(lib_parent) = std::path::Path::new(npm_root).parent() {
                     let tsgo_path = lib_parent.join("bin/tsgo");
                     if tsgo_path.exists() {
-                        return Some(tsgo_path.to_string_lossy().to_string());
+                        return Some(tsgo_path.to_string_lossy().into());
                     }
                 }
             }

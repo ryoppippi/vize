@@ -2,6 +2,11 @@
 //!
 //! Handles completions within script blocks including Vue Composition API,
 //! compiler macros, and import suggestions.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, Documentation, MarkupContent,
@@ -30,7 +35,7 @@ pub(crate) fn complete_script(ctx: &IdeContext, is_setup: bool) -> Vec<Completio
 
     // Use vize_croquis for accurate bindings in script
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 

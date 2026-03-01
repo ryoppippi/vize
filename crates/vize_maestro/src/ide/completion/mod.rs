@@ -7,6 +7,7 @@
 //! - Real completions from tsgo (when available)
 //!
 //! Uses vize_croquis for accurate scope analysis and type information.
+#![allow(clippy::disallowed_methods)]
 
 mod items;
 mod script;

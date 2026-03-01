@@ -5,6 +5,7 @@
 
 use super::types::VizeMapping;
 use vize_carton::append;
+use vize_carton::String;
 use vize_croquis::analysis::ComponentUsage;
 
 /// Generate a template expression with optional v-if narrowing.

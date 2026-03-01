@@ -2,6 +2,7 @@
 //!
 //! Provides the main `complete` and `complete_with_tsgo` methods
 //! that dispatch to block-specific handlers.
+#![allow(clippy::disallowed_types)]
 
 #[cfg(feature = "native")]
 use std::sync::Arc;

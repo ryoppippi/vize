@@ -14,6 +14,8 @@ use std::{
 
 use super::{LspDiagnostic, TsgoLspClient};
 use vize_carton::cstr;
+use vize_carton::FxHashMap;
+use vize_carton::String;
 
 impl TsgoLspClient {
     /// Open a virtual document (waits for diagnostics - slower but convenient for single files)
@@ -98,10 +100,8 @@ impl TsgoLspClient {
         &mut self,
         uris: &[String],
     ) -> Vec<(String, Vec<LspDiagnostic>)> {
-        use std::collections::HashMap;
-
         // Phase 1: Send all requests
-        let mut request_ids: HashMap<i64, String> = HashMap::new();
+        let mut request_ids: FxHashMap<i64, String> = FxHashMap::default();
         for uri in uris {
             let id = self.request_id.fetch_add(1, Ordering::SeqCst);
             let request = serde_json::json!({
@@ -181,7 +181,7 @@ impl TsgoLspClient {
             if let Some(msg_id) = msg.get("id") {
                 if msg_id.as_i64() == Some(id) {
                     if let Some(error) = msg.get("error") {
-                        return Err(cstr!("LSP error: {error:?}").to_string());
+                        return Err(cstr!("LSP error: {error:?}"));
                     }
                     return Ok(msg.get("result").cloned().unwrap_or(Value::Null));
                 }
@@ -205,31 +205,30 @@ impl TsgoLspClient {
 
     /// Send a message with Content-Length header
     pub(crate) fn send_message(&mut self, msg: &Value) -> Result<(), String> {
-        let content =
-            serde_json::to_string(msg).map_err(|e| cstr!("JSON error: {e}").to_string())?;
-        let header = cstr!("Content-Length: {}\r\n\r\n", content.len()).to_string();
+        #[allow(clippy::disallowed_methods)]
+        let content = serde_json::to_string(msg).map_err(|e| cstr!("JSON error: {e}"))?;
+        let header = cstr!("Content-Length: {}\r\n\r\n", content.len());
 
         self.stdin
             .write_all(header.as_bytes())
-            .map_err(|e| cstr!("Write error: {e}").to_string())?;
+            .map_err(|e| cstr!("Write error: {e}"))?;
         self.stdin
             .write_all(content.as_bytes())
-            .map_err(|e| cstr!("Write error: {e}").to_string())?;
-        self.stdin
-            .flush()
-            .map_err(|e| cstr!("Flush error: {e}").to_string())?;
+            .map_err(|e| cstr!("Write error: {e}"))?;
+        self.stdin.flush().map_err(|e| cstr!("Flush error: {e}"))?;
 
         Ok(())
     }
 
     /// Read a single LSP message
+    #[allow(clippy::disallowed_types)]
     pub(crate) fn read_message(&mut self) -> Result<Value, String> {
         // Read headers (with retry on WouldBlock for non-blocking mode)
         let mut content_length: usize = 0;
-        let mut headers_read = Vec::new();
+        let mut headers_read: Vec<std::string::String> = Vec::new();
 
         loop {
-            let mut line = String::new();
+            let mut line = std::string::String::new();
             let bytes_read = loop {
                 match self.stdout.read_line(&mut line) {
                     Ok(n) => break n,
@@ -238,7 +237,7 @@ impl TsgoLspClient {
                         thread::sleep(Duration::from_millis(1));
                         continue;
                     }
-                    Err(e) => return Err(cstr!("Read error: {e}").to_string()),
+                    Err(e) => return Err(cstr!("Read error: {e}")),
                 }
             };
 
@@ -246,8 +245,7 @@ impl TsgoLspClient {
                 // EOF - process may have exited
                 return Err(cstr!(
                     "EOF while reading headers. Headers read so far: {headers_read:?}"
-                )
-                .to_string());
+                ));
             }
 
             headers_read.push(line.clone());
@@ -260,12 +258,12 @@ impl TsgoLspClient {
             if let Some(len_str) = line.strip_prefix("Content-Length: ") {
                 content_length = len_str
                     .parse()
-                    .map_err(|e| cstr!("Invalid Content-Length: {e}").to_string())?;
+                    .map_err(|e| cstr!("Invalid Content-Length: {e}"))?;
             }
         }
 
         if content_length == 0 {
-            return Err(cstr!("No Content-Length header. Headers: {headers_read:?}").to_string());
+            return Err(cstr!("No Content-Length header. Headers: {headers_read:?}"));
         }
 
         // Read content (with retry on WouldBlock)
@@ -273,18 +271,18 @@ impl TsgoLspClient {
         let mut bytes_read = 0;
         while bytes_read < content_length {
             match self.stdout.read(&mut content[bytes_read..]) {
-                Ok(0) => return Err("EOF while reading content".to_string()),
+                Ok(0) => return Err("EOF while reading content".into()),
                 Ok(n) => bytes_read += n,
                 Err(e) if e.kind() == ErrorKind::WouldBlock => {
                     thread::sleep(Duration::from_millis(1));
                     continue;
                 }
-                Err(e) => return Err(cstr!("Read error: {e}").to_string()),
+                Err(e) => return Err(cstr!("Read error: {e}")),
             }
         }
 
-        let msg: Value = serde_json::from_slice(&content)
-            .map_err(|e| cstr!("JSON parse error: {e}").to_string())?;
+        let msg: Value =
+            serde_json::from_slice(&content).map_err(|e| cstr!("JSON parse error: {e}"))?;
 
         Ok(msg)
     }

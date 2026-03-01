@@ -2,6 +2,7 @@
 //!
 //! Extracts expressions from Vue templates and generates TypeScript
 //! for type checking and IntelliSense.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use vize_armature::RootNode;
 use vize_relief::ast::*;

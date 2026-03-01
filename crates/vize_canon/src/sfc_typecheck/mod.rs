@@ -72,7 +72,7 @@ mod tests {
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: "test".to_string(),
+            message: "test".into(),
             start: 0,
             end: 0,
             code: None,
@@ -270,7 +270,7 @@ const message = ref('Hello');
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Warning,
-            message: "warning 1".to_string(),
+            message: "warning 1".into(),
             start: 0,
             end: 0,
             code: None,
@@ -280,7 +280,7 @@ const message = ref('Hello');
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Warning,
-            message: "warning 2".to_string(),
+            message: "warning 2".into(),
             start: 0,
             end: 0,
             code: None,
@@ -299,7 +299,7 @@ const message = ref('Hello');
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: "error".to_string(),
+            message: "error".into(),
             start: 0,
             end: 0,
             code: None,
@@ -309,7 +309,7 @@ const message = ref('Hello');
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Warning,
-            message: "warning".to_string(),
+            message: "warning".into(),
             start: 0,
             end: 0,
             code: None,
@@ -319,7 +319,7 @@ const message = ref('Hello');
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Info,
-            message: "info".to_string(),
+            message: "info".into(),
             start: 0,
             end: 0,
             code: None,

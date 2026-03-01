@@ -3,6 +3,7 @@
 //! Provides find-all-references for:
 //! - Script bindings used in template
 //! - Script bindings used in other script code
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 //! - Script bindings used in style v-bind()
 
 mod script;

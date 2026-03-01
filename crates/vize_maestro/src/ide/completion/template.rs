@@ -2,6 +2,11 @@
 //!
 //! Handles completions for template directives, built-in components,
 //! Art blocks, and variant blocks.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{
     CompletionItem, CompletionItemKind, CompletionItemLabelDetails, CompletionResponse,
@@ -32,7 +37,7 @@ pub(crate) fn complete_template(ctx: &IdeContext) -> Vec<CompletionItem> {
 
     // Use vize_croquis for accurate scope analysis and type information
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 

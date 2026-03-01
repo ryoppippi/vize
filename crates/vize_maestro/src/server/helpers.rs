@@ -2,6 +2,7 @@
 //!
 //! Provides block snippet completions, lint hover info, and
 //! diagnostic publishing utilities.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{
     CompletionItem, CompletionItemKind, DiagnosticSeverity, Hover, HoverContents, InsertTextFormat,

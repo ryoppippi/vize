@@ -10,6 +10,7 @@ use crate::{
 
 use super::runner::TypeChecker;
 use vize_carton::cstr;
+use vize_carton::String;
 
 impl TypeChecker {
     /// Get type information at a specific offset.
@@ -39,10 +40,7 @@ impl TypeChecker {
                 let expr_end = abs_start + end;
 
                 if offset >= expr_start && offset <= expr_end {
-                    return Some((
-                        template[expr_start..expr_end].trim().to_string(),
-                        expr_start,
-                    ));
+                    return Some((template[expr_start..expr_end].trim().into(), expr_start));
                 }
 
                 pos = abs_start + end + 2;
@@ -68,14 +66,14 @@ impl TypeChecker {
         directive: &str,
         offset: usize,
     ) -> Option<(String, usize)> {
-        let pattern = cstr!("{directive}=\"").to_string();
+        let pattern = cstr!("{directive}=\"");
         let mut pos = 0;
 
-        while let Some(start) = template[pos..].find(&pattern) {
+        while let Some(start) = template[pos..].find(pattern.as_str()) {
             let abs_start = pos + start + pattern.len();
             if let Some(end) = template[abs_start..].find('"') {
                 if offset >= abs_start && offset <= abs_start + end {
-                    return Some((template[abs_start..abs_start + end].to_string(), abs_start));
+                    return Some((template[abs_start..abs_start + end].into(), abs_start));
                 }
                 pos = abs_start + end + 1;
             } else {
@@ -138,7 +136,7 @@ impl TypeChecker {
             return None;
         }
 
-        Some(expr[start..end].to_string())
+        Some(expr[start..end].into())
     }
 
     /// Get completions at a specific offset.
@@ -167,23 +165,24 @@ impl TypeChecker {
             };
 
             completions.push(
-                CompletionItem::new(name, kind)
-                    .with_detail(&binding.type_info.display)
+                CompletionItem::new(name.as_str(), kind)
+                    .with_detail(binding.type_info.display.as_str())
                     .with_priority(10),
             );
         }
 
         // Add components
         for name in ctx.components.keys() {
-            completions
-                .push(CompletionItem::new(name, CompletionKind::Component).with_priority(20));
+            completions.push(
+                CompletionItem::new(name.as_str(), CompletionKind::Component).with_priority(20),
+            );
         }
 
         // Add globals
         for (name, type_info) in &ctx.globals {
             completions.push(
-                CompletionItem::new(name, CompletionKind::Variable)
-                    .with_detail(&type_info.display)
+                CompletionItem::new(name.as_str(), CompletionKind::Variable)
+                    .with_detail(type_info.display.as_str())
                     .with_priority(30),
             );
         }

@@ -1,4 +1,5 @@
 //! Server state management.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -278,7 +279,7 @@ impl ServerState {
     /// Generate and cache virtual documents for a document.
     pub fn update_virtual_docs(&self, uri: &Url, content: &str) {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

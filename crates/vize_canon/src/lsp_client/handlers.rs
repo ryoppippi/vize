@@ -11,6 +11,7 @@ use std::{
     thread,
     time::Duration,
 };
+use vize_carton::String;
 
 use super::TsgoLspClient;
 
@@ -150,7 +151,7 @@ impl TsgoLspClient {
                                 .iter()
                                 .filter_map(|d| serde_json::from_value(d.clone()).ok())
                                 .collect();
-                            self.diagnostics.insert(uri_str.to_string(), diags);
+                            self.diagnostics.insert(uri_str.into(), diags);
                         }
                     }
                 }

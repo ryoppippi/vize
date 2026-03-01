@@ -2,6 +2,7 @@
 //!
 //! Finds references to symbols in template expressions,
 //! including mustache interpolations and directive bindings.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{Location, Position, Range};
 

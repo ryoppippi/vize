@@ -1,6 +1,7 @@
 //! Style virtual code generation.
 //!
 //! Preserves style content with 1:1 source mapping for CSS features.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use vize_atelier_sfc::SfcStyleBlock;
 

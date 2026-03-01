@@ -1,6 +1,7 @@
 //! Script virtual code generation.
 //!
 //! Preserves script content and generates bindings export for template.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use vize_atelier_sfc::SfcScriptBlock;
 

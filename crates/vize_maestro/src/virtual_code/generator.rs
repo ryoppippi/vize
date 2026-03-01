@@ -1,6 +1,7 @@
 //! Virtual code generator that transforms SFC into virtual documents.
 //!
 //! Uses arena allocation from vize_carton for optimal performance.
+#![allow(clippy::disallowed_methods)]
 
 use vize_atelier_sfc::SfcDescriptor;
 use vize_carton::cstr;

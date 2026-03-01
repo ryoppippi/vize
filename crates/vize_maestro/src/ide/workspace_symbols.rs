@@ -4,6 +4,11 @@
 //! - Vue components (from file names)
 //! - Script bindings (functions, variables, classes)
 //! - CSS classes and IDs
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{Location, Position, Range, SymbolInformation, SymbolKind, Url};
 
@@ -70,7 +75,7 @@ impl WorkspaceSymbolsService {
         symbols: &mut Vec<SymbolInformation>,
     ) {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

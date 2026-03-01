@@ -4,6 +4,7 @@
 //! including responses to client requests, server-initiated requests, and
 //! notifications like `publishDiagnostics`.
 
+#[allow(clippy::disallowed_types)]
 use std::sync::Arc;
 
 use dashmap::DashMap;
@@ -19,21 +20,27 @@ use super::{
     types::{LspDiagnostic, TsgoBridgeError},
 };
 use vize_carton::cstr;
+use vize_carton::String;
 
 /// Type alias for pending requests map.
+#[allow(clippy::disallowed_types)]
 pub(crate) type PendingMap = Arc<DashMap<u64, oneshot::Sender<Result<Value, TsgoBridgeError>>>>;
 
 /// Type alias for diagnostics cache map.
+#[allow(clippy::disallowed_types)]
 pub(crate) type DiagnosticsCache = Arc<DashMap<String, Vec<LspDiagnostic>>>;
 
 /// Type alias for shared stdin writer.
+#[allow(clippy::disallowed_types)]
 pub(crate) type SharedStdin =
     Arc<tokio::sync::Mutex<Option<tokio::io::BufWriter<tokio::process::ChildStdin>>>>;
 
 /// Type alias for open documents tracking (URI -> version).
+#[allow(clippy::disallowed_types)]
 pub(crate) type OpenDocuments = Arc<DashMap<String, i32>>;
 
 /// Start the response reader task that processes messages from tsgo stdout.
+#[allow(clippy::disallowed_types, clippy::disallowed_methods)]
 pub(crate) fn start_reader_task(
     stdout: TokioChildStdout,
     pending: PendingMap,
@@ -43,7 +50,8 @@ pub(crate) fn start_reader_task(
     tokio::spawn(async move {
         tracing::info!("tsgo_bridge: reader task started");
         let mut reader = BufReader::new(stdout);
-        let mut headers = String::new();
+        #[allow(clippy::disallowed_types)]
+        let mut headers = std::string::String::new();
         let mut content_length: usize = 0;
 
         loop {
@@ -52,7 +60,8 @@ pub(crate) fn start_reader_task(
 
             // Read headers
             loop {
-                let mut line = String::new();
+                #[allow(clippy::disallowed_types)]
+                let mut line = std::string::String::new();
                 match reader.read_line(&mut line).await {
                     Ok(0) => {
                         tracing::warn!("tsgo_bridge: reader EOF");
@@ -154,7 +163,7 @@ pub(crate) fn start_reader_task(
                             );
                             Err(TsgoBridgeError::ResponseError {
                                 code: error.code,
-                                message: error.message,
+                                message: error.message.into(),
                             })
                         } else {
                             Ok(message.result.unwrap_or(Value::Null))
@@ -179,7 +188,7 @@ pub(crate) fn start_reader_task(
                                     diags.len(),
                                     uri
                                 );
-                                diagnostics_cache.insert(uri.to_string(), diags);
+                                diagnostics_cache.insert(uri.into(), diags);
                             }
                         }
                     }

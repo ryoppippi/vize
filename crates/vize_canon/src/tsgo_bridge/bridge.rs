@@ -4,13 +4,12 @@
 //! communicating with, and shutting down the tsgo process. Also includes
 //! the `BatchTypeChecker` for efficient multi-document checking.
 
+#[allow(clippy::disallowed_types)]
+use std::sync::Arc;
 use std::{
     path::PathBuf,
     process::Stdio,
-    sync::{
-        atomic::{AtomicBool, AtomicU64, Ordering},
-        Arc,
-    },
+    sync::atomic::{AtomicBool, AtomicU64, Ordering},
 };
 
 use dashmap::DashMap;
@@ -29,6 +28,8 @@ use super::{
     types::*,
 };
 use vize_carton::cstr;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Bridge to tsgo for type checking via LSP.
 pub struct TsgoBridge {
@@ -61,6 +62,7 @@ impl TsgoBridge {
     }
 
     /// Create a new tsgo bridge with custom configuration.
+    #[allow(clippy::disallowed_types)]
     pub fn with_config(config: TsgoBridgeConfig) -> Self {
         let profiler = if config.enable_profiling {
             Profiler::enabled()
@@ -106,21 +108,19 @@ impl TsgoBridge {
 
         tracing::info!("tsgo_bridge: spawning process...");
         let mut child = cmd.spawn().map_err(|e| {
-            TsgoBridgeError::SpawnFailed(
-                cstr!("Failed to spawn tsgo at {tsgo_path:?}: {e}").to_string(),
-            )
+            TsgoBridgeError::SpawnFailed(cstr!("Failed to spawn tsgo at {tsgo_path:?}: {e}"))
         })?;
         tracing::info!("tsgo_bridge: process spawned");
 
         let stdin = child
             .stdin
             .take()
-            .ok_or_else(|| TsgoBridgeError::SpawnFailed("Failed to get stdin".to_string()))?;
+            .ok_or_else(|| TsgoBridgeError::SpawnFailed("Failed to get stdin".into()))?;
 
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| TsgoBridgeError::SpawnFailed("Failed to get stdout".to_string()))?;
+            .ok_or_else(|| TsgoBridgeError::SpawnFailed("Failed to get stdout".into()))?;
 
         let stderr = child.stderr.take();
 
@@ -131,7 +131,8 @@ impl TsgoBridge {
         if let Some(stderr) = stderr {
             tokio::spawn(async move {
                 let mut reader = BufReader::new(stderr);
-                let mut line = String::new();
+                #[allow(clippy::disallowed_types)]
+                let mut line = std::string::String::new();
                 loop {
                     line.clear();
                     match reader.read_line(&mut line).await {
@@ -145,12 +146,15 @@ impl TsgoBridge {
 
         // Start response reader task
         tracing::info!("tsgo_bridge: starting reader task...");
-        reader::start_reader_task(
-            stdout,
-            Arc::clone(&self.pending),
-            Arc::clone(&self.diagnostics_cache),
-            Arc::clone(&self.stdin),
-        );
+        #[allow(clippy::disallowed_types)]
+        {
+            reader::start_reader_task(
+                stdout,
+                Arc::clone(&self.pending),
+                Arc::clone(&self.diagnostics_cache),
+                Arc::clone(&self.stdin),
+            );
+        }
 
         // Initialize LSP
         tracing::info!("tsgo_bridge: calling initialize()...");
@@ -276,7 +280,7 @@ impl TsgoBridge {
         }
 
         Err(TsgoBridgeError::SpawnFailed(
-            "tsgo not found. Install with: npm install -D @typescript/native-preview".to_string(),
+            "tsgo not found. Install with: npm install -D @typescript/native-preview".into(),
         ))
     }
 
@@ -288,8 +292,8 @@ impl TsgoBridge {
             .config
             .working_dir
             .as_ref()
-            .map(|p| cstr!("file://{}", p.display()).to_string())
-            .unwrap_or_else(|| "file:///".to_string());
+            .map(|p| cstr!("file://{}", p.display()))
+            .unwrap_or_else(|| "file:///".into());
 
         tracing::info!("tsgo_bridge: LSP rootUri = {}", root_uri);
 
@@ -337,14 +341,14 @@ impl TsgoBridge {
         let request = JsonRpcRequest {
             jsonrpc: "2.0",
             id,
-            method: method.to_string(),
+            method: method.into(),
             params,
         };
 
         let content = serde_json::to_string(&request)
-            .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+            .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
 
-        let message = cstr!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
+        let message = cstr!("Content-Length: {}\r\n\r\n{}", content.len(), content);
 
         // Create response channel
         let (tx, rx) = oneshot::channel();
@@ -357,11 +361,11 @@ impl TsgoBridge {
                 stdin
                     .write_all(message.as_bytes())
                     .await
-                    .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+                    .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
                 stdin
                     .flush()
                     .await
-                    .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+                    .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
             } else {
                 return Err(TsgoBridgeError::NotInitialized);
             }
@@ -373,7 +377,7 @@ impl TsgoBridge {
         {
             Ok(Ok(result)) => result,
             Ok(Err(_)) => Err(TsgoBridgeError::CommunicationError(
-                "Response channel closed".to_string(),
+                "Response channel closed".into(),
             )),
             Err(_) => {
                 self.pending.remove(&id);
@@ -390,25 +394,25 @@ impl TsgoBridge {
     ) -> Result<(), TsgoBridgeError> {
         let notification = JsonRpcNotification {
             jsonrpc: "2.0",
-            method: method.to_string(),
+            method: method.into(),
             params,
         };
 
         let content = serde_json::to_string(&notification)
-            .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+            .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
 
-        let message = cstr!("Content-Length: {}\r\n\r\n{}", content.len(), content).to_string();
+        let message = cstr!("Content-Length: {}\r\n\r\n{}", content.len(), content);
 
         let mut stdin_guard = self.stdin.lock().await;
         if let Some(ref mut stdin) = *stdin_guard {
             stdin
                 .write_all(message.as_bytes())
                 .await
-                .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+                .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
             stdin
                 .flush()
                 .await
-                .map_err(|e| TsgoBridgeError::CommunicationError(e.to_string()))?;
+                .map_err(|e| TsgoBridgeError::CommunicationError(e.to_compact_string()))?;
             Ok(())
         } else {
             Err(TsgoBridgeError::NotInitialized)
@@ -431,12 +435,12 @@ impl TsgoBridge {
         // tsgo only publishes diagnostics for file:// URIs
         let uri = if name.starts_with("file://") || name.starts_with('/') {
             if name.starts_with("file://") {
-                name.to_string()
+                String::from(name)
             } else {
-                cstr!("file://{name}").to_string()
+                cstr!("file://{name}")
             }
         } else {
-            cstr!("{VIRTUAL_URI_SCHEME}://{name}").to_string()
+            cstr!("{VIRTUAL_URI_SCHEME}://{name}")
         };
 
         // Clear cached diagnostics for this URI
@@ -477,12 +481,12 @@ impl TsgoBridge {
         // Build URI first to check if document is already open
         let uri = if name.starts_with("file://") || name.starts_with('/') {
             if name.starts_with("file://") {
-                name.to_string()
+                String::from(name)
             } else {
-                cstr!("file://{name}").to_string()
+                cstr!("file://{name}")
             }
         } else {
-            cstr!("{VIRTUAL_URI_SCHEME}://{name}").to_string()
+            cstr!("{VIRTUAL_URI_SCHEME}://{name}")
         };
 
         // Check if document is already open
@@ -608,7 +612,7 @@ impl TsgoBridge {
                     );
                     // Cache for later
                     self.diagnostics_cache
-                        .insert(uri.to_string(), diags.clone());
+                        .insert(String::from(uri), diags.clone());
                     return Ok(diags);
                 }
                 tracing::info!(
@@ -756,7 +760,7 @@ impl TsgoBridge {
         }
 
         let hover: LspHover = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(cstr!("Failed to parse hover: {e}").to_string())
+            TsgoBridgeError::CommunicationError(cstr!("Failed to parse hover: {e}"))
         })?;
 
         Ok(Some(hover))
@@ -802,9 +806,7 @@ impl TsgoBridge {
 
         // Try parsing as definition response (can be location, array, or links)
         let response: LspDefinitionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(
-                cstr!("Failed to parse definition: {e}").to_string(),
-            )
+            TsgoBridgeError::CommunicationError(cstr!("Failed to parse definition: {e}"))
         })?;
 
         Ok(response.into_locations())
@@ -853,9 +855,7 @@ impl TsgoBridge {
 
         // Try parsing as completion response (can be array or list)
         let response: LspCompletionResponse = serde_json::from_value(result).map_err(|e| {
-            TsgoBridgeError::CommunicationError(
-                cstr!("Failed to parse completion: {e}").to_string(),
-            )
+            TsgoBridgeError::CommunicationError(cstr!("Failed to parse completion: {e}"))
         })?;
 
         Ok(response.items())
@@ -875,6 +875,7 @@ impl Drop for TsgoBridge {
 }
 
 /// Batch type checker for checking multiple documents efficiently.
+#[allow(clippy::disallowed_types)]
 pub struct BatchTypeChecker {
     /// Bridge instance
     bridge: Arc<TsgoBridge>,
@@ -882,6 +883,7 @@ pub struct BatchTypeChecker {
     batch_size: usize,
 }
 
+#[allow(clippy::disallowed_types)]
 impl BatchTypeChecker {
     /// Create a new batch type checker.
     pub fn new(bridge: Arc<TsgoBridge>) -> Self {

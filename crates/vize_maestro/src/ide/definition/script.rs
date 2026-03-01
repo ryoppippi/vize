@@ -1,6 +1,7 @@
 //! Script and style definition lookup.
 //!
 //! Handles go-to-definition within script blocks and v-bind() in styles.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 
@@ -20,7 +21,7 @@ pub(crate) fn definition_in_script(ctx: &IdeContext) -> Option<GotoDefinitionRes
     }
 
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 
@@ -68,7 +69,7 @@ pub(crate) fn definition_in_style(ctx: &IdeContext) -> Option<GotoDefinitionResp
     let before_cursor = &ctx.content[..ctx.offset];
     if before_cursor.contains("v-bind(") {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 

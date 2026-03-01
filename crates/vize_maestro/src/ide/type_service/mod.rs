@@ -3,6 +3,7 @@
 //! Integrates vize_vitrine's strict type checker with the LSP server.
 //! Uses croquis for semantic analysis and provides comprehensive type diagnostics.
 //! Also supports batch type checking via tsgo CLI.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 mod diagnostics;
 mod type_context;
@@ -66,7 +67,7 @@ impl TypeService {
     /// Get type information at a specific position.
     pub fn get_type_at(ctx: &IdeContext) -> Option<vize_canon::TypeInfo> {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -95,7 +96,7 @@ impl TypeService {
     /// Get type-aware completions.
     pub fn get_completions(ctx: &IdeContext) -> Vec<vize_canon::CompletionItem> {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 

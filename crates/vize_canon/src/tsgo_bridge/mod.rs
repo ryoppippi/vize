@@ -27,7 +27,7 @@ mod tests {
     #[test]
     fn test_virtual_uri_format() {
         let name = "Component.vue.ts";
-        let uri = cstr!("{VIRTUAL_URI_SCHEME}://{name}").to_string();
+        let uri = cstr!("{VIRTUAL_URI_SCHEME}://{name}");
         assert_eq!(uri, "vize-virtual://Component.vue.ts");
     }
 
@@ -50,8 +50,8 @@ mod tests {
             },
             severity: Some(1),
             code: None,
-            source: Some("ts".to_string()),
-            message: "Type error".to_string(),
+            source: Some("ts".into()),
+            message: "Type error".into(),
             related_information: None,
         });
 

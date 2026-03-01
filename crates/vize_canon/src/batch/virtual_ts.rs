@@ -8,6 +8,7 @@ use super::SfcBlockType;
 use vize_atelier_sfc::SfcDescriptor;
 use vize_carton::append;
 use vize_carton::cstr;
+use vize_carton::String;
 use vize_croquis::{Analyzer, AnalyzerOptions, Croquis};
 
 /// Result of virtual TypeScript generation.
@@ -53,7 +54,7 @@ impl VirtualTsGenerator {
 
     /// Generate virtual TypeScript from SFC descriptor.
     pub fn generate(&self, descriptor: &SfcDescriptor, analysis: &Croquis) -> VirtualTsResult {
-        let mut code = String::new();
+        let mut code = String::default();
         let mut source_map = SfcSourceMap::new();
 
         // Header
@@ -228,8 +229,8 @@ impl VirtualTsGenerator {
     /// Generate virtual TypeScript from SFC content string.
     pub fn generate_from_content(&self, content: &str) -> Result<VirtualTsResult, String> {
         let options = vize_atelier_sfc::SfcParseOptions::default();
-        let descriptor = vize_atelier_sfc::parse_sfc(content, options)
-            .map_err(|e| cstr!("{e:?}").to_string())?;
+        let descriptor =
+            vize_atelier_sfc::parse_sfc(content, options).map_err(|e| cstr!("{e:?}"))?;
 
         let mut analyzer = Analyzer::with_options(AnalyzerOptions::full());
 

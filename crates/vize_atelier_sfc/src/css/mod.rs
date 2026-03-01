@@ -10,7 +10,9 @@
 //! - `transform`: v-bind() extraction and byte-level utilities
 //! - `scoped`: scoped CSS transformation (:deep, :slotted, :global)
 
-use vize_carton::{String, ToCompactString};
+use vize_carton::String;
+#[cfg(not(feature = "native"))]
+use vize_carton::ToCompactString;
 #[cfg(feature = "native")]
 mod parser;
 mod scoped;

@@ -2,6 +2,7 @@
 //!
 //! Finds usages of destructured props in script setup code
 //! and generates `#props.` prefix hints.
+#![allow(clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, Position, Range};
 

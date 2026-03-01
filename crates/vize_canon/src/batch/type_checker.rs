@@ -169,7 +169,7 @@ mod tests {
             file: PathBuf::from("test.vue"),
             line: 0,
             column: 0,
-            message: "error".to_string(),
+            message: "error".into(),
             code: Some(2304),
             severity: 1,
             block_type: None,

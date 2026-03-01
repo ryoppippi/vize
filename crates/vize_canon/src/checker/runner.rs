@@ -118,10 +118,10 @@ impl TypeChecker {
         ctx: &TypeContext,
         result: &mut CheckResult,
     ) {
-        let pattern = cstr!("{directive}=\"").to_string();
+        let pattern = cstr!("{directive}=\"");
         let mut pos = 0;
 
-        while let Some(start) = template[pos..].find(&pattern) {
+        while let Some(start) = template[pos..].find(pattern.as_str()) {
             let abs_start = pos + start + pattern.len();
             if let Some(end) = template[abs_start..].find('"') {
                 let expr = &template[abs_start..abs_start + end];
@@ -299,7 +299,7 @@ impl TypeChecker {
         if !ctx.has_binding(ident) && !ctx.globals.contains_key(ident) {
             result.add_diagnostic(TypeDiagnostic::error(
                 TypeErrorCode::UnknownIdentifier,
-                cstr!("Cannot find name '{ident}'").to_string(),
+                cstr!("Cannot find name '{ident}'"),
                 start,
                 end,
             ));

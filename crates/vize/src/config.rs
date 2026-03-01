@@ -3,6 +3,8 @@
 //! Reads `vize.config.json` from the current working directory.
 //! Also provides JSON Schema generation for editor autocompletion.
 
+#![allow(clippy::disallowed_types)]
+
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

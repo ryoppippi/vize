@@ -30,6 +30,7 @@ pub enum ScriptExtension {
 }
 
 #[derive(Args, Default)]
+#[allow(clippy::disallowed_types)]
 pub struct BuildArgs {
     /// Glob pattern(s) to match .vue files (default: ./**/*.vue)
     #[arg(default_value = "./**/*.vue")]

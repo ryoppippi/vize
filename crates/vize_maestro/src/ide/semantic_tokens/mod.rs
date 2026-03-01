@@ -5,6 +5,7 @@
 //! - Vue directives
 //! - Script bindings
 //! - CSS v-bind variables
+#![allow(clippy::disallowed_methods)]
 
 mod encoding;
 mod expressions;
@@ -34,7 +35,7 @@ impl SemanticTokensService {
         }
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

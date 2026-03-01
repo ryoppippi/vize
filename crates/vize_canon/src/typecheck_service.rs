@@ -5,12 +5,14 @@
 
 use crate::tsgo_bridge::{TsgoBridge, TsgoBridgeError};
 use std::path::Path;
+#[allow(clippy::disallowed_types)]
 use std::sync::Arc;
 use vize_carton::cstr;
 use vize_carton::String;
 use vize_croquis::virtual_ts::{generate_virtual_ts, VirtualTsOutput};
 
 /// Type check service for Vue SFCs.
+#[allow(clippy::disallowed_types)]
 pub struct TypeCheckService {
     /// The tsgo bridge.
     bridge: Arc<TsgoBridge>,
@@ -89,6 +91,7 @@ pub struct SfcRelatedInfo {
 
 impl TypeCheckService {
     /// Create a new type check service.
+    #[allow(clippy::disallowed_types)]
     pub async fn new() -> Result<Self, TsgoBridgeError> {
         let bridge = TsgoBridge::new();
         bridge.spawn().await?;

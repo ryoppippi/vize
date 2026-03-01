@@ -1,4 +1,9 @@
 //! Diagnostic collectors for SFC parser, template parser, linter, and Musea.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{
     CodeDescription, Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range, Url,
@@ -72,7 +77,7 @@ impl DiagnosticService {
         use vize_patina::rules::musea::MuseaLinter;
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -205,7 +210,7 @@ impl DiagnosticService {
     /// Collect SFC parser diagnostics.
     pub(super) fn collect_sfc_diagnostics(uri: &Url, content: &str) -> Vec<Diagnostic> {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -231,7 +236,8 @@ impl DiagnosticService {
                     range,
                     severity: Some(DiagnosticSeverity::ERROR),
                     source: Some(sources::SFC_PARSER.to_string()),
-                    message: err.message,
+                    #[allow(clippy::disallowed_methods)]
+                    message: err.message.to_string(),
                     ..Default::default()
                 }]
             }
@@ -241,7 +247,7 @@ impl DiagnosticService {
     /// Collect template parser diagnostics.
     pub(super) fn collect_template_diagnostics(uri: &Url, content: &str) -> Vec<Diagnostic> {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -280,7 +286,8 @@ impl DiagnosticService {
                     severity: Some(DiagnosticSeverity::ERROR),
                     code: Some(NumberOrString::Number(error.code as i32)),
                     source: Some(sources::TEMPLATE_PARSER.to_string()),
-                    message: error.message.clone(),
+                    #[allow(clippy::disallowed_methods)]
+                    message: error.message.to_string(),
                     ..Default::default()
                 })
             })
@@ -290,7 +297,7 @@ impl DiagnosticService {
     /// Collect linter diagnostics from vize_patina.
     pub(super) fn collect_lint_diagnostics(uri: &Url, content: &str) -> Vec<Diagnostic> {
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

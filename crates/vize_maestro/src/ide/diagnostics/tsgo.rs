@@ -2,6 +2,7 @@
 //!
 //! This module generates virtual TypeScript from Vue SFCs and uses the tsgo
 //! LSP bridge to collect type-checking diagnostics.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{Diagnostic, DiagnosticSeverity, Position, Range, Url};
 
@@ -258,7 +259,7 @@ impl DiagnosticService {
         use vize_croquis::{Analyzer, AnalyzerOptions};
 
         let options = SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -323,7 +324,8 @@ impl DiagnosticService {
         let line_mappings = Self::parse_vize_map_comments(&code);
 
         Some(VirtualTsResult {
-            code,
+            #[allow(clippy::disallowed_methods)]
+            code: code.to_string(),
             user_code_start_line,
             sfc_script_start_line,
             template_scope_start_line,

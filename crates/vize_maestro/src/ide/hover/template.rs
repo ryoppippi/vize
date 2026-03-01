@@ -2,6 +2,11 @@
 //!
 //! Provides hover information for template expressions, Vue directives,
 //! and template bindings from script setup.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind};
 use vize_croquis::{Analyzer, AnalyzerOptions};
@@ -137,7 +142,7 @@ impl HoverService {
     pub(super) fn hover_ts_binding(ctx: &IdeContext, word: &str) -> Option<Hover> {
         // Parse SFC to get script content
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 

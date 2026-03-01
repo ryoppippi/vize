@@ -18,6 +18,9 @@ use vize_atelier_sfc::{
     compile_sfc, parse_sfc, ScriptCompileOptions, SfcCompileOptions, SfcParseOptions,
     StyleCompileOptions, TemplateCompileOptions,
 };
+use vize_carton::cstr;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 use super::{
     config::{
@@ -129,9 +132,15 @@ pub(crate) fn run(args: BuildArgs) {
                     fs::create_dir_all(parent).expect("Failed to create output subdirectory");
                 }
 
-                let content = match args.format {
+                let content: String = match args.format {
                     OutputFormat::Js => output.code,
-                    OutputFormat::Json => serde_json::to_string_pretty(&output).unwrap_or_default(),
+                    OutputFormat::Json =>
+                    {
+                        #[allow(clippy::disallowed_methods)]
+                        serde_json::to_string_pretty(&output)
+                            .unwrap_or_default()
+                            .into()
+                    }
                     OutputFormat::Stats => unreachable!(),
                 };
 
@@ -332,7 +341,8 @@ pub(crate) fn run(args: BuildArgs) {
 }
 
 /// Collect `.vue` files matching the given glob patterns.
-fn collect_files(patterns: &[String]) -> Vec<PathBuf> {
+#[allow(clippy::disallowed_types)]
+fn collect_files(patterns: &[std::string::String]) -> Vec<PathBuf> {
     let mut files = Vec::new();
 
     for pattern in patterns {
@@ -361,13 +371,13 @@ fn parse_pattern(pattern: &str) -> (String, String) {
         if let Some(last_slash) = root_part.rfind('/') {
             let root = &pattern[..last_slash];
             let root = if root.is_empty() { "." } else { root };
-            return (root.to_string(), pattern.to_string());
+            return (root.to_compact_string(), pattern.to_compact_string());
         }
     }
 
     let path = std::path::Path::new(pattern);
     if path.is_dir() {
-        return (pattern.to_string(), format!("{}/**/*.vue", pattern));
+        return (pattern.to_compact_string(), cstr!("{}/**/*.vue", pattern));
     }
 
     if path.is_file() && pattern.ends_with(".vue") {
@@ -378,14 +388,15 @@ fn parse_pattern(pattern: &str) -> (String, String) {
             } else {
                 &parent_str
             };
-            return (parent_str.to_string(), pattern.to_string());
+            return (parent_str.to_compact_string(), pattern.to_compact_string());
         }
     }
 
-    (".".to_string(), pattern.to_string())
+    (".".into(), pattern.to_compact_string())
 }
 
 /// Check whether a file path matches a glob-like pattern.
+#[allow(clippy::disallowed_types, clippy::disallowed_methods)]
 fn pattern_matches(path: &std::path::Path, pattern: &str) -> bool {
     let path_str = path.to_string_lossy().replace("\\", "/");
 
@@ -418,11 +429,11 @@ fn detect_script_lang(source: &str) -> String {
 
     if let Some(captures) = script_pattern.captures(source) {
         if let Some(lang) = captures.get(1) {
-            return lang.as_str().to_string();
+            return lang.as_str().to_compact_string();
         }
     }
 
-    "js".to_string()
+    "js".into()
 }
 
 /// Compile a single `.vue` file with profiling information.
@@ -437,17 +448,17 @@ fn compile_file_with_profile(
     // Read file
     let source = fs::read_to_string(path).map_err(|e| CompileError {
         path: path.clone(),
-        error: format!("Failed to read file: {}", e),
+        error: cstr!("Failed to read file: {}", e),
         phase: ErrorPhase::Read,
     })?;
 
     let file_size = source.len();
 
-    let filename = path
+    let filename: String = path
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("anonymous.vue")
-        .to_string();
+        .into();
 
     let script_lang = detect_script_lang(&source);
 

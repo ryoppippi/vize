@@ -5,6 +5,7 @@
 
 use super::types::VirtualTsOptions;
 use vize_carton::append;
+use vize_carton::String;
 
 /// Vue compiler macros - these are defined inside setup scope, NOT globally.
 /// This ensures they're only valid within <script setup>.
@@ -55,7 +56,7 @@ declare global {
 /// Includes Vue core globals ($attrs, $slots, $refs, $emit) and
 /// user-configurable plugin globals ($t, $route, etc.).
 pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
-    let mut ctx = String::new();
+    let mut ctx = String::default();
 
     // Vue core globals (always present)
     ctx.push_str("    // Vue instance context (available in template)\n");

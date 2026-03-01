@@ -3,6 +3,7 @@
 //! Provides inlay hints for:
 //! - Props destructure (show `#props.` prefix for destructured props in template and script)
 //!
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 //! Uses vize_croquis for proper scope analysis to accurately identify destructured props.
 
 mod script;
@@ -20,7 +21,7 @@ impl InlayHintService {
         let mut hints = Vec::new();
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

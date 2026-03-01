@@ -32,7 +32,8 @@ pub(crate) fn format_document(
             start: Position::new(0, 0),
             end: Position::new(line_count, last_line_len),
         },
-        new_text: formatted.code,
+        #[allow(clippy::disallowed_methods)]
+        new_text: formatted.code.to_string(),
     }])
 }
 

@@ -5,6 +5,7 @@
 
 use vize_carton::append;
 use vize_carton::cstr;
+use vize_carton::String;
 use vize_croquis::Croquis;
 
 /// Generate Props type definition at module level.
@@ -148,7 +149,7 @@ pub(crate) fn extract_interface_fields(script: &str, type_name: &str) -> Vec<Str
                         .chars()
                         .all(|c| c.is_alphanumeric() || c == '_' || c == '$')
                 {
-                    fields.push(field_name.to_string());
+                    fields.push(field_name.into());
                 }
             }
         }
@@ -160,9 +161,9 @@ pub(crate) fn extract_interface_fields(script: &str, type_name: &str) -> Vec<Str
 /// Find the body of an interface or type declaration in script content.
 fn find_type_body<'a>(script: &'a str, type_name: &str) -> Option<&'a str> {
     for pattern in &[
-        cstr!("interface {type_name} ").to_string(),
-        cstr!("interface {type_name}{{").to_string(),
-        cstr!("type {type_name} ").to_string(),
+        cstr!("interface {type_name} "),
+        cstr!("interface {type_name}{{"),
+        cstr!("type {type_name} "),
     ] {
         if let Some(pos) = script.find(pattern.as_str()) {
             let rest = &script[pos..];

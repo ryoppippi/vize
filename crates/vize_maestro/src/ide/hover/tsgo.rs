@@ -2,6 +2,11 @@
 //!
 //! Provides offset conversion between SFC and virtual TypeScript documents,
 //! and conversion of tsgo hover responses to LSP hover format.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{Hover, HoverContents, MarkupContent, MarkupKind, Range};
 use vize_canon::{LspHover, LspHoverContents, LspMarkedString};
@@ -20,7 +25,7 @@ impl HoverService {
 
         // Get template block start offset in SFC
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -52,7 +57,7 @@ impl HoverService {
         let virtual_docs = ctx.virtual_docs.as_ref()?;
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: ctx.uri.path().to_string(),
+            filename: ctx.uri.path().to_string().into(),
             ..Default::default()
         };
 

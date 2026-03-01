@@ -4,7 +4,9 @@
 //! including v-for, v-slot, and event handler scopes. Uses recursive
 //! tree-based generation so nested scopes are properly contained.
 
-use std::collections::{HashMap, HashSet};
+use vize_carton::FxHashMap;
+use vize_carton::FxHashSet;
+use vize_carton::String;
 
 use vize_croquis::{
     analysis::ComponentUsage, naming::to_pascal_case, Croquis, EventHandlerScopeData, Scope,
@@ -22,16 +24,16 @@ use vize_carton::cstr;
 /// Context for recursive scope generation, bundling shared parameters.
 pub(crate) struct ScopeGenContext<'a> {
     pub(crate) summary: &'a Croquis,
-    pub(crate) expressions_by_scope: &'a HashMap<u32, Vec<&'a vize_croquis::TemplateExpression>>,
-    pub(crate) children_map: &'a HashMap<u32, Vec<ScopeId>>,
+    pub(crate) expressions_by_scope: &'a FxHashMap<u32, Vec<&'a vize_croquis::TemplateExpression>>,
+    pub(crate) children_map: &'a FxHashMap<u32, Vec<ScopeId>>,
     pub(crate) template_offset: u32,
 }
 
 /// Context for recursive component prop checks inside v-for scopes.
 pub(crate) struct VForPropsContext<'a> {
     pub(crate) summary: &'a Croquis,
-    pub(crate) components_by_scope: &'a HashMap<u32, Vec<(usize, &'a ComponentUsage)>>,
-    pub(crate) children_map: &'a HashMap<u32, Vec<ScopeId>>,
+    pub(crate) components_by_scope: &'a FxHashMap<u32, Vec<(usize, &'a ComponentUsage)>>,
+    pub(crate) children_map: &'a FxHashMap<u32, Vec<ScopeId>>,
     pub(crate) template_offset: u32,
 }
 
@@ -45,7 +47,7 @@ pub(crate) fn generate_scope_closures(
     template_offset: u32,
 ) {
     // Group expressions by scope_id
-    let mut expressions_by_scope: HashMap<u32, Vec<_>> = HashMap::new();
+    let mut expressions_by_scope: FxHashMap<u32, Vec<_>> = FxHashMap::default();
     for expr in &summary.template_expressions {
         expressions_by_scope
             .entry(expr.scope_id.as_u32())
@@ -54,7 +56,7 @@ pub(crate) fn generate_scope_closures(
     }
 
     // Build scope tree: parent_scope_id -> Vec<child ScopeId>
-    let mut children_map: HashMap<u32, Vec<ScopeId>> = HashMap::new();
+    let mut children_map: FxHashMap<u32, Vec<ScopeId>> = FxHashMap::default();
     for scope in summary.scopes.iter() {
         if let Some(parent_id) = scope.parent() {
             children_map
@@ -66,7 +68,7 @@ pub(crate) fn generate_scope_closures(
 
     // Determine which scopes are nested inside a closure scope (VFor/VSlot).
     // These will be generated recursively inside their parent, not at top level.
-    let nested_scope_ids: HashSet<ScopeId> = summary
+    let nested_scope_ids: FxHashSet<ScopeId> = summary
         .scopes
         .iter()
         .filter(|scope| {
@@ -133,14 +135,14 @@ fn generate_undefined_refs(
     }
 
     // Collect type export names to exclude from undefined refs
-    let type_export_names: HashSet<&str> = summary
+    let type_export_names: FxHashSet<&str> = summary
         .type_exports
         .iter()
         .map(|te| te.name.as_str())
         .collect();
 
     ts.push_str("\n  // Undefined references from template:\n");
-    let mut seen_names: HashSet<&str> = HashSet::new();
+    let mut seen_names: FxHashSet<&str> = FxHashSet::default();
     for undef in &summary.undefined_refs {
         if !seen_names.insert(undef.name.as_str()) {
             continue;
@@ -155,7 +157,7 @@ fn generate_undefined_refs(
 
         let gen_start = ts.len();
         // Use void expression to reference the name without creating an unused variable
-        let expr_code = cstr!("  void ({});\n", undef.name).to_string();
+        let expr_code = cstr!("  void ({});\n", undef.name);
         let name_offset = expr_code.find(undef.name.as_str()).unwrap_or(0);
         let gen_name_start = gen_start + name_offset;
         let gen_name_end = gen_name_start + undef.name.len();
@@ -178,7 +180,7 @@ fn generate_component_props(
     ts: &mut String,
     mappings: &mut Vec<VizeMapping>,
     summary: &Croquis,
-    children_map: &HashMap<u32, Vec<ScopeId>>,
+    children_map: &FxHashMap<u32, Vec<ScopeId>>,
     template_offset: u32,
 ) {
     if summary.component_usages.is_empty() {
@@ -186,7 +188,8 @@ fn generate_component_props(
     }
 
     // Group component usages by scope_id
-    let mut components_by_scope: HashMap<u32, Vec<(usize, &ComponentUsage)>> = HashMap::new();
+    let mut components_by_scope: FxHashMap<u32, Vec<(usize, &ComponentUsage)>> =
+        FxHashMap::default();
     for (idx, usage) in summary.component_usages.iter().enumerate() {
         components_by_scope
             .entry(usage.scope_id.as_u32())
@@ -236,7 +239,7 @@ fn generate_component_props(
     }
 
     // Collect all v-for scope IDs and determine which are nested
-    let vfor_scope_ids: HashSet<u32> = summary
+    let vfor_scope_ids: FxHashSet<u32> = summary
         .scopes
         .iter()
         .filter(|s| matches!(s.kind, ScopeKind::VFor))
@@ -244,7 +247,7 @@ fn generate_component_props(
         .collect();
 
     // Root VFor scopes: VFor scopes whose parent is NOT a VFor scope
-    let root_vfor_scope_ids: HashSet<u32> = summary
+    let root_vfor_scope_ids: FxHashSet<u32> = summary
         .scopes
         .iter()
         .filter(|s| {
@@ -296,7 +299,7 @@ fn generate_scope_node(
     indent: &str,
 ) {
     let scope_id = scope.id.as_u32();
-    let inner_indent = cstr!("{indent}  ").to_string();
+    let inner_indent = cstr!("{indent}  ");
 
     match scope.data() {
         ScopeData::VFor(data) => {
@@ -314,11 +317,11 @@ fn generate_scope_node(
             let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
             let element_type = if let Some(ref ta) = type_annotation {
                 // Use the asserted type's element type
-                cstr!("{ta}[number]").to_string()
+                cstr!("{ta}[number]")
             } else if is_simple_identifier {
-                cstr!("typeof {source_expr}[number]").to_string()
+                cstr!("typeof {source_expr}[number]")
             } else {
-                "any".to_string()
+                "any".into()
             };
 
             append!(
@@ -400,10 +403,10 @@ fn generate_scope_node(
 
             if let Some(ref component_name) = data.target_component {
                 let pascal_event = to_pascal_case(data.event_name.as_str());
-                let on_handler = cstr!("on{pascal_event}").to_string();
+                let on_handler = cstr!("on{pascal_event}");
 
                 let prop_key = if on_handler.contains(':') {
-                    cstr!("\"{on_handler}\"").to_string()
+                    cstr!("\"{on_handler}\"")
                 } else {
                     on_handler
                 };
@@ -427,7 +430,7 @@ fn generate_scope_node(
                 );
                 append!(*ts, "{indent}    : unknown;\n");
 
-                let event_type = cstr!("__{component_name}_{safe_event_name}_event").to_string();
+                let event_type = cstr!("__{component_name}_{safe_event_name}_event");
                 append!(*ts, "{indent}(($event: {event_type}) => {{\n");
 
                 generate_event_handler_expressions(
@@ -472,7 +475,7 @@ fn generate_scope_node(
 fn generate_event_handler_expressions(
     ts: &mut String,
     mappings: &mut Vec<VizeMapping>,
-    expressions_by_scope: &HashMap<u32, Vec<&vize_croquis::TemplateExpression>>,
+    expressions_by_scope: &FxHashMap<u32, Vec<&vize_croquis::TemplateExpression>>,
     scope_id: u32,
     data: &EventHandlerScopeData,
     template_offset: u32,
@@ -538,18 +541,18 @@ fn generate_vfor_component_props_recursive(
     indent: &str,
 ) {
     let scope_id = scope.id.as_u32();
-    let inner_indent = cstr!("{indent}  ").to_string();
+    let inner_indent = cstr!("{indent}  ");
 
     if let ScopeData::VFor(data) = scope.data() {
         let (source_expr, type_annotation) = strip_as_assertion(&data.source);
 
         let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
         let element_type = if let Some(ref ta) = type_annotation {
-            cstr!("{ta}[number]").to_string()
+            cstr!("{ta}[number]")
         } else if is_simple_identifier {
-            cstr!("typeof {source_expr}[number]").to_string()
+            cstr!("typeof {source_expr}[number]")
         } else {
-            "any".to_string()
+            "any".into()
         };
 
         append!(

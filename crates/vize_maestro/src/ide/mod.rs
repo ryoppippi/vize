@@ -12,6 +12,7 @@
 //! - Semantic tokens
 //! - Code lens
 //! - Workspace symbols
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 pub mod code_action;
 pub mod code_lens;
@@ -182,7 +183,7 @@ impl<'a> IdeContext<'a> {
 
         // Parse SFC to determine block type
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

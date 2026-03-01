@@ -4,6 +4,7 @@
 //! the script block that is available in the template.
 
 use vize_carton::FxHashMap;
+use vize_carton::String;
 
 use crate::types::TypeInfo;
 
@@ -360,6 +361,6 @@ mod tests {
             .with_default("\"hello\"");
 
         assert!(prop.required);
-        assert_eq!(prop.default, Some("\"hello\"".to_string()));
+        assert_eq!(prop.default.as_deref(), Some("\"hello\""));
     }
 }

@@ -25,6 +25,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
+#[allow(clippy::disallowed_types)]
 use std::sync::Arc;
 use vize_carton::cstr;
 use vize_carton::FxHashMap;
@@ -99,6 +100,7 @@ pub struct ServerConfig {
 }
 
 /// tsgo Server
+#[allow(clippy::disallowed_types)]
 pub struct TsgoServer {
     config: ServerConfig,
     running: Arc<AtomicBool>,
@@ -115,6 +117,7 @@ impl TsgoServer {
     }
 
     /// Create a new server with custom configuration.
+    #[allow(clippy::disallowed_types)]
     pub fn with_config(config: ServerConfig) -> Self {
         Self {
             config,
@@ -147,9 +150,9 @@ impl TsgoServer {
             }
 
             let response = self.handle_request(&line);
+            #[allow(clippy::disallowed_methods)]
             let response_json = serde_json::to_string(&response).unwrap_or_else(|_| {
-                r#"{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"}}"#
-                    .to_string()
+                r#"{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"}}"#.into()
             });
 
             writeln!(stdout, "{}", response_json)?;
@@ -207,9 +210,9 @@ impl TsgoServer {
             }
 
             let response = self.handle_request(&line);
+            #[allow(clippy::disallowed_methods)]
             let response_json = serde_json::to_string(&response).unwrap_or_else(|_| {
-                r#"{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"}}"#
-                    .to_string()
+                r#"{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"}}"#.into()
             });
 
             if writeln!(writer, "{}", response_json).is_err() {
@@ -436,7 +439,7 @@ impl TsgoServer {
                     _ => cstr!("{c:?}"),
                 });
                 Diagnostic {
-                    message: d.message.into(),
+                    message: d.message,
                     severity,
                     line: d.range.start.line + 1, // LSP is 0-indexed
                     column: d.range.start.character + 1,

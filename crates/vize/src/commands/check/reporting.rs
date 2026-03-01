@@ -7,6 +7,7 @@ use serde::Serialize;
 
 /// JSON output structure for `--format json`.
 #[derive(Serialize)]
+#[allow(clippy::disallowed_types)]
 pub(crate) struct JsonOutput {
     pub files: Vec<JsonFileResult>,
     #[serde(rename = "errorCount")]
@@ -17,6 +18,7 @@ pub(crate) struct JsonOutput {
 
 /// Per-file result in JSON output.
 #[derive(Serialize)]
+#[allow(clippy::disallowed_types)]
 pub(crate) struct JsonFileResult {
     pub file: String,
     #[serde(rename = "virtualTs")]

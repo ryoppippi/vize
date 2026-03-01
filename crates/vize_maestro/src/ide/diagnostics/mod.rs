@@ -5,6 +5,7 @@
 //! - Template parser errors
 //! - vize_patina (linter)
 //! - Future: vize_canon (type checker)
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 mod collectors;
 #[cfg(feature = "native")]

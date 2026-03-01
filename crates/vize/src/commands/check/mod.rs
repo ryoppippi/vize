@@ -7,10 +7,10 @@ mod reporting;
 mod runner;
 
 use clap::Args;
-use serde::Deserialize;
 use std::path::PathBuf;
 
 #[derive(Args)]
+#[allow(clippy::disallowed_types)]
 pub struct CheckArgs {
     /// Glob pattern(s) to match .vue files
     #[arg(default_value = "./**/*.vue")]
@@ -52,6 +52,7 @@ pub struct CheckArgs {
 }
 
 /// Intermediate representation of a generated virtual TypeScript file.
+#[allow(clippy::disallowed_types)]
 pub(crate) struct GeneratedFile {
     pub original: String,
     pub virtual_ts: String,
@@ -59,41 +60,47 @@ pub(crate) struct GeneratedFile {
     pub original_content: String,
 }
 
-/// Server response for check method.
+/// Serde types for check-server JSON-RPC communication (Unix only).
 #[cfg(unix)]
-#[derive(Deserialize)]
-pub(crate) struct ServerCheckResult {
-    pub diagnostics: Vec<ServerDiagnostic>,
-    #[serde(rename = "virtualTs")]
-    pub virtual_ts: String,
-    #[serde(rename = "errorCount")]
-    pub error_count: usize,
+#[allow(clippy::disallowed_types)]
+pub(crate) mod unix_types {
+    use serde::Deserialize;
+
+    /// Server response for check method.
+    #[derive(Deserialize)]
+    pub(crate) struct ServerCheckResult {
+        pub diagnostics: Vec<ServerDiagnostic>,
+        #[serde(rename = "virtualTs")]
+        pub virtual_ts: String,
+        #[serde(rename = "errorCount")]
+        pub error_count: usize,
+    }
+
+    #[derive(Deserialize)]
+    pub(crate) struct ServerDiagnostic {
+        pub message: String,
+        pub severity: String,
+        pub line: u32,
+        pub column: u32,
+        pub code: Option<String>,
+    }
+
+    #[derive(Deserialize)]
+    pub(crate) struct JsonRpcResponse {
+        pub result: Option<ServerCheckResult>,
+        pub error: Option<JsonRpcError>,
+    }
+
+    #[derive(Deserialize)]
+    pub(crate) struct JsonRpcError {
+        #[allow(dead_code)]
+        pub code: i64,
+        pub message: String,
+    }
 }
 
 #[cfg(unix)]
-#[derive(Deserialize)]
-pub(crate) struct ServerDiagnostic {
-    pub message: String,
-    pub severity: String,
-    pub line: u32,
-    pub column: u32,
-    pub code: Option<String>,
-}
-
-#[cfg(unix)]
-#[derive(Deserialize)]
-pub(crate) struct JsonRpcResponse {
-    pub result: Option<ServerCheckResult>,
-    pub error: Option<JsonRpcError>,
-}
-
-#[cfg(unix)]
-#[derive(Deserialize)]
-pub(crate) struct JsonRpcError {
-    #[allow(dead_code)]
-    pub code: i64,
-    pub message: String,
-}
+pub(crate) use unix_types::*;
 
 pub fn run(args: CheckArgs) {
     // If socket is specified, use socket client mode (Unix only)

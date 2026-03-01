@@ -2,6 +2,7 @@
 //!
 //! This module implements the Virtual Code architecture inspired by Volar,
 //! which transforms Vue SFC files into virtual documents for each embedded language.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 //!
 //! ## Architecture
 //!

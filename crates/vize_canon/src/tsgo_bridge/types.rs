@@ -2,12 +2,16 @@
 //!
 //! Contains all LSP protocol types, error types, configuration,
 //! and result types used by the bridge.
+//!
+//! Many structs use `std::string::String` for serde deserialization compatibility.
+#![allow(clippy::disallowed_types)]
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::PathBuf;
 
 use vize_carton::source_range::SourceMap;
+use vize_carton::String;
 
 /// Virtual URI scheme for in-memory documents.
 pub const VIRTUAL_URI_SCHEME: &str = "vize-virtual";
@@ -48,6 +52,7 @@ impl std::error::Error for TsgoBridgeError {}
 
 /// LSP diagnostic from tsgo.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspDiagnostic {
     /// Diagnostic range
     pub range: LspRange,
@@ -56,9 +61,9 @@ pub struct LspDiagnostic {
     /// Diagnostic code
     pub code: Option<Value>,
     /// Source (e.g., "ts")
-    pub source: Option<String>,
+    pub source: Option<std::string::String>,
     /// Message
-    pub message: String,
+    pub message: std::string::String,
     /// Related information
     #[serde(rename = "relatedInformation")]
     pub related_information: Option<Vec<LspRelatedInformation>>,
@@ -80,15 +85,17 @@ pub struct LspPosition {
 
 /// Related diagnostic information.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspRelatedInformation {
     pub location: LspLocation,
-    pub message: String,
+    pub message: std::string::String,
 }
 
 /// LSP location.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspLocation {
-    pub uri: String,
+    pub uri: std::string::String,
     pub range: LspRange,
 }
 
@@ -104,65 +111,73 @@ pub struct LspHover {
 /// LSP hover contents - can be markup or multiple items.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::disallowed_types)]
 pub enum LspHoverContents {
     /// A single MarkupContent
     Markup(LspMarkupContent),
     /// A single string
-    String(String),
+    String(std::string::String),
     /// Array of marked strings or MarkupContent
     Array(Vec<LspMarkedString>),
 }
 
 /// LSP markup content.
 #[derive(Debug, Clone, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspMarkupContent {
     /// The type of the Markup ("markdown" | "plaintext")
-    pub kind: String,
+    pub kind: std::string::String,
     /// The content itself
-    pub value: String,
+    pub value: std::string::String,
 }
 
 /// LSP marked string (for hover arrays).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::disallowed_types)]
 pub enum LspMarkedString {
     /// A simple string
-    String(String),
+    String(std::string::String),
     /// Language-tagged code block
-    LanguageString { language: String, value: String },
+    LanguageString {
+        language: std::string::String,
+        value: std::string::String,
+    },
 }
 
 /// LSP completion item.
 #[derive(Debug, Clone, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspCompletionItem {
     /// The label of this completion item
-    pub label: String,
+    pub label: std::string::String,
     /// The kind of this completion item (1=Text, 2=Method, 3=Function, 4=Constructor, 5=Field, 6=Variable, etc.)
     pub kind: Option<u32>,
     /// A human-readable string with additional information
-    pub detail: Option<String>,
+    pub detail: Option<std::string::String>,
     /// A human-readable string that represents a doc-comment
     pub documentation: Option<LspDocumentation>,
     /// A string that should be inserted when selecting this completion
     #[serde(rename = "insertText")]
-    pub insert_text: Option<String>,
+    pub insert_text: Option<std::string::String>,
     /// The format of the insert text (1=PlainText, 2=Snippet)
     #[serde(rename = "insertTextFormat")]
     pub insert_text_format: Option<u32>,
     /// A string that should be used when filtering a set of completions
     #[serde(rename = "filterText")]
-    pub filter_text: Option<String>,
+    pub filter_text: Option<std::string::String>,
     /// A string that should be used when comparing this item with other items
     #[serde(rename = "sortText")]
-    pub sort_text: Option<String>,
+    pub sort_text: Option<std::string::String>,
 }
 
 /// LSP documentation - can be string or MarkupContent.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::disallowed_types)]
 pub enum LspDocumentation {
     /// A simple string
-    String(String),
+    String(std::string::String),
     /// Markup content
     Markup(LspMarkupContent),
 }
@@ -199,13 +214,14 @@ impl LspCompletionResponse {
 
 /// LSP location link (for definition responses).
 #[derive(Debug, Clone, Deserialize)]
+#[allow(clippy::disallowed_types)]
 pub struct LspLocationLink {
     /// Span of the origin of this link
     #[serde(rename = "originSelectionRange")]
     pub origin_selection_range: Option<LspRange>,
     /// The target resource identifier
     #[serde(rename = "targetUri")]
-    pub target_uri: String,
+    pub target_uri: std::string::String,
     /// The full target range
     #[serde(rename = "targetRange")]
     pub target_range: LspRange,

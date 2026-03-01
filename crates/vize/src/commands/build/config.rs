@@ -12,6 +12,8 @@ use std::{
 };
 
 use super::ScriptExtension;
+use vize_carton::cstr;
+use vize_carton::String;
 
 /// Aggregate compile statistics shared across worker threads.
 #[derive(Debug)]
@@ -84,21 +86,21 @@ impl FileProfile {
         let mut suggestions = Vec::new();
 
         if self.template_size > 10000 {
-            suggestions.push(format!(
+            suggestions.push(cstr!(
                 "Large template ({} bytes) - consider splitting into smaller components",
                 self.template_size
             ));
         }
 
         if self.script_size > 20000 {
-            suggestions.push(format!(
+            suggestions.push(cstr!(
                 "Large script ({} bytes) - consider extracting logic into composables",
                 self.script_size
             ));
         }
 
         if self.style_count > 3 {
-            suggestions.push(format!(
+            suggestions.push(cstr!(
                 "Multiple style blocks ({}) - consider consolidating styles",
                 self.style_count
             ));
@@ -107,7 +109,7 @@ impl FileProfile {
         if self.parse_time > self.compile_time * 2 {
             suggestions.push(
                 "Parsing is slow - check for complex template expressions or deeply nested elements"
-                    .to_string(),
+                    .into(),
             );
         }
 

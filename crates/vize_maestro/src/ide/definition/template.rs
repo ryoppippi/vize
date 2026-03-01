@@ -2,6 +2,7 @@
 //!
 //! Handles go-to-definition for template expressions, component tags,
 //! and prop references.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{GotoDefinitionResponse, Location, Position, Range};
 use vize_croquis::{Analyzer, AnalyzerOptions};
@@ -30,7 +31,7 @@ pub(crate) fn definition_in_template(ctx: &IdeContext) -> Option<GotoDefinitionR
 
     // Parse SFC to get the actual script content (not virtual code)
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 
@@ -106,7 +107,7 @@ pub(crate) fn find_props_property_definition(
     }
 
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 
@@ -171,7 +172,7 @@ pub(crate) fn find_component_prop_definition(
     let component_content = std::fs::read_to_string(&resolved_path).ok()?;
 
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: resolved_path.to_string_lossy().to_string(),
+        filename: resolved_path.to_string_lossy().to_string().into(),
         ..Default::default()
     };
 
@@ -231,7 +232,7 @@ pub(crate) fn find_component_definition(
     tag_name: &str,
 ) -> Option<GotoDefinitionResponse> {
     let options = vize_atelier_sfc::SfcParseOptions {
-        filename: ctx.uri.path().to_string(),
+        filename: ctx.uri.path().to_string().into(),
         ..Default::default()
     };
 

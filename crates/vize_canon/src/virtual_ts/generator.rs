@@ -16,6 +16,7 @@ use super::{
 };
 use vize_carton::append;
 use vize_carton::cstr;
+use vize_carton::String;
 
 /// Generate virtual TypeScript from Vue SFC analysis.
 ///
@@ -55,7 +56,7 @@ pub fn generate_virtual_ts_with_offsets(
     template_offset: u32,
     options: &VirtualTsOptions,
 ) -> VirtualTsOutput {
-    let mut ts = String::new();
+    let mut ts = String::default();
     let mut mappings: Vec<VizeMapping> = Vec::new();
 
     // Header with ES target library references.
@@ -194,9 +195,7 @@ pub fn generate_virtual_ts_with_offsets(
     // Setup scope: function that contains compiler macros and script content
     ts.push_str("// ========== Setup Scope ==========\n");
     let async_prefix = if is_async { "async " } else { "" };
-    let generic_params = generic_param
-        .map(|g| cstr!("<{g}>").to_string())
-        .unwrap_or_default();
+    let generic_params = generic_param.map(|g| cstr!("<{g}>")).unwrap_or_default();
     append!(ts, "{async_prefix}function __setup{generic_params}() {{\n",);
 
     // Compiler macros (only valid inside setup scope)
@@ -239,13 +238,20 @@ pub fn generate_virtual_ts_with_offsets(
             {
                 let leading_ws = &output_line[..output_line.len() - trimmed_line.len()];
                 let rest = trimmed_line.strip_prefix("export ").unwrap();
-                output_line = std::borrow::Cow::Owned(cstr!("{leading_ws}{rest}").to_string());
+                #[allow(clippy::disallowed_types)]
+                {
+                    output_line = std::borrow::Cow::Owned(cstr!("{leading_ws}{rest}").into());
+                }
             }
 
             // Replace import.meta with polyfill variable to avoid TS1343
             if uses_import_meta && output_line.contains("import.meta") {
-                output_line =
-                    std::borrow::Cow::Owned(output_line.replace("import.meta", "__import_meta"));
+                #[allow(clippy::disallowed_types)]
+                {
+                    output_line = std::borrow::Cow::Owned(
+                        output_line.replace("import.meta", "__import_meta"),
+                    );
+                }
             }
 
             ts.push_str(&output_line);
@@ -430,8 +436,5 @@ pub fn generate_virtual_ts_with_offsets(
     ts.push_str("};\n");
     ts.push_str("export default __vize_component__;\n");
 
-    VirtualTsOutput {
-        code: ts.into(),
-        mappings,
-    }
+    VirtualTsOutput { code: ts, mappings }
 }

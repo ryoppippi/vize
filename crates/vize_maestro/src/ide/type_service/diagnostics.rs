@@ -3,6 +3,7 @@
 //! Converts vize_vitrine type check results into LSP diagnostics,
 //! including support for the legacy vize_canon type checker and
 //! batch type checking via tsgo.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{
     CodeDescription, Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity, Location,
@@ -33,7 +34,7 @@ impl TypeService {
 
         // Use vize_vitrine's strict type checker
         let options = TypeCheckOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             strict: lsp_options.strict,
             check_props: lsp_options.check_props,
             check_emits: lsp_options.check_emits,
@@ -90,7 +91,8 @@ impl TypeService {
                                             },
                                         },
                                     },
-                                    message: rel.message.clone(),
+                                    #[allow(clippy::disallowed_methods)]
+                                    message: rel.message.to_string(),
                                 }
                             })
                             .collect(),
@@ -102,7 +104,8 @@ impl TypeService {
                 let message = if let Some(ref help) = diag.help {
                     format!("{}\n\nHelp: {}", diag.message, help)
                 } else {
-                    diag.message.clone()
+                    #[allow(clippy::disallowed_methods)]
+                    diag.message.to_string()
                 };
 
                 // Build code description URL
@@ -132,7 +135,8 @@ impl TypeService {
                         TypeSeverity::Info => DiagnosticSeverity::INFORMATION,
                         TypeSeverity::Hint => DiagnosticSeverity::HINT,
                     }),
-                    code: diag.code.map(NumberOrString::String),
+                    #[allow(clippy::disallowed_methods)]
+                    code: diag.code.map(|c| NumberOrString::String(c.to_string())),
                     code_description,
                     source: Some("vize/types".to_string()),
                     message,
@@ -156,7 +160,7 @@ impl TypeService {
         let content = doc.text();
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -204,7 +208,8 @@ impl TypeService {
                     }),
                     code: Some(NumberOrString::Number(diag.code.code() as i32)),
                     source: Some("vize/types".to_string()),
-                    message: diag.message,
+                    #[allow(clippy::disallowed_methods)]
+                    message: diag.message.to_string(),
                     ..Default::default()
                 }
             })

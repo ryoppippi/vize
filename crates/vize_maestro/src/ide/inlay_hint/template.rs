@@ -2,6 +2,7 @@
 //!
 //! Finds usages of props in template mustache expressions and
 //! Vue directive attributes, generating `#props.` prefix hints.
+#![allow(clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::{InlayHint, InlayHintKind, InlayHintLabel, Position, Range};
 

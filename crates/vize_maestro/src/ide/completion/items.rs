@@ -2,6 +2,11 @@
 //!
 //! Provides helper functions for constructing various kinds of
 //! completion items and converting binding types to completion info.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use tower_lsp::lsp_types::{
     CompletionItem, CompletionItemKind, Documentation, InsertTextFormat, MarkupContent, MarkupKind,

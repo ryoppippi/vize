@@ -2,6 +2,11 @@
 //!
 //! Provides the main `definition` and `definition_with_tsgo` methods
 //! that dispatch to block-specific handlers.
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 #[cfg(feature = "native")]
 use std::sync::Arc;
@@ -79,7 +84,7 @@ impl super::DefinitionService {
         // Check if this is a prop name used directly in template
         if helpers::is_in_vue_directive_expression(ctx) {
             let options = vize_atelier_sfc::SfcParseOptions {
-                filename: ctx.uri.path().to_string(),
+                filename: ctx.uri.path().to_string().into(),
                 ..Default::default()
             };
             if let Ok(descriptor) = vize_atelier_sfc::parse_sfc(&ctx.content, options) {

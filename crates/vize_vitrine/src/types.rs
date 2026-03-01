@@ -1,6 +1,7 @@
 //! Shared types for bindings.
 
 use serde::{Deserialize, Serialize};
+use vize_carton::String;
 
 #[cfg(feature = "napi")]
 use napi_derive::napi;

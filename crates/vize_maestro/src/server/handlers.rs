@@ -2,6 +2,7 @@
 //!
 //! Implements the `LanguageServer` trait for `MaestroServer`, dispatching
 //! requests to the appropriate IDE services.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 use tower_lsp::{
     jsonrpc::Result,
@@ -260,7 +261,7 @@ impl LanguageServer for MaestroServer {
 
         let content = doc.text();
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 
@@ -561,7 +562,7 @@ impl LanguageServer for MaestroServer {
         let mut ranges = Vec::new();
 
         let options = vize_atelier_sfc::SfcParseOptions {
-            filename: uri.path().to_string(),
+            filename: uri.path().to_string().into(),
             ..Default::default()
         };
 

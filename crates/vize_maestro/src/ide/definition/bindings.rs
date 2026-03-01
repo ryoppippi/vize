@@ -2,6 +2,7 @@
 //!
 //! Provides types for describing where bindings are defined and
 //! utilities for extracting binding locations from script content.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
 
 /// Location of a binding definition.
 #[derive(Debug, Clone)]
