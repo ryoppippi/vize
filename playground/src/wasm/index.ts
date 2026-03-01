@@ -115,6 +115,10 @@ export function isWasmLoaded(): boolean {
   return wasmModule !== null;
 }
 
+export function isUsingMock(): boolean {
+  return false;
+}
+
 export function getWasm(): WasmModule | null {
   return wasmModule;
 }
