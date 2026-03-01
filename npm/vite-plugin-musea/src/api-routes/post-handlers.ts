@@ -7,7 +7,7 @@
 import type { ServerResponse } from "node:http";
 import path from "node:path";
 
-import type { ApiRoutesContext, SendJson, SendError, ReadBody } from "./index.js";
+import type { ApiRoutesContext, SendJson, SendError } from "./index.js";
 import { generatePreviewModuleWithProps } from "../preview/index.js";
 import { toPascalCase } from "../utils.js";
 
