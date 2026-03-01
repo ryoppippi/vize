@@ -347,7 +347,7 @@ impl From<crate::input::Event> for InputEventNapi {
                 y: None,
                 width: None,
                 height: None,
-                text: Some(text),
+                text: Some(text.into()),
             },
         }
     }
