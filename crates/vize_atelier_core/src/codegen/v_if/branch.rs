@@ -10,7 +10,7 @@ use crate::ast::{
 
 use super::{
     super::{
-        children::generate_children,
+        children::{generate_children, is_directive_comment},
         context::CodegenContext,
         element::is_whitespace_or_comment,
         expression::generate_expression,
@@ -225,7 +225,12 @@ fn generate_if_branch_component(
     } else if el.children.iter().any(|c| !is_whitespace_or_comment(c)) {
         // Teleport/KeepAlive: pass children as array, not slot object
         ctx.push(", [");
-        for (i, child) in el.children.iter().enumerate() {
+        let filtered: Vec<_> = el
+            .children
+            .iter()
+            .filter(|c| !is_directive_comment(c))
+            .collect();
+        for (i, child) in filtered.iter().enumerate() {
             if i > 0 {
                 ctx.push(",");
             }
@@ -369,7 +374,11 @@ fn generate_if_branch_template_fragment(
     generate_if_branch_key(ctx, branch, branch_index);
     ctx.push(" }, [");
     ctx.indent();
-    for (i, child) in children.iter().enumerate() {
+    let filtered: Vec<_> = children
+        .iter()
+        .filter(|c| !is_directive_comment(c))
+        .collect();
+    for (i, child) in filtered.iter().enumerate() {
         if i > 0 {
             ctx.push(",");
         }
@@ -447,10 +456,14 @@ fn generate_if_branch_children(ctx: &mut CodegenContext, children: &[TemplateChi
             ctx.push(", 1 /* TEXT */");
         }
     } else {
-        // Complex children - use array
+        // Complex children - use array (filter directive comments)
+        let filtered: Vec<_> = children
+            .iter()
+            .filter(|c| !is_directive_comment(c))
+            .collect();
         ctx.push("[");
         ctx.indent();
-        for (i, child) in children.iter().enumerate() {
+        for (i, child) in filtered.iter().enumerate() {
             if i > 0 {
                 ctx.push(",");
             }

@@ -8,7 +8,7 @@ use crate::transforms::v_memo::{get_memo_exp, has_v_memo};
 
 use super::{
     super::{
-        children::{generate_children, generate_children_force_array},
+        children::{generate_children, generate_children_force_array, is_directive_comment},
         context::CodegenContext,
         expression::generate_expression,
         helpers::is_builtin_component,
@@ -108,7 +108,12 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
         if !el.children.is_empty() {
             ctx.push(", {}, () => [");
             ctx.indent();
-            for (i, child) in el.children.iter().enumerate() {
+            let filtered: Vec<_> = el
+                .children
+                .iter()
+                .filter(|c| !is_directive_comment(c))
+                .collect();
+            for (i, child) in filtered.iter().enumerate() {
                 if i > 0 {
                     ctx.push(",");
                 }
@@ -363,7 +368,12 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
                 // (whitespace-only children are skipped to match Vue's behavior)
                 ctx.push(", [");
                 ctx.indent();
-                for (i, child) in el.children.iter().enumerate() {
+                let filtered: Vec<_> = el
+                    .children
+                    .iter()
+                    .filter(|c| !is_directive_comment(c))
+                    .collect();
+                for (i, child) in filtered.iter().enumerate() {
                     if i > 0 {
                         ctx.push(",");
                     }
@@ -439,7 +449,12 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             if !el.children.is_empty() {
                 ctx.push(", {}, () => [");
                 ctx.indent();
-                for (i, child) in el.children.iter().enumerate() {
+                let filtered: Vec<_> = el
+                    .children
+                    .iter()
+                    .filter(|c| !is_directive_comment(c))
+                    .collect();
+                for (i, child) in filtered.iter().enumerate() {
                     if i > 0 {
                         ctx.push(",");
                     }

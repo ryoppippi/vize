@@ -21,12 +21,7 @@ import { fileExists, matchGlob } from "./comparison.js";
 import { captureAndCompare } from "./runner-comparison.js";
 import { computeSummary } from "./utils.js";
 
-export type {
-  VrtResult,
-  VrtSummary,
-  ExtendedVrtOptions,
-  PixelCompareOptions,
-} from "./types.js";
+export type { VrtResult, VrtSummary, ExtendedVrtOptions, PixelCompareOptions } from "./types.js";
 
 import type { VrtResult, VrtSummary, ExtendedVrtOptions } from "./types.js";
 

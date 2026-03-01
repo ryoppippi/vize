@@ -1,8 +1,8 @@
 :root {
-  --musea-bg-primary: #E6E2D6;
+  --musea-bg-primary: #e6e2d6;
   --musea-bg-secondary: #ddd9cd;
   --musea-bg-tertiary: #d4d0c4;
-  --musea-bg-elevated: #E6E2D6;
+  --musea-bg-elevated: #e6e2d6;
   --musea-accent: #121212;
   --musea-accent-hover: #2a2a2a;
   --musea-accent-subtle: rgba(18, 18, 18, 0.08);
@@ -19,10 +19,14 @@
   --musea-transition: 0.15s ease;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: var(--musea-bg-primary);
   color: var(--musea-text);
   min-height: 100vh;

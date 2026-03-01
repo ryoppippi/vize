@@ -45,7 +45,7 @@
 }
 
 .variant-preview-code {
-  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
   font-size: 0.75rem;
   color: var(--musea-text-muted);
   background: var(--musea-bg-primary);
@@ -168,7 +168,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive */
