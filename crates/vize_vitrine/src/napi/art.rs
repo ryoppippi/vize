@@ -2,10 +2,13 @@
 //!
 //! Provides art parsing, CSF transformation, documentation generation,
 //! catalog generation, palette/props controls, and variant autogeneration.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
-use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use rayon::prelude::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use vize_carton::cstr;
 
 // ============================================================================
@@ -215,7 +218,8 @@ pub fn parse_art(
     let parse_opts = ArtParseOptions {
         filename: opts
             .filename
-            .unwrap_or_else(|| "anonymous.art.vue".to_string()),
+            .unwrap_or_else(|| "anonymous.art.vue".to_string())
+            .into(),
     };
 
     let descriptor = musea_parse(&allocator, &source, parse_opts)
@@ -275,7 +279,8 @@ pub fn art_to_csf(source: String, options: Option<ArtParseOptionsNapi>) -> Resul
     let parse_opts = ArtParseOptions {
         filename: opts
             .filename
-            .unwrap_or_else(|| "anonymous.art.vue".to_string()),
+            .unwrap_or_else(|| "anonymous.art.vue".to_string())
+            .into(),
     };
 
     let descriptor = musea_parse(&allocator, &source, parse_opts)
@@ -286,8 +291,8 @@ pub fn art_to_csf(source: String, options: Option<ArtParseOptionsNapi>) -> Resul
 
     // Create result before descriptor and allocator are dropped
     let result = CsfOutputNapi {
-        code: csf.code,
-        filename: csf.filename,
+        code: csf.code.into(),
+        filename: csf.filename.into(),
     };
 
     Ok(result)
@@ -308,7 +313,8 @@ pub fn generate_art_doc(
     let parse_opts = ArtParseOptions {
         filename: art_opts
             .filename
-            .unwrap_or_else(|| "anonymous.art.vue".to_string()),
+            .unwrap_or_else(|| "anonymous.art.vue".to_string())
+            .into(),
     };
 
     let descriptor = musea_parse(&allocator, &source, parse_opts)
@@ -321,18 +327,18 @@ pub fn generate_art_doc(
         include_metadata: doc_opts.include_metadata.unwrap_or(true),
         include_toc: doc_opts.include_toc.unwrap_or(true),
         toc_threshold: doc_opts.toc_threshold.unwrap_or(5) as usize,
-        base_path: doc_opts.base_path.unwrap_or_default(),
-        title: doc_opts.title,
+        base_path: doc_opts.base_path.unwrap_or_default().into(),
+        title: doc_opts.title.map(Into::into),
         include_timestamp: false,
     };
 
     let output = generate_component_doc(&descriptor, &opts);
 
     Ok(DocOutputNapi {
-        markdown: output.markdown,
-        filename: output.filename,
-        title: output.title,
-        category: output.category,
+        markdown: output.markdown.into(),
+        filename: output.filename.into(),
+        title: output.title.into(),
+        category: output.category.map(Into::into),
         variant_count: output.variant_count as u32,
     })
 }
@@ -368,19 +374,19 @@ pub fn generate_art_catalog(
         include_metadata: doc_opts.include_metadata.unwrap_or(true),
         include_toc: doc_opts.include_toc.unwrap_or(true),
         toc_threshold: doc_opts.toc_threshold.unwrap_or(5) as usize,
-        base_path: doc_opts.base_path.unwrap_or_default(),
-        title: doc_opts.title,
+        base_path: doc_opts.base_path.unwrap_or_default().into(),
+        title: doc_opts.title.map(Into::into),
         include_timestamp: false,
     };
 
     let output = generate_catalog(&entries, &opts);
 
     Ok(CatalogOutputNapi {
-        markdown: output.markdown,
-        filename: output.filename,
+        markdown: output.markdown.into(),
+        filename: output.filename.into(),
         component_count: output.component_count as u32,
-        categories: output.categories,
-        tags: output.tags,
+        categories: output.categories.into_iter().map(Into::into).collect(),
+        tags: output.tags.into_iter().map(Into::into).collect(),
     })
 }
 
@@ -400,8 +406,8 @@ pub fn generate_art_docs_batch(
         include_metadata: doc_opts.include_metadata.unwrap_or(true),
         include_toc: doc_opts.include_toc.unwrap_or(true),
         toc_threshold: doc_opts.toc_threshold.unwrap_or(5) as usize,
-        base_path: doc_opts.base_path.unwrap_or_default(),
-        title: doc_opts.title,
+        base_path: doc_opts.base_path.unwrap_or_default().into(),
+        title: doc_opts.title.map(Into::into),
         include_timestamp: false,
     };
 
@@ -420,10 +426,10 @@ pub fn generate_art_docs_batch(
                 .map(|descriptor| {
                     let output = generate_component_doc(&descriptor, &opts);
                     DocOutputNapi {
-                        markdown: output.markdown,
-                        filename: output.filename,
-                        title: output.title,
-                        category: output.category,
+                        markdown: output.markdown.into(),
+                        filename: output.filename.into(),
+                        title: output.title.into(),
+                        category: output.category.map(Into::into),
                         variant_count: output.variant_count as u32,
                     }
                 })
@@ -448,7 +454,8 @@ pub fn generate_art_palette(
     let parse_opts = ArtParseOptions {
         filename: art_opts
             .filename
-            .unwrap_or_else(|| "anonymous.art.vue".to_string()),
+            .unwrap_or_else(|| "anonymous.art.vue".to_string())
+            .into(),
     };
 
     let descriptor = musea_parse(&allocator, &source, parse_opts)
@@ -470,7 +477,7 @@ pub fn generate_art_palette(
         .controls
         .iter()
         .map(|c| PropControlNapi {
-            name: c.name.clone(),
+            name: c.name.clone().into(),
             control: match c.control {
                 ControlKind::Text => "text".to_string(),
                 ControlKind::Number => "number".to_string(),
@@ -486,13 +493,13 @@ pub fn generate_art_palette(
                 ControlKind::Raw => "raw".to_string(),
             },
             default_value: c.default_value.clone(),
-            description: c.description.clone(),
+            description: c.description.clone().map(Into::into),
             required: c.required,
             options: c
                 .options
                 .iter()
                 .map(|o| SelectOptionNapi {
-                    label: o.label.clone(),
+                    label: o.label.clone().into(),
                     value: o.value.clone(),
                 })
                 .collect(),
@@ -501,16 +508,16 @@ pub fn generate_art_palette(
                 max: r.max,
                 step: r.step,
             }),
-            group: c.group.clone(),
+            group: c.group.clone().map(Into::into),
         })
         .collect();
 
     Ok(PaletteOutputNapi {
-        title: output.palette.title,
+        title: output.palette.title.into(),
         controls,
-        groups: output.palette.groups,
-        json: output.json,
-        typescript: output.typescript,
+        groups: output.palette.groups.into_iter().map(Into::into).collect(),
+        json: output.json.into(),
+        typescript: output.typescript.into(),
     })
 }
 
@@ -536,8 +543,8 @@ pub fn generate_variants(
     let prop_defs: Vec<PropDefinition> = props
         .into_iter()
         .map(|p| PropDefinition {
-            name: p.name,
-            prop_type: p.prop_type,
+            name: p.name.into(),
+            prop_type: p.prop_type.into(),
             required: p.required,
             default_value: p.default_value,
         })
@@ -549,16 +556,16 @@ pub fn generate_variants(
         .variants
         .into_iter()
         .map(|v| GeneratedVariantNapi {
-            name: v.name,
+            name: v.name.into(),
             is_default: v.is_default,
             props: serde_json::Value::Object(v.props),
-            description: v.description,
+            description: v.description.map(Into::into),
         })
         .collect();
 
     Ok(AutogenOutputNapi {
         variants: variants_napi,
-        art_file_content: output.art_file_content,
-        component_name: output.component_name,
+        art_file_content: output.art_file_content.into(),
+        component_name: output.component_name.into(),
     })
 }

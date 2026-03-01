@@ -2,6 +2,9 @@
 //!
 //! Provides parseSfc, compileSfc, compileSfcBatch, and
 //! compileSfcBatchWithResults functions for Vue Single File Components.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use glob::glob;
 use napi::bindgen_prelude::{Env, Error, Object, Result, Status};
@@ -125,7 +128,7 @@ pub fn parse_sfc(env: Env, source: String, options: Option<SfcParseOptionsNapi>)
 
     let opts = options.unwrap_or_default();
     let parse_opts = SfcParseOptions {
-        filename: opts.filename.unwrap_or_else(|| "anonymous.vue".to_string()),
+        filename: opts.filename.unwrap_or_else(|| "anonymous.vue".to_string()).into(),
         ..Default::default()
     };
 
@@ -193,7 +196,7 @@ pub fn parse_sfc(env: Env, source: String, options: Option<SfcParseOptionsNapi>)
 
             Ok(obj)
         }
-        Err(e) => Err(Error::new(Status::GenericFailure, e.message)),
+        Err(e) => Err(Error::new(Status::GenericFailure, e.message.to_string())),
     }
 }
 
@@ -209,7 +212,8 @@ pub fn compile_sfc(
     };
 
     let opts = options.unwrap_or_default();
-    let filename = opts.filename.unwrap_or_else(|| "anonymous.vue".to_string());
+    let filename: vize_carton::CompactString =
+        opts.filename.unwrap_or_else(|| "anonymous.vue".to_string()).into();
 
     // Parse
     let parse_opts = SfcParseOptions {
@@ -223,7 +227,7 @@ pub fn compile_sfc(
             return Ok(SfcCompileResultNapi {
                 code: String::new(),
                 css: None,
-                errors: vec![e.message],
+                errors: vec![e.message.into()],
                 warnings: vec![],
             });
         }
@@ -234,10 +238,10 @@ pub fn compile_sfc(
     let is_ts = opts.is_ts.unwrap_or(false);
 
     // Extract scope_id from options (strip "data-v-" prefix if present)
-    let external_scope_id = opts
+    let external_scope_id: Option<vize_carton::CompactString> = opts
         .scope_id
         .as_ref()
-        .map(|sid| sid.strip_prefix("data-v-").unwrap_or(sid).to_string());
+        .map(|sid| sid.strip_prefix("data-v-").unwrap_or(sid).into());
 
     // Create compiler options with scope_id for scoped CSS
     let template_compiler_options = if has_scoped {
@@ -279,15 +283,15 @@ pub fn compile_sfc(
 
     match sfc_compile(&descriptor, compile_opts) {
         Ok(result) => Ok(SfcCompileResultNapi {
-            code: result.code,
-            css: result.css,
-            errors: result.errors.into_iter().map(|e| e.message).collect(),
-            warnings: result.warnings.into_iter().map(|e| e.message).collect(),
+            code: result.code.into(),
+            css: result.css.map(Into::into),
+            errors: result.errors.into_iter().map(|e| e.message.into()).collect(),
+            warnings: result.warnings.into_iter().map(|e| e.message.into()).collect(),
         }),
         Err(e) => Ok(SfcCompileResultNapi {
             code: String::new(),
             css: None,
-            errors: vec![e.message],
+            errors: vec![e.message.into()],
             warnings: vec![],
         }),
     }
@@ -295,7 +299,6 @@ pub fn compile_sfc(
 
 /// Batch compile SFC files matching a glob pattern (native multithreading)
 #[napi(js_name = "compileSfcBatch")]
-#[allow(clippy::disallowed_macros)]
 pub fn compile_sfc_batch(
     pattern: String,
     options: Option<BatchCompileOptionsNapi>,
@@ -356,11 +359,11 @@ pub fn compile_sfc_batch(
 
         input_bytes.fetch_add(source.len(), Ordering::Relaxed);
 
-        let filename = path
+        let filename: vize_carton::CompactString = path
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("anonymous.vue")
-            .to_string();
+            .into();
 
         // Parse
         let parse_opts = SfcParseOptions {
@@ -477,9 +480,11 @@ pub fn compile_sfc_batch_with_results(
 
         let has_scoped = source.contains("<style") && source.contains("scoped");
 
+        let filename_cs: vize_carton::CompactString = filename.clone().into();
+
         // Parse
         let parse_opts = SfcParseOptions {
-            filename: filename.clone(),
+            filename: filename_cs.clone(),
             ..Default::default()
         };
 
@@ -492,9 +497,9 @@ pub fn compile_sfc_batch_with_results(
                     path: filename.clone(),
                     code: String::new(),
                     css: None,
-                    scope_id,
+                    scope_id: scope_id.clone().into(),
                     has_scoped,
-                    errors: vec![e.message],
+                    errors: vec![e.message.into()],
                     warnings: vec![],
                     template_hash: None,
                     style_hash: None,
@@ -505,9 +510,9 @@ pub fn compile_sfc_batch_with_results(
         };
 
         // Compute hashes for HMR
-        let template_hash = descriptor.template_hash();
-        let style_hash = descriptor.style_hash();
-        let script_hash = descriptor.script_hash();
+        let template_hash: Option<String> = descriptor.template_hash().map(Into::into);
+        let style_hash: Option<String> = descriptor.style_hash().map(Into::into);
+        let script_hash: Option<String> = descriptor.script_hash().map(Into::into);
 
         // Compile
         // Preserve TypeScript in output - let Vite/esbuild handle TS transformation
@@ -524,16 +529,16 @@ pub fn compile_sfc_batch_with_results(
 
         let compile_opts = SfcCompileOptions {
             parse: SfcParseOptions {
-                filename: filename.clone(),
+                filename: filename_cs.clone(),
                 ..Default::default()
             },
             script: ScriptCompileOptions {
-                id: Some(filename.clone()),
+                id: Some(filename_cs.clone()),
                 is_ts,
                 ..Default::default()
             },
             template: TemplateCompileOptions {
-                id: Some(filename.clone()),
+                id: Some(filename_cs.clone()),
                 scoped: actual_has_scoped,
                 ssr,
                 is_ts,
@@ -541,7 +546,7 @@ pub fn compile_sfc_batch_with_results(
                 ..Default::default()
             },
             style: StyleCompileOptions {
-                id: filename.clone(),
+                id: filename_cs,
                 scoped: actual_has_scoped,
                 ..Default::default()
             },
@@ -554,15 +559,15 @@ pub fn compile_sfc_batch_with_results(
                 let mut guard = results.lock().unwrap();
                 guard.push(BatchFileResultNapi {
                     path: filename.clone(),
-                    code: result.code,
-                    css: result.css,
-                    scope_id,
+                    code: result.code.into(),
+                    css: result.css.map(Into::into),
+                    scope_id: scope_id.into(),
                     has_scoped: actual_has_scoped,
-                    errors: result.errors.into_iter().map(|e| e.message).collect(),
-                    warnings: result.warnings.into_iter().map(|e| e.message).collect(),
-                    template_hash,
-                    style_hash,
-                    script_hash,
+                    errors: result.errors.into_iter().map(|e| e.message.into()).collect(),
+                    warnings: result.warnings.into_iter().map(|e| e.message.into()).collect(),
+                    template_hash: template_hash.clone(),
+                    style_hash: style_hash.clone(),
+                    script_hash: script_hash.clone(),
                 });
             }
             Err(e) => {
@@ -572,9 +577,9 @@ pub fn compile_sfc_batch_with_results(
                     path: filename.clone(),
                     code: String::new(),
                     css: None,
-                    scope_id,
+                    scope_id: scope_id.into(),
                     has_scoped: actual_has_scoped,
-                    errors: vec![e.message],
+                    errors: vec![e.message.into()],
                     warnings: vec![],
                     template_hash,
                     style_hash,

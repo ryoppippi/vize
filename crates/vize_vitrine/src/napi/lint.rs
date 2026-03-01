@@ -2,9 +2,12 @@
 //!
 //! Provides the `lint` function for linting Vue SFC files
 //! with native multithreading and .gitignore awareness.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use glob::glob;
-use napi::bindgen_prelude::{Error, Result, Status};
+use napi::bindgen_prelude::Result;
 use napi_derive::napi;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use std::{
@@ -12,7 +15,6 @@ use std::{
     sync::atomic::{AtomicUsize, Ordering},
 };
 use vize_carton::append;
-use vize_carton::cstr;
 
 /// Lint options for NAPI
 #[napi(object)]
@@ -84,7 +86,7 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
 
     if files.is_empty() {
         return Ok(LintResultNapi {
-            output: cstr!("No .vue files found matching patterns: {patterns:?}"),
+            output: format!("No .vue files found matching patterns: {:?}", patterns),
             error_count: 0,
             warning_count: 0,
             file_count: 0,
@@ -131,12 +133,12 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
     let quiet = opts.quiet.unwrap_or(false);
 
     // Format output
-    let mut output = String::new();
+    let mut output = vize_carton::CompactString::default();
     if !quiet || total_errors > 0 || total_warnings > 0 {
         let lint_results: Vec<_> = results.iter().map(|(_, _, r)| r).cloned().collect();
         let sources: Vec<_> = results
             .iter()
-            .map(|(f, s, _)| (f.clone(), s.clone()))
+            .map(|(f, s, _)| (vize_carton::CompactString::from(f.as_str()), vize_carton::CompactString::from(s.as_str())))
             .collect();
 
         let formatted = format_results(&lint_results, &sources, format);
@@ -156,7 +158,7 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
     }
 
     Ok(LintResultNapi {
-        output,
+        output: output.into(),
         error_count: total_errors as u32,
         warning_count: total_warnings as u32,
         file_count: files.len() as u32,

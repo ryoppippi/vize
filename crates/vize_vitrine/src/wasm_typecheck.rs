@@ -1,4 +1,7 @@
 //! WASM bindings for type checking.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use wasm_bindgen::prelude::*;
 

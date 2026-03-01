@@ -2,6 +2,9 @@
 //!
 //! Provides compile, compileVapor, and parseTemplate functions
 //! for direct template-to-render-function compilation.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
@@ -18,7 +21,6 @@ use vize_atelier_vapor::{compile_vapor as vapor_compile, VaporCompilerOptions};
 
 /// Compile Vue template to VDom render function
 #[napi]
-#[allow(clippy::disallowed_macros)]
 pub fn compile(template: String, options: Option<CompilerOptions>) -> Result<CompileResult> {
     let opts = options.unwrap_or_default();
     let allocator = Bump::new();
@@ -94,12 +96,12 @@ pub fn compile_vapor(template: String, options: Option<CompilerOptions>) -> Resu
     if !result.error_messages.is_empty() {
         return Err(Error::new(
             Status::GenericFailure,
-            result.error_messages.join("\n"),
+            result.error_messages.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n"),
         ));
     }
 
     Ok(CompileResult {
-        code: result.code,
+        code: result.code.into(),
         preamble: String::new(),
         ast: serde_json::json!({}),
         map: None,
@@ -110,7 +112,6 @@ pub fn compile_vapor(template: String, options: Option<CompilerOptions>) -> Resu
 
 /// Parse template to AST only
 #[napi]
-#[allow(clippy::disallowed_macros)]
 pub fn parse_template(
     template: String,
     _options: Option<CompilerOptions>,
@@ -130,7 +131,6 @@ pub fn parse_template(
 }
 
 /// Build AST JSON from root node.
-#[allow(clippy::disallowed_macros)]
 fn build_ast_json(root: &vize_atelier_core::RootNode<'_>) -> serde_json::Value {
     use vize_atelier_core::TemplateChildNode;
 

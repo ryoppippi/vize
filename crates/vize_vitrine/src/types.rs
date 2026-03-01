@@ -1,7 +1,11 @@
 //! Shared types for bindings.
+//!
+//! These types are FFI boundary types used by both NAPI and WASM builds,
+//! so they use `std::string::String` for JavaScript interop compatibility.
+
+#![allow(clippy::disallowed_types)]
 
 use serde::{Deserialize, Serialize};
-use vize_carton::String;
 
 #[cfg(feature = "napi")]
 use napi_derive::napi;

@@ -1,4 +1,7 @@
 //! Croquis (Semantic Analyzer) WASM bindings.
+//!
+//! FFI boundary code: uses std types for JavaScript interop.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
 
 use super::to_js_value;
 use vize_carton::Bump;
@@ -19,7 +22,7 @@ pub fn analyze_sfc_wasm(source: &str, options: JsValue) -> Result<JsValue, JsVal
 
     // Parse SFC first
     let parse_opts = SfcParseOptions {
-        filename: filename.clone(),
+        filename: filename.clone().into(),
         ..Default::default()
     };
 
