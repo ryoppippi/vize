@@ -116,6 +116,40 @@ mod tests {
     }
 
     #[test]
+    fn test_vize_forget_suppresses_template_v_for() {
+        let linter = Linter::new();
+        // <template v-for> becomes a ForNode in the AST, not an ElementNode.
+        // @vize:forget should suppress diagnostics on ForNode too.
+        let result = linter.lint_template(
+            r#"<div><!-- @vize:forget template key is valid in Vue 3 -->
+<template v-for="item in items" :key="item.id">
+  <li>{{ item.name }}</li>
+</template></div>"#,
+            "test.vue",
+        );
+        assert_eq!(
+            result.error_count, 0,
+            "ForNode should be suppressed by @vize:forget"
+        );
+    }
+
+    #[test]
+    fn test_vize_forget_suppresses_template_v_if() {
+        let linter = Linter::new();
+        // <div v-if> becomes part of an IfNode in the AST.
+        // @vize:forget should suppress diagnostics on IfNode too.
+        let result = linter.lint_template(
+            r#"<div><!-- @vize:forget conditional rendering -->
+<span v-if="show" v-for="item in items">{{ item }}</span></div>"#,
+            "test.vue",
+        );
+        assert_eq!(
+            result.error_count, 0,
+            "IfNode should be suppressed by @vize:forget"
+        );
+    }
+
+    #[test]
     fn test_lint_sfc_extracts_template() {
         let linter = Linter::new();
         // SFC with script and template - should only lint template content

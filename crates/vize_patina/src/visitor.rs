@@ -63,8 +63,24 @@ impl<'a, 'ctx, 'rules> LintVisitor<'a, 'ctx, 'rules> {
                     rule.check_interpolation(self.ctx, interp);
                 }
             }
-            TemplateChildNode::If(if_node) => self.visit_if(if_node),
-            TemplateChildNode::For(for_node) => self.visit_for(for_node),
+            TemplateChildNode::If(if_node) => {
+                if self.forget_next_element {
+                    self.forget_next_element = false;
+                    let start_line = self.ctx.offset_to_line(if_node.loc.start.offset);
+                    let end_line = self.ctx.offset_to_line(if_node.loc.end.offset);
+                    self.ctx.disable_all(start_line, Some(end_line));
+                }
+                self.visit_if(if_node);
+            }
+            TemplateChildNode::For(for_node) => {
+                if self.forget_next_element {
+                    self.forget_next_element = false;
+                    let start_line = self.ctx.offset_to_line(for_node.loc.start.offset);
+                    let end_line = self.ctx.offset_to_line(for_node.loc.end.offset);
+                    self.ctx.disable_all(start_line, Some(end_line));
+                }
+                self.visit_for(for_node);
+            }
             TemplateChildNode::Comment(comment) => {
                 if let Some(kind) = comment.directive {
                     self.process_vize_directive(comment, kind);
