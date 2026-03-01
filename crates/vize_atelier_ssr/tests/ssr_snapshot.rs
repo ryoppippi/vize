@@ -3,14 +3,16 @@
 //! These tests compare the SSR compiler output against expected snapshots.
 //! The snapshots are based on Vue's official compiler-ssr test cases.
 
+#![allow(clippy::disallowed_macros)]
+
 use vize_atelier_ssr::compile_ssr;
-use vize_carton::Bump;
+use vize_carton::{Bump, String};
 
 /// Helper to get the compiled string content (the template literal part)
 fn get_compiled_string(src: &str) -> String {
     let allocator = Bump::new();
     // Wrap in a div to avoid root-level attr injection
-    let wrapped = format!("<div>{}</div>", src);
+    let wrapped: String = format!("<div>{}</div>", src).into();
     let (_, errors, result) = compile_ssr(&allocator, &wrapped);
 
     if !errors.is_empty() {
@@ -375,7 +377,7 @@ mod v_text {
 
 mod scope_id {
     use vize_atelier_ssr::{compile_ssr_with_options, SsrCompilerOptions};
-    use vize_carton::Bump;
+    use vize_carton::{Bump, String};
 
     fn compile_with_scope_id(src: &str) -> String {
         let allocator = Bump::new();
@@ -409,7 +411,7 @@ mod scope_id {
 
 mod css_vars {
     use vize_atelier_ssr::{compile_ssr_with_options, SsrCompilerOptions};
-    use vize_carton::Bump;
+    use vize_carton::{Bump, String};
 
     fn compile_with_css_vars(src: &str) -> String {
         let allocator = Bump::new();

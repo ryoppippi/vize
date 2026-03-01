@@ -349,6 +349,7 @@ pub struct OxlintBridge {
 mod tests {
     use super::{offset_to_line_col, LintResult, LspEmitter, Telegraph};
     use crate::diagnostic::LintDiagnostic;
+    use vize_carton::ToCompactString;
 
     #[test]
     fn test_telegraph_with_text() {

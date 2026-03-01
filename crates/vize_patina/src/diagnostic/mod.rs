@@ -14,6 +14,7 @@ pub use types::{Fix, HelpLevel, LintDiagnostic, LintSummary, Severity, TextEdit}
 #[cfg(test)]
 mod tests {
     use super::{formatting, render_help, HelpLevel, HelpRenderTarget};
+    use vize_carton::ToCompactString;
 
     #[test]
     fn test_help_level_full() {
@@ -21,7 +22,7 @@ mod tests {
         let help = "**Why:** Use `:key` for tracking.\n\n```vue\n<li :key=\"id\">\n```";
         let result = level.process(help);
         // Full mode preserves raw markdown
-        assert_eq!(result, Some(help.to_string()));
+        assert_eq!(result, Some(help.to_compact_string()));
     }
 
     #[test]
@@ -38,7 +39,7 @@ mod tests {
         let result = level.process(help);
         assert_eq!(
             result,
-            Some("Why: The :key attribute helps Vue track items.".to_string())
+            Some("Why: The :key attribute helps Vue track items.".to_compact_string())
         );
     }
 
@@ -47,7 +48,7 @@ mod tests {
         let level = HelpLevel::Short;
         let help = "```vue\n<li :key=\"id\">\n```\nUse unique keys";
         let result = level.process(help);
-        assert_eq!(result, Some("Use unique keys".to_string()));
+        assert_eq!(result, Some("Use unique keys".to_compact_string()));
     }
 
     #[test]
@@ -57,7 +58,7 @@ mod tests {
         let result = level.process(help);
         assert_eq!(
             result,
-            Some("Add a key attribute to the element".to_string())
+            Some("Add a key attribute to the element".to_compact_string())
         );
     }
 

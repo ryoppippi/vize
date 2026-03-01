@@ -13,7 +13,7 @@ pub use config::{LintResult, Linter};
 #[cfg(test)]
 mod tests {
     use super::Linter;
-    use vize_carton::Allocator;
+    use vize_carton::{Allocator, ToCompactString};
 
     #[test]
     fn test_lint_empty_template() {
@@ -46,8 +46,14 @@ mod tests {
     fn test_lint_files_batch() {
         let linter = Linter::new();
         let files = vec![
-            ("test1.vue".to_string(), "<div>Hello</div>".to_string()),
-            ("test2.vue".to_string(), "<span>World</span>".to_string()),
+            (
+                "test1.vue".to_compact_string(),
+                "<div>Hello</div>".to_compact_string(),
+            ),
+            (
+                "test2.vue".to_compact_string(),
+                "<span>World</span>".to_compact_string(),
+            ),
         ];
 
         let (results, summary) = linter.lint_files(&files);

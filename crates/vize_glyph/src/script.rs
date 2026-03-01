@@ -102,6 +102,7 @@ pub fn format_js_expression(expr: &str, options: &FormatOptions) -> Option<Strin
 #[cfg(test)]
 mod tests {
     use super::{format_js_expression, format_script_content, Allocator, FormatOptions};
+    use vize_carton::String;
 
     #[test]
     fn test_format_simple_script() {
