@@ -46,7 +46,10 @@ jobs:
 
       - name: Build docs
         working-directory: docs
-        run: pnpm build
+        run: |
+          npx playwright install --with-deps chromium
+          export PUPPETEER_EXECUTABLE_PATH=$(node -e "console.log(require('playwright').chromium.executablePath())")
+          npx vite build
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
