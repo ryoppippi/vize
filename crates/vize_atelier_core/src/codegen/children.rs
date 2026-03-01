@@ -19,7 +19,7 @@ pub fn generate_children_force_array(ctx: &mut CodegenContext, children: &[Templ
 
 /// Check if a child node is a directive comment that should be stripped.
 #[inline]
-fn is_directive_comment(child: &TemplateChildNode<'_>) -> bool {
+pub(crate) fn is_directive_comment(child: &TemplateChildNode<'_>) -> bool {
     matches!(child, TemplateChildNode::Comment(c) if c.directive.is_some())
 }
 

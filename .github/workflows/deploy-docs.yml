@@ -44,6 +44,9 @@ jobs:
       - name: Build @vizejs/vite-plugin
         run: pnpm -r --filter '@vizejs/native' --filter '@vizejs/vite-plugin' run build
 
+      - name: Install Puppeteer browser (for Mermaid rendering)
+        run: npx puppeteer browsers install chrome-headless-shell
+
       - name: Build docs
         working-directory: docs
         run: |

@@ -62,7 +62,9 @@
   color: var(--musea-text);
   font-size: 0.8125rem;
   outline: none;
-  transition: border-color var(--musea-transition), background var(--musea-transition);
+  transition:
+    border-color var(--musea-transition),
+    background var(--musea-transition);
 }
 
 .search-input::placeholder {
@@ -172,7 +174,7 @@
 }
 
 .art-item::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0.75rem;
   top: 50%;

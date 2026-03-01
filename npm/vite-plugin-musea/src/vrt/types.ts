@@ -2,7 +2,13 @@
  * Type definitions for VRT runner.
  */
 
-import type { VrtOptions, CaptureConfig, ComparisonConfig, CiConfig, ViewportConfig } from "../types/index.js";
+import type {
+  VrtOptions,
+  CaptureConfig,
+  ComparisonConfig,
+  CiConfig,
+  ViewportConfig,
+} from "../types/index.js";
 
 /**
  * VRT test result for a single variant.

@@ -10,7 +10,7 @@ use crate::{
 
 use super::{
     super::{
-        children::generate_children,
+        children::{generate_children, is_directive_comment},
         context::CodegenContext,
         expression::generate_expression,
         helpers::is_builtin_component,
@@ -286,7 +286,12 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
                 ctx.push(", () => [");
                 ctx.skip_scope_id = prev_skip_scope_id;
                 ctx.indent();
-                for (i, child) in el.children.iter().enumerate() {
+                let filtered: Vec<_> = el
+                    .children
+                    .iter()
+                    .filter(|c| !is_directive_comment(c))
+                    .collect();
+                for (i, child) in filtered.iter().enumerate() {
                     if i > 0 {
                         ctx.push(",");
                     }
@@ -308,11 +313,16 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
         }
         ElementType::Template => {
             // Template elements render their children directly
-            if el.children.len() == 1 {
-                generate_node(ctx, &el.children[0]);
+            let filtered: Vec<_> = el
+                .children
+                .iter()
+                .filter(|c| !is_directive_comment(c))
+                .collect();
+            if filtered.len() == 1 {
+                generate_node(ctx, filtered[0]);
             } else {
                 ctx.push("[");
-                for (i, child) in el.children.iter().enumerate() {
+                for (i, child) in filtered.iter().enumerate() {
                     if i > 0 {
                         ctx.push(", ");
                     }
