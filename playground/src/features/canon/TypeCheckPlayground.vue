@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import "./TypeCheckPlayground.css";
 import { ref, watch, computed, onMounted, onUnmounted, inject, type ComputedRef } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
-import type { WasmModule } from "../../wasm/index";
+import { type WasmModule, getWasm } from "../../wasm/index";
 import { TYPECHECK_PRESET, TYPECHECK_TYPED_PRESET } from "../../shared/presets/typecheck";
-import { mdiCheckDecagram, mdiCheck, mdiCloseCircle, mdiAlert, mdiInformation } from "@mdi/js";
+import {
+  mdiCheckDecagram,
+  mdiCheck,
+  mdiCloseCircle,
+  mdiAlert,
+  mdiInformation,
+  mdiCodeTags,
+} from "@mdi/js";
 import { useMonacoTypeCheck } from "./useMonacoTypeCheck";
 import { formatHelp, formatMessage } from "./formatHelpers";
 
@@ -41,7 +49,7 @@ const {
   dispose,
 } = useMonacoTypeCheck({
   source,
-  compiler: () => props.compiler,
+  compiler: () => props.compiler ?? getWasm(),
   strictMode,
   includeVirtualTs,
   checkProps,
@@ -129,16 +137,44 @@ watch(
   },
 );
 
+// Workaround for vite-plugin-vize prop reactivity issue
+let hasCompilerInitialized = false;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+function tryInitialize() {
+  const compiler = getWasm();
+  if (compiler && !hasCompilerInitialized) {
+    hasCompilerInitialized = true;
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    typeCheck();
+    loadCapabilities();
+  }
+}
+
 onMounted(async () => {
   loadOptions();
   await configureTypeScript();
   registerHoverProvider();
-  if (props.compiler) {
-    loadCapabilities();
+  tryInitialize();
+  if (!hasCompilerInitialized) {
+    pollInterval = setInterval(tryInitialize, 100);
+    setTimeout(() => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }, 10000);
   }
 });
 
 onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
   dispose();
 });
 </script>
@@ -148,7 +184,9 @@ onUnmounted(() => {
     <div class="panel input-panel">
       <div class="panel-header">
         <div class="header-title">
-          <span class="icon">&lt;/&gt;</span>
+          <svg class="icon" viewBox="0 0 24 24">
+            <path :d="mdiCodeTags" fill="currentColor" />
+          </svg>
           <h2>Source</h2>
         </div>
         <div class="panel-actions">
@@ -338,5 +376,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped src="./TypeCheckPlayground.css"></style>

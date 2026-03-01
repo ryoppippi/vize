@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "./CrossFilePlayground.css";
 import { ref, computed, watch, onMounted, onUnmounted, inject, type ComputedRef } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import type { Diagnostic } from "../../shared/MonacoEditor.vue";
@@ -136,6 +137,32 @@ watch(
   { deep: true },
 );
 
+// Workaround for vite-plugin-vize: v-for scoped variables are not correctly
+// passed to event handlers. We read the filename from DOM instead.
+function setEditorValue(source: string) {
+  const el = document.querySelector(".editor-content .monaco-container") as any;
+  if (el?.__monacoEditor) {
+    el.__monacoEditor.setValue(source);
+  }
+}
+
+function handleFileClick(event: Event) {
+  const el = event.currentTarget as HTMLElement;
+  const name =
+    el.querySelector(".tab-name, .file-name, .dep-target")?.textContent?.trim() ||
+    el.textContent?.trim() ||
+    "";
+  if (name && files.value[name]) {
+    selectFile(name);
+    setEditorValue(files.value[name]);
+  }
+}
+
+function handleSelectIssue(issue: (typeof crossFileIssues.value)[0]) {
+  selectIssue(issue);
+  setEditorValue(files.value[issue.file] ?? "");
+}
+
 // Workaround for vite-plugin-vize prop reactivity issue
 // Use getWasm() directly with polling instead of props.compiler
 let hasCompilerInitialized = false;
@@ -228,7 +255,7 @@ onUnmounted(() => {
                 'has-warnings': issuesByFile[name]?.some((i) => i.severity === 'warning'),
               },
             ]"
-            @click="selectFile(name)"
+            @click="handleFileClick($event)"
           >
             <svg class="file-icon" viewBox="0 0 24 24">
               <path :d="getFileIcon(name)" fill="currentColor" />
@@ -260,7 +287,7 @@ onUnmounted(() => {
                 <svg class="dep-arrow" viewBox="0 0 24 24">
                   <path :d="mdiArrowRight" fill="currentColor" />
                 </svg>
-                <span class="dep-target" @click="selectFile(dep)">{{ dep }}</span>
+                <span class="dep-target" @click="handleFileClick($event)">{{ dep }}</span>
               </div>
             </div>
           </div>
@@ -316,7 +343,7 @@ onUnmounted(() => {
             v-for="name in fileNames"
             :key="name"
             :class="['editor-tab', { active: activeFile === name }]"
-            @click="selectFile(name)"
+            @click="handleFileClick($event)"
           >
             <svg class="tab-icon" viewBox="0 0 24 24">
               <path :d="getFileIcon(name)" fill="currentColor" />
@@ -378,7 +405,7 @@ onUnmounted(() => {
               v-for="issue in issues"
               :key="issue.id"
               :class="['issue-card', issue.severity, { selected: selectedIssue?.id === issue.id }]"
-              @click="selectIssue(issue)"
+              @click="handleSelectIssue(issue)"
             >
               <div class="issue-header">
                 <svg class="severity-icon" viewBox="0 0 24 24">
@@ -407,5 +434,3 @@ onUnmounted(() => {
     </aside>
   </div>
 </template>
-
-<style scoped src="./CrossFilePlayground.css"></style>

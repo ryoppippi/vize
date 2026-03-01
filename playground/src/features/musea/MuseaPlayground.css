@@ -50,8 +50,8 @@
 .perf-badge {
   font-size: 0.625rem;
   padding: 0.125rem 0.375rem;
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
+  background: var(--color-success-bg);
+  color: var(--color-success);
   border-radius: 3px;
   font-family: "JetBrains Mono", monospace;
 }
@@ -83,18 +83,18 @@
   gap: 0.375rem;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
-  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
-  color: #a78bfa;
+  color: var(--text-secondary);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .btn-examples:hover {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(236, 72, 153, 0.3));
-  border-color: rgba(168, 85, 247, 0.6);
+  background: var(--bg-tertiary);
+  border-color: var(--accent-rust);
 }
 
 .tabs {
@@ -175,8 +175,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(236, 72, 153, 0.15));
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
   margin-bottom: 0.75rem;
 }
@@ -184,7 +184,7 @@
 .output-title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #a78bfa;
+  color: var(--accent-rust);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

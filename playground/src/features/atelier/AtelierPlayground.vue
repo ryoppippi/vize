@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from "vue";
+import { watch, onMounted, onUnmounted } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import CodeHighlight from "../../shared/CodeHighlight.vue";
 import { useTheme } from "../../utils/useTheme";
@@ -12,7 +12,7 @@ import {
   getTokenTypeColor,
 } from "./useTokenAnalysis";
 import { getBindingIcon, getBindingLabel } from "./bindingHelpers";
-import type { loadWasm } from "../../wasm/index";
+import { type loadWasm, getWasm } from "../../wasm/index";
 
 const props = defineProps<{
   compiler: Awaited<ReturnType<typeof loadWasm>> | null;
@@ -48,7 +48,7 @@ const {
   compile,
   handlePresetChange,
   copyFullOutput,
-} = useAtelierCompiler(() => props.compiler);
+} = useAtelierCompiler(() => props.compiler ?? getWasm());
 
 const { lexicalTokens, tokensByType, tokenStats } = useTokenAnalysis(source);
 
@@ -57,7 +57,44 @@ watch(
   () => {
     if (props.compiler) compile();
   },
+  { immediate: true },
 );
+
+// Workaround for vite-plugin-vize prop reactivity issue
+let hasCompilerInitialized = false;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+function tryInitialize() {
+  const compiler = getWasm();
+  if (compiler && !hasCompilerInitialized) {
+    hasCompilerInitialized = true;
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    compile();
+  }
+}
+
+onMounted(() => {
+  tryInitialize();
+  if (!hasCompilerInitialized) {
+    pollInterval = setInterval(tryInitialize, 100);
+    setTimeout(() => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }, 10000);
+  }
+});
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+});
 </script>
 
 <template>
@@ -80,9 +117,6 @@ watch(
         Output
         <span v-if="compileTime !== null" class="compile-time">{{ compileTime.toFixed(4) }}ms</span>
       </h2>
-      <div class="panel-actions">
-        <button @click="copyFullOutput" class="btn-ghost">Copy All Output</button>
-      </div>
       <div class="tabs">
         <button :class="['tab', { active: activeTab === 'code' }]" @click="activeTab = 'code'">
           Code
@@ -123,7 +157,7 @@ watch(
         <span>Compiling...</span>
       </div>
 
-      <div v-else-if="error" class="error">
+      <div v-else-if="error" class="wasm-error">
         <h3>Compilation Error</h3>
         <pre>{{ error }}</pre>
       </div>
@@ -133,34 +167,34 @@ watch(
         <div v-if="activeTab === 'code'" class="code-output">
           <div class="code-header">
             <h4>Compiled Code</h4>
-            <div v-if="isTypeScript" class="code-mode-toggle">
+            <div class="code-header-actions">
+              <div v-if="isTypeScript" class="code-mode-toggle">
+                <button
+                  :class="['toggle-btn', { active: codeViewMode === 'ts' }]"
+                  @click="codeViewMode = 'ts'"
+                >
+                  TS
+                </button>
+                <button
+                  :class="['toggle-btn', { active: codeViewMode === 'js' }]"
+                  @click="codeViewMode = 'js'"
+                >
+                  JS
+                </button>
+              </div>
               <button
-                :class="['toggle-btn', { active: codeViewMode === 'ts' }]"
-                @click="codeViewMode = 'ts'"
+                @click="
+                  copyToClipboard(
+                    isTypeScript && codeViewMode === 'js'
+                      ? formattedJsCode
+                      : formattedCode || output.code,
+                  )
+                "
+                class="btn-ghost"
               >
-                TS
-              </button>
-              <button
-                :class="['toggle-btn', { active: codeViewMode === 'js' }]"
-                @click="codeViewMode = 'js'"
-              >
-                JS
+                Copy
               </button>
             </div>
-          </div>
-          <div class="code-actions">
-            <button
-              @click="
-                copyToClipboard(
-                  isTypeScript && codeViewMode === 'js'
-                    ? formattedJsCode
-                    : formattedCode || output.code,
-                )
-              "
-              class="btn-ghost"
-            >
-              Copy
-            </button>
           </div>
           <CodeHighlight
             v-if="isTypeScript && codeViewMode === 'js'"

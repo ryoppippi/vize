@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "./GlyphPlayground.css";
 import { ref, watch, computed, inject, toRaw, onMounted, onUnmounted, type ComputedRef } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import CodeHighlight from "../../shared/CodeHighlight.vue";
@@ -601,5 +602,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped src="./GlyphPlayground.css"></style>

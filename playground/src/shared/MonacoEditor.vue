@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "./MonacoEditor.css";
 import { ref, watch, onMounted, onUnmounted, shallowRef, inject, type ComputedRef } from "vue";
 import * as monaco from "monaco-editor";
 import { configureMonaco, addVueCommentAction } from "./monacoConfig";
@@ -119,7 +120,7 @@ onMounted(() => {
 
   configureMonaco();
 
-  editorInstance.value = monaco.editor.create(containerRef.value, {
+  const editor = monaco.editor.create(containerRef.value, {
     value: props.modelValue,
     language: props.language,
     theme: resolvedTheme() === "light" ? "vue-light" : "vue-dark",
@@ -135,14 +136,18 @@ onMounted(() => {
     readOnly: props.readOnly ?? false,
     domReadOnly: props.readOnly ?? false,
   });
+  editorInstance.value = editor;
 
-  editorInstance.value.onDidChangeModelContent(() => {
-    const value = editorInstance.value?.getValue() || "";
+  // Store on DOM for vite-plugin-vize workaround (ref binding may fail)
+  (containerRef.value as any).__monacoEditor = editor;
+
+  editor.onDidChangeModelContent(() => {
+    const value = editor.getValue() || "";
     emit("update:modelValue", value);
   });
 
   if (props.language === "vue") {
-    addVueCommentAction(editorInstance.value);
+    addVueCommentAction(editor);
   }
 
   if (props.scopes && props.scopes.length > 0) {
@@ -220,6 +225,3 @@ defineExpose({
    due to Vize compiler not extracting scoped styles in production builds.
    See: styles.css -> Monaco Container section */
 </style>
-
-<!-- Global styles for Monaco decorations (must not be scoped) -->
-<style src="./MonacoEditor.css"></style>

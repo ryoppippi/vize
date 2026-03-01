@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, watch, computed, inject, type ComputedRef } from "vue";
+import "./MuseaPlayground.css";
+import { ref, watch, computed, inject, onMounted, onUnmounted, type ComputedRef } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import CodeHighlight from "../../shared/CodeHighlight.vue";
-import type { WasmModule } from "../../wasm/index";
+import { type WasmModule, getWasm } from "../../wasm/index";
 import { ART_PRESET } from "../../shared/presets/musea";
 import { mdiPalette, mdiDiamond } from "@mdi/js";
 import { useArtParsing } from "./useArtParsing";
@@ -26,7 +27,8 @@ const {
   sizeTokens,
   otherTokens,
   variantCount,
-} = useArtParsing(source, () => props.compiler);
+  compile,
+} = useArtParsing(source, () => props.compiler ?? getWasm());
 
 type TabType = "parsed" | "csf" | "variants";
 const validTabs: TabType[] = ["parsed", "csf", "variants"];
@@ -55,6 +57,42 @@ watch(activeTab, (tab) => {
 function copyToClipboard(text: string) {
   navigator.clipboard.writeText(text);
 }
+
+// Workaround for vite-plugin-vize prop reactivity issue
+let hasCompilerInitialized = false;
+let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+function tryInitialize() {
+  const compiler = getWasm();
+  if (compiler && !hasCompilerInitialized) {
+    hasCompilerInitialized = true;
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    compile();
+  }
+}
+
+onMounted(() => {
+  tryInitialize();
+  if (!hasCompilerInitialized) {
+    pollInterval = setInterval(tryInitialize, 100);
+    setTimeout(() => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }, 10000);
+  }
+});
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+});
 </script>
 
 <template>
@@ -301,5 +339,3 @@ function copyToClipboard(text: string) {
     </div>
   </div>
 </template>
-
-<style scoped src="./MuseaPlayground.css"></style>

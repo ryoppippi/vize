@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import "./CroquisPlayground.css";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
-import type { WasmModule } from "../../wasm/index";
+import { type WasmModule, getWasm } from "../../wasm/index";
 import { ANALYSIS_PRESET } from "../../shared/presets/croquis";
 import { mdiCodeTags, mdiChartTimelineVariant, mdiCheck, mdiCloseCircle, mdiAlert } from "@mdi/js";
 import { useCroquisAnalysis } from "./useCroquisAnalysis";
@@ -32,7 +33,7 @@ const {
   monacoDiagnostics,
   bindingsBySource,
   virLines,
-} = useCroquisAnalysis(() => props.compiler);
+} = useCroquisAnalysis(() => props.compiler ?? getWasm());
 </script>
 
 <template>
@@ -345,5 +346,3 @@ const {
     </div>
   </div>
 </template>
-
-<style scoped src="./CroquisPlayground.css"></style>

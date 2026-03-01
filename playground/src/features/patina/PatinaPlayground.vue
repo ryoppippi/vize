@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import "./PatinaPlayground.css";
 import { ref, watch, computed, onMounted, onUnmounted, inject, type ComputedRef } from "vue";
 import MonacoEditor from "../../shared/MonacoEditor.vue";
 import type { WasmModule, LintResult, LintRule } from "../../wasm/index";
@@ -103,8 +104,8 @@ function tryInitialize() {
       clearInterval(pollInterval);
       pollInterval = null;
     }
-    lint();
     loadRules();
+    lint();
   }
 }
 
@@ -324,5 +325,3 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
-
-<style scoped src="./PatinaPlayground.css"></style>
