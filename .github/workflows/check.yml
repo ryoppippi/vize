@@ -148,13 +148,14 @@ jobs:
         working-directory: playground
         run: pnpm test:browser
 
-      - name: Update VRT snapshots
+      - name: Run VRT
         working-directory: playground
-        run: pnpm test:vrt:update
+        run: pnpm test:vrt
 
-      - name: Upload VRT snapshots
+      - name: Upload VRT diff artifacts
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: vrt-snapshots
-          path: playground/e2e/vrt/__snapshots__/
+          name: vrt-diff
+          path: playground/e2e/vrt/test-results/
           retention-days: 7
