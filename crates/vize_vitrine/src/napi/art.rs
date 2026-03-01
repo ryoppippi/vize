@@ -4,7 +4,11 @@
 //! catalog generation, palette/props controls, and variant autogeneration.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;

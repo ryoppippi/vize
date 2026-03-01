@@ -1,7 +1,11 @@
 //! Patina (Linter) WASM bindings.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use super::to_js_value;
 use wasm_bindgen::prelude::*;

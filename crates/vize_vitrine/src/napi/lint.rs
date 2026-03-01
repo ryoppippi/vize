@@ -4,7 +4,11 @@
 //! with native multithreading and .gitignore awareness.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use glob::glob;
 use napi::bindgen_prelude::Result;
@@ -138,7 +142,12 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
         let lint_results: Vec<_> = results.iter().map(|(_, _, r)| r).cloned().collect();
         let sources: Vec<_> = results
             .iter()
-            .map(|(f, s, _)| (vize_carton::CompactString::from(f.as_str()), vize_carton::CompactString::from(s.as_str())))
+            .map(|(f, s, _)| {
+                (
+                    vize_carton::CompactString::from(f.as_str()),
+                    vize_carton::CompactString::from(s.as_str()),
+                )
+            })
             .collect();
 
         let formatted = format_results(&lint_results, &sources, format);

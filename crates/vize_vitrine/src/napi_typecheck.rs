@@ -1,7 +1,11 @@
 //! NAPI bindings for type checking.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
@@ -78,11 +82,8 @@ pub fn type_check_napi(
     options: Option<TypeCheckOptionsNapi>,
 ) -> Result<TypeCheckResultNapi> {
     let opts = options.unwrap_or_default();
-    let filename: vize_carton::CompactString = opts
-        .filename
-        .as_deref()
-        .unwrap_or("anonymous.vue")
-        .into();
+    let filename: vize_carton::CompactString =
+        opts.filename.as_deref().unwrap_or("anonymous.vue").into();
 
     let mut check_opts = TypeCheckOptions::new(filename);
     apply_napi_options(&opts, &mut check_opts);

@@ -4,7 +4,11 @@
 //! for direct template-to-render-function compilation.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use napi::bindgen_prelude::{Error, Result, Status};
 use napi_derive::napi;
@@ -96,7 +100,12 @@ pub fn compile_vapor(template: String, options: Option<CompilerOptions>) -> Resu
     if !result.error_messages.is_empty() {
         return Err(Error::new(
             Status::GenericFailure,
-            result.error_messages.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n"),
+            result
+                .error_messages
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n"),
         ));
     }
 

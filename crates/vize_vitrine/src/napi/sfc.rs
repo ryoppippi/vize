@@ -4,7 +4,11 @@
 //! compileSfcBatchWithResults functions for Vue Single File Components.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use glob::glob;
 use napi::bindgen_prelude::{Env, Error, Object, Result, Status};
@@ -128,7 +132,10 @@ pub fn parse_sfc(env: Env, source: String, options: Option<SfcParseOptionsNapi>)
 
     let opts = options.unwrap_or_default();
     let parse_opts = SfcParseOptions {
-        filename: opts.filename.unwrap_or_else(|| "anonymous.vue".to_string()).into(),
+        filename: opts
+            .filename
+            .unwrap_or_else(|| "anonymous.vue".to_string())
+            .into(),
         ..Default::default()
     };
 
@@ -212,8 +219,10 @@ pub fn compile_sfc(
     };
 
     let opts = options.unwrap_or_default();
-    let filename: vize_carton::CompactString =
-        opts.filename.unwrap_or_else(|| "anonymous.vue".to_string()).into();
+    let filename: vize_carton::CompactString = opts
+        .filename
+        .unwrap_or_else(|| "anonymous.vue".to_string())
+        .into();
 
     // Parse
     let parse_opts = SfcParseOptions {
@@ -285,8 +294,16 @@ pub fn compile_sfc(
         Ok(result) => Ok(SfcCompileResultNapi {
             code: result.code.into(),
             css: result.css.map(Into::into),
-            errors: result.errors.into_iter().map(|e| e.message.into()).collect(),
-            warnings: result.warnings.into_iter().map(|e| e.message.into()).collect(),
+            errors: result
+                .errors
+                .into_iter()
+                .map(|e| e.message.into())
+                .collect(),
+            warnings: result
+                .warnings
+                .into_iter()
+                .map(|e| e.message.into())
+                .collect(),
         }),
         Err(e) => Ok(SfcCompileResultNapi {
             code: String::new(),
@@ -563,8 +580,16 @@ pub fn compile_sfc_batch_with_results(
                     css: result.css.map(Into::into),
                     scope_id: scope_id.into(),
                     has_scoped: actual_has_scoped,
-                    errors: result.errors.into_iter().map(|e| e.message.into()).collect(),
-                    warnings: result.warnings.into_iter().map(|e| e.message.into()).collect(),
+                    errors: result
+                        .errors
+                        .into_iter()
+                        .map(|e| e.message.into())
+                        .collect(),
+                    warnings: result
+                        .warnings
+                        .into_iter()
+                        .map(|e| e.message.into())
+                        .collect(),
                     template_hash: template_hash.clone(),
                     style_hash: style_hash.clone(),
                     script_hash: script_hash.clone(),

@@ -1,7 +1,11 @@
 //! WASM bindings for Vue compiler.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 mod analyze;
 mod cross_file;
@@ -361,8 +365,16 @@ impl Compiler {
                     .map(|b| serde_json::to_value(&b).unwrap_or_default()),
             },
             css: sfc_result.css.map(Into::into),
-            errors: sfc_result.errors.into_iter().map(|e| e.message.into()).collect(),
-            warnings: sfc_result.warnings.into_iter().map(|e| e.message.into()).collect(),
+            errors: sfc_result
+                .errors
+                .into_iter()
+                .map(|e| e.message.into())
+                .collect(),
+            warnings: sfc_result
+                .warnings
+                .into_iter()
+                .map(|e| e.message.into())
+                .collect(),
             binding_metadata,
         };
 
@@ -418,7 +430,12 @@ fn compile_internal(
         let result = vapor_compile(&allocator, template, vapor_opts);
 
         if !result.error_messages.is_empty() {
-            return Err(result.error_messages.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n"));
+            return Err(result
+                .error_messages
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n"));
         }
 
         return Ok(CompileResult {

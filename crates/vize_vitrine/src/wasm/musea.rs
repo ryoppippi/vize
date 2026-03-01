@@ -1,7 +1,11 @@
 //! Musea (Art file) WASM bindings.
 //!
 //! FFI boundary code: uses std types for JavaScript interop.
-#![allow(clippy::disallowed_types, clippy::disallowed_methods, clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_types,
+    clippy::disallowed_methods,
+    clippy::disallowed_macros
+)]
 
 use super::to_js_value;
 use vize_carton::cstr;
@@ -18,7 +22,9 @@ pub fn parse_art_wasm(source: &str, options: JsValue) -> Result<JsValue, JsValue
         .and_then(|v| v.as_string())
         .unwrap_or_else(|| "anonymous.art.vue".to_string());
 
-    let parse_opts = ArtParseOptions { filename: filename.into() };
+    let parse_opts = ArtParseOptions {
+        filename: filename.into(),
+    };
 
     let descriptor =
         parse_art(&allocator, source, parse_opts).map_err(|e| JsValue::from_str(&e.to_string()))?;
@@ -66,7 +72,9 @@ pub fn art_to_csf_wasm(source: &str, options: JsValue) -> Result<JsValue, JsValu
         .and_then(|v| v.as_string())
         .unwrap_or_else(|| "anonymous.art.vue".to_string());
 
-    let parse_opts = ArtParseOptions { filename: filename.into() };
+    let parse_opts = ArtParseOptions {
+        filename: filename.into(),
+    };
 
     let descriptor =
         parse_art(&allocator, source, parse_opts).map_err(|e| JsValue::from_str(&e.to_string()))?;
@@ -96,7 +104,9 @@ pub fn generate_art_doc_wasm(source: &str, options: JsValue) -> Result<JsValue, 
         .and_then(|v| v.as_string())
         .unwrap_or_else(|| "anonymous.art.vue".to_string());
 
-    let parse_opts = ArtParseOptions { filename: filename.into() };
+    let parse_opts = ArtParseOptions {
+        filename: filename.into(),
+    };
 
     let descriptor =
         parse_art(&allocator, source, parse_opts).map_err(|e| JsValue::from_str(&e.to_string()))?;
@@ -220,7 +230,9 @@ pub fn generate_art_palette_wasm(source: &str, options: JsValue) -> Result<JsVal
         .and_then(|v| v.as_string())
         .unwrap_or_else(|| "anonymous.art.vue".to_string());
 
-    let parse_opts = ArtParseOptions { filename: filename.into() };
+    let parse_opts = ArtParseOptions {
+        filename: filename.into(),
+    };
 
     let descriptor =
         parse_art(&allocator, source, parse_opts).map_err(|e| JsValue::from_str(&e.to_string()))?;
