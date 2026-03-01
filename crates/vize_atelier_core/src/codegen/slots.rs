@@ -87,7 +87,10 @@ pub fn has_slot_children(el: &ElementNode<'_>) -> bool {
     }
 
     // Teleport and KeepAlive pass children as arrays, not slot objects
-    if matches!(el.tag.as_str(), "Teleport" | "KeepAlive") {
+    if matches!(
+        el.tag.as_str(),
+        "Teleport" | "teleport" | "KeepAlive" | "keep-alive"
+    ) {
         return false;
     }
 

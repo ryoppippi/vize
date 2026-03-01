@@ -20,12 +20,24 @@ pub(crate) fn resolve_type_args(
         return content.to_compact_string();
     }
 
-    // Handle intersection types: BaseProps & ExtendedProps
+    // Handle intersection types: BaseProps & ExtendedProps & { inline: string }
     if content.contains('&') {
-        let parts: Vec<&str> = content.split('&').collect();
+        // Split by '&' but respect braces (inline object types may contain '&')
+        let parts = split_intersection(content);
         let mut merged_props = Vec::new();
-        for part in parts {
-            let resolved = resolve_single_type_ref(part.trim(), interfaces, type_aliases);
+        for part in &parts {
+            let trimmed_part = part.trim();
+            // Inline object type literal - include directly
+            if trimmed_part.starts_with('{') && trimmed_part.ends_with('}') {
+                let inner = &trimmed_part[1..trimmed_part.len() - 1];
+                let inner = inner.trim();
+                if !inner.is_empty() {
+                    merged_props.push(inner.to_compact_string());
+                }
+                continue;
+            }
+            // Named type reference - resolve it
+            let resolved = resolve_single_type_ref(trimmed_part, interfaces, type_aliases);
             if let Some(body) = resolved {
                 let body = body.trim();
                 let inner = if body.starts_with('{') && body.ends_with('}') {
@@ -91,4 +103,29 @@ pub(crate) fn resolve_single_type_ref(
         return Some(body.clone());
     }
     None
+}
+
+/// Split an intersection type string by `&`, respecting brace nesting.
+/// `"BaseProps & { paginator: T }"` → `["BaseProps", "{ paginator: T }"]`
+fn split_intersection(s: &str) -> Vec<String> {
+    let mut parts = Vec::new();
+    let mut depth = 0i32;
+    let mut start = 0;
+    let bytes = s.as_bytes();
+    for (i, &b) in bytes.iter().enumerate() {
+        match b {
+            b'{' | b'<' | b'(' => depth += 1,
+            b'}' | b'>' | b')' => depth -= 1,
+            b'&' if depth == 0 => {
+                parts.push(s[start..i].trim().to_compact_string());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    let last = s[start..].trim();
+    if !last.is_empty() {
+        parts.push(last.to_compact_string());
+    }
+    parts
 }

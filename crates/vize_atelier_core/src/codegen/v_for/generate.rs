@@ -16,6 +16,7 @@ use super::super::{
     helpers::{escape_js_string, is_builtin_component},
     node::generate_node,
     patch_flag::{calculate_element_patch_info, patch_flag_name},
+    slots::{generate_slots, has_slot_children},
 };
 use super::helpers::{get_element_key, has_other_props, should_skip_prop};
 use vize_carton::ToCompactString;
@@ -201,7 +202,12 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 let children_el = unwrapped_child.unwrap_or(el);
                 if !children_el.children.is_empty() {
                     ctx.push(", ");
-                    if gen_is_template {
+                    if is_component && has_slot_children(children_el) {
+                        // Component children must be compiled as slot functions,
+                        // not raw children. Otherwise Vue warns:
+                        // "Non-function value encountered for default slot"
+                        generate_slots(ctx, children_el);
+                    } else if gen_is_template {
                         // Template children are array
                         ctx.push("[");
                         ctx.indent();
@@ -222,11 +228,18 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
 
                 // Add patch flag
                 if is_component {
-                    let (patch_flag, dynamic_props) = calculate_element_patch_info(
+                    let (mut patch_flag, dynamic_props) = calculate_element_patch_info(
                         el,
                         ctx.options.binding_metadata.as_ref(),
                         ctx.options.cache_handlers,
                     );
+                    // Remove TEXT flag for components with slot children (text is inside slot)
+                    if has_slot_children(el) {
+                        if let Some(flag) = patch_flag {
+                            let new_flag = flag & !1;
+                            patch_flag = if new_flag > 0 { Some(new_flag) } else { None };
+                        }
+                    }
                     if el.children.is_empty() && (patch_flag.is_some() || dynamic_props.is_some()) {
                         ctx.push(", null");
                     }

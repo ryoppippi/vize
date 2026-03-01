@@ -1,6 +1,7 @@
 //! Main props generation logic.
 
 use crate::ast::{ExpressionNode, PropNode, RuntimeHelper};
+use vize_relief::options::BindingType;
 
 use super::{
     super::{
@@ -390,35 +391,58 @@ fn generate_props_object_inner(
                     ctx.push(" ");
                 }
                 first = false;
-                // Keys need quotes if they contain special characters (like hyphens)
-                let needs_quotes = !is_valid_js_identifier(&attr.name);
-                if needs_quotes {
-                    ctx.push("\"");
-                }
-                ctx.push(&attr.name);
-                if needs_quotes {
-                    ctx.push("\"");
-                }
-                ctx.push(": ");
-                if let Some(value) = &attr.value {
-                    // In inline mode, ref="refName" should reference the setup variable directly
-                    // instead of being a string literal, if refName is a known binding
-                    let is_ref_binding = attr.name == "ref"
-                        && ctx.options.inline
-                        && ctx
-                            .options
+
+                // Check if this is a ref attribute that needs ref_key generation
+                let ref_binding_type = if attr.name == "ref" && ctx.options.inline {
+                    attr.value.as_ref().and_then(|v| {
+                        ctx.options
                             .binding_metadata
                             .as_ref()
-                            .is_some_and(|m| m.bindings.contains_key(value.content.as_str()));
-                    if is_ref_binding {
-                        ctx.push(&value.content);
-                    } else {
-                        ctx.push("\"");
-                        ctx.push(&escape_js_string(&value.content));
+                            .and_then(|m| m.bindings.get(v.content.as_str()).copied())
+                    })
+                } else {
+                    None
+                };
+                let needs_ref_key = matches!(
+                    ref_binding_type,
+                    Some(
+                        BindingType::SetupLet | BindingType::SetupRef | BindingType::SetupMaybeRef
+                    )
+                );
+
+                if needs_ref_key {
+                    // Emit ref_key + ref pair for setup-let/ref/maybe-ref bindings.
+                    // Vue's runtime setRef() needs ref_key to write to instance.refs,
+                    // which is essential for useTemplateRef to receive the element.
+                    let ref_name = &attr.value.as_ref().unwrap().content;
+                    ctx.push("ref_key: \"");
+                    ctx.push(ref_name);
+                    ctx.push("\", ref: ");
+                    ctx.push(ref_name);
+                } else {
+                    // Normal attribute output
+                    let needs_quotes = !is_valid_js_identifier(&attr.name);
+                    if needs_quotes {
                         ctx.push("\"");
                     }
-                } else {
-                    ctx.push("\"\"");
+                    ctx.push(&attr.name);
+                    if needs_quotes {
+                        ctx.push("\"");
+                    }
+                    ctx.push(": ");
+                    if let Some(value) = &attr.value {
+                        // In inline mode, ref="refName" should reference the setup variable
+                        // instead of being a string literal, if refName is a known binding
+                        if ref_binding_type.is_some() {
+                            ctx.push(&value.content);
+                        } else {
+                            ctx.push("\"");
+                            ctx.push(&escape_js_string(&value.content));
+                            ctx.push("\"");
+                        }
+                    } else {
+                        ctx.push("\"\"");
+                    }
                 }
             }
             PropNode::Directive(dir) => {

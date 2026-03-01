@@ -63,10 +63,17 @@ fn process_directive_expressions<'a>(
                     }
                 }
                 "on" => {
-                    // Process event handler expression
                     if let Some(exp) = &dir.exp {
-                        let processed = process_inline_handler(ctx, exp);
-                        dir.exp = Some(processed);
+                        if dir.arg.is_none() {
+                            // v-on="obj" - process as regular expression (object of handlers),
+                            // NOT as an inline handler. toHandlers() expects an object, not a function.
+                            let processed = process_expression(ctx, exp, false);
+                            dir.exp = Some(processed);
+                        } else {
+                            // v-on:event="handler" - process as inline handler
+                            let processed = process_inline_handler(ctx, exp);
+                            dir.exp = Some(processed);
+                        }
                     }
                 }
                 "model" => {
