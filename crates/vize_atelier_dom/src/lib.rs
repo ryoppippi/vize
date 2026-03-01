@@ -208,7 +208,10 @@ mod tests {
         let template = r#"<button @click="quoteId = null; renoteTargetNote = null;">x</button>"#;
         let (_, errors, result) = compile_template_with_options(&allocator, template, opts);
 
-        eprintln!("=== Template Output ===\npreamble:\n{}\ncode:\n{}", result.preamble, result.code);
+        eprintln!(
+            "=== Template Output ===\npreamble:\n{}\ncode:\n{}",
+            result.preamble, result.code
+        );
         assert!(errors.is_empty(), "Errors: {:?}", errors);
         let full = format!("{}\n{}", result.preamble, result.code);
         assert!(
