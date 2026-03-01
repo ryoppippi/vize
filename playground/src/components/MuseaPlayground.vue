@@ -203,11 +203,11 @@ watch(
             </svg>
             Examples
           </a>
-          <button @click="source = ART_PRESET" class="btn-ghost">Reset</button>
+          <button class="btn-ghost" @click="source = ART_PRESET">Reset</button>
         </div>
       </div>
       <div class="editor-container">
-        <MonacoEditor v-model="source" language="vue" :diagnostics="diagnostics" :theme="theme" />
+        <MonacoEditor v-model="source" language="vue" :diagnostics :theme />
       </div>
     </div>
 
@@ -309,9 +309,12 @@ watch(
                   <div
                     v-for="token in colorTokens"
                     :key="token.name"
+                    role="button"
+                    tabindex="0"
                     class="color-token"
-                    @click="copyToClipboard(token.name)"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <div class="color-swatch" :style="{ background: token.value }"></div>
                     <div class="token-info">
@@ -329,9 +332,12 @@ watch(
                   <div
                     v-for="token in sizeTokens"
                     :key="token.name"
+                    role="button"
+                    tabindex="0"
                     class="size-token"
-                    @click="copyToClipboard(token.name)"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <code class="token-name">{{ token.name }}</code>
                     <span class="token-value">{{ token.value }}</span>
@@ -347,9 +353,12 @@ watch(
                   <div
                     v-for="token in otherTokens"
                     :key="token.name"
+                    role="button"
+                    tabindex="0"
                     class="other-token"
-                    @click="copyToClipboard(token.name)"
                     :title="`Click to copy: ${token.name}`"
+                    @click="copyToClipboard(token.name)"
+                    @keydown.enter="copyToClipboard(token.name)"
                   >
                     <code class="token-name">{{ token.name }}</code>
                     <span class="token-value">{{ token.value }}</span>
@@ -378,10 +387,10 @@ watch(
                     <span v-if="variant.isDefault" class="default-badge">default</span>
                     <span v-if="variant.skipVrt" class="skip-badge">skip vrt</span>
                   </div>
-                  <button @click="copyToClipboard(variant.template)" class="btn-copy">Copy</button>
+                  <button class="btn-copy" @click="copyToClipboard(variant.template)">Copy</button>
                 </div>
                 <div class="variant-template">
-                  <CodeHighlight :code="variant.template" language="html" :theme="theme" />
+                  <CodeHighlight :code="variant.template" language="html" :theme />
                 </div>
               </div>
             </div>
@@ -393,7 +402,7 @@ watch(
               <span class="output-title">Storybook CSF</span>
               <div class="csf-actions">
                 <code class="filename-badge">{{ csfOutput.filename }}</code>
-                <button @click="copyToClipboard(csfOutput.code)" class="btn-copy">Copy</button>
+                <button class="btn-copy" @click="copyToClipboard(csfOutput.code)">Copy</button>
               </div>
             </div>
             <div class="code-container">
@@ -401,7 +410,7 @@ watch(
                 :code="csfOutput.code"
                 language="typescript"
                 show-line-numbers
-                :theme="theme"
+                :theme
               />
             </div>
           </div>
