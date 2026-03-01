@@ -1,0 +1,7 @@
+*
+!.gitignore
+!index.ts
+!types.ts
+!types/
+!types/*.ts
+!wasm-transform.ts
