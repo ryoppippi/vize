@@ -4,6 +4,7 @@
 //! `v-slot:` -> `#`) and JS expression formatting in directive values.
 
 use crate::{options::FormatOptions, script};
+use vize_carton::{String, ToCompactString};
 
 use super::attributes::attribute_priority;
 
@@ -15,18 +16,18 @@ pub(crate) fn normalize_attribute(
     options: &FormatOptions,
 ) -> (String, Option<String>, u8) {
     // Normalize directive shorthands (only if enabled)
-    let normalized_name = if options.normalize_directive_shorthands {
+    let normalized_name: String = if options.normalize_directive_shorthands {
         if let Some(rest) = name.strip_prefix("v-bind:") {
-            format!(":{rest}")
+            format!(":{rest}").into()
         } else if let Some(rest) = name.strip_prefix("v-on:") {
-            format!("@{rest}")
+            format!("@{rest}").into()
         } else if let Some(rest) = name.strip_prefix("v-slot:") {
-            format!("#{rest}")
+            format!("#{rest}").into()
         } else {
-            name.to_string()
+            name.to_compact_string()
         }
     } else {
-        name.to_string()
+        name.to_compact_string()
     };
 
     // Format JS expressions in directive values
@@ -66,7 +67,7 @@ fn should_format_expression(name: &str) -> bool {
 fn format_directive_value(name: &str, value: &str, options: &FormatOptions) -> String {
     let trimmed = value.trim();
     if trimmed.is_empty() {
-        return value.to_string();
+        return value.to_compact_string();
     }
 
     // v-for has special syntax: "(item, index) in items"
@@ -75,7 +76,7 @@ fn format_directive_value(name: &str, value: &str, options: &FormatOptions) -> S
     }
 
     // Try to format as JS expression via oxc_formatter
-    script::format_js_expression(trimmed, options).unwrap_or_else(|| value.to_string())
+    script::format_js_expression(trimmed, options).unwrap_or_else(|| value.to_compact_string())
 }
 
 /// Format `v-for` expression: normalize spacing in `(item, index) in items`.
@@ -88,22 +89,22 @@ pub(crate) fn format_v_for_expression(expr: &str) -> String {
         } else if let Some(idx) = find_v_for_keyword(expr, " of ") {
             (&expr[..idx], " of ", &expr[idx + 4..])
         } else {
-            return expr.to_string();
+            return expr.to_compact_string();
         };
 
     let iter_trimmed = iterator_part.trim();
     let collection_trimmed = collection_part.trim();
 
     // Normalize parenthesized destructuring: "(item,index)" -> "(item, index)"
-    let normalized_iter = if iter_trimmed.starts_with('(') && iter_trimmed.ends_with(')') {
+    let normalized_iter: String = if iter_trimmed.starts_with('(') && iter_trimmed.ends_with(')') {
         let inner = &iter_trimmed[1..iter_trimmed.len() - 1];
         let parts: Vec<&str> = inner.split(',').map(|s| s.trim()).collect();
-        format!("({})", parts.join(", "))
+        format!("({})", parts.join(", ")).into()
     } else {
-        iter_trimmed.to_string()
+        iter_trimmed.to_compact_string()
     };
 
-    format!("{normalized_iter}{keyword}{collection_trimmed}")
+    format!("{normalized_iter}{keyword}{collection_trimmed}").into()
 }
 
 /// Find `keyword` in a v-for expression while respecting nested parens/brackets.

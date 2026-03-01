@@ -22,6 +22,7 @@ use super::{
     directives::{generate_vmodel_closing, generate_vshow_closing},
     helpers::{has_vmodel_directive, has_vshow_directive, is_is_prop, is_renderable_prop},
 };
+use vize_carton::ToCompactString;
 
 /// Generate element code (non-block)
 pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
@@ -82,7 +83,7 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             // If props are hoisted, use the hoisted reference
             if let Some(hoisted_index) = el.hoisted_props_index {
                 ctx.push(", _hoisted_");
-                ctx.push(&hoisted_index.to_string());
+                ctx.push(&hoisted_index.to_compact_string());
             } else if super::helpers::has_renderable_props(el) {
                 ctx.push(", ");
                 generate_props(ctx, &el.props);
@@ -101,7 +102,7 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             // Generate patch flag
             if let Some(flag) = patch_flag {
                 ctx.push(", ");
-                ctx.push(&flag.to_string());
+                ctx.push(&flag.to_compact_string());
                 ctx.push(" /* ");
                 let flag_name = patch_flag_name(flag);
                 ctx.push(&flag_name);
@@ -325,7 +326,7 @@ pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
     // Close withMemo wrapper if v-memo was present
     if let Some(cache_index) = memo_cache_index {
         ctx.push(", _cache, ");
-        ctx.push(&cache_index.to_string());
+        ctx.push(&cache_index.to_compact_string());
         ctx.push(")");
     }
 }

@@ -1,6 +1,8 @@
 //! Functions for processing normal `<script>` blocks when both
 //! `<script>` and `<script setup>` exist.
 
+use vize_carton::{String, ToCompactString};
+
 /// Extract content from normal script block that should be preserved when both
 /// `<script>` and `<script setup>` exist.
 /// This includes imports, type definitions, interfaces, but excludes `export default`.
@@ -38,11 +40,12 @@ pub(super) fn extract_normal_script_content(
             .lines()
             .filter(|line| !line.trim().starts_with("export default"))
             .collect::<Vec<_>>()
-            .join("\n");
+            .join("\n")
+            .into();
     }
 
     let program = ret.program;
-    let mut output = String::new();
+    let mut output = String::default();
     let mut last_end = 0;
 
     // Collect spans of statements to skip (export default declarations)
@@ -60,7 +63,9 @@ pub(super) fn extract_normal_script_content(
                 let stmt_end = stmt.span().end;
                 let stmt_text = &content[stmt_start as usize..stmt_end as usize];
                 // Replace "export default" with "const __default__ ="
-                let rewritten = stmt_text.replacen("export default", "const __default__ =", 1);
+                let rewritten: String = stmt_text
+                    .replacen("export default", "const __default__ =", 1)
+                    .into();
                 rewrites.push((stmt_start, stmt_end, rewritten));
                 let _ = decl; // suppress unused
             }
@@ -100,7 +105,7 @@ pub(super) fn extract_normal_script_content(
         output.push_str(&content[last_end..]);
     }
 
-    let extracted = output.trim().to_string();
+    let extracted = output.trim().to_compact_string();
 
     // If source is TypeScript and we need JavaScript output, transpile
     if source_is_ts && !output_is_ts {
@@ -130,7 +135,7 @@ pub(super) fn extract_normal_script_content(
 
                 if transform_ret.errors.is_empty() {
                     // Generate JavaScript code
-                    return Codegen::new().build(&program2).code;
+                    return Codegen::new().build(&program2).code.into();
                 }
             }
         }

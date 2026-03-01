@@ -2,7 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::{EventModifiers, SetEventIRNode};
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate SetEvent code
 pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>) {
@@ -11,9 +11,9 @@ pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<
 
     let handler: String = if let Some(ref value) = set_event.value {
         if value.is_static {
-            cstr!("\"{}\"", value.content).into()
+            cstr!("\"{}\"", value.content)
         } else {
-            value.content.to_string()
+            value.content.to_compact_string()
         }
     } else {
         String::from("() => {}")
@@ -29,16 +29,12 @@ pub fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<
 
 /// Apply event modifiers to handler
 fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
-    let mut result = handler.to_string();
+    let mut result = handler.to_compact_string();
 
     // Apply key modifiers
     if !modifiers.keys.is_empty() {
-        let keys: Vec<String> = modifiers
-            .keys
-            .iter()
-            .map(|k| cstr!("\"{k}\"").into())
-            .collect();
-        result = cstr!("_withKeys({result}, [{}])", keys.join(", ")).into();
+        let keys: Vec<String> = modifiers.keys.iter().map(|k| cstr!("\"{k}\"")).collect();
+        result = cstr!("_withKeys({result}, [{}])", keys.join(", "));
     }
 
     // Apply non-key modifiers
@@ -46,9 +42,9 @@ fn apply_modifiers(handler: &str, modifiers: &EventModifiers) -> String {
         let mods: Vec<String> = modifiers
             .non_keys
             .iter()
-            .map(|m| cstr!("\"{m}\"").into())
+            .map(|m| cstr!("\"{m}\""))
             .collect();
-        result = cstr!("_withModifiers({result}, [{}])", mods.join(", ")).into();
+        result = cstr!("_withModifiers({result}, [{}])", mods.join(", "));
     }
 
     result
@@ -74,7 +70,7 @@ pub fn generate_event_options(modifiers: &EventModifiers) -> Option<String> {
         parts.push("passive: true");
     }
 
-    Some(cstr!("{{ {} }}", parts.join(", ")).into())
+    Some(cstr!("{{ {} }}", parts.join(", ")))
 }
 
 /// Generate delegate event handler
@@ -85,23 +81,23 @@ pub fn generate_delegate_event(
     options: Option<&str>,
 ) -> String {
     if let Some(opts) = options {
-        cstr!("_delegate({element_var}, \"{event_name}\", {handler}, {opts})").into()
+        cstr!("_delegate({element_var}, \"{event_name}\", {handler}, {opts})")
     } else {
-        cstr!("_delegate({element_var}, \"{event_name}\", {handler})").into()
+        cstr!("_delegate({element_var}, \"{event_name}\", {handler})")
     }
 }
 
 /// Generate inline event handler
 pub fn generate_inline_handler(element_var: &str, event_name: &str, handler: &str) -> String {
-    cstr!("{element_var}.addEventListener(\"{event_name}\", {handler})").into()
+    cstr!("{element_var}.addEventListener(\"{event_name}\", {handler})")
 }
 
 /// Capitalize event name for onEvent format
 pub fn capitalize_event_name(event: &str) -> String {
     let mut chars = event.chars();
     match chars.next() {
-        None => String::new(),
-        Some(first) => cstr!("on{}{}", first.to_uppercase(), chars.as_str()).into(),
+        None => String::default(),
+        Some(first) => cstr!("on{}{}", first.to_uppercase(), chars.as_str()),
     }
 }
 

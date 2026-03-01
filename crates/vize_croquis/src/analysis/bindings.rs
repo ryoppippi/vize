@@ -3,7 +3,7 @@
 //! Contains types for script binding resolution, undefined reference
 //! detection, unused variable tracking, and export validation.
 
-use vize_carton::{CompactString, FxHashMap};
+use vize_carton::{CompactString, FxHashMap, String};
 use vize_relief::BindingType;
 
 /// Binding metadata extracted from script analysis.
@@ -40,8 +40,9 @@ impl BindingMetadata {
 
     /// Add a binding
     #[inline]
-    pub fn add(&mut self, name: impl Into<CompactString>, binding_type: BindingType) {
-        self.bindings.insert(name.into(), binding_type);
+    pub fn add(&mut self, name: impl AsRef<str>, binding_type: BindingType) {
+        self.bindings
+            .insert(CompactString::new(name.as_ref()), binding_type);
     }
 
     /// Get binding type for a name

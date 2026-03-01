@@ -6,11 +6,12 @@
 use super::tracker::ReactivityTracker;
 use super::{BindingState, ViolationKind, ViolationSeverity};
 use vize_carton::append;
+use vize_carton::String;
 
 impl ReactivityTracker {
     /// Generate markdown report.
     pub fn to_markdown(&self) -> String {
-        let mut md = String::new();
+        let mut md = String::default();
 
         md.push_str("# Reactivity Analysis Report\n\n");
 

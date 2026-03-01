@@ -3,6 +3,7 @@
 //! v-html sets the element's innerHTML.
 
 use vize_atelier_core::DirectiveNode;
+use vize_carton::{String, ToCompactString};
 
 /// Check if directive is v-html
 pub fn is_v_html(dir: &DirectiveNode<'_>) -> bool {
@@ -12,7 +13,10 @@ pub fn is_v_html(dir: &DirectiveNode<'_>) -> bool {
 /// Generate innerHTML prop for v-html
 pub fn generate_html_prop(dir: &DirectiveNode<'_>) -> Option<(String, String)> {
     if let Some(vize_atelier_core::ExpressionNode::Simple(simple)) = &dir.exp {
-        return Some((String::from("innerHTML"), simple.content.to_string()));
+        return Some((
+            String::from("innerHTML"),
+            simple.content.to_compact_string(),
+        ));
     }
     None
 }

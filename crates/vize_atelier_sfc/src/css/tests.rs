@@ -1,5 +1,6 @@
 //! Tests for CSS compilation.
 
+use vize_carton::ToCompactString;
 use vize_carton::{Bump, BumpVec};
 
 use super::scoped::{
@@ -26,7 +27,7 @@ fn test_compile_scoped_css() {
         css,
         &CssCompileOptions {
             scoped: true,
-            scope_id: Some("data-v-123".to_string()),
+            scope_id: Some("data-v-123".to_compact_string()),
             ..Default::default()
         },
     );
@@ -56,8 +57,8 @@ fn test_v_bind_extraction() {
     let css = ".foo { color: v-bind(color); background: v-bind('bgColor'); }";
     let (transformed, vars) = extract_and_transform_v_bind(&bump, css);
     assert_eq!(vars.len(), 2);
-    assert!(vars.contains(&"color".to_string()));
-    assert!(vars.contains(&"bgColor".to_string()));
+    assert!(vars.contains(&"color".to_compact_string()));
+    assert!(vars.contains(&"bgColor".to_compact_string()));
     assert!(transformed.contains("var(--"));
 }
 
@@ -149,7 +150,7 @@ fn test_scoped_css_with_quoted_font_family() {
         css,
         &CssCompileOptions {
             scoped: true,
-            scope_id: Some("data-v-123".to_string()),
+            scope_id: Some("data-v-123".to_compact_string()),
             ..Default::default()
         },
     );

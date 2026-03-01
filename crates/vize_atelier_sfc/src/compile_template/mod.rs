@@ -3,6 +3,7 @@
 //! This module handles compilation of `<template>` blocks,
 //! supporting both DOM mode and Vapor mode.
 
+use vize_carton::{String, ToCompactString};
 mod extraction;
 mod string_tracking;
 mod vapor;
@@ -37,7 +38,7 @@ pub(crate) fn compile_template_block(
         let mut attr = String::with_capacity(scope_id.len() + 7);
         attr.push_str("data-v-");
         attr.push_str(scope_id);
-        Some(attr.into())
+        Some(attr)
     } else {
         None
     };
@@ -71,13 +72,13 @@ pub(crate) fn compile_template_block(
         let _ = write!(&mut message, "{:?}", errors);
         return Err(SfcError {
             message,
-            code: Some("TEMPLATE_ERROR".to_string()),
+            code: Some("TEMPLATE_ERROR".to_compact_string()),
             loc: Some(template.loc.clone()),
         });
     }
 
     // Generate render function with proper imports
-    let mut output = String::new();
+    let mut output = String::default();
 
     // Add Vue imports
     output.push_str(&result.preamble);

@@ -3,7 +3,7 @@
 //! Handles removing duplicate import specifiers from the same source module
 //! to avoid "Identifier has already been declared" errors.
 
-use std::collections::HashSet;
+use vize_carton::{FxHashSet, String, ToCompactString};
 
 use oxc_allocator::Allocator;
 use oxc_ast::ast::{ImportDeclarationSpecifier, Statement};
@@ -16,12 +16,14 @@ use super::super::import_utils::process_import_for_types;
 /// This avoids "Identifier has already been declared" errors.
 pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
-    let mut seen_specifiers: HashSet<String> = HashSet::new();
+    let mut seen_specifiers: FxHashSet<String> = FxHashSet::default();
 
     for import in imports {
         let processed = if is_ts {
             // In TS mode, preserve type imports as-is (TypeScript handles them)
-            import.trim().to_string() + "\n"
+            let mut s = import.trim().to_compact_string();
+            s.push('\n');
+            s
         } else {
             let Some(p) = process_import_for_types(import) else {
                 continue;
@@ -38,8 +40,10 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
         let parse_result = parser.parse();
 
         if !parse_result.errors.is_empty() {
-            if seen_specifiers.insert(trimmed.to_string()) {
-                result.push(trimmed.to_string() + "\n");
+            if seen_specifiers.insert(trimmed.to_compact_string()) {
+                let mut s = trimmed.to_compact_string();
+                s.push('\n');
+                result.push(s);
             }
             continue;
         }
@@ -115,7 +119,7 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
                                 key.push_str("::");
                                 key.push_str(local);
                                 if seen_specifiers.insert(key) {
-                                    default_spec = Some(local.to_string());
+                                    default_spec = Some(local.to_compact_string());
                                 }
                             }
                             ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => {
@@ -125,7 +129,7 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
                                 key.push_str("::");
                                 key.push_str(local);
                                 if seen_specifiers.insert(key) {
-                                    namespace_spec = Some(local.to_string());
+                                    namespace_spec = Some(local.to_compact_string());
                                 }
                             }
                         }
@@ -148,7 +152,11 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
                     parts.push(name);
                 }
                 if !named_specs.is_empty() {
-                    let joined = named_specs.join(", ");
+                    let joined = named_specs
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     let mut part = String::with_capacity(joined.len() + 4);
                     part.push_str("{ ");
                     part.push_str(&joined);
@@ -156,7 +164,11 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
                     parts.push(part);
                 }
 
-                let joined = parts.join(", ");
+                let joined = parts
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 let mut line = String::with_capacity(joined.len() + source.len() + 18);
                 if is_ts && is_type_only_import {
                     line.push_str("import type ");
@@ -173,8 +185,10 @@ pub fn dedupe_imports(imports: &[String], is_ts: bool) -> Vec<String> {
             }
         }
 
-        if !handled && seen_specifiers.insert(trimmed.to_string()) {
-            result.push(trimmed.to_string() + "\n");
+        if !handled && seen_specifiers.insert(trimmed.to_compact_string()) {
+            let mut s = trimmed.to_compact_string();
+            s.push('\n');
+            result.push(s);
         }
     }
 

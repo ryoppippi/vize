@@ -1,9 +1,11 @@
 //! Tests for inline script compilation.
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::super::compiler::compile_script_setup_inline;
     use crate::compile_script::TemplateParts;
+    use vize_carton::String;
 
     /// Helper to compile a minimal script setup and return the output code
     fn compile_setup(script_content: &str) -> String {

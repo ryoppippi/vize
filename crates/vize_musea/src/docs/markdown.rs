@@ -4,7 +4,7 @@
 
 use super::{DocOptions, DocOutput};
 use crate::types::{ArtDescriptor, ArtStatus, ArtVariant};
-use vize_carton::append;
+use vize_carton::{append, cstr, String, ToCompactString};
 
 /// Generate Markdown documentation for a single Art component.
 ///
@@ -60,13 +60,13 @@ pub fn generate_component_doc(art: &ArtDescriptor<'_>, options: &DocOptions) -> 
     }
 
     // Generate filename
-    let filename = format!("{}.md", slugify(art.metadata.title));
+    let filename = cstr!("{}.md", slugify(art.metadata.title));
 
     DocOutput {
         markdown: md,
         filename,
-        title: art.metadata.title.to_string(),
-        category: art.metadata.category.map(|s| s.to_string()),
+        title: art.metadata.title.to_compact_string(),
+        category: art.metadata.category.map(|s| s.to_compact_string()),
         variant_count: art.variants.len(),
     }
 }
@@ -132,7 +132,7 @@ pub fn generate_variant_doc(variant: &ArtVariant<'_>, options: &DocOptions) -> S
 
 /// Generate metadata section with category, tags, etc.
 fn generate_metadata_section(art: &ArtDescriptor<'_>) -> String {
-    let mut md = String::new();
+    let mut md = String::default();
 
     let has_metadata = art.metadata.category.is_some()
         || !art.metadata.tags.is_empty()
@@ -150,12 +150,7 @@ fn generate_metadata_section(art: &ArtDescriptor<'_>) -> String {
     }
 
     if !art.metadata.tags.is_empty() {
-        let tags: Vec<String> = art
-            .metadata
-            .tags
-            .iter()
-            .map(|t| format!("`{}`", t))
-            .collect();
+        let tags: Vec<String> = art.metadata.tags.iter().map(|t| cstr!("`{}`", t)).collect();
         append!(md, "| **Tags** | {} |\n", tags.join(" "));
     }
 
@@ -172,7 +167,7 @@ fn generate_metadata_section(art: &ArtDescriptor<'_>) -> String {
 
 /// Generate table of contents for variants.
 fn generate_toc(variants: &[ArtVariant<'_>]) -> String {
-    let mut md = String::new();
+    let mut md = String::default();
 
     md.push_str("## Table of Contents\n\n");
 
@@ -193,16 +188,17 @@ fn generate_toc(variants: &[ArtVariant<'_>]) -> String {
 /// Format status as a badge.
 fn format_status_badge(status: ArtStatus) -> String {
     match status {
-        ArtStatus::Draft => "> **Status:** 🚧 Draft".to_string(),
-        ArtStatus::Deprecated => "> **Status:** ⚠️ Deprecated".to_string(),
-        ArtStatus::Ready => String::new(),
+        ArtStatus::Draft => "> **Status:** 🚧 Draft".to_compact_string(),
+        ArtStatus::Deprecated => "> **Status:** ⚠️ Deprecated".to_compact_string(),
+        ArtStatus::Ready => String::default(),
     }
 }
 
 /// Convert a string to a URL-safe slug.
 #[inline]
 fn slugify(s: &str) -> String {
-    s.chars()
+    let intermediate: String = s
+        .chars()
         .map(|c| {
             if c.is_alphanumeric() {
                 c.to_ascii_lowercase()
@@ -210,11 +206,14 @@ fn slugify(s: &str) -> String {
                 '-'
             }
         })
-        .collect::<String>()
+        .collect();
+    let joined = intermediate
+        .as_str()
         .split('-')
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
-        .join("-")
+        .join("-");
+    joined.into()
 }
 
 #[cfg(test)]

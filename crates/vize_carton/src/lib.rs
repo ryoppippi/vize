@@ -1,3 +1,6 @@
+// vize_carton defines and bridges std types, so it needs to use them directly.
+#![allow(clippy::disallowed_types, clippy::disallowed_methods)]
+
 //! Carton - The artist's toolbox for Vize.
 //!
 //! This crate provides the foundational utilities and data structures for the Vize compiler,

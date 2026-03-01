@@ -9,8 +9,6 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use vize_carton::String;
 
-use std::string::String as StdString;
-
 use crate::transform::TransformContext;
 
 use super::{
@@ -21,7 +19,7 @@ use super::{
 
 /// Result of expression rewriting
 pub(crate) struct RewriteResult {
-    pub(crate) code: StdString,
+    pub(crate) code: String,
     pub(crate) used_unref: bool,
 }
 
@@ -35,7 +33,7 @@ pub(crate) fn rewrite_expression(
     let js_content = if ctx.options.is_ts {
         strip_typescript_from_expression(content)
     } else {
-        content.to_string()
+        String::new(content)
     };
 
     // Try to parse as a JavaScript expression
@@ -60,15 +58,15 @@ pub(crate) fn rewrite_expression(
 
             // Combine prefix rewrites (from HashSet) with suffix rewrites
             // Each rewrite is (position, prefix, suffix)
-            let mut all_rewrites: Vec<(usize, StdString, StdString)> = collector
+            let mut all_rewrites: Vec<(usize, String, String)> = collector
                 .rewrites
                 .into_iter()
-                .map(|(pos, prefix)| (pos, prefix, StdString::new()))
+                .map(|(pos, prefix)| (pos, prefix, String::default()))
                 .collect();
 
             // Add suffix rewrites (suffixes come after the identifier)
             for (pos, suffix) in collector.suffix_rewrites {
-                all_rewrites.push((pos, StdString::new(), suffix));
+                all_rewrites.push((pos, String::default(), suffix));
             }
 
             // Sort by position descending so we can replace from end to start
@@ -98,12 +96,18 @@ pub(crate) fn rewrite_expression(
         }
         Err(_) => {
             // Parse failed - fallback to simple identifier check
-            let code = if is_simple_identifier(&js_content) {
+            let code: String = if is_simple_identifier(&js_content) {
                 if let Some(prefix) = get_identifier_prefix(&js_content, ctx) {
-                    [prefix, &js_content].concat()
+                    let mut s = String::with_capacity(prefix.len() + js_content.len());
+                    s.push_str(prefix);
+                    s.push_str(&js_content);
+                    s
                 } else if is_ref_binding_simple(&js_content, ctx) {
                     // Add .value for refs in inline mode
-                    [&js_content, ".value"].concat()
+                    let mut s = String::with_capacity(js_content.len() + 6);
+                    s.push_str(&js_content);
+                    s.push_str(".value");
+                    s
                 } else {
                     js_content
                 }

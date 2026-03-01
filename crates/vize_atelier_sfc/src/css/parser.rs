@@ -6,6 +6,7 @@
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserFlags, ParserOptions, StyleSheet};
 use lightningcss::targets::Targets;
+use vize_carton::{String, ToCompactString};
 
 /// Convert major version to LightningCSS format (major << 16)
 pub(crate) fn version_to_u32(major: u32) -> u32 {
@@ -25,7 +26,7 @@ pub(crate) fn compile_css_internal(
         flags |= ParserFlags::CUSTOM_MEDIA;
     }
     let parser_options = ParserOptions {
-        filename: filename.to_string(),
+        filename: filename.into(),
         flags,
         ..Default::default()
     };
@@ -35,9 +36,9 @@ pub(crate) fn compile_css_internal(
         Err(e) => {
             let mut errors = Vec::with_capacity(1);
             let mut message = String::from("CSS parse error: ");
-            message.push_str(&e.to_string());
+            message.push_str(&e.to_compact_string());
             errors.push(message);
-            return (css.to_string(), errors);
+            return (css.to_compact_string(), errors);
         }
     };
 
@@ -52,7 +53,7 @@ pub(crate) fn compile_css_internal(
             use std::fmt::Write as _;
             let _ = write!(&mut message, "{:?}", e);
             errors.push(message);
-            return (css.to_string(), errors);
+            return (css.to_compact_string(), errors);
         }
     }
 
@@ -64,14 +65,14 @@ pub(crate) fn compile_css_internal(
     };
 
     match stylesheet.to_css(printer_options) {
-        Ok(result) => (result.code, vec![]),
+        Ok(result) => (result.code.into(), vec![]),
         Err(e) => {
             let mut errors = Vec::with_capacity(1);
             let mut message = String::from("CSS print error: ");
             use std::fmt::Write as _;
             let _ = write!(&mut message, "{:?}", e);
             errors.push(message);
-            (css.to_string(), errors)
+            (css.to_compact_string(), errors)
         }
     }
 }

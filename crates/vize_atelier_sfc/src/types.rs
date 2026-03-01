@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use vize_carton::FxHashMap;
+use vize_carton::{FxHashMap, String};
 
 // Re-export from vize_relief to avoid duplication
 pub use vize_atelier_core::options::{BindingMetadata, BindingType};
@@ -94,42 +94,42 @@ impl<'a> SfcDescriptor<'a> {
 
     /// Compute hash of the template block content.
     /// Returns None if there is no template block.
-    pub fn template_hash(&self) -> Option<String> {
+    pub fn template_hash(&self) -> Option<vize_carton::String> {
         self.template
             .as_ref()
-            .map(|t| vize_carton::hash::content_hash(&t.content).to_string())
+            .map(|t| vize_carton::hash::content_hash(&t.content))
     }
 
     /// Compute hash of all style blocks content.
     /// Returns None if there are no style blocks.
-    pub fn style_hash(&self) -> Option<String> {
+    pub fn style_hash(&self) -> Option<vize_carton::String> {
         if self.styles.is_empty() {
             return None;
         }
-        let mut combined = String::new();
+        let mut combined = vize_carton::String::default();
         for style in &self.styles {
             combined.push_str(&style.content);
             combined.push('\0'); // Separator
         }
-        Some(vize_carton::hash::content_hash(&combined).to_string())
+        Some(vize_carton::hash::content_hash(&combined))
     }
 
     /// Compute hash of the script blocks (script + script_setup) content.
     /// Returns None if there are no script blocks.
-    pub fn script_hash(&self) -> Option<String> {
+    pub fn script_hash(&self) -> Option<vize_carton::String> {
         let script_content = self.script.as_ref().map(|s| s.content.as_ref());
         let script_setup_content = self.script_setup.as_ref().map(|s| s.content.as_ref());
 
         match (script_content, script_setup_content) {
             (None, None) => None,
-            (Some(s), None) => Some(vize_carton::hash::content_hash(s).to_string()),
-            (None, Some(ss)) => Some(vize_carton::hash::content_hash(ss).to_string()),
+            (Some(s), None) => Some(vize_carton::hash::content_hash(s)),
+            (None, Some(ss)) => Some(vize_carton::hash::content_hash(ss)),
             (Some(s), Some(ss)) => {
-                let mut combined = String::with_capacity(s.len() + ss.len() + 1);
+                let mut combined = vize_carton::String::with_capacity(s.len() + ss.len() + 1);
                 combined.push_str(s);
                 combined.push('\0');
                 combined.push_str(ss);
-                Some(vize_carton::hash::content_hash(&combined).to_string())
+                Some(vize_carton::hash::content_hash(&combined))
             }
         }
     }
@@ -517,7 +517,7 @@ pub struct SfcError {
 
 impl From<vize_atelier_core::CompilerError> for SfcError {
     fn from(err: vize_atelier_core::CompilerError) -> Self {
-        let mut code = String::new();
+        let mut code = vize_carton::String::default();
         use std::fmt::Write as _;
         let _ = write!(&mut code, "{:?}", err.code);
         Self {

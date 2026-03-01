@@ -9,6 +9,7 @@ use crate::types::BindingType;
 use vize_croquis::macros::is_builtin_macro;
 
 use super::super::MacroCall;
+use vize_carton::{String, ToCompactString};
 
 /// Extract macro call from expression
 pub(super) fn extract_macro_from_expr(
@@ -91,7 +92,7 @@ pub(super) fn infer_binding_type(
 /// Get callee name from call expression
 pub(super) fn get_callee_name(call: &CallExpression<'_>) -> Option<String> {
     match &call.callee {
-        Expression::Identifier(id) => Some(id.name.to_string()),
+        Expression::Identifier(id) => Some(id.name.to_compact_string()),
         _ => None,
     }
 }
@@ -115,9 +116,9 @@ pub(super) fn extract_type_args_from_call(
         // Remove the < and > from the type args
         let type_str = &source[start..end];
         if type_str.starts_with('<') && type_str.ends_with('>') {
-            type_str[1..type_str.len() - 1].to_string()
+            String::from(&type_str[1..type_str.len() - 1])
         } else {
-            type_str.to_string()
+            type_str.to_compact_string()
         }
     })
 }
@@ -125,16 +126,16 @@ pub(super) fn extract_type_args_from_call(
 /// Extract arguments from call expression as string
 pub(super) fn extract_args_from_call(call: &CallExpression<'_>, source: &str) -> String {
     if call.arguments.is_empty() {
-        return String::new();
+        return String::default();
     }
 
     let first_start = call.arguments.first().map(|a| a.span().start).unwrap_or(0);
     let last_end = call.arguments.last().map(|a| a.span().end).unwrap_or(0);
 
     if first_start < last_end {
-        source[first_start as usize..last_end as usize].to_string()
+        String::from(&source[first_start as usize..last_end as usize])
     } else {
-        String::new()
+        String::default()
     }
 }
 

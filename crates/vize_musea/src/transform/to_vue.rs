@@ -6,7 +6,7 @@
 #![allow(clippy::disallowed_macros)]
 
 use crate::types::ArtDescriptor;
-use vize_carton::append;
+use vize_carton::{append, cstr, String};
 
 /// Output of Vue transformation.
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ pub fn transform_to_vue(art: &ArtDescriptor<'_>) -> VueOutput {
 
 /// Generate the main component that exposes variants.
 fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
-    let mut code = String::new();
+    let mut code = String::default();
 
     // Imports
     code.push_str("import { defineComponent, h, reactive, markRaw } from 'vue';\n");
@@ -68,7 +68,7 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
     // Export variants array
     code.push_str("export const variants = [\n");
     for variant in &art.variants {
-        let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".to_string());
+        let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".into());
 
         append!(
             code,
@@ -84,7 +84,7 @@ fn generate_main_component(art: &ArtDescriptor<'_>) -> String {
     // Generate variant components
     for (i, variant) in art.variants.iter().enumerate() {
         let component_name = to_pascal_case(variant.name);
-        let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".to_string());
+        let args_json = serde_json::to_string(&variant.args).unwrap_or_else(|_| "{}".into());
 
         append!(
             code,
@@ -169,13 +169,13 @@ fn generate_render_expression(template: &str, art: &ArtDescriptor<'_>) -> String
 
     if uses_target {
         // Simple case: render the target component with interpolated args
-        format!(
+        cstr!(
             "h(TargetComponent, args, () => `{}`)",
             escape_template_literal(template)
         )
     } else {
         // Render raw template content (for custom components)
-        format!(
+        cstr!(
             "h('div', {{ innerHTML: `{}` }})",
             escape_template_literal(template)
         )
@@ -184,7 +184,7 @@ fn generate_render_expression(template: &str, art: &ArtDescriptor<'_>) -> String
 
 /// Generate metadata JSON for the Art.
 fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
-    let mut json = String::new();
+    let mut json = String::default();
     json.push_str("{\n");
     append!(
         json,
@@ -209,7 +209,7 @@ fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
             .metadata
             .tags
             .iter()
-            .map(|t| format!("'{}'", escape_js_string(t)))
+            .map(|t| cstr!("'{}'", escape_js_string(t)))
             .collect();
         append!(json, "  tags: [{}],\n", tags.join(", "));
     }
@@ -232,7 +232,7 @@ fn generate_metadata_json(art: &ArtDescriptor<'_>) -> String {
 
 /// Generate metadata module for gallery sidebar.
 fn generate_metadata_module(art: &ArtDescriptor<'_>) -> String {
-    let mut code = String::new();
+    let mut code = String::default();
 
     code.push_str("// Auto-generated metadata module\n");
     append!(
@@ -275,16 +275,22 @@ fn status_to_string(status: crate::types::ArtStatus) -> &'static str {
 
 /// Convert string to PascalCase.
 fn to_pascal_case(s: &str) -> String {
-    s.split(|c: char| c.is_whitespace() || c == '-' || c == '_')
-        .filter(|part| !part.is_empty())
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(first) => first.to_uppercase().chain(chars).collect(),
+    let mut result = String::default();
+    for part in s
+        .split(|c: char| c.is_whitespace() || c == '-' || c == '_')
+        .filter(|p| !p.is_empty())
+    {
+        let mut chars = part.chars();
+        if let Some(first) = chars.next() {
+            for uc in first.to_uppercase() {
+                result.push(uc);
             }
-        })
-        .collect()
+            for ch in chars {
+                result.push(ch);
+            }
+        }
+    }
+    result
 }
 
 /// Escape a string for JavaScript string literal.
@@ -294,6 +300,7 @@ fn escape_js_string(s: &str) -> String {
         .replace('\n', "\\n")
         .replace('\r', "\\r")
         .replace('\t', "\\t")
+        .into()
 }
 
 /// Escape content for JavaScript template literal.
@@ -301,6 +308,7 @@ fn escape_template_literal(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('`', "\\`")
         .replace("${", "\\${")
+        .into()
 }
 
 #[cfg(test)]

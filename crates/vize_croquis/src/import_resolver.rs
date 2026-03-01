@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 
 use dashmap::DashMap;
 use serde::Deserialize;
-use vize_carton::{cstr, profiler::CacheStats, CompactString, FxHashMap};
+use vize_carton::{cstr, profiler::CacheStats, CompactString, FxHashMap, String, ToCompactString};
 
 /// Resolved module information
 #[derive(Debug, Clone)]
@@ -191,7 +191,7 @@ impl ImportResolver {
         let cache_key = format!("{}:{specifier}", from_file.display());
 
         // Check cache first
-        if let Some(cached) = self.cache.get(&cache_key) {
+        if let Some(cached) = self.cache.get(cache_key.as_str()) {
             self.cache_stats.hit();
             return cached.clone();
         }
@@ -202,7 +202,7 @@ impl ImportResolver {
         let result = self.resolve_uncached(specifier, from_file);
 
         // Cache the result
-        self.cache.insert(cache_key, result.clone());
+        self.cache.insert(cache_key.into(), result.clone());
         self.cache_stats.set_entries(self.cache.len() as u64);
 
         result
@@ -220,7 +220,7 @@ impl ImportResolver {
             return Err(ImportResolveError::NotFound({
                 #[allow(clippy::disallowed_macros)]
                 let s = format!("Node module resolution not supported: {specifier}");
-                s
+                s.into()
             }));
         }
 
@@ -241,7 +241,7 @@ impl ImportResolver {
             }
         }
 
-        Err(ImportResolveError::NotFound(specifier.to_string()))
+        Err(ImportResolveError::NotFound(specifier.to_compact_string()))
     }
 
     /// Resolve a relative import
@@ -252,7 +252,7 @@ impl ImportResolver {
     ) -> Result<ResolvedModule, ImportResolveError> {
         let from_dir = from_file
             .parent()
-            .ok_or_else(|| ImportResolveError::InvalidSpecifier(specifier.to_string()))?;
+            .ok_or_else(|| ImportResolveError::InvalidSpecifier(specifier.to_compact_string()))?;
 
         let target = from_dir.join(specifier);
         self.try_resolve_file(&target)
@@ -340,14 +340,16 @@ impl ImportResolver {
             }
         }
 
-        Err(ImportResolveError::NotFound(path.display().to_string()))
+        Err(ImportResolveError::NotFound(
+            path.display().to_compact_string(),
+        ))
     }
 
     /// Create a resolved module from a path
     fn create_resolved_module(&self, path: &Path) -> Result<ResolvedModule, ImportResolveError> {
         let canonical = path
             .canonicalize()
-            .map_err(|e| ImportResolveError::ReadError(e.to_string()))?;
+            .map_err(|e| ImportResolveError::ReadError(e.to_compact_string()))?;
 
         let is_type_only = canonical
             .extension()
@@ -368,7 +370,9 @@ impl ImportResolver {
 
     /// Get the content of a resolved module
     pub fn get_content(&self, module: &ResolvedModule) -> Result<String, ImportResolveError> {
-        fs::read_to_string(&module.path).map_err(|e| ImportResolveError::ReadError(e.to_string()))
+        fs::read_to_string(&module.path)
+            .map(|s| s.into())
+            .map_err(|e| ImportResolveError::ReadError(e.to_compact_string()))
     }
 
     /// Extract type definitions from a module's content

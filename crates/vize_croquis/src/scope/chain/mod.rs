@@ -12,7 +12,7 @@
 mod builder;
 mod resolution;
 
-use vize_carton::{smallvec, CompactString, FxHashMap, SmallVec};
+use vize_carton::{smallvec, CompactString, FxHashMap, SmallVec, String, ToCompactString};
 use vize_relief::BindingType;
 
 use super::types::{
@@ -174,10 +174,10 @@ impl Scope {
                 // Use hook name without "on" prefix: onMounted -> mounted
                 data.hook_name
                     .strip_prefix("on")
-                    .map(|s| s.to_ascii_lowercase())
-                    .unwrap_or_else(|| data.hook_name.to_string())
+                    .map(|s| String::from(s.to_ascii_lowercase().as_str()))
+                    .unwrap_or_else(|| data.hook_name.clone())
             }
-            _ => self.kind.to_display().to_string(),
+            _ => self.kind.to_display().to_compact_string(),
         }
     }
 }

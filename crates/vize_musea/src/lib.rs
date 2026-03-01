@@ -128,7 +128,7 @@ import Button from './Button.vue'
             &allocator,
             source,
             ArtParseOptions {
-                filename: "Button.art.vue".to_string(),
+                filename: "Button.art.vue".into(),
             },
         )
         .unwrap();

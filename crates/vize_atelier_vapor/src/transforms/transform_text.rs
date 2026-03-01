@@ -115,11 +115,12 @@ pub fn generate_text_expression(parts: &[(bool, String)]) -> String {
 }
 
 /// Escape text for JavaScript string
-fn escape_text(s: &str) -> std::string::String {
+fn escape_text(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('"', "\\\"")
         .replace('\n', "\\n")
         .replace('\r', "\\r")
+        .into()
 }
 
 #[cfg(test)]

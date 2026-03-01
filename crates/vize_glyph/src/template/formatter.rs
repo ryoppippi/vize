@@ -5,6 +5,7 @@
 //! and interpolation formatting.
 
 use crate::{error::FormatError, options::FormatOptions, script};
+use vize_carton::{String, ToCompactString};
 
 use super::{
     attributes::{render_attribute, sort_attributes, ParsedAttribute},
@@ -278,7 +279,7 @@ impl<'a> TemplateFormatter<'a> {
 
         let tag_name = std::str::from_utf8(&source[tag_start..pos])
             .unwrap_or("")
-            .to_string();
+            .to_compact_string();
 
         // Parse attributes
         let mut attrs = Vec::new();
@@ -348,7 +349,7 @@ impl<'a> TemplateFormatter<'a> {
 
         let raw_name = std::str::from_utf8(&source[name_start..pos])
             .unwrap_or("")
-            .to_string();
+            .to_compact_string();
 
         // Skip whitespace before '='
         let mut val_pos = pos;
@@ -375,7 +376,7 @@ impl<'a> TemplateFormatter<'a> {
                 }
                 let value = std::str::from_utf8(&source[value_start..val_pos])
                     .unwrap_or("")
-                    .to_string();
+                    .to_compact_string();
                 if val_pos < len {
                     val_pos += 1; // skip closing quote
                 }
@@ -393,7 +394,7 @@ impl<'a> TemplateFormatter<'a> {
                 }
                 let value = std::str::from_utf8(&source[value_start..val_pos])
                     .unwrap_or("")
-                    .to_string();
+                    .to_compact_string();
                 pos = val_pos;
                 Some(value)
             }
@@ -449,7 +450,7 @@ pub(crate) fn format_interpolations(text: &str, options: &FormatOptions) -> Stri
             if depth == 0 {
                 let expr = &text[expr_start..expr_end];
                 let formatted_expr = script::format_js_expression(expr, options)
-                    .unwrap_or_else(|| expr.trim().to_string());
+                    .unwrap_or_else(|| expr.trim().to_compact_string());
                 result.push_str("{{ ");
                 result.push_str(&formatted_expr);
                 result.push_str(" }}");

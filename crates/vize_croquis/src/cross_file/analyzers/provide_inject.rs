@@ -11,7 +11,7 @@ use crate::cross_file::diagnostics::{
 use crate::cross_file::graph::{DependencyEdge, DependencyGraph};
 use crate::cross_file::registry::{FileId, ModuleRegistry};
 use crate::provide::{InjectEntry, InjectPattern, ProvideEntry, ProvideKey};
-use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet};
+use vize_carton::{cstr, CompactString, FxHashMap, FxHashSet, String};
 
 /// Information about a provide/inject match.
 #[derive(Debug, Clone)]

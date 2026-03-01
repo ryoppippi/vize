@@ -5,6 +5,7 @@
 
 use crate::types::{SfcError, SfcStyleBlock, StyleCompileOptions};
 
+use vize_carton::String;
 /// Helper to compile all style blocks
 pub(super) fn compile_styles(
     styles: &[SfcStyleBlock],
@@ -12,7 +13,7 @@ pub(super) fn compile_styles(
     base_opts: &StyleCompileOptions,
     warnings: &mut Vec<SfcError>,
 ) -> String {
-    let mut all_css = String::new();
+    let mut all_css = String::default();
     for style in styles {
         let style_opts = StyleCompileOptions {
             id: {

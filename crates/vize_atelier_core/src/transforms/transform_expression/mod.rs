@@ -65,12 +65,12 @@ pub fn process_expression<'a>(
                 // Only strip TypeScript, no prefixing
                 strip_typescript_from_expression(content)
             } else {
-                content.to_string()
+                String::new(content)
             };
 
             ExpressionNode::Simple(Box::new_in(
                 SimpleExpressionNode {
-                    content: String::new(&processed),
+                    content: processed,
                     is_static: false,
                     const_type: simple.const_type,
                     loc: simple.loc.clone(),

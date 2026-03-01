@@ -4,7 +4,7 @@
 //! into CSS custom properties (variables). Also provides low-level byte search
 //! utilities used by both this module and the scoped CSS module.
 
-use vize_carton::{Bump, BumpVec};
+use vize_carton::{Bump, BumpVec, String, ToCompactString};
 
 /// Extract v-bind() expressions and transform them to CSS variables
 pub(crate) fn extract_and_transform_v_bind<'a>(
@@ -29,7 +29,7 @@ pub(crate) fn extract_and_transform_v_bind<'a>(
                 let expr_bytes = &css_bytes[start..start + end];
                 let expr_str = unsafe { std::str::from_utf8_unchecked(expr_bytes) }.trim();
                 let expr_str = expr_str.trim_matches(|c| c == '"' || c == '\'');
-                vars.push(expr_str.to_string());
+                vars.push(expr_str.to_compact_string());
 
                 // Generate hash and write var(--hash-expr)
                 result.extend_from_slice(b"var(--");

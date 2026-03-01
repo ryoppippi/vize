@@ -8,6 +8,8 @@ use oxc_ast::ast::{Argument, BindingPattern, Expression, Statement, VariableDecl
 use oxc_parser::Parser;
 use oxc_span::{GetSpan, SourceType};
 
+use vize_carton::{String, ToCompactString};
+
 use crate::types::BindingType;
 
 use super::super::define_props_destructure::process_props_destructure;
@@ -37,17 +39,17 @@ impl ScriptCompileContext {
         for stmt in program.body.iter() {
             match stmt {
                 Statement::TSInterfaceDeclaration(iface) => {
-                    let name = iface.id.name.to_string();
+                    let name = iface.id.name.to_compact_string();
                     let body_start = iface.body.span.start as usize;
                     let body_end = iface.body.span.end as usize;
-                    let body = source[body_start..body_end].to_string();
+                    let body = String::from(&source[body_start..body_end]);
                     self.interfaces.insert(name, body);
                 }
                 Statement::TSTypeAliasDeclaration(type_alias) => {
-                    let name = type_alias.id.name.to_string();
+                    let name = type_alias.id.name.to_compact_string();
                     let type_start = type_alias.type_annotation.span().start as usize;
                     let type_end = type_alias.type_annotation.span().end as usize;
-                    let type_body = source[type_start..type_end].to_string();
+                    let type_body = String::from(&source[type_start..type_end]);
                     self.type_aliases.insert(name, type_body);
                 }
                 // Handle exported types: `export type X = ...` and `export interface X { ... }`
@@ -55,17 +57,17 @@ impl ScriptCompileContext {
                     if let Some(ref decl) = export_decl.declaration {
                         match decl {
                             oxc_ast::ast::Declaration::TSInterfaceDeclaration(iface) => {
-                                let name = iface.id.name.to_string();
+                                let name = iface.id.name.to_compact_string();
                                 let body_start = iface.body.span.start as usize;
                                 let body_end = iface.body.span.end as usize;
-                                let body = source[body_start..body_end].to_string();
+                                let body = String::from(&source[body_start..body_end]);
                                 self.interfaces.insert(name, body);
                             }
                             oxc_ast::ast::Declaration::TSTypeAliasDeclaration(type_alias) => {
-                                let name = type_alias.id.name.to_string();
+                                let name = type_alias.id.name.to_compact_string();
                                 let type_start = type_alias.type_annotation.span().start as usize;
                                 let type_end = type_alias.type_annotation.span().end as usize;
-                                let type_body = source[type_start..type_end].to_string();
+                                let type_body = String::from(&source[type_start..type_end]);
                                 self.type_aliases.insert(name, type_body);
                             }
                             _ => {}
@@ -103,34 +105,34 @@ impl ScriptCompileContext {
         for stmt in ret.program.body.iter() {
             match stmt {
                 Statement::TSInterfaceDeclaration(iface) => {
-                    let name = iface.id.name.to_string();
+                    let name = iface.id.name.to_compact_string();
                     let body_start = iface.body.span.start as usize;
                     let body_end = iface.body.span.end as usize;
-                    let body = source[body_start..body_end].to_string();
+                    let body = String::from(&source[body_start..body_end]);
                     self.interfaces.entry(name).or_insert(body);
                 }
                 Statement::TSTypeAliasDeclaration(type_alias) => {
-                    let name = type_alias.id.name.to_string();
+                    let name = type_alias.id.name.to_compact_string();
                     let type_start = type_alias.type_annotation.span().start as usize;
                     let type_end = type_alias.type_annotation.span().end as usize;
-                    let type_body = source[type_start..type_end].to_string();
+                    let type_body = String::from(&source[type_start..type_end]);
                     self.type_aliases.entry(name).or_insert(type_body);
                 }
                 Statement::ExportNamedDeclaration(export_decl) => {
                     if let Some(ref decl) = export_decl.declaration {
                         match decl {
                             oxc_ast::ast::Declaration::TSInterfaceDeclaration(iface) => {
-                                let name = iface.id.name.to_string();
+                                let name = iface.id.name.to_compact_string();
                                 let body_start = iface.body.span.start as usize;
                                 let body_end = iface.body.span.end as usize;
-                                let body = source[body_start..body_end].to_string();
+                                let body = String::from(&source[body_start..body_end]);
                                 self.interfaces.entry(name).or_insert(body);
                             }
                             oxc_ast::ast::Declaration::TSTypeAliasDeclaration(type_alias) => {
-                                let name = type_alias.id.name.to_string();
+                                let name = type_alias.id.name.to_compact_string();
                                 let type_start = type_alias.type_annotation.span().start as usize;
                                 let type_end = type_alias.type_annotation.span().end as usize;
-                                let type_body = source[type_start..type_end].to_string();
+                                let type_body = String::from(&source[type_start..type_end]);
                                 self.type_aliases.entry(name).or_insert(type_body);
                             }
                             _ => {}
@@ -159,7 +161,7 @@ impl ScriptCompileContext {
                                 // Named import: import { foo } from 'bar'
                                 // Skip type-only imports: import { type Foo } from 'bar'
                                 if !spec.import_kind.is_type() {
-                                    let name = spec.local.name.to_string();
+                                    let name = spec.local.name.to_compact_string();
                                     // Imports are treated as setup-maybe-ref since we don't know their type
                                     self.bindings
                                         .bindings
@@ -170,7 +172,7 @@ impl ScriptCompileContext {
                                 spec,
                             ) => {
                                 // Default import: import Foo from 'bar'
-                                let name = spec.local.name.to_string();
+                                let name = spec.local.name.to_compact_string();
                                 // Default imports of .vue files are typically components
                                 self.bindings.bindings.insert(name, BindingType::SetupConst);
                             }
@@ -178,7 +180,7 @@ impl ScriptCompileContext {
                                 spec,
                             ) => {
                                 // Namespace import: import * as foo from 'bar'
-                                let name = spec.local.name.to_string();
+                                let name = spec.local.name.to_compact_string();
                                 self.bindings.bindings.insert(name, BindingType::SetupConst);
                             }
                         }
@@ -189,7 +191,7 @@ impl ScriptCompileContext {
                 for decl in var_decl.declarations.iter() {
                     // Extract binding name if this is a simple identifier binding
                     let binding_name = match &decl.id {
-                        BindingPattern::BindingIdentifier(id) => Some(id.name.to_string()),
+                        BindingPattern::BindingIdentifier(id) => Some(id.name.to_compact_string()),
                         _ => None,
                     };
 
@@ -197,7 +199,7 @@ impl ScriptCompileContext {
                     if let Some(init) = &decl.init {
                         if let Some(mut macro_call) = extract_macro_from_expr(init, source) {
                             // Attach binding name to macro call
-                            macro_call.1.binding_name = binding_name.clone();
+                            macro_call.1.binding_name = binding_name.as_deref().map(Into::into);
                             self.register_macro(&macro_call.0, macro_call.1);
                         }
 
@@ -208,9 +210,9 @@ impl ScriptCompileContext {
                                     start: call.span.start as usize,
                                     end: call.span.end as usize,
                                     args: source[call.span.start as usize..call.span.end as usize]
-                                        .to_string(),
+                                        .into(),
                                     type_args: None,
-                                    binding_name: binding_name.clone(),
+                                    binding_name: binding_name.as_deref().map(Into::into),
                                 });
 
                                 // Also extract the inner defineProps
@@ -225,7 +227,7 @@ impl ScriptCompileContext {
                                             end: inner_call.span.end as usize,
                                             args: extract_args_from_call(inner_call, source),
                                             type_args,
-                                            binding_name: binding_name.clone(),
+                                            binding_name: binding_name.as_deref().map(String::from),
                                         };
                                         self.extract_props_bindings(&props_call);
                                         self.macros.define_props = Some(props_call);
@@ -239,7 +241,7 @@ impl ScriptCompileContext {
                     // Extract binding name(s)
                     match &decl.id {
                         BindingPattern::BindingIdentifier(id) => {
-                            let name = id.name.to_string();
+                            let name = id.name.to_compact_string();
 
                             // Determine binding type
                             let binding_type = if let Some(init) = &decl.init {
@@ -311,7 +313,7 @@ impl ScriptCompileContext {
                                     if let BindingPattern::BindingIdentifier(id) = &prop.value {
                                         self.bindings
                                             .bindings
-                                            .insert(id.name.to_string(), destructure_type);
+                                            .insert(id.name.to_compact_string(), destructure_type);
                                     }
                                 }
                             }
@@ -329,7 +331,7 @@ impl ScriptCompileContext {
                                 if let BindingPattern::BindingIdentifier(id) = &elem {
                                     self.bindings
                                         .bindings
-                                        .insert(id.name.to_string(), destructure_type);
+                                        .insert(id.name.to_compact_string(), destructure_type);
                                 }
                             }
                         }
@@ -337,7 +339,7 @@ impl ScriptCompileContext {
                             if let BindingPattern::BindingIdentifier(id) = &assign_pat.left {
                                 self.bindings
                                     .bindings
-                                    .insert(id.name.to_string(), BindingType::SetupConst);
+                                    .insert(id.name.to_compact_string(), BindingType::SetupConst);
                             }
                         }
                     }
@@ -347,14 +349,14 @@ impl ScriptCompileContext {
                 if let Some(id) = &func.id {
                     self.bindings
                         .bindings
-                        .insert(id.name.to_string(), BindingType::SetupConst);
+                        .insert(id.name.to_compact_string(), BindingType::SetupConst);
                 }
             }
             Statement::ClassDeclaration(class) => {
                 if let Some(id) = &class.id {
                     self.bindings
                         .bindings
-                        .insert(id.name.to_string(), BindingType::SetupConst);
+                        .insert(id.name.to_compact_string(), BindingType::SetupConst);
                 }
             }
             Statement::ExpressionStatement(expr_stmt) => {
@@ -369,8 +371,7 @@ impl ScriptCompileContext {
                         self.macros.with_defaults = Some(MacroCall {
                             start: call.span.start as usize,
                             end: call.span.end as usize,
-                            args: source[call.span.start as usize..call.span.end as usize]
-                                .to_string(),
+                            args: source[call.span.start as usize..call.span.end as usize].into(),
                             type_args: None,
                             binding_name: None,
                         });

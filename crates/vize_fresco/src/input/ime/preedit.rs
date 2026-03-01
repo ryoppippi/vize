@@ -124,9 +124,9 @@ impl Preedit {
                 .unwrap_or(0)
         };
 
-        let mut new_text = self.text.to_string();
-        new_text.insert_str(byte_pos, text);
-        self.text = CompactString::from(new_text);
+        let before = &self.text[..byte_pos];
+        let after = &self.text[byte_pos..];
+        self.text = cstr!("{before}{text}{after}");
         self.cursor += SegmentedText::new(text).grapheme_count;
     }
 

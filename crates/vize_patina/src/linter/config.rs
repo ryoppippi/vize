@@ -7,7 +7,7 @@ use crate::{
     diagnostic::{HelpLevel, LintDiagnostic},
     rule::RuleRegistry,
 };
-use vize_carton::{i18n::Locale, FxHashSet};
+use vize_carton::{i18n::Locale, FxHashSet, String};
 
 /// Lint result for a single file.
 #[derive(Debug, Clone)]

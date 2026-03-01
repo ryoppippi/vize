@@ -4,6 +4,7 @@
 //! according to Vue style guide order, plus rendering them back to strings.
 
 use crate::options::{AttributeSortOrder, FormatOptions};
+use vize_carton::String;
 
 /// Parsed attribute with structured information for sorting and rendering.
 #[derive(Debug, Clone)]
@@ -68,7 +69,7 @@ fn attr_sort_key(name: &str, merge_bind: bool) -> (u8, String) {
             .strip_prefix(':')
             .or_else(|| name.strip_prefix("v-bind:"))
             .unwrap_or(name);
-        (0, base.to_ascii_lowercase())
+        (0, base.to_ascii_lowercase().into())
     } else {
         // Non-bind first (0), then bind (1)
         let is_bind = name.starts_with(':') || name.starts_with("v-bind:");
@@ -77,7 +78,7 @@ fn attr_sort_key(name: &str, merge_bind: bool) -> (u8, String) {
             .or_else(|| name.strip_prefix("v-bind:"))
             .unwrap_or(name);
         let group = if is_bind { 1 } else { 0 };
-        (group, base.to_ascii_lowercase())
+        (group, base.to_ascii_lowercase().into())
     }
 }
 
@@ -141,7 +142,7 @@ pub(crate) fn attribute_priority(name: &str) -> u8 {
 #[allow(clippy::disallowed_macros)]
 pub(crate) fn render_attribute(attr: &ParsedAttribute) -> String {
     match &attr.value {
-        Some(value) => format!("{}=\"{}\"", attr.name, value),
+        Some(value) => format!("{}=\"{}\"", attr.name, value).into(),
         None => attr.name.clone(),
     }
 }

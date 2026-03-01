@@ -5,6 +5,8 @@
 
 use std::borrow::Cow;
 
+use vize_carton::{String, ToCompactString};
+
 use crate::script::{transform_destructured_props, ScriptCompileContext};
 use crate::types::SfcError;
 
@@ -51,7 +53,7 @@ pub fn compile_script_setup_inline(
     // This preserves type definitions that would otherwise be stripped
     let preserved_normal_script = normal_script_content
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string());
+        .map(|s| s.to_compact_string());
 
     // Check if we need mergeDefaults import (props destructure with defaults)
     let has_props_destructure = ctx.macros.props_destructure.is_some();
@@ -164,10 +166,10 @@ pub fn compile_script_setup_inline(
 
     // Setup code body - transform props destructure references and separate hoisted/setup code
     let setup_code = setup_lines.join("\n");
-    let transformed_setup = if let Some(ref destructure) = ctx.macros.props_destructure {
+    let transformed_setup: String = if let Some(ref destructure) = ctx.macros.props_destructure {
         transform_destructured_props(&setup_code, destructure)
     } else {
-        setup_code
+        setup_code.into()
     };
 
     // Separate hoisted consts (literal consts that can be module-level) from setup code
@@ -247,7 +249,7 @@ pub fn compile_script_setup_inline(
     };
 
     // Detect top-level await to generate async setup()
-    let setup_code_for_await_check: String = setup_lines.join("\n");
+    let setup_code_for_await_check = setup_lines.join("\n");
     let is_async = contains_top_level_await(&setup_code_for_await_check, source_is_ts);
 
     let async_prefix = if is_async {
@@ -346,10 +348,12 @@ pub fn compile_script_setup_inline(
     }
 
     // Convert arena Vec<u8> to String - SAFETY: we only push valid UTF-8
-    let output_str = unsafe { String::from_utf8_unchecked(output.into_iter().collect()) };
+    #[allow(clippy::disallowed_types)]
+    let output_str: std::string::String =
+        unsafe { std::string::String::from_utf8_unchecked(output.into_iter().collect()) };
 
     // Normal script content is already embedded in the output buffer (after imports, before component def)
-    let final_code = if is_ts || !source_is_ts {
+    let final_code: String = if is_ts || !source_is_ts {
         // Preserve output as-is when:
         // - is_ts: output should be TypeScript (preserve for downstream toolchains)
         // - !source_is_ts: source is already JavaScript, no TS to strip
@@ -360,7 +364,7 @@ pub fn compile_script_setup_inline(
             code = code.replace("$event => (", "($event: any) => (");
             code = code.replace("$event => { ", "($event: any) => { ");
         }
-        code
+        code.into()
     } else {
         // Source is TypeScript but output should be JavaScript - transform to strip TS syntax
         transform_typescript_to_js(&output_str)
@@ -420,7 +424,7 @@ fn emit_render_return(
         // No template (e.g., Musea art files) -- return setup bindings as an object
         // so they're accessible for runtime template compilation (compileToFunction).
         use crate::types::BindingType;
-        let setup_bindings: Vec<&String> = ctx
+        let setup_bindings: Vec<&str> = ctx
             .bindings
             .bindings
             .iter()
@@ -435,7 +439,7 @@ fn emit_render_return(
                         | BindingType::LiteralConst
                 )
             })
-            .map(|(name, _)| name)
+            .map(|(name, _)| name.as_str())
             .collect();
         if !setup_bindings.is_empty() {
             output.extend_from_slice(b"return { ");
@@ -461,9 +465,9 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
 
     // Parse script content - extract imports and setup code
     let mut in_import = false;
-    let mut import_buffer = String::new();
+    let mut import_buffer = String::default();
     let mut in_destructure = false;
-    let mut destructure_buffer = String::new();
+    let mut destructure_buffer = String::default();
     let mut brace_depth: i32 = 0;
     let mut in_macro_call = false;
     let mut macro_angle_depth: i32 = 0;
@@ -476,7 +480,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
     let mut destructure_call_keep_lines = false; // true for regular function calls (keep args in output)
                                                  // Track multiline object literals: const xxx = { ... }
     let mut in_object_literal = false;
-    let mut object_literal_buffer = String::new();
+    let mut object_literal_buffer = String::default();
     let mut object_literal_brace_depth: i32 = 0;
     // Track TypeScript-only declarations (interface, type) to skip them
     let mut in_ts_interface = false;
@@ -514,7 +518,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             destructure_call_paren_depth -= cleaned.matches(')').count() as i32;
             // For regular (non-macro) function calls, keep argument lines in setup output
             if destructure_call_keep_lines {
-                setup_lines.push(line.to_string());
+                setup_lines.push(line.to_compact_string());
             }
             if destructure_call_paren_depth <= 0 {
                 in_destructure_call = false;
@@ -577,7 +581,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
                 if !is_props_macro {
                     // Not a props destructure - add to setup lines
                     for buf_line in destructure_buffer.lines() {
-                        setup_lines.push(buf_line.to_string());
+                        setup_lines.push(buf_line.to_compact_string());
                     }
                 }
                 // Check if the destructure's RHS has an unclosed function call:
@@ -627,7 +631,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             if !trimmed_no_semi_d.ends_with("()") && !trimmed_no_semi_d.ends_with(')') {
                 // Multi-line: wait for completion
                 in_destructure = true;
-                destructure_buffer = line.to_string() + "\n";
+                destructure_buffer = line.to_compact_string() + "\n";
                 brace_depth =
                     trimmed.matches('{').count() as i32 - trimmed.matches('}').count() as i32;
                 macro_angle_depth =
@@ -650,7 +654,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             && trimmed.ends_with('=')
         {
             in_destructure = true;
-            destructure_buffer = line.to_string() + "\n";
+            destructure_buffer = line.to_compact_string() + "\n";
             brace_depth = 0; // braces are balanced on this line
             macro_angle_depth = 0;
             continue;
@@ -663,7 +667,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             && !trimmed.contains('}')
         {
             in_destructure = true;
-            destructure_buffer = line.to_string() + "\n";
+            destructure_buffer = line.to_compact_string() + "\n";
             brace_depth = trimmed.matches('{').count() as i32 - trimmed.matches('}').count() as i32;
             macro_angle_depth = 0;
             continue;
@@ -683,7 +687,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             if object_literal_brace_depth <= 0 {
                 // Object literal is complete, add to setup_lines
                 for buf_line in object_literal_buffer.lines() {
-                    setup_lines.push(buf_line.to_string());
+                    setup_lines.push(buf_line.to_compact_string());
                 }
                 in_object_literal = false;
                 object_literal_buffer.clear();
@@ -702,7 +706,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             && !trimmed.contains("defineModel")
         {
             in_object_literal = true;
-            object_literal_buffer = line.to_string() + "\n";
+            object_literal_buffer = line.to_compact_string() + "\n";
             object_literal_brace_depth =
                 trimmed.matches('{').count() as i32 - trimmed.matches('}').count() as i32;
             continue;
@@ -738,7 +742,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
         if was_in_template_literal {
             // This line is inside (or closes) a template literal
             if !trimmed.is_empty() && !is_macro_call_line(trimmed) {
-                setup_lines.push(line.to_string());
+                setup_lines.push(line.to_compact_string());
             }
             continue;
         }
@@ -790,7 +794,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             ts_interface_brace_depth =
                 trimmed.matches('{').count() as i32 - trimmed.matches('}').count() as i32;
             if is_ts {
-                ts_declarations.push(line.to_string());
+                ts_declarations.push(line.to_compact_string());
             }
             if ts_interface_brace_depth <= 0 {
                 in_ts_interface = false;
@@ -810,12 +814,12 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
                     ts_interface_brace_depth = depth;
                 }
                 if is_ts {
-                    ts_declarations.push(line.to_string());
+                    ts_declarations.push(line.to_compact_string());
                 }
             } else {
                 // Single-line declare (e.g., `declare const x: number`)
                 if is_ts {
-                    ts_declarations.push(line.to_string());
+                    ts_declarations.push(line.to_compact_string());
                 }
             }
             continue;
@@ -931,7 +935,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
                     if trimmed.ends_with(';') {
                         // Definitely complete single-line type
                         if is_ts {
-                            ts_declarations.push(line.to_string());
+                            ts_declarations.push(line.to_compact_string());
                         }
                         continue;
                     }
@@ -943,7 +947,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
                     {
                         // Possibly complete, but next line may be conditional type continuation (? / :)
                         if is_ts {
-                            ts_declarations.push(line.to_string());
+                            ts_declarations.push(line.to_compact_string());
                         }
                         in_ts_type = true;
                         ts_type_pending_end = true;
@@ -951,13 +955,13 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
                     }
                 }
                 if is_ts {
-                    ts_declarations.push(line.to_string());
+                    ts_declarations.push(line.to_compact_string());
                 }
                 in_ts_type = true;
             } else {
                 // type without equals (e.g., `type X` on its own line) - rare but handle
                 if is_ts {
-                    ts_declarations.push(line.to_string());
+                    ts_declarations.push(line.to_compact_string());
                 }
             }
             continue;
@@ -967,7 +971,7 @@ fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>
             // All user code goes to setup_lines
             // Hoisting user-defined consts is problematic without proper AST-based scope tracking
             // Template-generated _hoisted_X consts are handled separately by template.hoisted
-            setup_lines.push(line.to_string());
+            setup_lines.push(line.to_compact_string());
         }
     }
 
@@ -1017,7 +1021,7 @@ fn build_props_emits(
                                 props_emits_buf.extend_from_slice(b" as PropType<");
                             }
                             // Normalize multi-line types to single line
-                            let normalized: String =
+                            let normalized =
                                 ts_type.split_whitespace().collect::<Vec<_>>().join(" ");
                             props_emits_buf.extend_from_slice(normalized.as_bytes());
                             props_emits_buf.push(b'>');
@@ -1158,7 +1162,7 @@ fn build_model_props_emits(
                 for part in inner.split(',') {
                     let name = part.trim().trim_matches(|c| c == '\'' || c == '"');
                     if !name.is_empty() {
-                        all_emits.push(name.to_string());
+                        all_emits.push(name.to_compact_string());
                     }
                 }
             }
@@ -1198,7 +1202,7 @@ fn collect_model_infos(ctx: &ScriptCompileContext) -> Vec<(String, String, Optio
         .iter()
         .map(|m| {
             let model_name = if m.args.trim().is_empty() {
-                "modelValue".to_string()
+                "modelValue".to_compact_string()
             } else {
                 let args = m.args.trim();
                 if args.starts_with('\'') || args.starts_with('"') {
@@ -1207,21 +1211,25 @@ fn collect_model_infos(ctx: &ScriptCompileContext) -> Vec<(String, String, Optio
                         .next()
                         .unwrap_or("modelValue")
                         .trim_matches(|c| c == '\'' || c == '"')
-                        .to_string()
+                        .to_compact_string()
                 } else {
-                    "modelValue".to_string()
+                    "modelValue".to_compact_string()
                 }
             };
-            let binding_name = m.binding_name.clone().unwrap_or_else(|| model_name.clone());
+            let binding_name = m
+                .binding_name
+                .as_deref()
+                .map(String::from)
+                .unwrap_or_else(|| model_name.clone());
             let options = if m.args.trim().is_empty() {
                 None
             } else {
                 let args = m.args.trim();
                 if args.starts_with('{') {
-                    Some(args.to_string())
+                    Some(args.to_compact_string())
                 } else if args.contains(',') {
                     args.split_once(',')
-                        .map(|(_, opts)| opts.trim().to_string())
+                        .map(|(_, opts)| opts.trim().to_compact_string())
                 } else {
                     None
                 }
@@ -1246,7 +1254,7 @@ fn separate_hoisted_consts(
         let trimmed = line.trim();
         // Track multi-line template literals / strings - don't hoist individual lines
         if in_multiline_value {
-            setup_body_lines.push(line.to_string());
+            setup_body_lines.push(line.to_compact_string());
             // Count unescaped backticks to detect end of template literal
             let backticks = trimmed
                 .chars()
@@ -1274,7 +1282,7 @@ fn separate_hoisted_consts(
                 let value_part = trimmed[eq_pos + 1..].trim();
                 // If value part is empty, the value is on the next line - don't hoist
                 if value_part.is_empty() {
-                    setup_body_lines.push(line.to_string());
+                    setup_body_lines.push(line.to_compact_string());
                     continue;
                 }
                 // Check for multi-line template literal (unclosed backtick)
@@ -1295,22 +1303,22 @@ fn separate_hoisted_consts(
                 if backticks % 2 == 1 {
                     // Unclosed template literal - don't hoist, mark as multi-line
                     in_multiline_value = true;
-                    setup_body_lines.push(line.to_string());
+                    setup_body_lines.push(line.to_compact_string());
                     continue;
                 }
             }
             // Extract variable name and check if it's LiteralConst
             if let Some(name) = extract_const_name(trimmed) {
                 if matches!(
-                    ctx.bindings.bindings.get(&name),
+                    ctx.bindings.bindings.get(name.as_str()),
                     Some(crate::types::BindingType::LiteralConst)
                 ) {
-                    hoisted_lines.push(line.to_string());
+                    hoisted_lines.push(line.to_compact_string());
                     continue;
                 }
             }
         }
-        setup_body_lines.push(line.to_string());
+        setup_body_lines.push(line.to_compact_string());
     }
 
     (hoisted_lines, setup_body_lines)

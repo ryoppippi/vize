@@ -10,6 +10,7 @@ use vize_carton::FxHashMap;
 use crate::types::BindingType;
 
 use super::{PropsDestructureBinding, PropsDestructuredBindings};
+use vize_carton::{String, ToCompactString};
 
 /// Process props destructure from an ObjectPattern
 pub fn process_props_destructure(
@@ -32,7 +33,7 @@ pub fn process_props_destructure(
                 // Default value: { foo = 123 }
                 BindingPattern::AssignmentPattern(assign) => {
                     if let BindingPattern::BindingIdentifier(id) = &assign.left {
-                        let local = id.name.to_string();
+                        let local = id.name.to_compact_string();
                         let default_expr = &source
                             [assign.right.span().start as usize..assign.right.span().end as usize];
 
@@ -40,7 +41,7 @@ pub fn process_props_destructure(
                             key.clone(),
                             PropsDestructureBinding {
                                 local: local.clone(),
-                                default: Some(default_expr.to_string()),
+                                default: Some(default_expr.to_compact_string()),
                             },
                         );
 
@@ -56,7 +57,7 @@ pub fn process_props_destructure(
                 }
                 // Simple destructure: { foo } or { foo: bar }
                 BindingPattern::BindingIdentifier(id) => {
-                    let local = id.name.to_string();
+                    let local = id.name.to_compact_string();
 
                     result.bindings.insert(
                         key.clone(),
@@ -85,7 +86,7 @@ pub fn process_props_destructure(
     // Handle rest spread: { ...rest }
     if let Some(rest) = &pattern.rest {
         if let BindingPattern::BindingIdentifier(id) = &rest.argument {
-            let rest_name = id.name.to_string();
+            let rest_name = id.name.to_compact_string();
             result.rest_id = Some(rest_name.clone());
             binding_metadata.insert(rest_name, BindingType::SetupReactiveConst);
         }
@@ -97,9 +98,9 @@ pub fn process_props_destructure(
 /// Resolve object key to string
 fn resolve_object_key(key: &oxc_ast::ast::PropertyKey<'_>, _source: &str) -> Option<String> {
     match key {
-        oxc_ast::ast::PropertyKey::StaticIdentifier(id) => Some(id.name.to_string()),
-        oxc_ast::ast::PropertyKey::StringLiteral(lit) => Some(lit.value.to_string()),
-        oxc_ast::ast::PropertyKey::NumericLiteral(lit) => Some(lit.value.to_string()),
+        oxc_ast::ast::PropertyKey::StaticIdentifier(id) => Some(id.name.to_compact_string()),
+        oxc_ast::ast::PropertyKey::StringLiteral(lit) => Some(lit.value.to_compact_string()),
+        oxc_ast::ast::PropertyKey::NumericLiteral(lit) => Some(lit.value.to_compact_string()),
         _ => None, // Computed keys not supported
     }
 }

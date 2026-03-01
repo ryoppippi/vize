@@ -1,6 +1,7 @@
 //! Element, component, and slot processing for SSR code generation.
 
 use vize_atelier_core::ast::{ElementNode, ElementType, RuntimeHelper};
+use vize_carton::{String, ToCompactString};
 
 use super::{helpers::escape_html_attr, SsrCodegenContext};
 use vize_carton::cstr;
@@ -258,7 +259,7 @@ impl<'a> SsrCodegenContext<'a> {
         for prop in &el.props {
             if let PropNode::Attribute(attr) = prop {
                 if attr.name == name {
-                    return attr.value.as_ref().map(|v| v.content.to_string());
+                    return attr.value.as_ref().map(|v| v.content.to_compact_string());
                 }
             }
         }
@@ -361,7 +362,7 @@ impl<'a> SsrCodegenContext<'a> {
                     if let Some(ExpressionNode::Simple(arg)) = &dir.arg {
                         if arg.content == "name" {
                             if let Some(ExpressionNode::Simple(exp)) = &dir.exp {
-                                return exp.content.to_string();
+                                return exp.content.to_compact_string();
                             }
                         }
                     }
@@ -369,11 +370,11 @@ impl<'a> SsrCodegenContext<'a> {
             } else if let PropNode::Attribute(attr) = prop {
                 if attr.name == "name" {
                     if let Some(value) = &attr.value {
-                        return value.content.to_string();
+                        return value.content.to_compact_string();
                     }
                 }
             }
         }
-        "default".to_string()
+        "default".to_compact_string()
     }
 }

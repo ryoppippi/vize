@@ -12,6 +12,7 @@ use crate::ast::{IfBranchNode, IfNode, PropNode, RuntimeHelper};
 use super::{context::CodegenContext, expression::generate_expression, helpers::escape_js_string};
 
 use branch::generate_if_branch;
+use vize_carton::ToCompactString;
 
 /// Generate if node.
 pub fn generate_if(ctx: &mut CodegenContext, if_node: &IfNode<'_>) {
@@ -81,7 +82,7 @@ pub fn generate_if_branch_key(
                     ctx.push(&escape_js_string(value.content.as_str()));
                     ctx.push("\"");
                 } else {
-                    ctx.push(&branch_index.to_string());
+                    ctx.push(&branch_index.to_compact_string());
                 }
             }
             PropNode::Directive(dir) => {
@@ -89,12 +90,12 @@ pub fn generate_if_branch_key(
                 if let Some(ref exp) = dir.exp {
                     generate_expression(ctx, exp);
                 } else {
-                    ctx.push(&branch_index.to_string());
+                    ctx.push(&branch_index.to_compact_string());
                 }
             }
         }
     } else {
-        ctx.push(&branch_index.to_string());
+        ctx.push(&branch_index.to_compact_string());
     }
 }
 

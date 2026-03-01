@@ -7,13 +7,15 @@ use oxc_ast::ast::{BindingPattern, Expression, VariableDeclarationKind};
 use vize_relief::BindingType;
 
 use super::super::extract::get_binding_type_from_kind;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Get binding name from binding pattern kind
 pub(in crate::script_parser) fn get_binding_pattern_name(
     pattern: &BindingPattern<'_>,
 ) -> Option<String> {
     match pattern {
-        BindingPattern::BindingIdentifier(id) => Some(id.name.to_string()),
+        BindingPattern::BindingIdentifier(id) => Some(id.name.to_compact_string()),
         BindingPattern::AssignmentPattern(assign) => get_binding_pattern_name(&assign.left),
         _ => None,
     }

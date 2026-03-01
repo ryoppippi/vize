@@ -51,6 +51,7 @@ pub use options::*;
 
 // Re-export allocator for external use
 pub use vize_carton::Allocator;
+use vize_carton::String;
 
 /// Format a Vue SFC source string
 ///

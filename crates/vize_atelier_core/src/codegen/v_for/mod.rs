@@ -14,6 +14,8 @@ use super::{
 
 use generate::generate_for_item;
 use helpers::extract_for_params;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 #[allow(unused_imports)]
 pub(crate) use helpers::{
@@ -117,7 +119,7 @@ pub fn generate_for(ctx: &mut CodegenContext, for_node: &ForNode<'_>) {
         _ => "FRAGMENT",
     };
     ctx.push("}), ");
-    ctx.push(&fragment_flag.to_string());
+    ctx.push(&fragment_flag.to_compact_string());
     ctx.push(" /* ");
     ctx.push(flag_name);
     ctx.push(" */))");

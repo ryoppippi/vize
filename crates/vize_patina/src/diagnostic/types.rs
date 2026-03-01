@@ -10,6 +10,8 @@ use oxc_diagnostics::OxcDiagnostic;
 use oxc_span::Span;
 use serde::Serialize;
 use vize_carton::CompactString;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 use super::formatting::{render_help, HelpRenderTarget};
 
@@ -43,7 +45,7 @@ impl HelpLevel {
         match self {
             HelpLevel::None => None,
             HelpLevel::Short => Some(super::formatting::strip_markdown_first_line(help)),
-            HelpLevel::Full => Some(help.to_string()),
+            HelpLevel::Full => Some(help.to_compact_string()),
         }
     }
 }
@@ -122,7 +124,7 @@ impl Fix {
     /// Apply the fix to a source string.
     #[inline]
     pub fn apply(&self, source: &str) -> String {
-        let mut result = source.to_string();
+        let mut result = source.to_compact_string();
         // Apply edits in reverse order to preserve offsets
         let mut edits = self.edits.clone();
         edits.sort_by(|a, b| b.start.cmp(&a.start));
@@ -248,7 +250,7 @@ impl LintDiagnostic {
     /// Get the formatted message with `[vize:RULE]` prefix.
     #[inline]
     pub fn formatted_message(&self) -> String {
-        format!("[vize:{}] {}", self.rule_name, self.message)
+        format!("[vize:{}] {}", self.rule_name, self.message).to_compact_string()
     }
 
     /// Convert to OxcDiagnostic for rich rendering.
@@ -272,8 +274,9 @@ impl LintDiagnostic {
 
         // Add additional labels
         for label in self.labels {
-            diag =
-                diag.and_label(Span::new(label.start, label.end).label(label.message.to_string()));
+            diag = diag.and_label(
+                Span::new(label.start, label.end).label(label.message.to_compact_string()),
+            );
         }
 
         diag

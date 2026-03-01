@@ -95,10 +95,10 @@ pub(crate) fn needs_typescript_stripping(content: &str) -> bool {
 }
 
 /// Strip TypeScript type annotations from an expression
-pub fn strip_typescript_from_expression(content: &str) -> std::string::String {
+pub fn strip_typescript_from_expression(content: &str) -> String {
     // Only process if TypeScript syntax is detected
     if !needs_typescript_stripping(content) {
-        return content.to_string();
+        return String::new(content);
     }
 
     let allocator = OxcAllocator::default();
@@ -114,7 +114,7 @@ pub fn strip_typescript_from_expression(content: &str) -> std::string::String {
 
     if !parse_result.errors.is_empty() {
         // If parsing fails, return original content
-        return content.to_string();
+        return String::new(content);
     }
 
     let mut program = parse_result.program;
@@ -125,7 +125,7 @@ pub fn strip_typescript_from_expression(content: &str) -> std::string::String {
         .build(&program);
 
     if !semantic_ret.errors.is_empty() {
-        return content.to_string();
+        return String::new(content);
     }
 
     let scoping = semantic_ret.semantic.into_scoping();
@@ -136,7 +136,7 @@ pub fn strip_typescript_from_expression(content: &str) -> std::string::String {
         .build_with_scoping(scoping, &mut program);
 
     if !ret.errors.is_empty() {
-        return content.to_string();
+        return String::new(content);
     }
 
     // Generate JavaScript code
@@ -154,14 +154,14 @@ pub fn strip_typescript_from_expression(content: &str) -> std::string::String {
             // Remove surrounding parentheses if present
             let expr = expr.trim();
             if expr.starts_with('(') && expr.ends_with(')') && has_matching_outer_parens(expr) {
-                return expr[1..expr.len() - 1].to_string();
+                return String::new(&expr[1..expr.len() - 1]);
             }
-            return expr.to_string();
+            return String::new(expr);
         }
     }
 
     // Fallback: return original content
-    content.to_string()
+    String::new(content)
 }
 
 /// Check if the outermost parens in a string are actually matching.

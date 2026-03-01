@@ -5,6 +5,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::CompactString as String;
+
 /// A range of byte offsets in a source file.
 ///
 /// Used for tracking positions in source code for:

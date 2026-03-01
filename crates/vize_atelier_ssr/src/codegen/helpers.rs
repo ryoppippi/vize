@@ -5,7 +5,7 @@ use vize_atelier_core::ast::{
 };
 
 use super::SsrCodegenContext;
-use vize_carton::cstr;
+use vize_carton::{cstr, String};
 
 impl<'a> SsrCodegenContext<'a> {
     /// Process a list of children nodes

@@ -300,8 +300,8 @@ pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
 }
 
 /// Escape HTML special characters in text content (vuejs/core #14310)
-pub(crate) fn escape_html_text(s: &str) -> std::string::String {
-    let mut result = std::string::String::with_capacity(s.len());
+pub(crate) fn escape_html_text(s: &str) -> String {
+    let mut result = String::with_capacity(s.len());
     for c in s.chars() {
         match c {
             '&' => result.push_str("&amp;"),

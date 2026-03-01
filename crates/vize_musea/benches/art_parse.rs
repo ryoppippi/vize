@@ -5,7 +5,11 @@
 //! These benchmarks measure the performance of the arena-allocated,
 //! zero-copy parser for Art files.
 
-#![allow(clippy::disallowed_macros)]
+#![allow(
+    clippy::disallowed_macros,
+    clippy::disallowed_types,
+    clippy::disallowed_methods
+)]
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, Throughput};
 use vize_carton::append;

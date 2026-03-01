@@ -1,5 +1,6 @@
 //! Helper functions for SFC compilation.
 
+use vize_carton::{String, ToCompactString};
 /// Generate scope ID from filename
 pub(super) fn generate_scope_id(filename: &str) -> String {
     use std::hash::{Hash, Hasher};
@@ -21,5 +22,5 @@ pub(super) fn extract_component_name(filename: &str) -> String {
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("anonymous")
-        .to_string()
+        .to_compact_string()
 }

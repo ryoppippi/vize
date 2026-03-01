@@ -3,7 +3,7 @@
 //! Provides utility functions for generating props access expressions
 //! and text-based identifier replacement.
 
-use vize_carton::FxHashMap;
+use vize_carton::{FxHashMap, String, ToCompactString};
 
 /// Sentinel value for rest spread identifiers in local_to_key map.
 /// When `gen_props_access_exp` receives this, it returns just `__props`.
@@ -13,7 +13,7 @@ pub(crate) const PROPS_REST_SENTINEL: &str = "\0__REST__";
 pub fn gen_props_access_exp(key: &str) -> String {
     // Rest spread sentinel: just return `__props` (no property access)
     if key == PROPS_REST_SENTINEL {
-        return "__props".to_string();
+        return "__props".to_compact_string();
     }
     if is_simple_identifier(key) {
         let mut out = String::with_capacity(key.len() + 8);
@@ -52,7 +52,7 @@ pub(crate) fn is_identifier_char(c: char) -> bool {
 
 /// Replace identifier occurrences with proper word boundary checking
 pub(crate) fn replace_identifier(source: &str, name: &str, replacement: &str) -> String {
-    let mut result = String::new();
+    let mut result = String::default();
     let chars: Vec<char> = source.chars().collect();
     let name_chars: Vec<char> = name.chars().collect();
     let mut i = 0;
@@ -60,8 +60,8 @@ pub(crate) fn replace_identifier(source: &str, name: &str, replacement: &str) ->
     while i < chars.len() {
         // Check if we're at the start of the identifier
         if i + name_chars.len() <= chars.len() {
-            let potential_match: String = chars[i..i + name_chars.len()].iter().collect();
-            if potential_match == name {
+            let potential_match: String = chars[i..i + name_chars.len()].iter().copied().collect();
+            if potential_match.as_str() == name {
                 // Check word boundaries
                 let before_ok = i == 0 || !is_identifier_char(chars[i - 1]);
                 let after_ok = i + name_chars.len() >= chars.len()
@@ -89,7 +89,7 @@ pub(crate) fn transform_props_text_based(
     source: &str,
     local_to_key: &FxHashMap<&str, &str>,
 ) -> String {
-    let mut result = source.to_string();
+    let mut result = source.to_compact_string();
 
     // Sort by length (longest first) to avoid partial replacements
     let mut props: Vec<(&str, &str)> = local_to_key.iter().map(|(k, v)| (*k, *v)).collect();

@@ -6,6 +6,7 @@
 use crate::ast::{RootNode, RuntimeHelper, TemplateChildNode};
 
 use super::context::CodegenContext;
+use vize_carton::String;
 
 /// Check if a root-level text node is ignorable whitespace.
 pub(super) fn is_ignorable_root_text(child: &TemplateChildNode<'_>) -> bool {
@@ -18,7 +19,7 @@ pub(super) fn generate_preamble_from_helpers(
     helpers: &[RuntimeHelper],
 ) -> String {
     if helpers.is_empty() {
-        return String::new();
+        return String::default();
     }
 
     // Pre-calculate capacity: each helper needs ~20 chars on average

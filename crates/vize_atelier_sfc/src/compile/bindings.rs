@@ -3,6 +3,8 @@
 //! Handles converting between Croquis and legacy binding formats,
 //! and registering bindings from normal `<script>` blocks.
 
+use vize_carton::ToCompactString;
+
 use crate::types::{BindingMetadata, BindingType};
 
 /// Convert Croquis BindingMetadata (CompactString keys) to legacy BindingMetadata (String keys)
@@ -12,10 +14,11 @@ pub(super) fn croquis_to_legacy_bindings(
     let mut dst = BindingMetadata::default();
     dst.is_script_setup = src.is_script_setup;
     for (name, bt) in src.iter() {
-        dst.bindings.insert(name.to_string(), bt);
+        dst.bindings.insert(name.to_compact_string(), bt);
     }
     for (local, key) in &src.props_aliases {
-        dst.props_aliases.insert(local.to_string(), key.to_string());
+        dst.props_aliases
+            .insert(local.to_compact_string(), key.to_compact_string());
     }
     dst
 }
@@ -56,21 +59,21 @@ pub(super) fn register_normal_script_bindings(content: &str, bindings: &mut Bind
                                 if s.import_kind.is_type() {
                                     continue;
                                 }
-                                let local = s.local.name.to_string();
+                                let local = s.local.name.to_compact_string();
                                 bindings
                                     .bindings
                                     .entry(local)
                                     .or_insert(BindingType::SetupConst);
                             }
                             ImportDeclarationSpecifier::ImportDefaultSpecifier(s) => {
-                                let local = s.local.name.to_string();
+                                let local = s.local.name.to_compact_string();
                                 bindings
                                     .bindings
                                     .entry(local)
                                     .or_insert(BindingType::SetupConst);
                             }
                             ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => {
-                                let local = s.local.name.to_string();
+                                let local = s.local.name.to_compact_string();
                                 bindings
                                     .bindings
                                     .entry(local)
@@ -90,7 +93,7 @@ pub(super) fn register_normal_script_bindings(content: &str, bindings: &mut Bind
                             {
                                 bindings
                                     .bindings
-                                    .entry(id.name.to_string())
+                                    .entry(id.name.to_compact_string())
                                     .or_insert(BindingType::SetupConst);
                             }
                         }

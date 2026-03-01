@@ -8,7 +8,7 @@ mod parse;
 mod props;
 
 use crate::types::{BindingMetadata, BindingType};
-use vize_carton::CompactString;
+use vize_carton::{CompactString, String, ToCompactString};
 use vize_croquis::analysis::Croquis;
 use vize_croquis::macros::{EmitDefinition, ModelDefinition, PropDefinition};
 
@@ -67,7 +67,7 @@ impl ScriptCompileContext {
     /// Create a new context
     pub fn new(source: &str) -> Self {
         Self {
-            source: source.to_string(),
+            source: source.to_compact_string(),
             bindings: BindingMetadata::default(),
             macros: ScriptSetupMacros::default(),
             has_define_props_call: false,
@@ -191,6 +191,7 @@ impl ScriptCompileContext {
 mod tests {
     use super::ScriptCompileContext;
     use crate::types::BindingType;
+    use vize_carton::ToCompactString;
 
     #[test]
     fn test_context_analyze() {
@@ -231,7 +232,10 @@ function increment() { count.value++ }
         assert!(ctx.has_define_props_call);
         assert!(ctx.macros.define_props.is_some());
         let props_call = ctx.macros.define_props.unwrap();
-        assert_eq!(props_call.type_args, Some("{ msg: string }".to_string()));
+        assert_eq!(
+            props_call.type_args,
+            Some("{ msg: string }".to_compact_string())
+        );
     }
 
     #[test]

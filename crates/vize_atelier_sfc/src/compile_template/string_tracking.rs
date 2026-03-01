@@ -4,6 +4,8 @@
 //! block comments, and `${...}` expressions when counting braces and
 //! parentheses in JavaScript/TypeScript code.
 
+use vize_carton::String;
+
 /// State for tracking string/template literal/comment context across multiple lines.
 /// Required because template literals (backtick strings) and block comments can span
 /// multiple lines, and `${...}` expressions within template literals contain code-mode
@@ -262,7 +264,7 @@ pub(super) fn count_parens_with_state(line: &str, state: &mut StringTrackState) 
 /// Compact render body by removing unnecessary line breaks inside function calls and arrays
 #[allow(dead_code)]
 pub(super) fn compact_render_body(render_body: &str) -> String {
-    let mut result = String::new();
+    let mut result = String::default();
     let mut chars = render_body.chars().peekable();
     let mut paren_depth: i32 = 0;
     let mut bracket_depth: i32 = 0;

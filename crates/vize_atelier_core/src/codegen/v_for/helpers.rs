@@ -4,6 +4,8 @@
 //! and utility predicates for v-for rendering.
 
 use crate::ast::{ElementNode, ExpressionNode, PropNode};
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Extract parameter names from a v-for callback expression.
 /// Handles simple identifiers ("item"), destructuring patterns ("{ id, name }"),
@@ -28,7 +30,7 @@ pub(crate) fn extract_destructure_params(trimmed: &str, params: &mut Vec<String>
             if let Some(rest) = part.strip_prefix("...") {
                 let rest = rest.trim();
                 if !rest.is_empty() && is_valid_ident(rest) {
-                    params.push(rest.to_string());
+                    params.push(rest.to_compact_string());
                 }
                 continue;
             }
@@ -36,7 +38,7 @@ pub(crate) fn extract_destructure_params(trimmed: &str, params: &mut Vec<String>
             if let Some(eq_pos) = part.find('=') {
                 let name = part[..eq_pos].trim();
                 if !name.is_empty() && is_valid_ident(name) {
-                    params.push(name.to_string());
+                    params.push(name.to_compact_string());
                 }
                 continue;
             }
@@ -47,13 +49,13 @@ pub(crate) fn extract_destructure_params(trimmed: &str, params: &mut Vec<String>
                 if value.starts_with('{') || value.starts_with('[') {
                     extract_destructure_params(value, params);
                 } else if is_valid_ident(value) {
-                    params.push(value.to_string());
+                    params.push(value.to_compact_string());
                 }
                 continue;
             }
             // Simple identifier
             if !part.is_empty() && is_valid_ident(part) {
-                params.push(part.to_string());
+                params.push(part.to_compact_string());
             }
         }
     } else if trimmed.starts_with('[') && trimmed.ends_with(']') {
@@ -63,16 +65,16 @@ pub(crate) fn extract_destructure_params(trimmed: &str, params: &mut Vec<String>
             if let Some(rest) = part.strip_prefix("...") {
                 let rest = rest.trim();
                 if !rest.is_empty() && is_valid_ident(rest) {
-                    params.push(rest.to_string());
+                    params.push(rest.to_compact_string());
                 }
             } else if part.starts_with('{') || part.starts_with('[') {
                 extract_destructure_params(part, params);
             } else if !part.is_empty() && is_valid_ident(part) {
-                params.push(part.to_string());
+                params.push(part.to_compact_string());
             }
         }
     } else if is_valid_ident(trimmed) {
-        params.push(trimmed.to_string());
+        params.push(trimmed.to_compact_string());
     }
 }
 

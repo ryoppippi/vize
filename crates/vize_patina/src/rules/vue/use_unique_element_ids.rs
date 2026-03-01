@@ -241,7 +241,7 @@ impl UseUniqueElementIds {
             ctx.t("vue/use-unique-element-ids.help")
         };
 
-        ctx.warn_with_help(&message, loc, help);
+        ctx.warn_with_help(message, loc, help);
     }
 
     fn report_static_id_tiered(
@@ -273,7 +273,7 @@ impl UseUniqueElementIds {
             ctx.t("vue/use-unique-element-ids.help")
         };
 
-        ctx.warn_with_help(&message, loc, help);
+        ctx.warn_with_help(message, loc, help);
     }
 }
 

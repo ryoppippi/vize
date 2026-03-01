@@ -9,6 +9,7 @@ use oxc_ast_visit::Visit;
 use oxc_parser::Parser;
 use oxc_span::SourceType;
 use oxc_syntax::scope::ScopeFlags;
+use vize_carton::String;
 
 /// Count unescaped backticks in a line, ignoring those inside regular strings.
 /// Returns the change in template literal depth (positive = more opens, negative = more closes).

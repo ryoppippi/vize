@@ -9,6 +9,8 @@ use super::{
     InterpolationNode, MappingData, PropNode, RootNode, SourceMapping, SourceRange,
     TemplateChildNode, VirtualTsGenerator, VirtualTsOutput,
 };
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 impl VirtualTsGenerator {
     /// Generate virtual TypeScript from template AST (legacy API).
@@ -243,7 +245,7 @@ impl VirtualTsGenerator {
                             .chars()
                             .all(|c| c.is_alphanumeric() || c == '_' || c == '$')
                     {
-                        Some(name.to_string())
+                        Some(name.to_compact_string())
                     } else {
                         None
                     }
@@ -258,7 +260,7 @@ impl VirtualTsGenerator {
                                 .chars()
                                 .all(|c| c.is_alphanumeric() || c == '_' || c == '$')
                         {
-                            return Some(name.to_string());
+                            return Some(name.to_compact_string());
                         }
                     }
                     None
@@ -348,7 +350,7 @@ impl VirtualTsGenerator {
                     SourceRange::new(source_start, source_end),
                     SourceRange::new(expr_start, expr_end),
                     MappingData::Expression {
-                        text: simple.content.to_string(),
+                        text: simple.content.to_compact_string(),
                     },
                 ));
 

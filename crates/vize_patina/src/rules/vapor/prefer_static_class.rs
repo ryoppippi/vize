@@ -24,6 +24,7 @@
 use crate::context::LintContext;
 use crate::diagnostic::{Fix, Severity, TextEdit};
 use crate::rule::{Rule, RuleCategory, RuleMeta};
+use vize_carton::String;
 use vize_relief::ast::{DirectiveNode, ElementNode, ExpressionNode, PropNode};
 
 static META: RuleMeta = RuleMeta {

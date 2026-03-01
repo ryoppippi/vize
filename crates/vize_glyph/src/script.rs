@@ -9,7 +9,7 @@ use oxc_allocator::Allocator as OxcAllocator;
 use oxc_formatter::{get_parse_options, Formatter as OxcFormatter};
 use oxc_parser::Parser;
 use oxc_span::SourceType;
-use vize_carton::Allocator;
+use vize_carton::{Allocator, String, ToCompactString};
 
 /// Format JavaScript/TypeScript content using oxc_formatter
 ///
@@ -23,7 +23,7 @@ pub fn format_script_content(
     // Fast path for empty content
     let trimmed = source.trim();
     if trimmed.is_empty() {
-        return Ok(String::new());
+        return Ok(String::default());
     }
 
     // Use OXC's allocator for parsing (required by oxc_parser)
@@ -38,15 +38,21 @@ pub fn format_script_content(
         .parse();
 
     if !parsed.errors.is_empty() {
-        let error_messages: Vec<String> = parsed.errors.iter().map(|e| e.to_string()).collect();
-        return Err(FormatError::ScriptParseError(error_messages.join("; ")));
+        let error_messages: Vec<String> = parsed
+            .errors
+            .iter()
+            .map(|e| e.to_compact_string())
+            .collect();
+        return Err(FormatError::ScriptParseError(
+            error_messages.join("; ").into(),
+        ));
     }
 
     // Convert options and format
     let oxc_options = options.to_oxc_format_options();
     let formatted = OxcFormatter::new(&oxc_allocator, oxc_options).build(&parsed.program);
 
-    Ok(formatted)
+    Ok(formatted.into())
 }
 
 /// Format a JS expression (for use in template directive values and interpolations).
@@ -55,7 +61,7 @@ pub fn format_script_content(
 pub fn format_js_expression(expr: &str, options: &FormatOptions) -> Option<String> {
     let trimmed = expr.trim();
     if trimmed.is_empty() {
-        return Some(String::new());
+        return Some(String::default());
     }
 
     let oxc_allocator = OxcAllocator::default();
@@ -90,7 +96,7 @@ pub fn format_js_expression(expr: &str, options: &FormatOptions) -> Option<Strin
         inner
     };
 
-    Some(inner.trim().to_string())
+    Some(inner.trim().to_compact_string())
 }
 
 #[cfg(test)]
@@ -163,6 +169,6 @@ mod tests {
     fn test_format_js_expression_empty() {
         let options = FormatOptions::default();
         let result = format_js_expression("", &options);
-        assert_eq!(result, Some(String::new()));
+        assert_eq!(result, Some(String::default()));
     }
 }

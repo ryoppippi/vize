@@ -12,6 +12,8 @@ use crate::ast::{CompoundExpressionChild, ExpressionNode, SimpleExpressionNode};
 use super::{context::CodegenContext, helpers::escape_js_string};
 
 use helpers::{convert_line_comments_to_block, strip_ctx_for_slot_params};
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 #[allow(unused_imports)]
 pub use generate::{
@@ -53,10 +55,10 @@ pub fn generate_simple_expression(ctx: &mut CodegenContext, exp: &SimpleExpressi
         ctx.push("\"");
     } else {
         // Strip TypeScript if needed
-        let mut content = if ctx.options.is_ts && exp.content.contains(" as ") {
+        let mut content: String = if ctx.options.is_ts && exp.content.contains(" as ") {
             crate::transforms::strip_typescript_from_expression(&exp.content)
         } else {
-            exp.content.to_string()
+            exp.content.to_compact_string()
         };
 
         // Convert // line comments to /* */ block comments.

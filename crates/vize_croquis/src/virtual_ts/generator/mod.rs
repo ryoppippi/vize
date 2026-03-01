@@ -27,6 +27,7 @@ use crate::script_parser::ScriptParseResult;
 use crate::types::TypeResolver;
 
 use super::types::{GenerationDiagnostic, ResolvedImport, VirtualTsConfig, VirtualTsOutput};
+use vize_carton::String;
 
 /// Virtual TypeScript generator.
 ///

@@ -83,20 +83,23 @@ pub fn process_inline_handler<'a>(
             // Check if it's a simple identifier (method name)
             // Vue passes method references directly, no wrapping needed
             if is_simple_identifier(content) {
-                let new_content = if ctx.options.prefix_identifiers {
+                let new_content: String = if ctx.options.prefix_identifiers {
                     // Use the same prefix logic as get_identifier_prefix for consistency
                     if let Some(prefix) = get_identifier_prefix(content, ctx) {
-                        [prefix, content].concat()
+                        let mut s = String::with_capacity(prefix.len() + content.len());
+                        s.push_str(prefix);
+                        s.push_str(content);
+                        s
                     } else {
-                        content.to_string()
+                        content.clone()
                     }
                 } else {
-                    content.to_string()
+                    content.clone()
                 };
 
                 return ExpressionNode::Simple(Box::new_in(
                     SimpleExpressionNode {
-                        content: String::new(&new_content),
+                        content: new_content,
                         is_static: false,
                         const_type: ConstantType::NotConstant,
                         loc: simple.loc.clone(),
@@ -111,7 +114,7 @@ pub fn process_inline_handler<'a>(
             }
 
             // Compound expression - rewrite and wrap in arrow function
-            let rewritten = if ctx.options.prefix_identifiers {
+            let rewritten: String = if ctx.options.prefix_identifiers {
                 let result = rewrite_expression(content, ctx, false);
                 if result.used_unref {
                     ctx.helper(crate::ast::RuntimeHelper::Unref);
@@ -121,19 +124,27 @@ pub fn process_inline_handler<'a>(
                 // Strip TypeScript type annotations even without prefix_identifiers
                 strip_typescript_from_expression(content)
             } else {
-                content.to_string()
+                content.clone()
             };
             // Use block body { ... } for multi-statement handlers (semicolons),
             // concise body ( ... ) for single expressions
             let new_content = if rewritten.contains(';') {
-                ["$event => { ", &rewritten, " }"].concat()
+                let mut s = String::with_capacity(14 + rewritten.len() + 2);
+                s.push_str("$event => { ");
+                s.push_str(&rewritten);
+                s.push_str(" }");
+                s
             } else {
-                ["$event => (", &rewritten, ")"].concat()
+                let mut s = String::with_capacity(12 + rewritten.len() + 1);
+                s.push_str("$event => (");
+                s.push_str(&rewritten);
+                s.push(')');
+                s
             };
 
             ExpressionNode::Simple(Box::new_in(
                 SimpleExpressionNode {
-                    content: String::new(&new_content),
+                    content: new_content,
                     is_static: false,
                     const_type: ConstantType::NotConstant,
                     loc: simple.loc.clone(),

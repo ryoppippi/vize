@@ -18,7 +18,7 @@ pub fn parse_sfc<'a>(
     options: SfcParseOptions,
 ) -> Result<SfcDescriptor<'a>, SfcError> {
     let mut descriptor = SfcDescriptor {
-        filename: Cow::Owned(options.filename),
+        filename: Cow::Owned(options.filename.into()),
         source: Cow::Borrowed(source),
         ..Default::default()
     };

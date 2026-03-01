@@ -39,7 +39,7 @@ use vize_atelier_core::{
     parser::parse_with_options,
     transform::transform as do_transform,
 };
-use vize_carton::Bump;
+use vize_carton::{Bump, String};
 
 /// Compile a Vue template for SSR with default options
 pub fn compile_ssr<'a>(
@@ -70,8 +70,8 @@ pub fn compile_ssr_with_options<'a>(
 
     if !errors.is_empty() {
         let codegen_result = SsrCodegenResult {
-            code: String::new(),
-            preamble: String::new(),
+            code: String::default(),
+            preamble: String::default(),
         };
         return (root, errors.to_vec(), codegen_result);
     }

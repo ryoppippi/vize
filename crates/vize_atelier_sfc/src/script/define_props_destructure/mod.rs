@@ -12,7 +12,7 @@ mod process;
 mod tests;
 mod transform;
 
-use vize_carton::FxHashMap;
+use vize_carton::{FxHashMap, String};
 
 /// Props destructure binding info
 #[derive(Debug, Clone)]

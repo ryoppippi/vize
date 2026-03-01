@@ -14,6 +14,7 @@ mod formatter;
 mod helpers;
 
 use crate::{error::FormatError, options::FormatOptions};
+use vize_carton::String;
 
 use formatter::TemplateFormatter;
 use helpers::is_whitespace;
@@ -28,7 +29,7 @@ pub fn format_template_content(
 
     // Fast path: all whitespace
     if bytes.iter().all(|&b| is_whitespace(b)) {
-        return Ok(String::new());
+        return Ok(String::default());
     }
 
     let formatter = TemplateFormatter::new(options);
@@ -43,6 +44,7 @@ mod tests {
     use directives::{custom_attribute_priority, format_v_for_expression, matches_attr_pattern};
     use formatter::format_interpolations;
     use helpers::{is_tag_name_char, is_void_element_str};
+    use vize_carton::ToCompactString;
 
     #[test]
     fn test_format_simple_template() {
@@ -382,10 +384,10 @@ mod tests {
         let source = r#"<div @click="h" class="c" id="main" title="t"></div>"#;
         let mut options = FormatOptions::default();
         options.attribute_groups = Some(vec![
-            vec!["id".to_string()],
-            vec!["class".to_string(), ":class".to_string()],
-            vec!["@*".to_string()],
-            vec!["*".to_string()],
+            vec!["id".to_compact_string()],
+            vec!["class".to_compact_string(), ":class".to_compact_string()],
+            vec!["@*".to_compact_string()],
+            vec!["*".to_compact_string()],
         ]);
         let result = format_template_content(source, &options).unwrap();
 
@@ -426,10 +428,10 @@ mod tests {
     #[test]
     fn test_custom_attribute_priority() {
         let groups = vec![
-            vec!["v-for".to_string()],
-            vec!["v-if".to_string(), "v-else".to_string()],
-            vec![":*".to_string()],
-            vec!["@*".to_string()],
+            vec!["v-for".to_compact_string()],
+            vec!["v-if".to_compact_string(), "v-else".to_compact_string()],
+            vec![":*".to_compact_string()],
+            vec!["@*".to_compact_string()],
         ];
 
         assert_eq!(custom_attribute_priority("v-for", &groups), 0);

@@ -24,6 +24,8 @@
 use crate::context::LintContext;
 use crate::diagnostic::{Fix, LintDiagnostic, Severity, TextEdit};
 use crate::rule::{Rule, RuleCategory, RuleMeta};
+use vize_carton::String;
+use vize_carton::ToCompactString;
 use vize_relief::ast::{DirectiveNode, ElementNode};
 
 static META: RuleMeta = RuleMeta {
@@ -86,8 +88,10 @@ impl Rule for VBindStyle {
                         .arg
                         .as_ref()
                         .map(|a| match a {
-                            vize_relief::ast::ExpressionNode::Simple(s) => s.content.to_string(),
-                            _ => String::new(),
+                            vize_relief::ast::ExpressionNode::Simple(s) => {
+                                s.content.to_compact_string()
+                            }
+                            _ => String::default(),
                         })
                         .unwrap_or_default();
 
@@ -95,8 +99,10 @@ impl Rule for VBindStyle {
                         .exp
                         .as_ref()
                         .map(|e| match e {
-                            vize_relief::ast::ExpressionNode::Simple(s) => s.content.to_string(),
-                            _ => String::new(),
+                            vize_relief::ast::ExpressionNode::Simple(s) => {
+                                s.content.to_compact_string()
+                            }
+                            _ => String::default(),
                         })
                         .unwrap_or_default();
 
@@ -129,8 +135,10 @@ impl Rule for VBindStyle {
                         .arg
                         .as_ref()
                         .map(|a| match a {
-                            vize_relief::ast::ExpressionNode::Simple(s) => s.content.to_string(),
-                            _ => String::new(),
+                            vize_relief::ast::ExpressionNode::Simple(s) => {
+                                s.content.to_compact_string()
+                            }
+                            _ => String::default(),
                         })
                         .unwrap_or_default();
 
@@ -138,8 +146,10 @@ impl Rule for VBindStyle {
                         .exp
                         .as_ref()
                         .map(|e| match e {
-                            vize_relief::ast::ExpressionNode::Simple(s) => s.content.to_string(),
-                            _ => String::new(),
+                            vize_relief::ast::ExpressionNode::Simple(s) => {
+                                s.content.to_compact_string()
+                            }
+                            _ => String::default(),
                         })
                         .unwrap_or_default();
 

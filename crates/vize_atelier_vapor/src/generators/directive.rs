@@ -3,7 +3,7 @@
 use super::block::GenerateContext;
 use crate::ir::DirectiveIRNode;
 use vize_atelier_core::ExpressionNode;
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate Directive code
 pub fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>) {
@@ -82,17 +82,17 @@ pub fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode
 
 /// Generate directive resolution
 pub fn generate_resolve_directive(name: &str) -> String {
-    cstr!("_resolveDirective(\"{name}\")").into()
+    cstr!("_resolveDirective(\"{name}\")")
 }
 
 /// Generate v-show directive
 pub fn generate_v_show(element_var: &str, value: &str) -> String {
-    cstr!("{element_var}.style.display = {value} ? '' : 'none'").into()
+    cstr!("{element_var}.style.display = {value} ? '' : 'none'")
 }
 
 /// Generate v-cloak removal
 pub fn generate_v_cloak_removal(element_var: &str) -> String {
-    cstr!("{element_var}.removeAttribute('v-cloak')").into()
+    cstr!("{element_var}.removeAttribute('v-cloak')")
 }
 
 /// Generate v-pre handling (skip compilation marker)
@@ -107,7 +107,6 @@ pub fn generate_with_directives(element_var: &str, directives: &[String]) -> Str
         "_withDirectives({element_var}, [{}])",
         directives.join(", ")
     )
-    .into()
 }
 
 /// Generate single directive array
@@ -117,19 +116,19 @@ pub fn generate_directive_array(
     arg: Option<&str>,
     modifiers: Option<&str>,
 ) -> String {
-    let mut parts = vec![directive.to_string(), value.to_string()];
+    let mut parts = vec![directive.to_compact_string(), value.to_compact_string()];
 
     if let Some(a) = arg {
-        parts.push(a.to_string());
+        parts.push(a.to_compact_string());
         if let Some(m) = modifiers {
-            parts.push(m.to_string());
+            parts.push(m.to_compact_string());
         }
     } else if let Some(m) = modifiers {
         parts.push(String::from("undefined"));
-        parts.push(m.to_string());
+        parts.push(m.to_compact_string());
     }
 
-    cstr!("[{}]", parts.join(", ")).into()
+    cstr!("[{}]", parts.join(", "))
 }
 
 #[cfg(test)]

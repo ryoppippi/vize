@@ -2,7 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::SlotOutletIRNode;
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate SlotOutlet code
 pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'_>) {
@@ -24,14 +24,14 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
                 let key = &p.key.content;
                 let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        cstr!("\"{}\"", first.content).into()
+                        cstr!("\"{}\"", first.content)
                     } else {
-                        first.content.to_string()
+                        first.content.to_compact_string()
                     }
                 } else {
                     String::from("undefined")
                 };
-                cstr!("{key}: {value}").into()
+                cstr!("{key}: {value}")
             })
             .collect();
         Some(cstr!("{{ {} }}", prop_strs.join(", ")))
@@ -73,9 +73,9 @@ pub fn generate_slot_outlet(ctx: &mut GenerateContext, slot: &SlotOutletIRNode<'
 /// Generate slot function for component
 pub fn generate_slot_function(name: &str, params: Option<&str>, body: &str) -> String {
     if let Some(p) = params {
-        cstr!("{name}: ({p}) => {body}").into()
+        cstr!("{name}: ({p}) => {body}")
     } else {
-        cstr!("{name}: () => {body}").into()
+        cstr!("{name}: () => {body}")
     }
 }
 
@@ -86,17 +86,17 @@ pub fn generate_scoped_slots(slots: &[(String, Option<String>, String)]) -> Stri
         .map(|(name, params, body)| generate_slot_function(name, params.as_deref(), body))
         .collect();
 
-    cstr!("{{ {} }}", slot_strs.join(", ")).into()
+    cstr!("{{ {} }}", slot_strs.join(", "))
 }
 
 /// Generate slot props normalization
 pub fn generate_normalize_slots(slots_expr: &str) -> String {
-    cstr!("_normalizeSlots({slots_expr})").into()
+    cstr!("_normalizeSlots({slots_expr})")
 }
 
 /// Generate dynamic slot name
 pub fn generate_dynamic_slot_name(expr: &str) -> String {
-    cstr!("[{expr}]").into()
+    cstr!("[{expr}]")
 }
 
 /// Check if slot is dynamic

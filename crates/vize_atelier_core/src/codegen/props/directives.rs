@@ -7,6 +7,8 @@ use super::super::{
     expression::{generate_event_handler, generate_expression, generate_simple_expression},
     helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier},
 };
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Check if a directive will produce valid output
 pub fn is_supported_directive(dir: &DirectiveNode<'_>) -> bool {
@@ -126,15 +128,15 @@ fn generate_vbind_prop(
                 let mut name = String::with_capacity(1 + key.len());
                 name.push('.');
                 name.push_str(key);
-                name.into()
+                name
             } else if has_attr {
                 // Add ^ prefix for attribute binding
                 let mut name = String::with_capacity(1 + key.len());
                 name.push('^');
                 name.push_str(key);
-                name.into()
+                name
             } else {
-                key.to_string().into()
+                key.to_compact_string()
             };
 
             let needs_quotes = !is_valid_js_identifier(&transformed_key);
@@ -302,7 +304,7 @@ fn generate_von_prop(ctx: &mut CodegenContext, dir: &DirectiveNode<'_>) {
                     // Also convert kebab-case to camelCase
                     let first_part_camelized = camelize(parts[0]);
                     if let Some(first) = first_part_camelized.chars().next() {
-                        ctx.push(&first.to_uppercase().to_string());
+                        ctx.push(&first.to_uppercase().to_compact_string());
                         ctx.push(&first_part_camelized[first.len_utf8()..]);
                     }
                     ctx.push(":");
@@ -320,7 +322,7 @@ fn generate_von_prop(ctx: &mut CodegenContext, dir: &DirectiveNode<'_>) {
                 ctx.push("on");
                 // Capitalize first letter of camelized name
                 if let Some(first) = camelized.chars().next() {
-                    ctx.push(&first.to_uppercase().to_string());
+                    ctx.push(&first.to_uppercase().to_compact_string());
                     ctx.push(&camelized[first.len_utf8()..]);
                 }
                 // Append event option modifiers (Capture, Once, Passive)
@@ -365,9 +367,9 @@ fn generate_von_prop(ctx: &mut CodegenContext, dir: &DirectiveNode<'_>) {
     if needs_cache {
         let cache_index = ctx.next_cache_index();
         ctx.push("_cache[");
-        ctx.push(&cache_index.to_string());
+        ctx.push(&cache_index.to_compact_string());
         ctx.push("] || (_cache[");
-        ctx.push(&cache_index.to_string());
+        ctx.push(&cache_index.to_compact_string());
         ctx.push("] = ");
     }
 

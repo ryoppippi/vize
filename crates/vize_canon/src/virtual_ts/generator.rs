@@ -430,5 +430,8 @@ pub fn generate_virtual_ts_with_offsets(
     ts.push_str("};\n");
     ts.push_str("export default __vize_component__;\n");
 
-    VirtualTsOutput { code: ts, mappings }
+    VirtualTsOutput {
+        code: ts.into(),
+        mappings,
+    }
 }

@@ -5,6 +5,7 @@
 
 use super::{CrossFileDiagnostic, CrossFileDiagnosticKind, DiagnosticSeverity};
 use vize_carton::append;
+use vize_carton::String;
 
 impl CrossFileDiagnostic {
     /// Generate rich markdown diagnostic message.

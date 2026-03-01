@@ -7,6 +7,7 @@ use oxc_ast::ast::{BindingPattern, Expression, Program, Statement};
 use vize_carton::FxHashMap;
 
 use super::helpers::gen_props_access_exp;
+use vize_carton::{String, ToCompactString};
 
 /// Collect identifier rewrites from AST
 pub(crate) fn collect_identifier_rewrites<'a>(
@@ -103,7 +104,7 @@ pub(crate) fn collect_from_statement<'a>(
         Statement::FunctionDeclaration(func) => {
             // Register function name as local binding
             if let Some(id) = &func.id {
-                local_bindings.insert(id.name.to_string(), true);
+                local_bindings.insert(id.name.to_compact_string(), true);
             }
             // Walk function body with new scope
             if let Some(body) = &func.body {
@@ -710,7 +711,7 @@ pub(crate) fn register_binding_pattern(
 ) {
     match pattern {
         BindingPattern::BindingIdentifier(id) => {
-            bindings.insert(id.name.to_string(), true);
+            bindings.insert(id.name.to_compact_string(), true);
         }
         BindingPattern::ObjectPattern(obj) => {
             for prop in obj.properties.iter() {

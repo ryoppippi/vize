@@ -2,7 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::SetTextIRNode;
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate SetText code
 pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
@@ -13,9 +13,9 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
         .iter()
         .map(|v| {
             if v.is_static {
-                cstr!("\"{}\"", escape_text(&v.content)).into()
+                cstr!("\"{}\"", escape_text(&v.content))
             } else {
-                v.content.to_string()
+                v.content.to_compact_string()
             }
         })
         .collect();
@@ -32,24 +32,24 @@ pub fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>
 /// Generate text content assignment
 pub fn generate_text_content(element_var: &str, content: &str, is_static: bool) -> String {
     if is_static {
-        cstr!("{element_var}.textContent = \"{}\"", escape_text(content)).into()
+        cstr!("{element_var}.textContent = \"{}\"", escape_text(content))
     } else {
-        cstr!("{element_var}.textContent = {content}").into()
+        cstr!("{element_var}.textContent = {content}")
     }
 }
 
 /// Generate createTextNode
 pub fn generate_create_text_node(content: &str, is_static: bool) -> String {
     if is_static {
-        cstr!("document.createTextNode(\"{}\")", escape_text(content)).into()
+        cstr!("document.createTextNode(\"{}\")", escape_text(content))
     } else {
-        cstr!("document.createTextNode({content})").into()
+        cstr!("document.createTextNode({content})")
     }
 }
 
 /// Generate toDisplayString call
 pub fn generate_to_display_string(expr: &str) -> String {
-    cstr!("_toDisplayString({expr})").into()
+    cstr!("_toDisplayString({expr})")
 }
 
 /// Escape text for JavaScript string
@@ -59,6 +59,7 @@ fn escape_text(s: &str) -> String {
         .replace('\n', "\\n")
         .replace('\r', "\\r")
         .replace('\t', "\\t")
+        .into()
 }
 
 /// Build text expression from multiple parts
@@ -70,7 +71,7 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
     if parts.len() == 1 {
         let (is_static, content) = parts[0];
         if is_static {
-            return cstr!("\"{}\"", escape_text(content)).into();
+            return cstr!("\"{}\"", escape_text(content));
         } else {
             return generate_to_display_string(content);
         }
@@ -80,14 +81,14 @@ pub fn build_text_expression(parts: &[(bool, &str)]) -> String {
         .iter()
         .map(|(is_static, content)| {
             if *is_static {
-                cstr!("\"{}\"", escape_text(content)).into()
+                cstr!("\"{}\"", escape_text(content))
             } else {
                 generate_to_display_string(content)
             }
         })
         .collect();
 
-    exprs.join(" + ")
+    exprs.join(" + ").into()
 }
 
 /// Check if text node can be inlined into template

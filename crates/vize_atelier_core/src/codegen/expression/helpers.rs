@@ -7,6 +7,8 @@ use crate::options::BindingType;
 use vize_croquis::builtins::is_global_allowed;
 
 use super::super::context::CodegenContext;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Prefix identifiers in expression with appropriate prefix based on binding metadata.
 /// This is a context-aware version that uses `$setup.` for setup bindings in function mode.
@@ -93,7 +95,7 @@ pub(crate) fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContex
                     out.push_str(name);
                     out
                 } else {
-                    name.to_string()
+                    name.to_compact_string()
                 };
                 if replacement != name {
                     let start = (ident.span.start - self.offset) as usize;
@@ -202,7 +204,7 @@ pub(crate) fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContex
         fn visit_variable_declarator(&mut self, declarator: &oxc_ast::ast::VariableDeclarator<'_>) {
             // Add local var names to skip list
             if let oxc_ast::ast::BindingPattern::BindingIdentifier(ident) = &declarator.id {
-                self.local_vars.insert(ident.name.to_string());
+                self.local_vars.insert(ident.name.to_compact_string());
             }
             // Visit init expression
             if let Some(init) = &declarator.init {
@@ -217,7 +219,7 @@ pub(crate) fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContex
             // Add arrow function params to local vars
             for param in &arrow.params.items {
                 if let oxc_ast::ast::BindingPattern::BindingIdentifier(ident) = &param.pattern {
-                    self.local_vars.insert(ident.name.to_string());
+                    self.local_vars.insert(ident.name.to_compact_string());
                 }
             }
             // Visit body
@@ -325,10 +327,10 @@ pub(crate) fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContex
     /// Apply collected rewrites to content and return the result
     fn apply_rewrites(content: &str, mut rewrites: Vec<(usize, usize, String)>) -> String {
         if rewrites.is_empty() {
-            return content.to_string();
+            return content.to_compact_string();
         }
         rewrites.sort_by(|a, b| b.0.cmp(&a.0));
-        let mut result = content.to_string();
+        let mut result = content.to_compact_string();
         for (start, end, replacement) in rewrites {
             if start < result.len() && end <= result.len() {
                 result.replace_range(start..end, &replacement);
@@ -386,7 +388,7 @@ pub(crate) fn prefix_identifiers_with_context(content: &str, ctx: &CodegenContex
 
                 apply_rewrites(content, rewrites)
             } else {
-                content.to_string()
+                content.to_compact_string()
             }
         }
     }

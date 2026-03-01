@@ -6,6 +6,8 @@
 use crate::{context::LintContext, diagnostic::LintSummary, visitor::LintVisitor};
 use vize_armature::Parser;
 use vize_carton::Allocator;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 use super::config::{LintResult, Linter};
 
@@ -46,7 +48,7 @@ impl Linter {
         let diagnostics = ctx.into_diagnostics();
 
         LintResult {
-            filename: filename.to_string(),
+            filename: filename.to_compact_string(),
             diagnostics,
             error_count,
             warning_count,
@@ -85,7 +87,7 @@ impl Linter {
             Some(r) => r,
             None => {
                 return LintResult {
-                    filename: filename.to_string(),
+                    filename: filename.to_compact_string(),
                     diagnostics: Vec::new(),
                     error_count: 0,
                     warning_count: 0,
@@ -153,7 +155,7 @@ fn extract_template_fast(source: &str) -> Option<(String, u32)> {
             depth -= 1;
             if depth == 0 {
                 let content = std::str::from_utf8(&bytes[content_start..next_lt]).ok()?;
-                return Some((content.to_string(), content_start as u32));
+                return Some((content.to_compact_string(), content_start as u32));
             }
             pos = next_lt + 11;
         } else {

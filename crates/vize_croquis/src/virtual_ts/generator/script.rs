@@ -8,6 +8,8 @@ use super::{
     BindingMetadata, BindingType, CompactString, MacroTracker, Path, RootNode, ScopeChain,
     ScopeData, ScopeKind, ScriptParseResult, VirtualTsConfig, VirtualTsGenerator, VirtualTsOutput,
 };
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 impl VirtualTsGenerator {
     /// Extract setup scope info from ScopeChain.
@@ -130,10 +132,10 @@ impl VirtualTsGenerator {
     /// Resolve a single import line's path.
     fn resolve_import_line(&self, line: &str, from_file: Option<&Path>) -> String {
         let Some(file_path) = from_file else {
-            return line.to_string();
+            return line.to_compact_string();
         };
         let Some(parent) = file_path.parent() else {
-            return line.to_string();
+            return line.to_compact_string();
         };
 
         // Match relative path in import
@@ -147,11 +149,11 @@ impl VirtualTsGenerator {
                         .canonicalize()
                         .ok()
                         .and_then(|p| p.to_str().map(String::from))
-                        .unwrap_or_else(|| resolved.to_string_lossy().to_string());
+                        .unwrap_or_else(|| resolved.to_string_lossy().to_compact_string());
                     format!("from \"{}\"", abs_path)
                 })
-                .to_string(),
-            Err(_) => line.to_string(),
+                .to_compact_string(),
+            Err(_) => line.to_compact_string(),
         }
     }
 
@@ -275,10 +277,10 @@ impl VirtualTsGenerator {
     #[allow(unused)]
     fn resolve_import_paths(&self, content: &str, from_file: Option<&Path>) -> String {
         let Some(file_path) = from_file else {
-            return content.to_string();
+            return content.to_compact_string();
         };
         let Some(parent) = file_path.parent() else {
-            return content.to_string();
+            return content.to_compact_string();
         };
 
         let import_re = regex::Regex::new(
@@ -297,12 +299,12 @@ impl VirtualTsGenerator {
                         .canonicalize()
                         .ok()
                         .and_then(|p| p.to_str().map(String::from))
-                        .unwrap_or_else(|| resolved.to_string_lossy().to_string());
+                        .unwrap_or_else(|| resolved.to_string_lossy().to_compact_string());
 
                     format!("{}{}{}", prefix, abs_path, suffix)
                 })
-                .to_string(),
-            Err(_) => content.to_string(),
+                .to_compact_string(),
+            Err(_) => content.to_compact_string(),
         }
     }
 

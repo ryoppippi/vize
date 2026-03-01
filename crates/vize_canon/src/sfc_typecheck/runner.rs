@@ -46,10 +46,10 @@ pub fn type_check_sfc(source: &str, options: &SfcTypeCheckOptions) -> SfcTypeChe
         Err(e) => {
             result.add_diagnostic(SfcTypeDiagnostic {
                 severity: SfcTypeSeverity::Error,
-                message: cstr!("Failed to parse SFC: {}", e.message).to_string(),
+                message: cstr!("Failed to parse SFC: {}", e.message),
                 start: 0,
                 end: 0,
-                code: Some("parse-error".to_string()),
+                code: Some("parse-error".into()),
                 help: None,
                 related: Vec::new(),
             });

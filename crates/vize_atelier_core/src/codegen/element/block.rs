@@ -28,6 +28,7 @@ use super::{
     },
     v_once::generate_v_once_element,
 };
+use vize_carton::ToCompactString;
 
 /// Generate element as a block
 pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
@@ -124,7 +125,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
         // Close withMemo wrapper if v-memo was present (unlikely but safe)
         if let Some(cache_index) = memo_cache_index {
             ctx.push(", _cache, ");
-            ctx.push(&cache_index.to_string());
+            ctx.push(&cache_index.to_compact_string());
             ctx.push(")");
         }
         return;
@@ -158,7 +159,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             // If props are hoisted, use the hoisted reference
             if let Some(hoisted_index) = el.hoisted_props_index {
                 ctx.push(", _hoisted_");
-                ctx.push(&hoisted_index.to_string());
+                ctx.push(&hoisted_index.to_compact_string());
             } else if has_renderable_props(el) {
                 ctx.push(", ");
                 generate_props(ctx, &el.props);
@@ -191,7 +192,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             if should_emit_patch_flag {
                 if let Some(flag) = patch_flag {
                     ctx.push(", ");
-                    ctx.push(&flag.to_string());
+                    ctx.push(&flag.to_compact_string());
                     ctx.push(" /* ");
                     let flag_name = patch_flag_name(flag);
                     ctx.push(&flag_name);
@@ -379,7 +380,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             // Generate patch flag
             if let Some(flag) = patch_flag {
                 ctx.push(", ");
-                ctx.push(&flag.to_string());
+                ctx.push(&flag.to_compact_string());
                 ctx.push(" /* ");
                 let flag_name = patch_flag_name(flag);
                 ctx.push(&flag_name);
@@ -467,7 +468,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
     // Close withMemo wrapper if v-memo was present
     if let Some(cache_index) = memo_cache_index {
         ctx.push(", _cache, ");
-        ctx.push(&cache_index.to_string());
+        ctx.push(&cache_index.to_compact_string());
         ctx.push(")");
     }
 }

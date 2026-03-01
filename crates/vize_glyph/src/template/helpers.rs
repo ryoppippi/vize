@@ -3,6 +3,8 @@
 //! Provides byte-level helpers for tag parsing, whitespace detection,
 //! and HTML void element recognition.
 
+use vize_carton::{String, ToCompactString};
+
 /// Find a byte subsequence in a slice.
 pub(crate) fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack.windows(needle.len()).position(|w| w == needle)
@@ -23,7 +25,7 @@ pub(crate) fn parse_closing_tag(source: &[u8], start: usize) -> Option<(String, 
 
     let tag_name = std::str::from_utf8(&source[tag_start..pos])
         .unwrap_or("")
-        .to_string();
+        .to_compact_string();
 
     // Skip whitespace and find '>'
     while pos < len && source[pos] != b'>' {

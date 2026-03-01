@@ -8,7 +8,7 @@ pub(crate) mod helpers;
 
 use crate::options::SsrCompilerOptions;
 use vize_atelier_core::ast::{RootNode, RuntimeHelper, TemplateChildNode};
-use vize_carton::{cstr, Bump, FxHashSet};
+use vize_carton::{cstr, Bump, FxHashSet, String, ToCompactString};
 
 /// SSR codegen result
 #[derive(Debug, Default)]
@@ -104,7 +104,8 @@ impl<'a> SsrCodegenContext<'a> {
         let preamble = self.build_preamble();
 
         SsrCodegenResult {
-            code: String::from_utf8(self.code).unwrap_or_default(),
+            // SAFETY: We only push valid UTF-8 strings
+            code: unsafe { String::from_utf8_unchecked(self.code) },
             preamble,
         }
     }
@@ -115,14 +116,14 @@ impl<'a> SsrCodegenContext<'a> {
             last.push_str(s);
         } else {
             self.current_template_parts
-                .push(TemplatePart::Static(s.to_string()));
+                .push(TemplatePart::Static(s.to_compact_string()));
         }
     }
 
     /// Push dynamic expression to the current template literal
     pub(crate) fn push_string_part_dynamic(&mut self, expr: &str) {
         self.current_template_parts
-            .push(TemplatePart::Dynamic(expr.to_string()));
+            .push(TemplatePart::Dynamic(expr.to_compact_string()));
     }
 
     /// Flush the current template literal as a _push() call
@@ -179,7 +180,7 @@ impl<'a> SsrCodegenContext<'a> {
 
     /// Build the preamble with imports
     fn build_preamble(&self) -> String {
-        let mut preamble = String::new();
+        let mut preamble = String::default();
 
         // SSR helpers from @vue/server-renderer
         if !self.ssr_helpers.is_empty() {

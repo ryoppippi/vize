@@ -1,7 +1,7 @@
 //! Vapor mode template compilation.
 
 use vize_atelier_vapor::{compile_vapor, VaporCompilerOptions};
-use vize_carton::Bump;
+use vize_carton::{Bump, String, ToCompactString};
 
 use crate::types::{SfcError, SfcTemplateBlock};
 
@@ -29,20 +29,20 @@ pub(crate) fn compile_template_block_vapor(
         let _ = write!(&mut message, "{:?}", result.error_messages);
         return Err(SfcError {
             message,
-            code: Some("VAPOR_TEMPLATE_ERROR".to_string()),
+            code: Some("VAPOR_TEMPLATE_ERROR".to_compact_string()),
             loc: Some(template.loc.clone()),
         });
     }
 
     // Process the Vapor output to extract imports and render function
-    let mut output = String::new();
+    let mut output = String::default();
     let scope_attr = if has_scoped {
         let mut attr = String::with_capacity(scope_id.len() + 7);
         attr.push_str("data-v-");
         attr.push_str(scope_id);
         attr
     } else {
-        String::new()
+        String::default()
     };
 
     // Parse the Vapor output to separate imports and function body
@@ -68,7 +68,7 @@ pub(crate) fn compile_template_block_vapor(
                     let modified = add_scope_id_to_template(line, &scope_attr);
                     template_decls.push(modified);
                 } else {
-                    template_decls.push(line.to_string());
+                    template_decls.push(line.to_compact_string());
                 }
             } else if line.starts_with("export default") {
                 func_start = i;
@@ -132,5 +132,5 @@ pub(super) fn add_scope_id_to_template(template_line: &str, scope_id: &str) -> S
             }
         }
     }
-    template_line.to_string()
+    template_line.to_compact_string()
 }

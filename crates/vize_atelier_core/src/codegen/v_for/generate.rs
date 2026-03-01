@@ -18,6 +18,7 @@ use super::super::{
     patch_flag::{calculate_element_patch_info, patch_flag_name},
 };
 use super::helpers::{get_element_key, has_other_props, should_skip_prop};
+use vize_carton::ToCompactString;
 
 /// Generate item for v-for (as block, not regular vnode)
 pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>, is_stable: bool) {
@@ -231,7 +232,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                     }
                     if let Some(flag) = patch_flag {
                         ctx.push(", ");
-                        ctx.push(&flag.to_string());
+                        ctx.push(&flag.to_compact_string());
                         ctx.push(" /* ");
                         ctx.push(&patch_flag_name(flag));
                         ctx.push(" */");
@@ -259,7 +260,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                     );
                     if let Some(flag) = patch_flag {
                         ctx.push(", ");
-                        ctx.push(&flag.to_string());
+                        ctx.push(&flag.to_compact_string());
                         ctx.push(" /* ");
                         ctx.push(&patch_flag_name(flag));
                         ctx.push(" */");

@@ -21,13 +21,14 @@
 //! Connect: `echo '{"jsonrpc":"2.0","id":1,"method":"check",...}' | nc -U /tmp/vize.sock`
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use vize_carton::cstr;
+use vize_carton::FxHashMap;
+use vize_carton::String;
 
 /// JSON-RPC Request
 #[derive(Debug, Deserialize)]
@@ -102,7 +103,7 @@ pub struct TsgoServer {
     config: ServerConfig,
     running: Arc<AtomicBool>,
     /// Cache of generated Virtual TypeScript (uri -> content)
-    cache: HashMap<String, String>,
+    cache: FxHashMap<String, String>,
     /// LSP client for tsgo (lazy initialized)
     lsp_client: Option<crate::lsp_client::TsgoLspClient>,
 }
@@ -118,7 +119,7 @@ impl TsgoServer {
         Self {
             config,
             running: Arc::new(AtomicBool::new(false)),
-            cache: HashMap::new(),
+            cache: FxHashMap::default(),
             lsp_client: None,
         }
     }
@@ -236,7 +237,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32700,
-                        message: cstr!("Parse error: {e}").to_string(),
+                        message: cstr!("Parse error: {e}"),
                         data: None,
                     }),
                 };
@@ -260,7 +261,7 @@ impl TsgoServer {
                 result: None,
                 error: Some(JsonRpcError {
                     code: -32601,
-                    message: cstr!("Method not found: {}", request.method).to_string(),
+                    message: cstr!("Method not found: {}", request.method),
                     data: None,
                 }),
             },
@@ -278,7 +279,7 @@ impl TsgoServer {
                     result: None,
                     error: Some(JsonRpcError {
                         code: -32602,
-                        message: cstr!("Invalid params: {e}").to_string(),
+                        message: cstr!("Invalid params: {e}"),
                         data: None,
                     }),
                 };
@@ -315,12 +316,12 @@ impl TsgoServer {
 
         // Parse SFC
         let parse_opts = SfcParseOptions {
-            filename: uri.to_string(),
+            filename: uri.into(),
             ..Default::default()
         };
 
         let descriptor = parse_sfc(content, parse_opts)
-            .map_err(|e| cstr!("Failed to parse SFC: {}", e.message).to_string())?;
+            .map_err(|e| cstr!("Failed to parse SFC: {}", e.message))?;
 
         // Get script content
         let script_content = descriptor
@@ -376,7 +377,7 @@ impl TsgoServer {
         let virtual_ts = output.content.clone();
 
         // Cache the virtual TS
-        self.cache.insert(uri.to_string(), virtual_ts.clone());
+        self.cache.insert(uri.into(), virtual_ts.clone());
 
         // Run tsgo on the virtual TypeScript (using LSP with virtual file)
         let diagnostics = self.run_tsgo(uri, &virtual_ts)?;
@@ -407,7 +408,7 @@ impl TsgoServer {
             .expect("lsp_client must be initialized above");
 
         // Create virtual file URI (file:///path/to/file.vue.ts)
-        let virtual_uri = cstr!("file://{uri}.ts").to_string();
+        let virtual_uri = cstr!("file://{uri}.ts");
 
         // Open the virtual document
         client.did_open(&virtual_uri, content)?;
@@ -422,21 +423,21 @@ impl TsgoServer {
         let diagnostics = lsp_diagnostics
             .into_iter()
             .map(|d| {
-                let severity = match d.severity {
-                    Some(1) => "error",
-                    Some(2) => "warning",
-                    Some(3) => "info",
-                    Some(4) => "hint",
-                    _ => "error",
+                let severity: String = match d.severity {
+                    Some(1) => "error".into(),
+                    Some(2) => "warning".into(),
+                    Some(3) => "info".into(),
+                    Some(4) => "hint".into(),
+                    _ => "error".into(),
                 };
                 let code = d.code.map(|c| match c {
-                    serde_json::Value::Number(n) => cstr!("TS{n}").to_string(),
-                    serde_json::Value::String(s) => s,
-                    _ => cstr!("{c:?}").to_string(),
+                    serde_json::Value::Number(n) => cstr!("TS{n}"),
+                    serde_json::Value::String(s) => s.into(),
+                    _ => cstr!("{c:?}"),
                 });
                 Diagnostic {
-                    message: d.message,
-                    severity: severity.to_string(),
+                    message: d.message.into(),
+                    severity,
                     line: d.range.start.line + 1, // LSP is 0-indexed
                     column: d.range.start.character + 1,
                     code,

@@ -4,9 +4,7 @@
 //! in function mode, where the setup function returns bindings for use by a separate
 //! render function.
 
-use std::collections::HashSet;
-
-use vize_carton::Bump;
+use vize_carton::{Bump, FxHashSet, String, ToCompactString};
 
 use crate::script::{
     resolve_template_used_identifiers, transform_destructured_props, ScriptCompileContext,
@@ -47,17 +45,17 @@ pub fn compile_script_setup(
     let mut imports = Vec::new();
     let mut setup_lines = Vec::new();
     let mut in_import = false;
-    let mut import_buffer = String::new();
+    let mut import_buffer = String::default();
 
     // For multi-line statement tracking
     let mut in_destructure = false;
-    let mut destructure_buffer = String::new();
+    let mut destructure_buffer = String::default();
     let mut brace_depth: i32 = 0;
     let mut waiting_for_macro_close = false; // After destructure closes, waiting for macro call to complete
 
     // For multi-line macro call tracking (e.g., defineEmits<{ ... }>())
     let mut in_macro_call = false;
-    let mut macro_buffer = String::new();
+    let mut macro_buffer = String::default();
     let mut macro_angle_depth: i32 = 0;
 
     // For multi-line paren-based macro call tracking (e.g., defineExpose({ ... }))
@@ -206,7 +204,7 @@ pub fn compile_script_setup(
                 } else {
                     // Not a props destructure, add to setup lines
                     for buf_line in destructure_buffer.lines() {
-                        setup_lines.push(buf_line.to_string());
+                        setup_lines.push(buf_line.to_compact_string());
                     }
                     in_destructure = false;
                     destructure_buffer.clear();
@@ -359,7 +357,7 @@ pub fn compile_script_setup(
             if outside_template_literal && is_macro_call_line(trimmed) {
                 continue;
             }
-            setup_lines.push(line.to_string());
+            setup_lines.push(line.to_compact_string());
         }
     }
 
@@ -468,11 +466,11 @@ pub fn compile_script_setup(
     emit_expose(&mut output, &ctx);
 
     // Collect emit binding name for inclusion in __returned__
-    let emit_binding_name = ctx
+    let emit_binding_name: Option<String> = ctx
         .macros
         .define_emits
         .as_ref()
-        .and_then(|m| m.binding_name.clone());
+        .and_then(|m| m.binding_name.as_deref().map(String::from));
 
     // defineEmits binding: const emit = __emit
     if let Some(ref binding_name) = emit_binding_name {
@@ -482,7 +480,7 @@ pub fn compile_script_setup(
     }
 
     // Collect props binding for exclusion from __returned__ (props themselves shouldn't be in returned)
-    let mut props_binding_names: HashSet<String> = HashSet::new();
+    let mut props_binding_names: FxHashSet<String> = FxHashSet::default();
 
     // defineProps binding: const props = __props (only if not destructured)
     if !has_props_destructure {
@@ -491,7 +489,7 @@ pub fn compile_script_setup(
                 output.extend_from_slice(b"  const ");
                 output.extend_from_slice(binding_name.as_bytes());
                 output.extend_from_slice(b" = __props\n");
-                props_binding_names.insert(binding_name.clone());
+                props_binding_names.insert(String::from(binding_name.as_str()));
             }
         }
     }
@@ -516,13 +514,13 @@ pub fn compile_script_setup(
         eprintln!("[DEBUG] Setup code before transform:\n{}", setup_code);
     }
 
-    let transformed_setup = if let Some(ref destructure) = ctx.macros.props_destructure {
+    let transformed_setup: String = if let Some(ref destructure) = ctx.macros.props_destructure {
         let result = transform_destructured_props(&setup_code, destructure);
         #[cfg(debug_assertions)]
         eprintln!("[DEBUG] Setup code after transform:\n{}", result);
         result
     } else {
-        setup_code
+        setup_code.into()
     };
 
     // Indent the setup code
@@ -576,11 +574,13 @@ pub fn compile_script_setup(
     }
 
     // Convert arena Vec<u8> to String - SAFETY: we only push valid UTF-8
-    let output_str = unsafe { String::from_utf8_unchecked(output.into_iter().collect()) };
+    #[allow(clippy::disallowed_types)]
+    let output_str: std::string::String =
+        unsafe { std::string::String::from_utf8_unchecked(output.into_iter().collect()) };
 
     // Transform TypeScript to JavaScript only when output is not TS.
-    let final_code = if is_ts {
-        output_str
+    let final_code: String = if is_ts {
+        output_str.into()
     } else {
         transform_typescript_to_js(&output_str)
     };
@@ -614,7 +614,7 @@ fn emit_props_definition(
                 if let Some(ref type_args) = props_macro.type_args {
                     let prop_types = extract_prop_types_from_type(type_args);
                     if prop_types.is_empty() {
-                        "{}".to_string()
+                        "{}".to_compact_string()
                     } else {
                         let mut names: Vec<_> =
                             prop_types.iter().map(|(n, _)| n.as_str()).collect();
@@ -631,12 +631,12 @@ fn emit_props_definition(
                         s
                     }
                 } else if !props_macro.args.is_empty() {
-                    props_macro.args.clone()
+                    String::from(props_macro.args.as_str())
                 } else {
-                    "[]".to_string()
+                    "[]".to_compact_string()
                 }
             } else {
-                "[]".to_string()
+                "[]".to_compact_string()
             };
 
             output.extend_from_slice(b"  props: /*@__PURE__*/_mergeDefaults(");
@@ -686,8 +686,9 @@ fn emit_props_definition(
                                 output.extend_from_slice(b" as PropType<");
                             }
                             // Normalize multi-line types to single line
-                            let normalized: String =
-                                ts_type.split_whitespace().collect::<Vec<_>>().join(" ");
+                            let normalized: String = String::from(
+                                ts_type.split_whitespace().collect::<Vec<_>>().join(" "),
+                            );
                             output.extend_from_slice(normalized.as_bytes());
                             output.push(b'>');
                         }
@@ -717,18 +718,18 @@ fn collect_model_names(ctx: &ScriptCompileContext) -> Vec<String> {
         .iter()
         .map(|m| {
             if m.args.is_empty() {
-                "modelValue".to_string()
+                "modelValue".to_compact_string()
             } else {
                 let args_trimmed = m.args.trim();
                 if args_trimmed.starts_with('\'') || args_trimmed.starts_with('"') {
                     let quote_char = args_trimmed.chars().next().unwrap();
                     if let Some(end_pos) = args_trimmed[1..].find(quote_char) {
-                        args_trimmed[1..end_pos + 1].to_string()
+                        String::from(&args_trimmed[1..end_pos + 1])
                     } else {
-                        "modelValue".to_string()
+                        "modelValue".to_compact_string()
                     }
                 } else {
-                    "modelValue".to_string()
+                    "modelValue".to_compact_string()
                 }
             }
         })
@@ -812,7 +813,7 @@ fn emit_model_bindings(
         if let Some(ref binding_name) = model_call.binding_name {
             // Extract model name from args (first string argument) or default to "modelValue"
             let model_name = if model_call.args.is_empty() {
-                "modelValue".to_string()
+                "modelValue".to_compact_string()
             } else {
                 // Try to extract the first string argument (e.g., 'title' from defineModel('title'))
                 let args_trimmed = model_call.args.trim();
@@ -820,12 +821,12 @@ fn emit_model_bindings(
                     // Extract string content
                     let quote_char = args_trimmed.chars().next().unwrap();
                     if let Some(end_pos) = args_trimmed[1..].find(quote_char) {
-                        args_trimmed[1..end_pos + 1].to_string()
+                        String::from(&args_trimmed[1..end_pos + 1])
                     } else {
-                        "modelValue".to_string()
+                        "modelValue".to_compact_string()
                     }
                 } else {
-                    "modelValue".to_string()
+                    "modelValue".to_compact_string()
                 }
             };
 
@@ -834,7 +835,7 @@ fn emit_model_bindings(
             output.extend_from_slice(b" = _useModel(__props, \"");
             output.extend_from_slice(model_name.as_bytes());
             output.extend_from_slice(b"\")\n");
-            model_binding_names.push(binding_name.clone());
+            model_binding_names.push(String::from(binding_name.as_str()));
         }
     }
     model_binding_names
@@ -847,14 +848,14 @@ fn emit_model_bindings(
 fn build_returned_bindings(
     ctx: &mut ScriptCompileContext,
     _has_props_destructure: bool,
-    props_binding_names: &HashSet<String>,
+    props_binding_names: &FxHashSet<String>,
     emit_binding_name: &Option<String>,
     imports: &[String],
     template_content: Option<&str>,
     _model_binding_names: &[String],
 ) -> Vec<String> {
     // Compiler macros preset - these are compile-time only and should not be in __returned__
-    let compiler_macros: HashSet<&str> = [
+    let compiler_macros: FxHashSet<&str> = [
         "defineProps",
         "defineEmits",
         "defineExpose",
@@ -867,15 +868,20 @@ fn build_returned_bindings(
     .collect();
 
     // Collect destructured prop local names to exclude from __returned__
-    let destructured_prop_locals: HashSet<String> = ctx
+    let destructured_prop_locals: FxHashSet<String> = ctx
         .macros
         .props_destructure
         .as_ref()
-        .map(|d| d.bindings.values().map(|b| b.local.clone()).collect())
+        .map(|d| {
+            d.bindings
+                .values()
+                .map(|b| String::from(b.local.as_str()))
+                .collect()
+        })
         .unwrap_or_default();
 
     // Collect prop names from type-based defineProps to exclude from __returned__
-    let typed_prop_names: HashSet<String> = ctx
+    let typed_prop_names: FxHashSet<String> = ctx
         .macros
         .define_props
         .as_ref()
@@ -883,7 +889,7 @@ fn build_returned_bindings(
         .map(|type_args| {
             extract_prop_types_from_type(type_args)
                 .iter()
-                .map(|(n, _)| n.clone())
+                .map(|(n, _)| String::from(n.as_str()))
                 .collect()
         })
         .unwrap_or_default();
@@ -938,12 +944,12 @@ fn build_returned_bindings(
     let mut all_bindings = returned_bindings.clone();
     for name in &imported_identifiers {
         // Include if used in template OR if no template (include all for safety)
-        if template_content.is_none() || template_used_ids.used_ids.contains(name) {
+        if template_content.is_none() || template_used_ids.used_ids.contains(name.as_str()) {
             if !all_bindings.contains(name) {
                 all_bindings.push(name.clone());
             }
             // Also add to binding metadata so template compiler knows about it
-            if !ctx.bindings.bindings.contains_key(name) {
+            if !ctx.bindings.bindings.contains_key(name.as_str()) {
                 ctx.bindings
                     .bindings
                     .insert(name.clone(), BindingType::SetupConst);

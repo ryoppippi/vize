@@ -27,6 +27,7 @@ use self::styles::compile_styles;
 
 // Re-export ScriptCompileResult for public API
 pub use crate::compile_script::ScriptCompileResult;
+use vize_carton::{String, ToCompactString};
 
 /// Compile an SFC descriptor into JavaScript and CSS
 pub fn compile_sfc(
@@ -35,7 +36,7 @@ pub fn compile_sfc(
 ) -> Result<SfcCompileResult, SfcError> {
     let mut errors = Vec::new();
     let mut warnings = Vec::new();
-    let mut code = String::new();
+    let mut code = String::default();
     let mut css = None;
 
     let filename = options.script.id.as_deref().unwrap_or("anonymous.vue");
@@ -207,7 +208,7 @@ pub fn compile_sfc(
                 Err(e) => {
                     errors.push(e);
                     // Fall back to just the script
-                    code = script.content.to_string();
+                    code = script.content.to_compact_string();
                     code.push('\n');
                 }
             }
@@ -241,7 +242,7 @@ pub fn compile_sfc(
             return Err(SfcError {
                 message:
                     "At least one <template> or <script> is required in a single file component."
-                        .to_string(),
+                        .to_compact_string(),
                 code: None,
                 loc: None,
             });
@@ -328,9 +329,19 @@ pub fn compile_sfc(
             Some(Ok(template_code)) => extract_template_parts(template_code),
             Some(Err(e)) => {
                 errors.push(e.clone());
-                (String::new(), String::new(), String::new(), String::new())
+                (
+                    String::default(),
+                    String::default(),
+                    String::default(),
+                    String::default(),
+                )
             }
-            None => (String::new(), String::new(), String::new(), String::new()),
+            None => (
+                String::default(),
+                String::default(),
+                String::default(),
+                String::default(),
+            ),
         };
 
     // Compile script setup using inline mode to match Vue's @vue/compiler-sfc output format:

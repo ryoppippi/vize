@@ -42,6 +42,8 @@ use memchr::memmem;
 use crate::diagnostic::{LintDiagnostic, Severity};
 
 use super::{ScriptLintResult, ScriptRule, ScriptRuleMeta};
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 static META: ScriptRuleMeta = ScriptRuleMeta {
     name: "script/require-function-return-type",
@@ -143,12 +145,13 @@ impl ScriptRule for RequireFunctionReturnType {
                         let name_part = &rest[9..paren_start]; // after "function " until "("
                         let func_name = name_part.trim();
                         let message = if func_name.is_empty() {
-                            "Function is missing a return type annotation".to_string()
+                            "Function is missing a return type annotation".to_compact_string()
                         } else {
                             format!(
                                 "Function '{}' is missing a return type annotation",
                                 func_name
                             )
+                            .into()
                         };
                         result.add_diagnostic(
                             LintDiagnostic::warn(

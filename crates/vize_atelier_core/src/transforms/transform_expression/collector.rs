@@ -9,8 +9,8 @@ use oxc_ast_visit::{
     Visit,
 };
 use vize_carton::FxHashSet;
+use vize_carton::String;
 
-use std::string::String as StdString;
 use vize_croquis::builtins::is_global_allowed;
 
 use crate::transform::TransformContext;
@@ -23,11 +23,11 @@ pub(crate) struct IdentifierCollector<'a, 'ctx> {
     /// The wrapped source text (for scanning paren positions)
     pub(crate) source: &'a str,
     /// Identifiers that are being declared (e.g., in arrow function params)
-    pub(crate) local_scope: FxHashSet<StdString>,
+    pub(crate) local_scope: FxHashSet<String>,
     /// (position, prefix) pairs for rewrites
-    pub(crate) rewrites: FxHashSet<(usize, StdString)>,
+    pub(crate) rewrites: FxHashSet<(usize, String)>,
     /// (position, suffix) pairs for suffix rewrites (e.g., .value for refs)
-    pub(crate) suffix_rewrites: Vec<(usize, StdString)>,
+    pub(crate) suffix_rewrites: Vec<(usize, String)>,
     /// Assignment target identifier positions (for .value on LHS)
     pub(crate) assignment_targets: FxHashSet<usize>,
     /// Whether _unref helper was used
@@ -100,7 +100,7 @@ impl<'a, 'ctx> IdentifierCollector<'a, 'ctx> {
     pub(crate) fn collect_binding_pattern(&mut self, pattern: &oxc_ast_types::BindingPattern<'_>) {
         match pattern {
             oxc_ast_types::BindingPattern::BindingIdentifier(id) => {
-                self.local_scope.insert(id.name.to_string());
+                self.local_scope.insert(String::new(id.name.as_str()));
             }
             oxc_ast_types::BindingPattern::ObjectPattern(obj) => {
                 for prop in &obj.properties {
@@ -232,7 +232,7 @@ impl<'a, 'ctx> Visit<'_> for IdentifierCollector<'a, 'ctx> {
         if is_assignment_target {
             if let Some(prefix) = get_identifier_prefix(name, self.ctx) {
                 self.rewrites
-                    .insert((ident.span.start as usize, prefix.to_string()));
+                    .insert((ident.span.start as usize, String::new(prefix)));
             }
             if self.is_ref_binding(name) || needs_unref {
                 // For assignment targets wrapped in parens like ((model) = $event),
@@ -243,7 +243,7 @@ impl<'a, 'ctx> Visit<'_> for IdentifierCollector<'a, 'ctx> {
                 while pos < source_bytes.len() && source_bytes[pos] == b')' {
                     pos += 1;
                 }
-                self.suffix_rewrites.push((pos, ".value".to_string()));
+                self.suffix_rewrites.push((pos, String::new(".value")));
             }
             return;
         }
@@ -253,24 +253,24 @@ impl<'a, 'ctx> Visit<'_> for IdentifierCollector<'a, 'ctx> {
             // Result: _unref($setup.b) instead of just $setup.b
             if needs_unref && prefix == "$setup." {
                 self.rewrites
-                    .insert((ident.span.start as usize, "_unref($setup.".to_string()));
+                    .insert((ident.span.start as usize, String::new("_unref($setup.")));
                 self.suffix_rewrites
-                    .push((ident.span.end as usize, ")".to_string()));
+                    .push((ident.span.end as usize, String::new(")")));
                 self.used_unref = true;
             } else {
                 self.rewrites
-                    .insert((ident.span.start as usize, prefix.to_string()));
+                    .insert((ident.span.start as usize, String::new(prefix)));
             }
         } else if self.is_ref_binding(name) {
             // Add .value suffix for refs in inline mode
             self.suffix_rewrites
-                .push((ident.span.end as usize, ".value".to_string()));
+                .push((ident.span.end as usize, String::new(".value")));
         } else if needs_unref {
             // Wrap with _unref() for let/var bindings (inline mode)
             self.rewrites
-                .insert((ident.span.start as usize, "_unref(".to_string()));
+                .insert((ident.span.start as usize, String::new("_unref(")));
             self.suffix_rewrites
-                .push((ident.span.end as usize, ")".to_string()));
+                .push((ident.span.end as usize, String::new(")")));
             self.used_unref = true;
         }
     }
@@ -295,7 +295,7 @@ impl<'a, 'ctx> Visit<'_> for IdentifierCollector<'a, 'ctx> {
                             // But still add _ctx. prefix if needed
                             if let Some(prefix) = get_identifier_prefix(name, self.ctx) {
                                 self.rewrites
-                                    .insert((ident.span.start as usize, prefix.to_string()));
+                                    .insert((ident.span.start as usize, String::new(prefix)));
                             }
                             return;
                         }
@@ -368,7 +368,7 @@ impl<'a, 'ctx> Visit<'_> for IdentifierCollector<'a, 'ctx> {
                     } else {
                         ("", "")
                     };
-                    let mut suffix = StdString::with_capacity(
+                    let mut suffix = String::with_capacity(
                         2 + value_prefix.len() + p.len() + name.len() + value_suffix.len(),
                     );
                     suffix.push_str(": ");

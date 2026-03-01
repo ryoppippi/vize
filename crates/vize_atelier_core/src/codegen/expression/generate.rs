@@ -9,6 +9,7 @@ use super::{
     super::context::CodegenContext, generate_simple_expression,
     helpers::prefix_identifiers_with_context,
 };
+use vize_carton::String;
 
 /// Generate a simple expression with appropriate prefix.
 /// Used for ref attribute values that need `$setup.` prefix in function mode.
@@ -82,14 +83,14 @@ pub fn generate_event_handler(
             let content = &simple.content;
 
             // Step 1: Strip TypeScript if needed
-            let ts_stripped = if ctx.options.is_ts && content.contains(" as ") {
+            let ts_stripped: String = if ctx.options.is_ts && content.contains(" as ") {
                 crate::transforms::strip_typescript_from_expression(content)
             } else {
-                content.to_string()
+                content.clone()
             };
 
             // Step 2: Prefix identifiers if needed
-            let processed = if ctx.options.prefix_identifiers {
+            let processed: String = if ctx.options.prefix_identifiers {
                 prefix_identifiers_with_context(&ts_stripped, ctx)
             } else {
                 ts_stripped

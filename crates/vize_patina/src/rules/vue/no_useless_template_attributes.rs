@@ -27,6 +27,7 @@
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
+use vize_carton::ToCompactString;
 use vize_relief::ast::{ElementNode, PropNode};
 
 static META: RuleMeta = RuleMeta {
@@ -107,12 +108,12 @@ impl Rule for NoUselessTemplateAttributes {
         for prop in &element.props {
             if !Self::is_allowed_on_template(prop) {
                 let attr_name = match prop {
-                    PropNode::Attribute(attr) => attr.name.to_string(),
+                    PropNode::Attribute(attr) => attr.name.to_compact_string(),
                     PropNode::Directive(dir) => {
                         if let Some(raw) = &dir.raw_name {
-                            raw.to_string()
+                            raw.to_compact_string()
                         } else {
-                            format!("v-{}", dir.name)
+                            format!("v-{}", dir.name).into()
                         }
                     }
                 };

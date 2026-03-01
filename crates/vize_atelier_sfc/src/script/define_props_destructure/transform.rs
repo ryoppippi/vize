@@ -12,6 +12,7 @@ use vize_carton::FxHashMap;
 use super::collector::collect_identifier_rewrites;
 use super::helpers::{transform_props_text_based, PROPS_REST_SENTINEL};
 use super::PropsDestructuredBindings;
+use vize_carton::{String, ToCompactString};
 
 /// Transform destructured props references in source code.
 /// Rewrites `foo` to `__props.foo` for destructured props.
@@ -20,7 +21,7 @@ pub fn transform_destructured_props(
     destructured: &PropsDestructuredBindings,
 ) -> String {
     if destructured.is_empty() {
-        return source.to_string();
+        return source.to_compact_string();
     }
 
     // Build map of local name -> prop key
@@ -53,7 +54,7 @@ pub fn transform_destructured_props(
             // Apply rewrites in reverse order to preserve positions
             rewrites.sort_by(|a, b| b.0.cmp(&a.0));
 
-            let mut result = source.to_string();
+            let mut result = source.to_compact_string();
             for (start, end, replacement) in rewrites {
                 result.replace_range(start..end, &replacement);
             }
@@ -61,7 +62,7 @@ pub fn transform_destructured_props(
         }
 
         // AST parsing succeeded but no rewrites needed (props are shadowed or unused)
-        return source.to_string();
+        return source.to_compact_string();
     }
 
     // Fallback: Simple text-based transformation

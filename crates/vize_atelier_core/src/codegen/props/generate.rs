@@ -12,6 +12,7 @@ use super::{
     generate_vbind_object_exp, generate_von_object_exp, has_dynamic_key, has_dynamic_vmodel,
     has_other_props, has_vbind_object, has_von_object,
 };
+use vize_carton::{FxHashSet, String};
 
 /// Generate props object
 pub fn generate_props(ctx: &mut CodegenContext, props: &[PropNode<'_>]) {
@@ -347,7 +348,7 @@ fn generate_props_object_inner(
 
     let mut first = true;
     // Track which event names have already been output (for array merging)
-    let mut emitted_events: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut emitted_events: FxHashSet<String> = FxHashSet::default();
 
     for prop in props {
         // Skip v-slot directive (handled separately in slots codegen)

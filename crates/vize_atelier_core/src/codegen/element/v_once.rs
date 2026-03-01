@@ -15,6 +15,7 @@ use super::super::{
     patch_flag::{calculate_element_patch_info, patch_flag_name},
     props::is_supported_directive,
 };
+use vize_carton::ToCompactString;
 
 /// Generate v-once element with cache wrapper
 pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
@@ -24,7 +25,7 @@ pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
 
     // _cache[0] || (...)
     ctx.push("_cache[");
-    ctx.push(&cache_index.to_string());
+    ctx.push(&cache_index.to_compact_string());
     ctx.push("] || (");
     ctx.indent();
     ctx.newline();
@@ -36,7 +37,7 @@ pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
 
     // (_cache[0] = _createElementVNode(...)).cacheIndex = 0,
     ctx.push("(_cache[");
-    ctx.push(&cache_index.to_string());
+    ctx.push(&cache_index.to_compact_string());
     ctx.push("] = ");
 
     // Generate the element content
@@ -97,7 +98,7 @@ pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
                     ctx.push(", null");
                 }
                 ctx.push(", ");
-                ctx.push(&filtered_flag.to_string());
+                ctx.push(&filtered_flag.to_compact_string());
                 ctx.push(" /* ");
                 let flag_name = patch_flag_name(filtered_flag);
                 ctx.push(&flag_name);
@@ -108,7 +109,7 @@ pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
     }
 
     ctx.push(").cacheIndex = ");
-    ctx.push(&cache_index.to_string());
+    ctx.push(&cache_index.to_compact_string());
     ctx.push(",");
     ctx.newline();
 
@@ -119,7 +120,7 @@ pub fn generate_v_once_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
 
     // _cache[0]
     ctx.push("_cache[");
-    ctx.push(&cache_index.to_string());
+    ctx.push(&cache_index.to_compact_string());
     ctx.push("]");
 
     ctx.deindent();

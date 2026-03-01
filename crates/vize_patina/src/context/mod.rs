@@ -11,6 +11,7 @@ pub use state::{DisabledRange, ElementContext, SsrMode};
 
 use crate::diagnostic::{HelpLevel, LintDiagnostic, Severity};
 use std::borrow::Cow;
+use vize_carton::String;
 use vize_carton::{
     directive::DirectiveSeverity,
     i18n::{t, t_fmt, Locale},
@@ -217,7 +218,7 @@ impl<'a> LintContext<'a> {
     /// Translate a message key with variable substitution.
     #[inline]
     pub fn t_fmt(&self, key: &str, vars: &[(&str, &str)]) -> String {
-        t_fmt(self.locale, key, vars)
+        t_fmt(self.locale, key, vars).into()
     }
 
     /// Compute line offsets for fast line number lookup.

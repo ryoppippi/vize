@@ -1,7 +1,6 @@
 //! Code generation context that tracks state during Vapor code emission.
 
-use vize_carton::cstr;
-use vize_carton::FxHashMap;
+use vize_carton::{cstr, FxHashMap, FxHashSet, String, ToCompactString};
 
 /// Generate context
 pub(crate) struct GenerateContext<'a> {
@@ -11,9 +10,9 @@ pub(crate) struct GenerateContext<'a> {
     pub(crate) element_template_map: &'a FxHashMap<usize, usize>,
     temp_count: usize,
     /// Used helpers for import generation
-    pub(crate) used_helpers: std::collections::HashSet<&'static str>,
+    pub(crate) used_helpers: FxHashSet<&'static str>,
     /// Events that need delegation (event names)
-    pub(crate) delegate_events: std::collections::HashSet<String>,
+    pub(crate) delegate_events: FxHashSet<String>,
     /// Text node references (element_id -> text_node_var)
     pub(crate) text_nodes: FxHashMap<usize, String>,
 }
@@ -25,21 +24,21 @@ impl<'a> GenerateContext<'a> {
             indent_level: 0,
             element_template_map,
             temp_count: 0,
-            used_helpers: std::collections::HashSet::new(),
-            delegate_events: std::collections::HashSet::new(),
+            used_helpers: FxHashSet::default(),
+            delegate_events: FxHashSet::default(),
             text_nodes: FxHashMap::default(),
         }
     }
 
     pub(crate) fn add_delegate_event(&mut self, event_name: &str) {
-        self.delegate_events.insert(event_name.to_string());
+        self.delegate_events.insert(event_name.to_compact_string());
     }
 
     pub(crate) fn next_text_node(&mut self, element_id: usize) -> String {
         // Use element ID for text node variable name (x2 matches n2)
         let mut var_name = String::with_capacity(8);
         var_name.push('x');
-        var_name.push_str(&element_id.to_string());
+        var_name.push_str(&element_id.to_compact_string());
         self.text_nodes.insert(element_id, var_name.clone());
         var_name
     }
@@ -91,7 +90,7 @@ impl<'a> GenerateContext<'a> {
     pub(crate) fn next_temp(&mut self) -> String {
         let name = cstr!("_t{}", self.temp_count);
         self.temp_count += 1;
-        name.into()
+        name
     }
 }
 

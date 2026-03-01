@@ -13,6 +13,8 @@ mod macos;
 #[cfg(target_os = "windows")]
 mod windows;
 
+use compact_str::ToCompactString;
+
 use super::state::{ImeEvent, ImeMode, ImeState};
 use crate::input::event::Event;
 
@@ -98,7 +100,7 @@ impl PlatformIme for TerminalIme {
                     if key.is_printable() {
                         if let crate::input::keyboard::Key::Char(c) = key.key {
                             // Simple passthrough for now
-                            return Some(ImeEvent::Commit(c.to_string()));
+                            return Some(ImeEvent::Commit(c.to_compact_string()));
                         }
                     }
                 }
@@ -130,6 +132,8 @@ pub fn create_ime() -> Box<dyn PlatformIme + Send> {
 
 #[cfg(test)]
 mod tests {
+    use compact_str::ToCompactString;
+
     use super::{Event, ImeEvent, ImeMode, PlatformIme, TerminalIme};
 
     #[test]
@@ -152,7 +156,7 @@ mod tests {
         let mut ime = TerminalIme::new();
         ime.enable();
 
-        let event = Event::Paste("テスト".to_string());
+        let event = Event::Paste("テスト".to_compact_string());
         let result = ime.process_event(&event);
         assert!(matches!(result, Some(ImeEvent::Commit(s)) if s == "テスト"));
     }

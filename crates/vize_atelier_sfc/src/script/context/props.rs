@@ -3,6 +3,8 @@
 //! Handles extracting prop names and types from both runtime
 //! and type-based defineProps declarations.
 
+use vize_carton::ToCompactString;
+
 use crate::types::BindingType;
 
 use super::super::MacroCall;
@@ -47,7 +49,7 @@ impl ScriptCompileContext {
                     let name = &part[1..part.len() - 1];
                     self.bindings
                         .bindings
-                        .insert(name.to_string(), BindingType::Props);
+                        .insert(name.to_compact_string(), BindingType::Props);
                 }
             }
         } else if args.starts_with('{') && args.ends_with('}') {
@@ -61,13 +63,13 @@ impl ScriptCompileContext {
                     if !key.is_empty() && is_valid_identifier(key) {
                         self.bindings
                             .bindings
-                            .insert(key.to_string(), BindingType::Props);
+                            .insert(key.to_compact_string(), BindingType::Props);
                     }
                 } else if is_valid_identifier(part) {
                     // Shorthand property
                     self.bindings
                         .bindings
-                        .insert(part.to_string(), BindingType::Props);
+                        .insert(part.to_compact_string(), BindingType::Props);
                 }
             }
         }
@@ -81,9 +83,9 @@ impl ScriptCompileContext {
         let resolved_content = if content.starts_with('{') {
             // Inline object type - use as is (strip the braces)
             if content.ends_with('}') {
-                content[1..content.len() - 1].to_string()
+                vize_carton::String::from(&content[1..content.len() - 1])
             } else {
-                content.to_string()
+                content.to_compact_string()
             }
         } else {
             // Type reference - look up in interfaces or type_aliases
@@ -92,17 +94,17 @@ impl ScriptCompileContext {
                 // Interface body includes { }, strip them
                 let body = body.trim();
                 if body.starts_with('{') && body.ends_with('}') {
-                    body[1..body.len() - 1].to_string()
+                    vize_carton::String::from(&body[1..body.len() - 1])
                 } else {
-                    body.to_string()
+                    body.to_compact_string()
                 }
             } else if let Some(body) = self.type_aliases.get(type_name) {
                 // Type alias body might be { } or something else
                 let body = body.trim();
                 if body.starts_with('{') && body.ends_with('}') {
-                    body[1..body.len() - 1].to_string()
+                    vize_carton::String::from(&body[1..body.len() - 1])
                 } else {
-                    body.to_string()
+                    body.to_compact_string()
                 }
             } else {
                 // Unknown type reference - can't extract props
@@ -112,7 +114,7 @@ impl ScriptCompileContext {
 
         // Split by commas/semicolons/newlines (but not inside nested braces)
         let mut depth = 0;
-        let mut current = String::new();
+        let mut current = vize_carton::String::default();
 
         for c in resolved_content.chars() {
             match c {
@@ -149,7 +151,7 @@ impl ScriptCompileContext {
             if !name.is_empty() && is_valid_identifier(name) {
                 self.bindings
                     .bindings
-                    .insert(name.to_string(), BindingType::Props);
+                    .insert(name.to_compact_string(), BindingType::Props);
             }
         }
     }

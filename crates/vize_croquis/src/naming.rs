@@ -6,7 +6,7 @@
 //! - Re-exports from vize_carton for convenience
 
 // Re-export core utilities from vize_carton
-pub use vize_carton::{camelize, capitalize, hyphenate, is_simple_identifier};
+pub use vize_carton::{camelize, capitalize, hyphenate, is_simple_identifier, String};
 
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;

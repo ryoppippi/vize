@@ -3,6 +3,7 @@
 //! Handles resolving type references (interface names, type aliases, intersection types)
 //! to their concrete definitions for `defineProps<TypeRef>()` patterns.
 
+use vize_carton::{String, ToCompactString};
 /// Resolve type args that may be interface/type alias references.
 /// For `defineProps<Props>()` where `Props` is an interface name, resolves to the interface body.
 /// For intersection types like `BaseProps & ExtendedProps`, merges all interface bodies.
@@ -16,7 +17,7 @@ pub(crate) fn resolve_type_args(
 
     // Already an inline object type
     if content.starts_with('{') {
-        return content.to_string();
+        return content.to_compact_string();
     }
 
     // Handle intersection types: BaseProps & ExtendedProps
@@ -34,26 +35,30 @@ pub(crate) fn resolve_type_args(
                 };
                 let trimmed = inner.trim();
                 if !trimmed.is_empty() {
-                    merged_props.push(trimmed.to_string());
+                    merged_props.push(trimmed.to_compact_string());
                 }
             }
         }
         if !merged_props.is_empty() {
-            let joined = merged_props.join("; ");
+            let joined = merged_props
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("; ");
             let mut result = String::with_capacity(joined.len() + 4);
             result.push_str("{ ");
             result.push_str(&joined);
             result.push_str(" }");
             return result;
         }
-        return content.to_string();
+        return content.to_compact_string();
     }
 
     // Single type reference
     if let Some(body) = resolve_single_type_ref(content, interfaces, type_aliases) {
         let body = body.trim();
         if body.starts_with('{') {
-            return body.to_string();
+            return body.to_compact_string();
         }
         let mut result = String::with_capacity(body.len() + 4);
         result.push_str("{ ");
@@ -63,7 +68,7 @@ pub(crate) fn resolve_type_args(
     }
 
     // Unresolvable - return as-is
-    content.to_string()
+    content.to_compact_string()
 }
 
 /// Resolve a single type name to its definition body.

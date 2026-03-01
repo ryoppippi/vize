@@ -53,7 +53,7 @@ use vize_atelier_core::{
     parser::parse_with_options,
     transform::transform,
 };
-use vize_carton::Bump;
+use vize_carton::{Bump, String};
 
 /// Vapor compiler options
 #[derive(Debug, Clone, Default)]
@@ -72,11 +72,11 @@ pub struct VaporCompilerOptions {
 #[derive(Debug)]
 pub struct VaporCompileResult {
     /// Generated code
-    pub code: std::string::String,
+    pub code: String,
     /// Template strings for static parts
-    pub templates: Vec<vize_carton::String>,
+    pub templates: Vec<String>,
     /// Error messages during compilation
-    pub error_messages: Vec<std::string::String>,
+    pub error_messages: Vec<String>,
 }
 
 /// Compile a Vue template to Vapor mode
@@ -91,7 +91,7 @@ pub fn compile_vapor<'a>(
 
     if !errors.is_empty() {
         return VaporCompileResult {
-            code: String::new(),
+            code: String::default(),
             templates: Vec::new(),
             error_messages: errors.iter().map(|e| e.message.clone()).collect(),
         };

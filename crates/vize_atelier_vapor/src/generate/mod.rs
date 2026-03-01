@@ -10,7 +10,7 @@ mod setup;
 use std::fmt::Write;
 
 use crate::ir::{BlockIRNode, OperationNode, RootIRNode};
-use vize_carton::FxHashMap;
+use vize_carton::{FxHashMap, String, ToCompactString};
 
 use context::GenerateContext;
 use helpers::generate_effect;
@@ -20,9 +20,9 @@ use setup::{collect_delegate_events, escape_template, generate_imports};
 /// Vapor code generation result
 pub struct VaporGenerateResult {
     /// Generated code
-    pub code: std::string::String,
+    pub code: String,
     /// Static templates
-    pub templates: std::vec::Vec<vize_carton::String>,
+    pub templates: Vec<String>,
 }
 
 /// Generate Vapor code from IR
@@ -35,7 +35,7 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
     }
 
     // Generate template declarations (to separate string, we'll prepend imports later)
-    let mut template_code = String::new();
+    let mut template_code = String::default();
     for (i, template) in ir.templates.iter().enumerate() {
         writeln!(
             template_code,
@@ -60,7 +60,7 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
     ctx.push_line("}");
 
     // Generate delegate events code (after templates, before function)
-    let mut delegate_code = String::new();
+    let mut delegate_code = String::default();
     if !ctx.delegate_events.is_empty() {
         ctx.use_helper("delegateEvents");
         let mut events: Vec<_> = ctx.delegate_events.iter().collect();
@@ -102,11 +102,11 @@ fn generate_block(
     // Instantiate templates for elements in this block's returns
     for element_id in block.returns.iter() {
         if let Some(&template_index) = element_template_map.get(element_id) {
-            let mut line = std::string::String::with_capacity(32);
+            let mut line = String::with_capacity(32);
             line.push_str("const n");
-            line.push_str(&element_id.to_string());
+            line.push_str(&element_id.to_compact_string());
             line.push_str(" = t");
-            line.push_str(&template_index.to_string());
+            line.push_str(&template_index.to_compact_string());
             line.push_str("()");
             ctx.push_line(&line);
         }
@@ -118,11 +118,11 @@ fn generate_block(
             if let OperationNode::SetText(set_text) = op {
                 ctx.use_helper("txt");
                 let var_name = ctx.next_text_node(set_text.element);
-                let mut line = std::string::String::with_capacity(32);
+                let mut line = String::with_capacity(32);
                 line.push_str("const ");
                 line.push_str(&var_name);
                 line.push_str(" = _txt(n");
-                line.push_str(&set_text.element.to_string());
+                line.push_str(&set_text.element.to_compact_string());
                 line.push(')');
                 ctx.push_line(&line);
             }
@@ -144,7 +144,7 @@ fn generate_block(
         let returns = block
             .returns
             .iter()
-            .map(|r| ["n", &r.to_string()].concat())
+            .map(|r| ["n", &r.to_compact_string()].concat())
             .collect::<Vec<_>>()
             .join(", ");
 

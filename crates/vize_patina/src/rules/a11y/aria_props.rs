@@ -204,9 +204,9 @@ impl AriaProps {
                 "a11y/aria-props.help_suggestion",
                 &[("invalid", invalid_attr), ("valid", suggestion)],
             );
-            ctx.error_with_help(&message, loc, &help);
+            ctx.error_with_help(message.clone(), loc, help);
         } else {
-            ctx.error_with_help(&message, loc, ctx.t("a11y/aria-props.help"));
+            ctx.error_with_help(message, loc, ctx.t("a11y/aria-props.help"));
         }
     }
 }

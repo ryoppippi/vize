@@ -117,22 +117,23 @@ impl EventModifiers {
 
 /// Generate the runtime guard code for modifiers
 pub fn generate_modifier_guard(modifiers: &EventModifiers) -> String {
-    let mut guards: Vec<std::string::String> = Vec::new();
+    let mut guards: Vec<&str> = Vec::new();
 
     // Propagation guards
     if modifiers.propagation.stop {
-        guards.push("$event.stopPropagation()".to_string());
+        guards.push("$event.stopPropagation()");
     }
     if modifiers.propagation.prevent {
-        guards.push("$event.preventDefault()".to_string());
+        guards.push("$event.preventDefault()");
     }
 
     // Self guard
     if modifiers.self_only {
-        guards.push("if ($event.target !== $event.currentTarget) return".to_string());
+        guards.push("if ($event.target !== $event.currentTarget) return");
     }
 
     // System modifier guards
+    let exact_guard;
     if modifiers.exact {
         let mut exact_checks = Vec::new();
         if !modifiers.system.ctrl {
@@ -148,35 +149,36 @@ pub fn generate_modifier_guard(modifiers: &EventModifiers) -> String {
             exact_checks.push("$event.metaKey");
         }
         if !exact_checks.is_empty() {
-            guards.push(cstr!("if ({}) return", exact_checks.join(" || ")).to_string());
+            exact_guard = cstr!("if ({}) return", exact_checks.join(" || "));
+            guards.push(&exact_guard);
         }
     } else {
         if modifiers.system.ctrl {
-            guards.push("if (!$event.ctrlKey) return".to_string());
+            guards.push("if (!$event.ctrlKey) return");
         }
         if modifiers.system.alt {
-            guards.push("if (!$event.altKey) return".to_string());
+            guards.push("if (!$event.altKey) return");
         }
         if modifiers.system.shift {
-            guards.push("if (!$event.shiftKey) return".to_string());
+            guards.push("if (!$event.shiftKey) return");
         }
         if modifiers.system.meta {
-            guards.push("if (!$event.metaKey) return".to_string());
+            guards.push("if (!$event.metaKey) return");
         }
     }
 
     // Mouse button guards
     if modifiers.mouse.left {
-        guards.push("if ('button' in $event && $event.button !== 0) return".to_string());
+        guards.push("if ('button' in $event && $event.button !== 0) return");
     }
     if modifiers.mouse.middle {
-        guards.push("if ('button' in $event && $event.button !== 1) return".to_string());
+        guards.push("if ('button' in $event && $event.button !== 1) return");
     }
     if modifiers.mouse.right {
-        guards.push("if ('button' in $event && $event.button !== 2) return".to_string());
+        guards.push("if ('button' in $event && $event.button !== 2) return");
     }
 
-    guards.join("; ").into()
+    String::from(guards.join("; "))
 }
 
 /// Get key code for a key alias
@@ -202,13 +204,13 @@ pub fn generate_key_guard(keys: &[String]) -> String {
         return String::default();
     }
 
-    let checks: Vec<std::string::String> = keys
+    let checks: Vec<String> = keys
         .iter()
         .map(|key| {
             let resolved = resolve_key_alias(key.as_str())
-                .map(|k| k.to_string())
-                .unwrap_or_else(|| vize_carton::capitalize(key.as_str()).to_string());
-            cstr!("$event.key !== \"{resolved}\"").into()
+                .map(String::from)
+                .unwrap_or_else(|| vize_carton::capitalize(key.as_str()));
+            cstr!("$event.key !== \"{resolved}\"")
         })
         .collect();
 

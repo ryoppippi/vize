@@ -3,6 +3,9 @@
 //! Provides functions for rendering markdown help text into different
 //! output formats: ANSI terminal codes, plain text, or raw markdown passthrough.
 
+use vize_carton::String;
+use vize_carton::ToCompactString;
+
 // ANSI escape codes
 const ANSI_BOLD: &str = "\x1b[1m";
 const ANSI_BOLD_OFF: &str = "\x1b[22m";
@@ -34,7 +37,7 @@ pub fn render_help(markdown: &str, target: HelpRenderTarget) -> String {
     match target {
         HelpRenderTarget::Ansi => render_markdown_to_ansi(markdown),
         HelpRenderTarget::PlainText => strip_markdown(markdown),
-        HelpRenderTarget::Markdown => markdown.to_string(),
+        HelpRenderTarget::Markdown => markdown.to_compact_string(),
     }
 }
 
@@ -63,9 +66,9 @@ pub(crate) fn strip_markdown_first_line(text: &str) -> String {
         if stripped.is_empty() {
             continue;
         }
-        return stripped.to_string();
+        return stripped.to_compact_string();
     }
-    text.lines().next().unwrap_or(text).to_string()
+    text.lines().next().unwrap_or(text).to_compact_string()
 }
 
 /// Convert markdown text to ANSI-formatted text for TUI display.
@@ -243,5 +246,5 @@ pub(crate) fn strip_markdown(text: &str) -> String {
 
     // Trim trailing whitespace/newlines
     let trimmed = result.trim_end();
-    trimmed.to_string()
+    trimmed.to_compact_string()
 }

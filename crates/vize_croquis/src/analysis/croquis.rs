@@ -117,7 +117,7 @@ impl Croquis {
                             }
                         }
                         ScopeData::VSlot(data) => UnusedVarContext::VSlot {
-                            slot_name: data.name.to_string(),
+                            slot_name: data.name.clone(),
                         },
                         _ => continue,
                     };

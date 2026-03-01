@@ -9,6 +9,7 @@ use super::{
     VueApiCall, VueApiCategory,
 };
 use vize_carton::append;
+use vize_carton::String;
 
 impl CallGraph {
     /// Check if a function (or None for top-level) is in setup context.

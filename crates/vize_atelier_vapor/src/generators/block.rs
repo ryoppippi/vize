@@ -1,7 +1,7 @@
 //! Block code generation for Vapor mode.
 
 use crate::ir::{BlockIRNode, IREffect, OperationNode};
-use vize_carton::cstr;
+use vize_carton::{cstr, String};
 
 /// Context for code generation
 pub struct GenerateContext {
@@ -48,7 +48,7 @@ impl GenerateContext {
     pub fn next_temp(&mut self) -> String {
         let name = cstr!("_t{}", self.temp_count);
         self.temp_count += 1;
-        name.into()
+        name
     }
 
     pub fn newline(&mut self) {
@@ -158,6 +158,7 @@ pub fn escape_template(s: &str) -> String {
         .replace('"', "\\\"")
         .replace('\n', "\\n")
         .replace('\r', "\\r")
+        .into()
 }
 
 #[cfg(test)]

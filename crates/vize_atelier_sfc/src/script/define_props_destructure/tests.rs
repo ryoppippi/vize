@@ -1,18 +1,20 @@
 //! Tests for props destructure handling.
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::super::helpers::gen_props_access_exp;
     use super::super::transform::transform_destructured_props;
     use super::super::{PropsDestructureBinding, PropsDestructuredBindings};
+    use vize_carton::ToCompactString;
 
     fn make_bindings(names: &[&str]) -> PropsDestructuredBindings {
         let mut bindings = PropsDestructuredBindings::default();
         for name in names {
             bindings.bindings.insert(
-                name.to_string(),
+                name.to_compact_string(),
                 PropsDestructureBinding {
-                    local: name.to_string(),
+                    local: name.to_compact_string(),
                     default: None,
                 },
             );
@@ -387,9 +389,9 @@ return { msg, count }"#;
         let mut bindings = PropsDestructuredBindings::default();
         // prop key is "message", local name is "msg"
         bindings.bindings.insert(
-            "message".to_string(),
+            "message".to_compact_string(),
             PropsDestructureBinding {
-                local: "msg".to_string(),
+                local: "msg".to_compact_string(),
                 default: None,
             },
         );
@@ -406,11 +408,13 @@ return { msg, count }"#;
 
     // ==================== Snapshot tests ====================
 
+    #[allow(clippy::disallowed_macros)]
     mod snapshots {
         use super::{
             make_bindings, transform_destructured_props, PropsDestructureBinding,
             PropsDestructuredBindings,
         };
+        use vize_carton::ToCompactString;
 
         #[test]
         fn test_basic_usage() {
@@ -457,16 +461,16 @@ console.log(value)"#;
         fn test_aliasing() {
             let mut bindings = PropsDestructuredBindings::default();
             bindings.bindings.insert(
-                "foo".to_string(),
+                "foo".to_compact_string(),
                 PropsDestructureBinding {
-                    local: "x".to_string(),
+                    local: "x".to_compact_string(),
                     default: None,
                 },
             );
             bindings.bindings.insert(
-                "foo".to_string(),
+                "foo".to_compact_string(),
                 PropsDestructureBinding {
-                    local: "y".to_string(),
+                    local: "y".to_compact_string(),
                     default: None,
                 },
             );
@@ -629,13 +633,13 @@ do {
             // props.status should become __props.status
             let mut bindings = PropsDestructuredBindings::default();
             bindings.bindings.insert(
-                "actions".to_string(),
+                "actions".to_compact_string(),
                 PropsDestructureBinding {
-                    local: "actions".to_string(),
+                    local: "actions".to_compact_string(),
                     default: None,
                 },
             );
-            bindings.rest_id = Some("props".to_string());
+            bindings.rest_id = Some("props".to_compact_string());
 
             let source = r#"const status = computed(() => {
     if (props.status.reblog) return props.status.reblog
@@ -653,13 +657,13 @@ console.log(actions)"#;
             // bare `rest` should become `__props`
             let mut bindings = PropsDestructuredBindings::default();
             bindings.bindings.insert(
-                "a".to_string(),
+                "a".to_compact_string(),
                 PropsDestructureBinding {
-                    local: "a".to_string(),
+                    local: "a".to_compact_string(),
                     default: None,
                 },
             );
-            bindings.rest_id = Some("rest".to_string());
+            bindings.rest_id = Some("rest".to_compact_string());
 
             let source = r#"console.log(rest)
 const b = rest"#;

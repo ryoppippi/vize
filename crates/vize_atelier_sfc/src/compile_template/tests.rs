@@ -90,7 +90,7 @@ export function render(_ctx, _cache) {
 fn test_count_braces_multiline_template_literal() {
     let mut state = StringTrackState::default();
 
-    let line1 = concat!(r#"}, _toDisplayString(`${t("key")}: v${ver.major}.${"#);
+    let line1 = r#"}, _toDisplayString(`${t("key")}: v${ver.major}.${"#;
     let count1 = count_braces_with_state(line1, &mut state);
     assert_eq!(count1, -1, "Line 1 brace count");
     assert!(

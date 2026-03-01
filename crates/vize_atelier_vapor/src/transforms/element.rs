@@ -112,18 +112,20 @@ pub fn get_tag_name(el: &ElementNode<'_>) -> String {
 }
 
 /// Escape HTML special characters
-fn escape_html(s: &str) -> std::string::String {
+fn escape_html(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+        .into()
 }
 
 /// Escape attribute value
-fn escape_attr(s: &str) -> std::string::String {
+fn escape_attr(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('"', "&quot;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
+        .into()
 }
 
 #[cfg(test)]

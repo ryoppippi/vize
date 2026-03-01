@@ -5,8 +5,7 @@
 use super::{CatalogOutput, DocOptions};
 use crate::types::{ArtDescriptor, ArtStatus};
 use serde::{Deserialize, Serialize};
-use vize_carton::append;
-use vize_carton::FxHashMap;
+use vize_carton::{append, cstr, FxHashMap, String, ToCompactString};
 
 /// Entry in a component catalog.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,20 +44,25 @@ impl CatalogEntry {
     pub fn from_descriptor(art: &ArtDescriptor<'_>, base_path: &str) -> Self {
         let slug = slugify(art.metadata.title);
         let doc_path = if base_path.is_empty() {
-            format!("{}.md", slug)
+            cstr!("{}.md", slug)
         } else {
-            format!("{}/{}.md", base_path.trim_end_matches('/'), slug)
+            cstr!("{}/{}.md", base_path.trim_end_matches('/'), slug)
         };
 
         Self {
-            title: art.metadata.title.to_string(),
-            description: art.metadata.description.map(|s| s.to_string()),
-            category: art.metadata.category.map(|s| s.to_string()),
-            tags: art.metadata.tags.iter().map(|s| s.to_string()).collect(),
+            title: art.metadata.title.to_compact_string(),
+            description: art.metadata.description.map(|s| s.to_compact_string()),
+            category: art.metadata.category.map(|s| s.to_compact_string()),
+            tags: art
+                .metadata
+                .tags
+                .iter()
+                .map(|s| s.to_compact_string())
+                .collect(),
             status: art.metadata.status,
             variant_count: art.variants.len(),
             doc_path,
-            source_path: art.filename.to_string(),
+            source_path: art.filename.to_compact_string(),
             order: art.metadata.order,
         }
     }
@@ -120,7 +124,7 @@ pub fn generate_catalog(entries: &[CatalogEntry], options: &DocOptions) -> Catal
 
     CatalogOutput {
         markdown: md,
-        filename: "README.md".to_string(),
+        filename: "README.md".to_compact_string(),
         component_count: entries.len(),
         categories,
         tags,
@@ -162,9 +166,9 @@ pub fn generate_category_index(
 
     CatalogOutput {
         markdown: md,
-        filename: format!("{}.md", slugify(category)),
+        filename: cstr!("{}.md", slugify(category)),
         component_count: filtered.len(),
-        categories: vec![category.to_string()],
+        categories: vec![category.to_compact_string()],
         tags,
     }
 }
@@ -212,11 +216,11 @@ pub fn generate_tags_index(entries: &[CatalogEntry], _options: &DocOptions) -> C
         }
     }
 
-    let all_tags: Vec<String> = tags.iter().map(|s| s.to_string()).collect();
+    let all_tags: Vec<String> = tags.iter().map(|s| s.to_compact_string()).collect();
 
     CatalogOutput {
         markdown: md,
-        filename: "tags.md".to_string(),
+        filename: "tags.md".to_compact_string(),
         component_count: entries.len(),
         categories: vec![],
         tags: all_tags,
@@ -225,7 +229,7 @@ pub fn generate_tags_index(entries: &[CatalogEntry], _options: &DocOptions) -> C
 
 /// Generate a component table in Markdown.
 fn generate_component_table(entries: &[&CatalogEntry]) -> String {
-    let mut md = String::new();
+    let mut md = String::default();
 
     md.push_str("| Component | Description | Variants | Status |\n");
     md.push_str("|-----------|-------------|----------|--------|\n");
@@ -248,7 +252,7 @@ fn generate_component_table(entries: &[&CatalogEntry]) -> String {
             .take(50)
             .collect::<String>();
         let desc = if entry.description.as_ref().map(|d| d.len()).unwrap_or(0) > 50 {
-            format!("{}...", desc)
+            cstr!("{}...", desc)
         } else {
             desc
         };
@@ -323,7 +327,8 @@ fn group_by_tag(entries: &[CatalogEntry]) -> FxHashMap<&str, Vec<&CatalogEntry>>
 /// Convert a string to a URL-safe slug.
 #[inline]
 fn slugify(s: &str) -> String {
-    s.chars()
+    let intermediate: String = s
+        .chars()
         .map(|c| {
             if c.is_alphanumeric() {
                 c.to_ascii_lowercase()
@@ -331,14 +336,22 @@ fn slugify(s: &str) -> String {
                 '-'
             }
         })
-        .collect::<String>()
+        .collect();
+    let joined = intermediate
+        .as_str()
         .split('-')
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
-        .join("-")
+        .join("-");
+    joined.into()
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::disallowed_methods,
+    clippy::disallowed_types,
+    clippy::disallowed_macros
+)]
 mod tests {
     use super::{
         collect_categories, generate_catalog, generate_tags_index, slugify, CatalogEntry,
@@ -348,14 +361,17 @@ mod tests {
 
     fn make_entry(title: &str, category: Option<&str>, tags: &[&str]) -> CatalogEntry {
         CatalogEntry {
-            title: title.to_string(),
-            description: Some(format!("{} description", title)),
-            category: category.map(|s| s.to_string()),
-            tags: tags.iter().map(|s| s.to_string()).collect(),
+            title: title.into(),
+            description: Some(vize_carton::cstr!("{} description", title)),
+            category: category.map(|s| s.into()),
+            tags: tags
+                .iter()
+                .map(|s| vize_carton::CompactString::from(*s))
+                .collect(),
             status: ArtStatus::Ready,
             variant_count: 2,
-            doc_path: format!("{}.md", slugify(title)),
-            source_path: format!("{}.art.vue", slugify(title)),
+            doc_path: vize_carton::cstr!("{}.md", slugify(title)),
+            source_path: vize_carton::cstr!("{}.art.vue", slugify(title)),
             order: None,
         }
     }

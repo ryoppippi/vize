@@ -8,7 +8,6 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use vize_carton::{FxHashSet, String};
 
-use std::string::String as StdString;
 use vize_croquis::builtins::is_global_allowed;
 
 use crate::transform::TransformContext;
@@ -100,7 +99,7 @@ pub fn is_simple_identifier(s: &str) -> bool {
 /// Prefix identifiers in expression with `_ctx.` for codegen.
 ///
 /// This is a simpler version that doesn't require `TransformContext`.
-pub fn prefix_identifiers_in_expression(content: &str) -> std::string::String {
+pub fn prefix_identifiers_in_expression(content: &str) -> String {
     let allocator = OxcAllocator::default();
     let source_type = SourceType::default().with_module(true);
 
@@ -115,19 +114,19 @@ pub fn prefix_identifiers_in_expression(content: &str) -> std::string::String {
     match parse_result {
         Ok(expr) => {
             // Collect identifiers and their positions
-            let mut rewrites: Vec<(usize, usize, std::string::String)> = Vec::new();
-            let mut local_vars: FxHashSet<StdString> = FxHashSet::default();
+            let mut rewrites: Vec<(usize, usize, String)> = Vec::new();
+            let mut local_vars: FxHashSet<String> = FxHashSet::default();
 
             collect_identifiers_for_prefix(&expr, &mut rewrites, &mut local_vars, content);
 
             if rewrites.is_empty() {
-                return content.to_string();
+                return String::new(content);
             }
 
             // Sort by position (descending) to apply replacements from end to start
             rewrites.sort_by(|a, b| b.0.cmp(&a.0));
 
-            let mut result = content.to_string();
+            let mut result = String::new(content);
             for (start, end, replacement) in rewrites {
                 if start < result.len() && end <= result.len() {
                     result.replace_range(start..end, &replacement);
@@ -136,15 +135,15 @@ pub fn prefix_identifiers_in_expression(content: &str) -> std::string::String {
 
             result
         }
-        Err(_) => content.to_string(),
+        Err(_) => String::new(content),
     }
 }
 
 /// Collect identifiers that need `_ctx.` prefix
 fn collect_identifiers_for_prefix(
     expr: &oxc_ast::ast::Expression<'_>,
-    rewrites: &mut Vec<(usize, usize, std::string::String)>,
-    local_vars: &mut FxHashSet<StdString>,
+    rewrites: &mut Vec<(usize, usize, String)>,
+    local_vars: &mut FxHashSet<String>,
     _original: &str,
 ) {
     use oxc_ast::ast::Expression;
@@ -157,7 +156,10 @@ fn collect_identifiers_for_prefix(
                 // Adjust position: subtract 1 for the opening parenthesis we added
                 let start = id.span.start as usize - 1;
                 let end = id.span.end as usize - 1;
-                rewrites.push((start, end, ["_ctx.", name].concat()));
+                let mut prefixed = String::with_capacity(5 + name.len());
+                prefixed.push_str("_ctx.");
+                prefixed.push_str(name);
+                rewrites.push((start, end, prefixed));
             }
         }
         Expression::ArrowFunctionExpression(arrow) => {
@@ -271,11 +273,11 @@ fn collect_identifiers_for_prefix(
 /// Collect binding names from a pattern
 pub(crate) fn collect_binding_names(
     pattern: &oxc_ast::ast::BindingPattern<'_>,
-    local_vars: &mut FxHashSet<StdString>,
+    local_vars: &mut FxHashSet<String>,
 ) {
     match pattern {
         oxc_ast::ast::BindingPattern::BindingIdentifier(id) => {
-            local_vars.insert(id.name.to_string());
+            local_vars.insert(String::new(id.name.as_str()));
         }
         oxc_ast::ast::BindingPattern::ObjectPattern(obj) => {
             for prop in &obj.properties {

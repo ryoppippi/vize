@@ -10,6 +10,7 @@
 //! - `transform`: v-bind() extraction and byte-level utilities
 //! - `scoped`: scoped CSS transformation (:deep, :slotted, :global)
 
+use vize_carton::{String, ToCompactString};
 #[cfg(feature = "native")]
 mod parser;
 mod scoped;
@@ -165,7 +166,7 @@ pub fn compile_css(css: &str, options: &CssCompileOptions) -> CssCompileResult {
     };
 
     CssCompileResult {
-        code: scoped_css.to_string(),
+        code: scoped_css.to_compact_string(),
         map: None,
         css_vars,
         errors: vec![],

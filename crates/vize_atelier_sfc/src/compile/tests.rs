@@ -1,6 +1,7 @@
 use super::{compile_sfc, helpers, normal_script};
 use crate::types::{BindingType, ScriptCompileOptions, SfcCompileOptions, TemplateCompileOptions};
 use crate::{parse_sfc, SfcParseOptions};
+use vize_carton::ToCompactString;
 
 #[test]
 fn test_generate_scope_id() {
@@ -324,7 +325,7 @@ const doubled = computed(() => count * 2)
     let descriptor = parse_sfc(input, parse_opts).unwrap();
 
     let mut compile_opts = SfcCompileOptions::default();
-    compile_opts.script.id = Some("test.vue".to_string());
+    compile_opts.script.id = Some("test.vue".to_compact_string());
     let result = compile_sfc(&descriptor, compile_opts).unwrap();
 
     eprintln!("=== Full SFC props destructure output ===\n{}", result.code);
@@ -355,7 +356,7 @@ var c = 3
     let descriptor = parse_sfc(input, parse_opts).unwrap();
 
     let mut compile_opts = SfcCompileOptions::default();
-    compile_opts.script.id = Some("test.vue".to_string());
+    compile_opts.script.id = Some("test.vue".to_compact_string());
     let result = compile_sfc(&descriptor, compile_opts).unwrap();
 
     eprintln!("Let/var unref test output:\n{}", result.code);

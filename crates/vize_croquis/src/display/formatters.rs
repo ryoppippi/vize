@@ -14,6 +14,9 @@ use super::{
     TopLevelAwaitDisplay,
 };
 use vize_carton::append;
+use vize_carton::FxHashMap;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Builder for Croquis
 #[derive(Debug, Default)]
@@ -31,9 +34,9 @@ impl SummaryBuilder {
         // Add macro calls
         for call in tracker.all_calls() {
             self.summary.macros.push(MacroDisplay {
-                name: call.name.to_string(),
+                name: call.name.to_compact_string(),
                 #[allow(clippy::disallowed_macros)]
-                kind: format!("{:?}", call.kind),
+                kind: format!("{:?}", call.kind).into(),
                 start: call.start,
                 end: call.end,
             });
@@ -42,8 +45,8 @@ impl SummaryBuilder {
         // Add props
         for prop in tracker.props() {
             self.summary.props.push(PropDisplay {
-                name: prop.name.to_string(),
-                prop_type: prop.prop_type.as_ref().map(|s| s.to_string()),
+                name: prop.name.to_compact_string(),
+                prop_type: prop.prop_type.as_ref().map(|s| s.to_compact_string()),
                 required: prop.required,
                 has_default: prop.default_value.is_some(),
             });
@@ -52,8 +55,8 @@ impl SummaryBuilder {
         // Add emits
         for emit in tracker.emits() {
             self.summary.emits.push(EmitDisplay {
-                name: emit.name.to_string(),
-                payload_type: emit.payload_type.as_ref().map(|s| s.to_string()),
+                name: emit.name.to_compact_string(),
+                payload_type: emit.payload_type.as_ref().map(|s| s.to_compact_string()),
             });
         }
 
@@ -61,7 +64,7 @@ impl SummaryBuilder {
         self.summary.is_async = tracker.is_async();
         for await_expr in tracker.top_level_awaits() {
             self.summary.top_level_awaits.push(TopLevelAwaitDisplay {
-                expression: await_expr.expression.to_string(),
+                expression: await_expr.expression.to_compact_string(),
                 start: await_expr.start,
                 end: await_expr.end,
             });
@@ -81,7 +84,7 @@ impl SummaryBuilder {
             self.summary.optimization.blocks.push(BlockDisplay {
                 id: block.id,
                 #[allow(clippy::disallowed_macros)]
-                block_type: format!("{:?}", block.block_type),
+                block_type: format!("{:?}", block.block_type).into(),
                 parent_id: block.parent_id,
                 dynamic_children: block.dynamic_children_count,
             });
@@ -94,8 +97,8 @@ impl SummaryBuilder {
                 .event_cache
                 .push(EventCacheDisplay {
                     cache_index: event.cache_index,
-                    event_name: event.event_name.to_string(),
-                    handler: event.handler.to_string(),
+                    event_name: event.event_name.to_compact_string(),
+                    handler: event.handler.to_compact_string(),
                     is_inline: event.is_inline,
                 });
         }
@@ -104,7 +107,7 @@ impl SummaryBuilder {
         for once in tracker.once_cache() {
             self.summary.optimization.once_cache.push(OnceCacheDisplay {
                 cache_index: once.cache_index,
-                content: once.content.to_string(),
+                content: once.content.to_compact_string(),
                 start: once.start,
                 end: once.end,
             });
@@ -114,8 +117,8 @@ impl SummaryBuilder {
         for memo in tracker.memo_cache() {
             self.summary.optimization.memo_cache.push(MemoCacheDisplay {
                 cache_index: memo.cache_index,
-                deps: memo.deps.to_string(),
-                content: memo.content.to_string(),
+                deps: memo.deps.to_compact_string(),
+                content: memo.content.to_compact_string(),
                 start: memo.start,
                 end: memo.end,
             });
@@ -132,8 +135,8 @@ impl SummaryBuilder {
             self.summary.hoists.push(HoistDisplay {
                 id: hoist.id.as_u32(),
                 #[allow(clippy::disallowed_macros)]
-                level: format!("{:?}", hoist.level),
-                content: hoist.content.to_string(),
+                level: format!("{:?}", hoist.level).into(),
+                content: hoist.content.to_compact_string(),
             });
         }
 
@@ -151,7 +154,7 @@ impl SummaryBuilder {
                 .selectors()
                 .iter()
                 .map(|s| SelectorDisplay {
-                    raw: s.raw.to_string(),
+                    raw: s.raw.to_compact_string(),
                     scoped: true, // Assume scoped by default
                 })
                 .collect(),
@@ -192,20 +195,19 @@ impl Croquis {
             output.push_str("[scopes]\n");
 
             // Assign display IDs per prefix type (separate counters for #, ~, !)
-            use std::collections::HashMap;
-            let mut prefix_counters: HashMap<&str, u32> = HashMap::new();
+            let mut prefix_counters: FxHashMap<&str, u32> = FxHashMap::default();
             prefix_counters.insert("#", 0);
             prefix_counters.insert("~", 0);
             prefix_counters.insert("!", 0);
 
             // Map internal id -> (prefix, display_id)
-            let mut display_id_map: HashMap<u32, (String, u32)> = HashMap::new();
+            let mut display_id_map: FxHashMap<u32, (String, u32)> = FxHashMap::default();
             for scope in &self.scopes {
                 let prefix = scope.kind.prefix();
                 let counter = prefix_counters.entry(prefix).or_insert(0);
                 let display_id = *counter;
                 *counter += 1;
-                display_id_map.insert(scope.id, (prefix.to_string(), display_id));
+                display_id_map.insert(scope.id, (prefix.to_compact_string(), display_id));
             }
 
             for scope in &self.scopes {

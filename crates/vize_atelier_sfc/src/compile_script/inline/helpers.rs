@@ -3,6 +3,7 @@
 //! Provides utility functions for comment stripping and const name extraction
 //! used during script parsing.
 
+use vize_carton::{String, ToCompactString};
 /// Strip comments from a line for bracket/paren counting.
 /// Removes `// ...` line comments and `/* ... */` block comments while preserving string content.
 pub(crate) fn strip_comments_for_counting(line: &str) -> String {
@@ -68,5 +69,5 @@ pub(crate) fn extract_const_name(line: &str) -> Option<String> {
     if name.is_empty() {
         return None;
     }
-    Some(name.to_string())
+    Some(name.to_compact_string())
 }

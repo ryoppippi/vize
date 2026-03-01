@@ -1,6 +1,7 @@
 //! Type definitions for virtual TypeScript generation.
 
 use std::ops::Range;
+use vize_carton::String;
 
 /// A mapping from generated virtual TS position to SFC source position.
 #[derive(Debug, Clone, PartialEq, Eq)]

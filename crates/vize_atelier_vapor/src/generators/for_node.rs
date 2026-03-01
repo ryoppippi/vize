@@ -2,7 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::{BlockIRNode, ForIRNode};
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate for node code
 pub fn generate_for<F>(ctx: &mut GenerateContext, for_node: &ForIRNode<'_>, generate_block: F)
@@ -47,9 +47,9 @@ where
 /// Build parameter string for for callback
 fn build_params(value: &str, key: Option<&str>, index: Option<&str>) -> String {
     match (key, index) {
-        (Some(k), Some(i)) => cstr!("{value}, {k}, {i}").into(),
-        (Some(k), None) => cstr!("{value}, {k}").into(),
-        _ => value.to_string(),
+        (Some(k), Some(i)) => cstr!("{value}, {k}, {i}"),
+        (Some(k), None) => cstr!("{value}, {k}"),
+        _ => value.to_compact_string(),
     }
 }
 

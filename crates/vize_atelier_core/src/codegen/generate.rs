@@ -9,6 +9,8 @@ use crate::ast::{
 };
 
 use super::{context::CodegenContext, helpers::escape_js_string};
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Generate hoisted variable declarations.
 pub(super) fn generate_hoists(ctx: &CodegenContext, root: &RootNode<'_>) -> String {
@@ -17,7 +19,7 @@ pub(super) fn generate_hoists(ctx: &CodegenContext, root: &RootNode<'_>) -> Stri
     for (i, hoist) in root.hoists.iter().enumerate() {
         if let Some(node) = hoist {
             hoists_code.extend_from_slice(b"const _hoisted_");
-            hoists_code.extend_from_slice((i + 1).to_string().as_bytes());
+            hoists_code.extend_from_slice((i + 1).to_compact_string().as_bytes());
             hoists_code.extend_from_slice(b" = ");
             // Only add /*#__PURE__*/ for VNodeCall (createElementVNode calls)
             if matches!(node, JsChildNode::VNodeCall(_)) {
@@ -188,9 +190,9 @@ fn generate_vnode_call_to_bytes(ctx: &CodegenContext, vnode: &VNodeCall<'_>, out
     // Patch flag
     if let Some(patch_flag) = &vnode.patch_flag {
         out.extend_from_slice(b", ");
-        out.extend_from_slice(patch_flag.bits().to_string().as_bytes());
+        out.extend_from_slice(patch_flag.bits().to_compact_string().as_bytes());
         out.extend_from_slice(b" /* ");
-        let mut debug = String::new();
+        let mut debug = String::default();
         use std::fmt::Write as _;
         let _ = write!(&mut debug, "{:?}", patch_flag);
         out.extend_from_slice(debug.as_bytes());

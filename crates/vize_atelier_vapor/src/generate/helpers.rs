@@ -1,8 +1,7 @@
 //! Effect generation and inline operation helpers.
 
 use crate::ir::{IREffect, OperationNode};
-use vize_carton::cstr;
-use vize_carton::FxHashMap;
+use vize_carton::{cstr, FxHashMap, String};
 
 use super::{context::GenerateContext, operations::generate_operation, setup::is_svg_tag};
 
@@ -55,22 +54,22 @@ pub(crate) fn generate_operation_inline(
             if key.as_str() == "class" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    cstr!("_setAttr({element}, \"class\", {value})").into()
+                    cstr!("_setAttr({element}, \"class\", {value})")
                 } else {
                     ctx.use_helper("setClass");
-                    cstr!("_setClass({element}, {value})").into()
+                    cstr!("_setClass({element}, {value})")
                 }
             } else if key.as_str() == "style" {
                 if is_svg {
                     ctx.use_helper("setAttr");
-                    cstr!("_setAttr({element}, \"style\", {value})").into()
+                    cstr!("_setAttr({element}, \"style\", {value})")
                 } else {
                     ctx.use_helper("setStyle");
-                    cstr!("_setStyle({element}, {value})").into()
+                    cstr!("_setStyle({element}, {value})")
                 }
             } else {
                 ctx.use_helper("setProp");
-                cstr!("_setProp({element}, \"{key}\", {value})").into()
+                cstr!("_setProp({element}, \"{key}\", {value})")
             }
         }
         OperationNode::SetText(set_text) => {
@@ -78,7 +77,7 @@ pub(crate) fn generate_operation_inline(
             let text_ref = if let Some(text_var) = ctx.text_nodes.get(&set_text.element) {
                 text_var.clone()
             } else {
-                cstr!("n{}", set_text.element).into()
+                cstr!("n{}", set_text.element)
             };
 
             let values: Vec<String> = set_text
@@ -87,17 +86,17 @@ pub(crate) fn generate_operation_inline(
                 .map(|v| {
                     ctx.use_helper("toDisplayString");
                     if v.is_static {
-                        cstr!("\"{}\"", v.content).into()
+                        cstr!("\"{}\"", v.content)
                     } else {
-                        cstr!("_toDisplayString(_ctx.{})", v.content).into()
+                        cstr!("_toDisplayString(_ctx.{})", v.content)
                     }
                 })
                 .collect();
 
             if values.len() == 1 {
-                cstr!("_setText({text_ref}, {})", values[0]).into()
+                cstr!("_setText({text_ref}, {})", values[0])
             } else {
-                cstr!("_setText({text_ref}, {})", values.join(" + ")).into()
+                cstr!("_setText({text_ref}, {})", values.join(" + "))
             }
         }
         _ => String::from("/* unsupported */"),

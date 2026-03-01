@@ -12,6 +12,8 @@ use super::super::{
 };
 use super::generate_if_branch_key;
 use vize_carton::FxHashSet;
+use vize_carton::String;
+use vize_carton::ToCompactString;
 
 /// Check if prop should be skipped for v-if branch element.
 pub(super) fn should_skip_prop_for_if(
@@ -298,7 +300,7 @@ fn get_static_event_key(dir: &DirectiveNode<'_>) -> Option<String> {
             let first_part = camelize(parts[0]);
             let mut name = String::from("on");
             if let Some(first) = first_part.chars().next() {
-                name.push_str(&first.to_uppercase().to_string());
+                name.push_str(&first.to_uppercase().to_compact_string());
                 name.push_str(&first_part[first.len_utf8()..]);
             }
             name.push(':');
@@ -311,7 +313,7 @@ fn get_static_event_key(dir: &DirectiveNode<'_>) -> Option<String> {
         let camelized = camelize(event_name);
         let mut name = String::from("on");
         if let Some(first) = camelized.chars().next() {
-            name.push_str(&first.to_uppercase().to_string());
+            name.push_str(&first.to_uppercase().to_compact_string());
             name.push_str(&camelized[first.len_utf8()..]);
         }
         name

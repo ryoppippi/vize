@@ -8,6 +8,7 @@ use crate::cross_file::diagnostics::{
 use vize_carton::append;
 use vize_carton::cstr;
 use vize_carton::CompactString;
+use vize_carton::String;
 
 impl<'a> CrossFileReactivityAnalyzer<'a> {
     /// Generate diagnostics from detected issues.
@@ -151,7 +152,7 @@ impl<'a> CrossFileReactivityAnalyzer<'a> {
 
     /// Generate a markdown report of cross-file reactivity flows.
     pub fn to_markdown(&self) -> String {
-        let mut md = String::new();
+        let mut md = String::default();
 
         md.push_str("# Cross-File Reactivity Report\n\n");
 

@@ -379,7 +379,7 @@ pub(in crate::script_parser) fn process_variable_declarator(
                     } else {
                         infer_destructure_binding_type(kind, declarator.init.as_ref())
                     };
-                    result.bindings.add(&local_name, binding_type);
+                    result.bindings.add(local_name.as_str(), binding_type);
 
                     // Track destructure binding
                     if let Some(ref mut destructure) = props_destructure {
@@ -415,7 +415,7 @@ pub(in crate::script_parser) fn process_variable_declarator(
                     } else {
                         infer_destructure_binding_type(kind, declarator.init.as_ref())
                     };
-                    result.bindings.add(&name, binding_type);
+                    result.bindings.add(name.as_str(), binding_type);
 
                     // Track rest binding
                     if let Some(ref mut destructure) = props_destructure {
@@ -437,12 +437,12 @@ pub(in crate::script_parser) fn process_variable_declarator(
             let arr_binding_type = infer_destructure_binding_type(kind, declarator.init.as_ref());
             for elem in arr.elements.iter().flatten() {
                 if let Some(name) = get_binding_pattern_name(elem) {
-                    result.bindings.add(&name, arr_binding_type);
+                    result.bindings.add(name.as_str(), arr_binding_type);
                 }
             }
             if let Some(rest) = &arr.rest {
                 if let Some(name) = get_binding_pattern_name(&rest.argument) {
-                    result.bindings.add(&name, arr_binding_type);
+                    result.bindings.add(name.as_str(), arr_binding_type);
                 }
             }
         }
@@ -450,7 +450,7 @@ pub(in crate::script_parser) fn process_variable_declarator(
         BindingPattern::AssignmentPattern(assign) => {
             if let Some(name) = get_binding_pattern_name(&assign.left) {
                 let binding_type = get_binding_type_from_kind(kind);
-                result.bindings.add(&name, binding_type);
+                result.bindings.add(name.as_str(), binding_type);
             }
         }
     }

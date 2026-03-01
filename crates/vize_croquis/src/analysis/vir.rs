@@ -7,6 +7,7 @@ use super::{Croquis, TypeExportKind};
 use crate::macros::MacroKind;
 use std::fmt::Write;
 use vize_carton::FxHashMap;
+use vize_carton::String;
 use vize_relief::BindingType;
 
 impl Croquis {
@@ -330,7 +331,7 @@ impl Croquis {
             let counter = prefix_counters.entry(prefix).or_insert(0);
             #[allow(clippy::disallowed_macros)]
             let display_id = format!("{}{}", prefix, *counter);
-            id_to_display.insert(scope.id.as_u32(), display_id);
+            id_to_display.insert(scope.id.as_u32(), display_id.into());
             *counter += 1;
         }
 
@@ -346,7 +347,7 @@ impl Croquis {
 
             // Build parent references from the parents list using display IDs
             let par = if scope.parents.is_empty() {
-                String::new()
+                String::default()
             } else {
                 let refs: Vec<_> = scope
                     .parents
@@ -355,12 +356,12 @@ impl Croquis {
                     .map(|s| s.as_str())
                     .collect();
                 if refs.is_empty() {
-                    String::new()
+                    String::default()
                 } else {
                     {
                         #[allow(clippy::disallowed_macros)]
                         let s = format!(" < {}", refs.join(", "));
-                        s
+                        s.into()
                     }
                 }
             };

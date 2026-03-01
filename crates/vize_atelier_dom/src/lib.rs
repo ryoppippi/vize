@@ -34,7 +34,7 @@ use vize_atelier_core::{
     parser::parse_with_options,
     transform::transform as do_transform,
 };
-use vize_carton::Bump;
+use vize_carton::{Bump, String};
 use vize_croquis::Croquis;
 
 /// Compile a Vue template for DOM with default options
@@ -66,8 +66,8 @@ pub fn compile_template_with_options<'a>(
 
     if !errors.is_empty() {
         let codegen_result = CodegenResult {
-            code: String::new(),
-            preamble: String::new(),
+            code: String::default(),
+            preamble: String::default(),
             map: None,
         };
         return (root, errors.to_vec(), codegen_result);

@@ -4,6 +4,7 @@
 //! and configuration options for the SFC type checker.
 
 use serde::Serialize;
+use vize_carton::String;
 
 /// Type diagnostic severity.
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]

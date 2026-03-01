@@ -3,7 +3,7 @@
 //! v-text sets the element's textContent.
 
 use vize_atelier_core::{DirectiveNode, RuntimeHelper};
-use vize_carton::cstr;
+use vize_carton::{cstr, String};
 
 /// Runtime helper for v-text
 pub const V_TEXT: RuntimeHelper = RuntimeHelper::SetBlockTracking;
@@ -17,7 +17,7 @@ pub fn is_v_text(dir: &DirectiveNode<'_>) -> bool {
 pub fn generate_text_content(dir: &DirectiveNode<'_>) -> String {
     if let Some(ref exp) = dir.exp {
         if let vize_atelier_core::ExpressionNode::Simple(simple) = exp {
-            return cstr!("_toDisplayString({})", simple.content).into();
+            return cstr!("_toDisplayString({})", simple.content);
         }
     }
     String::from("''")
@@ -27,7 +27,7 @@ pub fn generate_text_content(dir: &DirectiveNode<'_>) -> String {
 pub fn generate_text_children(dir: &DirectiveNode<'_>) -> Option<String> {
     if let Some(ref exp) = dir.exp {
         if let vize_atelier_core::ExpressionNode::Simple(simple) = exp {
-            return Some(cstr!("_toDisplayString({})", simple.content).into());
+            return Some(cstr!("_toDisplayString({})", simple.content));
         }
     }
     None

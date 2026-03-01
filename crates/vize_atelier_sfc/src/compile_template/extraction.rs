@@ -1,5 +1,7 @@
 //! Extraction of imports, hoisted consts, and render functions from compiled template code.
 
+use vize_carton::{String, ToCompactString};
+
 use super::string_tracking::{
     compact_render_body, count_braces_with_state, count_parens_with_state, StringTrackState,
 };
@@ -7,9 +9,9 @@ use super::string_tracking::{
 /// Extract imports, hoisted consts, and render function from compiled template code
 /// Returns (imports, hoisted, render_function) where render_function is the full function definition
 pub(crate) fn extract_template_parts_full(template_code: &str) -> (String, String, String) {
-    let mut imports = String::new();
-    let mut hoisted = String::new();
-    let mut render_fn = String::new();
+    let mut imports = String::default();
+    let mut hoisted = String::default();
+    let mut render_fn = String::default();
     let mut in_render = false;
     let mut brace_depth = 0;
     let mut brace_state = StringTrackState::default();
@@ -51,10 +53,10 @@ pub(crate) fn extract_template_parts_full(template_code: &str) -> (String, Strin
 /// Returns (imports, hoisted, preamble, render_body)
 #[allow(dead_code)]
 pub(crate) fn extract_template_parts(template_code: &str) -> (String, String, String, String) {
-    let mut imports = String::new();
-    let mut hoisted = String::new();
-    let mut preamble = String::new(); // Component/directive resolution statements
-    let mut render_body = String::new();
+    let mut imports = String::default();
+    let mut hoisted = String::default();
+    let mut preamble = String::default(); // Component/directive resolution statements
+    let mut render_body = String::default();
     let mut in_render = false;
     let mut in_return = false;
     let mut brace_depth = 0;
@@ -111,12 +113,12 @@ pub(crate) fn extract_template_parts(template_code: &str) -> (String, String, St
                         // Remove trailing semicolon if present
                         let trimmed_body = render_body.trim_end();
                         if let Some(stripped) = trimmed_body.strip_suffix(';') {
-                            render_body = stripped.to_string();
+                            render_body = stripped.to_compact_string();
                         }
                     }
                 }
             } else if let Some(stripped) = trimmed.strip_prefix("return ") {
-                render_body = stripped.to_string();
+                render_body = stripped.to_compact_string();
                 // Count parentheses to handle multi-line return (string-aware)
                 paren_state = StringTrackState::default();
                 return_paren_depth = count_parens_with_state(stripped, &mut paren_state);

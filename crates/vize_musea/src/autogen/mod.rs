@@ -13,7 +13,7 @@ pub use strategy::generate_variants;
 pub use types::{AutogenConfig, AutogenOutput, GeneratedVariant, PropDefinition};
 
 use std::path::Path;
-use vize_carton::append;
+use vize_carton::{append, String, ToCompactString};
 
 /// Generate an `.art.vue` file from prop definitions.
 pub fn generate_art_file(
@@ -39,7 +39,7 @@ fn extract_component_name(component_path: &str) -> String {
         .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("Component")
-        .to_string()
+        .to_compact_string()
 }
 
 /// Render the `.art.vue` file content from generated variants.
@@ -48,7 +48,7 @@ fn render_art_file(
     component_path: &str,
     variants: &[GeneratedVariant],
 ) -> String {
-    let mut output = String::new();
+    let mut output = String::default();
 
     // <art> block
     append!(
@@ -90,11 +90,12 @@ fn render_art_file(
 }
 
 /// Render props as Vue template attributes.
-fn render_props(props: &serde_json::Map<String, serde_json::Value>) -> String {
+#[allow(clippy::disallowed_types)]
+fn render_props(props: &serde_json::Map<std::string::String, serde_json::Value>) -> String {
     let mut lines = Vec::new();
 
     for (name, value) in props {
-        let attr = match value {
+        let attr: std::string::String = match value {
             serde_json::Value::String(s) => format!("      {name}=\"{s}\""),
             serde_json::Value::Bool(true) => format!("      {name}"),
             serde_json::Value::Bool(false) => format!("      :{name}=\"false\""),
@@ -110,13 +111,19 @@ fn render_props(props: &serde_json::Map<String, serde_json::Value>) -> String {
     }
 
     if lines.is_empty() {
-        String::new()
+        String::default()
     } else {
-        lines.join("\n") + "\n"
+        let joined: std::string::String = lines.join("\n") + "\n";
+        joined.into()
     }
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::disallowed_methods,
+    clippy::disallowed_types,
+    clippy::disallowed_macros
+)]
 mod tests {
     use super::{
         extract_component_name, generate_art_file, render_props, AutogenConfig, PropDefinition,
@@ -137,20 +144,20 @@ mod tests {
     fn test_generate_art_file() {
         let props = vec![
             PropDefinition {
-                name: "variant".to_string(),
-                prop_type: "'primary' | 'secondary'".to_string(),
+                name: "variant".into(),
+                prop_type: "'primary' | 'secondary'".into(),
                 required: true,
                 default_value: Some(json!("primary")),
             },
             PropDefinition {
-                name: "label".to_string(),
-                prop_type: "string".to_string(),
+                name: "label".into(),
+                prop_type: "string".into(),
                 required: true,
                 default_value: Some(json!("Click me")),
             },
             PropDefinition {
-                name: "disabled".to_string(),
-                prop_type: "boolean".to_string(),
+                name: "disabled".into(),
+                prop_type: "boolean".into(),
                 required: false,
                 default_value: Some(json!(false)),
             },

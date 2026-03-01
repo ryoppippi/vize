@@ -2,7 +2,7 @@
 
 use super::block::GenerateContext;
 use crate::ir::{SetDynamicPropsIRNode, SetPropIRNode};
-use vize_carton::cstr;
+use vize_carton::{cstr, String, ToCompactString};
 
 /// Generate SetProp code
 pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
@@ -11,9 +11,9 @@ pub fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>
 
     let value: String = if let Some(first) = set_prop.prop.values.first() {
         if first.is_static {
-            cstr!("\"{}\"", first.content).into()
+            cstr!("\"{}\"", first.content)
         } else {
-            first.content.to_string()
+            first.content.to_compact_string()
         }
     } else {
         String::from("undefined")
@@ -41,9 +41,9 @@ pub fn generate_set_dynamic_props(
 
     for prop in set_props.props.iter() {
         let expr: String = if prop.is_static {
-            cstr!("\"{}\"", prop.content).into()
+            cstr!("\"{}\"", prop.content)
         } else {
-            prop.content.to_string()
+            prop.content.to_compact_string()
         };
         ctx.push_line_fmt(format_args!("_setDynamicProps({element}, {expr})"));
     }
@@ -68,35 +68,35 @@ fn is_dom_prop(key: &str) -> bool {
 /// Generate class binding
 pub fn generate_class_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        cstr!("{element_var}.className = \"{value}\"").into()
+        cstr!("{element_var}.className = \"{value}\"")
     } else {
-        cstr!("_setClass({element_var}, {value})").into()
+        cstr!("_setClass({element_var}, {value})")
     }
 }
 
 /// Generate style binding
 pub fn generate_style_binding(element_var: &str, value: &str, is_static: bool) -> String {
     if is_static {
-        cstr!("{element_var}.style.cssText = \"{value}\"").into()
+        cstr!("{element_var}.style.cssText = \"{value}\"")
     } else {
-        cstr!("_setStyle({element_var}, {value})").into()
+        cstr!("_setStyle({element_var}, {value})")
     }
 }
 
 /// Generate attribute binding
 pub fn generate_attribute(element_var: &str, name: &str, value: &str) -> String {
-    cstr!("{element_var}.setAttribute(\"{name}\", {value})").into()
+    cstr!("{element_var}.setAttribute(\"{name}\", {value})")
 }
 
 /// Generate prop binding for component
 pub fn generate_component_prop(component_var: &str, key: &str, value: &str) -> String {
-    cstr!("{component_var}.$props.{key} = {value}").into()
+    cstr!("{component_var}.$props.{key} = {value}")
 }
 
 /// Normalize prop key for components
 pub fn normalize_prop_key(key: &str) -> String {
     // Convert kebab-case to camelCase
-    let mut result = String::new();
+    let mut result = String::default();
     let mut capitalize_next = false;
 
     for c in key.chars() {

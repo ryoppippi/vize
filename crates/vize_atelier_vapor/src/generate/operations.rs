@@ -9,8 +9,7 @@ use crate::ir::{
     SlotOutletIRNode,
 };
 use vize_atelier_core::ExpressionNode;
-use vize_carton::cstr;
-use vize_carton::FxHashMap;
+use vize_carton::{cstr, FxHashMap, String, ToCompactString};
 
 use super::{context::GenerateContext, generate_block, setup::is_svg_tag};
 
@@ -126,7 +125,7 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
     let text_ref = if let Some(text_var) = ctx.text_nodes.get(&set_text.element) {
         text_var.clone()
     } else {
-        cstr!("n{}", set_text.element).into()
+        cstr!("n{}", set_text.element)
     };
 
     let values: Vec<String> = set_text
@@ -135,9 +134,9 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
         .map(|v| {
             ctx.use_helper("toDisplayString");
             if v.is_static {
-                cstr!("\"{}\"", v.content).into()
+                cstr!("\"{}\"", v.content)
             } else {
-                cstr!("_toDisplayString(_ctx.{})", v.content).into()
+                cstr!("_toDisplayString(_ctx.{})", v.content)
             }
         })
         .collect();
@@ -161,7 +160,7 @@ fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>)
     let event_name = &set_event.key.content;
 
     let handler = if let Some(ref value) = set_event.value {
-        value.content.to_string()
+        value.content.to_compact_string()
     } else {
         String::from("() => {}")
     };
@@ -316,7 +315,7 @@ fn generate_if_inner(
     ctx.push_line(
         &[
             "const n",
-            &if_node.id.to_string(),
+            &if_node.id.to_compact_string(),
             " = _createIf(() => ",
             &condition,
             ", () => {",
@@ -416,10 +415,10 @@ fn generate_for(
     let key_name = for_node.key.as_ref().map(|k| k.content.as_str());
     let index_name = for_node.index.as_ref().map(|i| i.content.as_str());
 
-    let params = match (key_name, index_name) {
-        (Some(k), Some(i)) => [value_name, ", ", k, ", ", i].concat(),
-        (Some(k), None) => [value_name, ", ", k].concat(),
-        _ => value_name.to_string(),
+    let params: String = match (key_name, index_name) {
+        (Some(k), Some(i)) => [value_name, ", ", k, ", ", i].concat().into(),
+        (Some(k), None) => [value_name, ", ", k].concat().into(),
+        _ => value_name.to_compact_string(),
     };
 
     ctx.push_line(&["_createFor(() => ", &source, ", (", &params, ") => {"].concat());
@@ -451,7 +450,7 @@ fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCompon
 
     // Props object
     let props = if component.props.is_empty() {
-        "null".to_string()
+        "null".to_compact_string()
     } else {
         let prop_strs: Vec<String> = component
             .props
@@ -460,30 +459,32 @@ fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCompon
                 let key = &p.key.content;
                 let is_event = key.as_str().starts_with("on") && key.len() > 2;
 
-                let value = if let Some(first) = p.values.first() {
+                let value: String = if let Some(first) = p.values.first() {
                     if first.is_static {
-                        ["() => (\"", first.content.as_str(), "\")"].concat()
+                        ["() => (\"", first.content.as_str(), "\")"].concat().into()
                     } else if is_event {
                         // Event handlers: () => _ctx.handler
-                        ["() => _ctx.", first.content.as_str()].concat()
+                        ["() => _ctx.", first.content.as_str()].concat().into()
                     } else {
                         // Regular props: () => (_ctx.value)
-                        ["() => (_ctx.", first.content.as_str(), ")"].concat()
+                        ["() => (_ctx.", first.content.as_str(), ")"]
+                            .concat()
+                            .into()
                     }
                 } else {
-                    "undefined".to_string()
+                    "undefined".to_compact_string()
                 };
-                [key.as_str(), ": ", &value].concat()
+                [key.as_str(), ": ", &value].concat().into()
             })
             .collect();
-        ["{ ", &prop_strs.join(", "), " }"].concat()
+        ["{ ", &prop_strs.join(", "), " }"].concat().into()
     };
 
     // Generate component creation
     ctx.push_line(
         &[
             "const n",
-            &component.id.to_string(),
+            &component.id.to_compact_string(),
             " = _createComponentWithFallback(",
             &component_var,
             ", ",

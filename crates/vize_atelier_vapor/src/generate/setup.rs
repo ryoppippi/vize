@@ -2,7 +2,7 @@
 
 use super::context::GenerateContext;
 use crate::ir::{BlockIRNode, OperationNode};
-use vize_carton::cstr;
+use vize_carton::{cstr, String};
 
 /// Collect delegate events from block
 pub(crate) fn collect_delegate_events(ctx: &mut GenerateContext, block: &BlockIRNode<'_>) {
@@ -18,7 +18,7 @@ pub(crate) fn collect_delegate_events(ctx: &mut GenerateContext, block: &BlockIR
 /// Generate imports based on used helpers
 pub(crate) fn generate_imports(ctx: &GenerateContext) -> String {
     if ctx.used_helpers.is_empty() {
-        return String::new();
+        return String::default();
     }
 
     // Define priority order for helpers (lower = earlier in import)
@@ -55,7 +55,7 @@ pub(crate) fn generate_imports(ctx: &GenerateContext) -> String {
         .collect::<std::vec::Vec<_>>()
         .join(", ");
 
-    cstr!("import {{ {imports} }} from 'vue';\n").into()
+    cstr!("import {{ {imports} }} from 'vue';\n")
 }
 
 /// Escape template string for JavaScript
@@ -64,6 +64,7 @@ pub(crate) fn escape_template(s: &str) -> String {
         .replace('"', "\\\"")
         .replace('\n', "\\n")
         .replace('\r', "\\r")
+        .into()
 }
 
 /// Check if a tag is an SVG element

@@ -46,11 +46,11 @@ pub fn check_props_typing(
             } else {
                 SfcTypeSeverity::Warning
             },
-            message: "defineProps() should have a type definition".to_string(),
+            message: "defineProps() should have a type definition".into(),
             start,
             end,
-            code: Some("untyped-props".to_string()),
-            help: Some("Use defineProps<{ propName: Type }>() to define prop types".to_string()),
+            code: Some("untyped-props".into()),
+            help: Some("Use defineProps<{ propName: Type }>() to define prop types".into()),
             related: Vec::new(),
         });
         return;
@@ -70,13 +70,11 @@ pub fn check_props_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: cstr!("Prop '{}' should have a type definition", prop.name).to_string(),
+                message: cstr!("Prop '{}' should have a type definition", prop.name),
                 start,
                 end,
-                code: Some("untyped-prop".to_string()),
-                help: Some(
-                    "Use defineProps<{ propName: Type }>() or define runtime type".to_string(),
-                ),
+                code: Some("untyped-prop".into()),
+                help: Some("Use defineProps<{ propName: Type }>() or define runtime type".into()),
                 related: Vec::new(),
             });
             break; // Only report once per defineProps
@@ -125,11 +123,11 @@ pub fn check_emits_typing(
             } else {
                 SfcTypeSeverity::Warning
             },
-            message: "defineEmits() should have a type definition".to_string(),
+            message: "defineEmits() should have a type definition".into(),
             start,
             end,
-            code: Some("untyped-emits".to_string()),
-            help: Some("Use defineEmits<{ (e: 'event', payload: Type): void }>()".to_string()),
+            code: Some("untyped-emits".into()),
+            help: Some("Use defineEmits<{ (e: 'event', payload: Type): void }>()".into()),
             related: Vec::new(),
         });
         return;
@@ -149,11 +147,11 @@ pub fn check_emits_typing(
                 } else {
                     SfcTypeSeverity::Warning
                 },
-                message: cstr!("Emit '{}' should have a type definition", emit.name).to_string(),
+                message: cstr!("Emit '{}' should have a type definition", emit.name),
                 start,
                 end,
-                code: Some("untyped-emit".to_string()),
-                help: Some("Use defineEmits<{ event: [payload: Type] }>()".to_string()),
+                code: Some("untyped-emit".into()),
+                help: Some("Use defineEmits<{ event: [payload: Type] }>()".into()),
                 related: Vec::new(),
             });
             break; // Only report once per defineEmits
@@ -176,18 +174,14 @@ pub fn check_template_bindings(
                 "Undefined reference '{}' in {}",
                 undef_ref.name,
                 undef_ref.context
-            )
-            .to_string(),
+            ),
             start: undef_ref.offset + template_offset,
             end: undef_ref.offset + template_offset + undef_ref.name.len() as u32,
-            code: Some("undefined-binding".to_string()),
-            help: Some(
-                cstr!(
-                    "Make sure '{}' is defined in script setup or imported",
-                    undef_ref.name
-                )
-                .to_string(),
-            ),
+            code: Some("undefined-binding".into()),
+            help: Some(cstr!(
+                "Make sure '{}' is defined in script setup or imported",
+                undef_ref.name
+            )),
             related: Vec::new(),
         });
     }
@@ -209,22 +203,20 @@ pub fn check_reactivity(
     for loss in summary.reactivity.losses() {
         let message = match &loss.kind {
             ReactivityLossKind::ReactiveDestructure { source_name, .. } => {
-                cstr!("Destructuring reactive object '{source_name}' loses reactivity").to_string()
+                cstr!("Destructuring reactive object '{source_name}' loses reactivity")
             }
             ReactivityLossKind::RefValueDestructure { source_name, .. } => {
-                cstr!("Destructuring ref '{source_name}' loses reactivity").to_string()
+                cstr!("Destructuring ref '{source_name}' loses reactivity")
             }
             ReactivityLossKind::RefValueExtract {
                 source_name,
                 target_name,
-            } => cstr!("Extracting '{target_name}' from '{source_name}.value' loses reactivity")
-                .to_string(),
+            } => cstr!("Extracting '{target_name}' from '{source_name}.value' loses reactivity"),
             ReactivityLossKind::ReactiveSpread { source_name } => {
-                cstr!("Spreading reactive object '{source_name}' loses reactivity").to_string()
+                cstr!("Spreading reactive object '{source_name}' loses reactivity")
             }
             ReactivityLossKind::ReactiveReassign { source_name } => {
                 cstr!("Reassigning reactive variable '{source_name}' disconnects reactivity")
-                    .to_string()
             }
         };
 
@@ -233,7 +225,7 @@ pub fn check_reactivity(
             message,
             start: loss.start + script_offset,
             end: loss.end + script_offset,
-            code: Some("reactivity-loss".to_string()),
+            code: Some("reactivity-loss".into()),
             help: None,
             related: Vec::new(),
         });
@@ -255,10 +247,10 @@ pub fn check_setup_context(
 
         result.add_diagnostic(SfcTypeDiagnostic {
             severity,
-            message: violation.kind.description().to_string(),
+            message: violation.kind.description().into(),
             start: violation.start + script_offset,
             end: violation.end + script_offset,
-            code: Some(violation.kind.to_display().to_string()),
+            code: Some(violation.kind.to_display().into()),
             help: None,
             related: Vec::new(),
         });
@@ -274,12 +266,12 @@ pub fn check_invalid_exports(
     for export in &summary.invalid_exports {
         result.add_diagnostic(SfcTypeDiagnostic {
             severity: SfcTypeSeverity::Error,
-            message: cstr!("Cannot export '{}' from <script setup>", export.name).to_string(),
+            message: cstr!("Cannot export '{}' from <script setup>", export.name),
             start: export.start + script_offset,
             end: export.end + script_offset,
-            code: Some("invalid-export".to_string()),
+            code: Some("invalid-export".into()),
             help: Some(
-                "Only type exports are allowed in <script setup>. Use a separate <script> block for value exports.".to_string(),
+                "Only type exports are allowed in <script setup>. Use a separate <script> block for value exports.".into(),
             ),
             related: Vec::new(),
         });
@@ -304,13 +296,11 @@ pub fn check_fallthrough_attrs(
 
     result.add_diagnostic(SfcTypeDiagnostic {
         severity,
-        message: "Multi-root component may lose fallthrough attributes".to_string(),
+        message: "Multi-root component may lose fallthrough attributes".into(),
         start: summary.template_info.content_start,
         end: summary.template_info.content_end,
-        code: Some("fallthrough-attrs".to_string()),
-        help: Some(
-            "Bind $attrs explicitly to one root element or use inheritAttrs: false".to_string(),
-        ),
+        code: Some("fallthrough-attrs".into()),
+        help: Some("Bind $attrs explicitly to one root element or use inheritAttrs: false".into()),
         related: Vec::new(),
     });
 }
