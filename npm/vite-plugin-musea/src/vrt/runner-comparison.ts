@@ -13,7 +13,8 @@ import path from "node:path";
 import { PNG } from "pngjs";
 
 import { readPng, writePng, colorDelta, isAntiAliased, fileExists } from "./comparison.js";
-import type { VrtResult, MuseaVrtRunner } from "./runner.js";
+import type { VrtResult } from "./types.js";
+import type { MuseaVrtRunner } from "./runner.js";
 import { buildVariantUrl } from "./utils.js";
 
 /**

@@ -1,7 +1,7 @@
 import type { HmrContext } from "vite";
 import path from "node:path";
 
-import type { VizePluginState } from "./index.js";
+import type { VizePluginState } from "./state.js";
 import { compileFile } from "../compiler.js";
 import { detectHmrUpdateType, type HmrUpdateType } from "../hmr.js";
 import { toVirtualId } from "../virtual.js";

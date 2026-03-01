@@ -1,7 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 
-import type { VizePluginState } from "./index.js";
+import type { VizePluginState } from "./state.js";
 import {
   LEGACY_VIZE_PREFIX,
   VIRTUAL_CSS_MODULE,

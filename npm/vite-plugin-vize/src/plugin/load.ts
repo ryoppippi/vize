@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 import type { TransformResult } from "vite";
 import { transformWithOxc } from "vite";
 
-import type { VizePluginState } from "./index.js";
+import type { VizePluginState } from "./state.js";
 import { compileFile } from "../compiler.js";
 import { generateOutput } from "../utils/index.js";
 import { resolveCssImports } from "../utils/css.js";

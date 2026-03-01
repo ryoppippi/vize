@@ -13,11 +13,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { ResolvedConfig } from "vite";
 import fs from "node:fs";
-import path from "node:path";
 
 import type { ArtFileInfo } from "../types/index.js";
-import { generatePreviewModuleWithProps } from "../preview/index.js";
-import { toPascalCase } from "../utils.js";
 import {
   handleTokensUsage,
   handleTokensGet,
@@ -32,6 +29,7 @@ import {
   handleArtDocs,
   handleArtA11y,
 } from "./handlers.js";
+import { handlePreviewWithProps, handleGenerate, handleRunVrt } from "./post-handlers.js";
 
 /** Dependencies injected from the plugin closure. */
 export interface ApiRoutesContext {
@@ -125,24 +123,19 @@ export function createApiMiddleware(ctx: ApiRoutesContext) {
           return;
         }
 
-        let body = "";
-        req.on("data", (chunk: string) => {
-          body += chunk;
-        });
-        req.on("end", async () => {
-          try {
-            const { source } = JSON.parse(body) as { source: string };
-            if (typeof source !== "string") {
-              sendError("Missing required field: source", 400);
-              return;
-            }
-            await fs.promises.writeFile(artPath, source, "utf-8");
-            await ctx.processArtFile(artPath);
-            sendJson({ success: true });
-          } catch (e) {
-            sendError(e instanceof Error ? e.message : String(e));
+        const body = await collectBody(req);
+        try {
+          const { source } = JSON.parse(body) as { source: string };
+          if (typeof source !== "string") {
+            sendError("Missing required field: source", 400);
+            return;
           }
-        });
+          await fs.promises.writeFile(artPath, source, "utf-8");
+          await ctx.processArtFile(artPath);
+          sendJson({ success: true });
+        } catch (e) {
+          sendError(e instanceof Error ? e.message : String(e));
+        }
         return;
       }
       next();
@@ -195,117 +188,24 @@ export function createApiMiddleware(ctx: ApiRoutesContext) {
       return;
     }
 
-    // --- POST /api/preview-with-props ---
-    if (url === "/preview-with-props" && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk) => {
-        body += chunk;
-      });
-      req.on("end", () => {
-        try {
-          const { artPath: reqArtPath, variantName, props: propsOverride } = JSON.parse(body);
-          const art = ctx.artFiles.get(reqArtPath);
-          if (!art) {
-            sendError("Art not found", 404);
-            return;
-          }
+    // --- POST routes (delegated to post-handlers.ts) ---
+    if (req.method === "POST") {
+      const body = await collectBody(req);
 
-          const variant = art.variants.find((v) => v.name === variantName);
-          if (!variant) {
-            sendError("Variant not found", 404);
-            return;
-          }
+      if (url === "/preview-with-props") {
+        handlePreviewWithProps(ctx, body, res, sendJson, sendError);
+        return;
+      }
 
-          const variantComponentName = toPascalCase(variant.name);
-          const moduleCode = generatePreviewModuleWithProps(
-            art,
-            variantComponentName,
-            variant.name,
-            propsOverride,
-            ctx.resolvedPreviewCss,
-            ctx.resolvedPreviewSetup,
-          );
-          res.setHeader("Content-Type", "application/javascript");
-          res.end(moduleCode);
-        } catch (e) {
-          sendError(e instanceof Error ? e.message : String(e));
-        }
-      });
-      return;
-    }
+      if (url === "/generate") {
+        await handleGenerate(body, sendJson, sendError);
+        return;
+      }
 
-    // --- POST /api/generate ---
-    if (url === "/generate" && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk) => {
-        body += chunk;
-      });
-      req.on("end", async () => {
-        try {
-          const { componentPath: reqComponentPath, options: autogenOptions } = JSON.parse(body);
-          const { generateArtFile: genArt } = await import("../autogen/index.js");
-          const result = await genArt(reqComponentPath, autogenOptions);
-          sendJson({
-            generated: true,
-            componentName: result.componentName,
-            variants: result.variants,
-            artFileContent: result.artFileContent,
-          });
-        } catch (e) {
-          sendError(e instanceof Error ? e.message : String(e));
-        }
-      });
-      return;
-    }
-
-    // --- POST /api/run-vrt ---
-    if (url === "/run-vrt" && req.method === "POST") {
-      let body = "";
-      req.on("data", (chunk) => {
-        body += chunk;
-      });
-      req.on("end", async () => {
-        try {
-          const { artPath, updateSnapshots } = JSON.parse(body);
-          const { MuseaVrtRunner } = await import("../vrt.js");
-
-          const runner = new MuseaVrtRunner({
-            snapshotDir: path.resolve(ctx.config.root, ".vize/snapshots"),
-          });
-
-          const port = ctx.getDevServerPort();
-          const baseUrl = `http://localhost:${port}`;
-
-          let artsToTest = Array.from(ctx.artFiles.values());
-          if (artPath) {
-            artsToTest = artsToTest.filter((a) => a.path === artPath);
-          }
-
-          await runner.start();
-          const results = await runner.runTests(artsToTest, baseUrl, {
-            updateSnapshots,
-          });
-          const summary = runner.getSummary(results);
-          await runner.stop();
-
-          sendJson({
-            success: true,
-            summary,
-            results: results.map((r) => ({
-              artPath: r.artPath,
-              variantName: r.variantName,
-              viewport: r.viewport.name,
-              passed: r.passed,
-              isNew: r.isNew,
-              diffPercentage: r.diffPercentage,
-              error: r.error,
-            })),
-          });
-        } catch (e) {
-          sendError(e instanceof Error ? e.message : String(e));
-        }
-      });
-      return;
+      if (url === "/run-vrt") {
+        await handleRunVrt(ctx, body, sendJson, sendError);
+        return;
+      }
     }
 
     next();

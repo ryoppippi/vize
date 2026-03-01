@@ -5,7 +5,7 @@
  * used across the runner modules.
  */
 
-import type { VrtResult, VrtSummary } from "./runner.js";
+import type { VrtResult, VrtSummary } from "./types.js";
 
 /**
  * Build URL for variant preview.

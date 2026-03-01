@@ -2,7 +2,7 @@ import type { Plugin, TransformResult } from "vite";
 import { transformWithOxc } from "vite";
 import { createRequire } from "node:module";
 
-import type { VizePluginState } from "./index.js";
+import type { VizePluginState } from "./state.js";
 import { compileFile } from "../compiler.js";
 import { generateOutput } from "../utils/index.js";
 import { applyDefineReplacements } from "../transform.js";

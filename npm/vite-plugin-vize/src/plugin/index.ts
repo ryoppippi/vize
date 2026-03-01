@@ -3,6 +3,7 @@
  *
  * Contains the `vize()` factory function that creates the Vite plugin array.
  * Hook implementations are split across sub-modules:
+ * - state.ts: VizePluginState type + compileAll batch compilation
  * - resolve.ts: resolveId hook + resolveVuePath
  * - load.ts: load + transform hooks
  * - hmr.ts: handleHotUpdate + generateBundle hooks
@@ -11,40 +12,20 @@
 
 import type { Plugin, ResolvedConfig, ViteDevServer } from "vite";
 import fs from "node:fs";
-import { glob } from "tinyglobby";
 
-import type { VizeOptions, CompiledModule, ConfigEnv } from "../types.js";
-import { compileBatch } from "../compiler.js";
+import type { VizeOptions, ConfigEnv } from "../types.js";
 import { createFilter } from "../utils/index.js";
-import { resolveCssImports, type CssAliasRule } from "../utils/css.js";
-import { toBrowserImportPrefix, type DynamicImportAliasRule } from "../virtual.js";
+import { type CssAliasRule } from "../utils/css.js";
+import { toBrowserImportPrefix } from "../virtual.js";
 import { isBuiltinDefine, createLogger } from "../transform.js";
 import { loadConfig, vizeConfigStore } from "../config.js";
+import { type VizePluginState, compileAll } from "./state.js";
 import { resolveIdHook } from "./resolve.js";
 import { loadHook, transformHook } from "./load.js";
 import { handleHotUpdateHook, handleGenerateBundleHook } from "./hmr.js";
 import { createVueCompatPlugin, createPostTransformPlugin } from "./compat.js";
 
-export interface VizePluginState {
-  cache: Map<string, CompiledModule>;
-  collectedCss: Map<string, string>;
-  isProduction: boolean;
-  root: string;
-  clientViteBase: string;
-  serverViteBase: string;
-  server: ViteDevServer | null;
-  filter: (id: string) => boolean;
-  scanPatterns: string[] | null;
-  ignorePatterns: string[];
-  mergedOptions: VizeOptions;
-  initialized: boolean;
-  dynamicImportAliasRules: DynamicImportAliasRule[];
-  cssAliasRules: CssAliasRule[];
-  extractCss: boolean;
-  clientViteDefine: Record<string, string>;
-  serverViteDefine: Record<string, string>;
-  logger: ReturnType<typeof createLogger>;
-}
+export type { VizePluginState } from "./state.js";
 
 export function vize(options: VizeOptions = {}): Plugin[] {
   const state: VizePluginState = {
@@ -67,60 +48,6 @@ export function vize(options: VizeOptions = {}): Plugin[] {
     serverViteDefine: {},
     logger: createLogger(options.debug ?? false),
   };
-
-  async function compileAll(): Promise<void> {
-    const startTime = performance.now();
-    const files = await glob(state.scanPatterns!, {
-      cwd: state.root,
-      ignore: state.ignorePatterns,
-      absolute: true,
-    });
-
-    state.logger.info(`Pre-compiling ${files.length} Vue files...`);
-
-    // Read all files
-    const fileContents: { path: string; source: string }[] = [];
-    for (const file of files) {
-      try {
-        const source = fs.readFileSync(file, "utf-8");
-        fileContents.push({ path: file, source });
-      } catch (e) {
-        state.logger.error(`Failed to read ${file}:`, e);
-      }
-    }
-
-    // Batch compile using native parallel processing
-    const result = compileBatch(fileContents, state.cache, {
-      ssr: state.mergedOptions.ssr ?? false,
-    });
-
-    // Collect CSS for production extraction.
-    // Skip files with delegated styles (preprocessor/CSS Modules) -- those go through
-    // Vite's CSS pipeline and are extracted by Vite itself.
-    if (state.isProduction) {
-      for (const fileResult of result.results) {
-        if (fileResult.css) {
-          const cached = state.cache.get(fileResult.path);
-          const hasDelegated = cached?.styles?.some(
-            (s) =>
-              (s.lang !== null && ["scss", "sass", "less", "stylus", "styl"].includes(s.lang)) ||
-              s.module !== false,
-          );
-          if (!hasDelegated) {
-            state.collectedCss.set(
-              fileResult.path,
-              resolveCssImports(fileResult.css, fileResult.path, state.cssAliasRules, false),
-            );
-          }
-        }
-      }
-    }
-
-    const elapsed = (performance.now() - startTime).toFixed(2);
-    state.logger.info(
-      `Pre-compilation complete: ${result.successCount} succeeded, ${result.failedCount} failed (${elapsed}ms, native batch: ${result.timeMs.toFixed(2)}ms)`,
-    );
-  }
 
   const mainPlugin: Plugin = {
     name: "vite-plugin-vize",
@@ -289,7 +216,7 @@ export function vize(options: VizeOptions = {}): Plugin[] {
         // where configResolved is not called. Skip pre-compilation.
         return;
       }
-      await compileAll();
+      await compileAll(state);
       state.logger.log("Cache keys:", [...state.cache.keys()].slice(0, 3));
     },
 
