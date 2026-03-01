@@ -459,11 +459,11 @@
 
 .virtual-ts-notice {
   padding: 0.5rem 0.75rem;
-  background: rgba(251, 191, 36, 0.1);
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: var(--color-notice-bg);
+  border: 1px solid var(--color-notice-border);
   border-radius: 4px;
   font-size: 0.6875rem;
-  color: #fbbf24;
+  color: var(--color-notice);
   line-height: 1.4;
   margin-bottom: 0.5rem;
 }
