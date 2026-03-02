@@ -162,6 +162,17 @@ impl Analyzer {
 
     /// Analyze script setup source code.
     pub fn analyze_script_setup(&mut self, source: &str) -> &mut Self {
+        self.analyze_script_setup_with_generic(source, None)
+    }
+
+    /// Analyze script setup source code with an optional generic parameter.
+    ///
+    /// `generic` is the value from `<script setup generic="T">` attribute, if present.
+    pub fn analyze_script_setup_with_generic(
+        &mut self,
+        source: &str,
+        generic: Option<&str>,
+    ) -> &mut Self {
         if !self.options.analyze_script {
             return self;
         }
@@ -169,7 +180,7 @@ impl Analyzer {
         self.script_analyzed = true;
 
         // Use OXC-based parser for accurate AST analysis
-        let result = crate::script_parser::parse_script_setup(source);
+        let result = crate::script_parser::parse_script_setup_with_generic(source, generic);
 
         // Merge results into summary
         self.summary.bindings = result.bindings;

@@ -32,6 +32,7 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
+    [key: string]: any;
   }
 }
 
@@ -66,7 +67,7 @@ function __setup() {
   function switchComponent() {
     currentComponent.value = currentComponent.value === CompA ? markRaw(CompB) : markRaw(CompA)
   }
-  // @vize-map: 2670:2857 -> 0:272
+  // @vize-map: 2694:2881 -> 0:272
 
   // ========== Template Scope (inherits from setup) ==========
   (function __template() {

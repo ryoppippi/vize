@@ -32,6 +32,7 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
+    [key: string]: any;
   }
 }
 
@@ -67,7 +68,7 @@ function __setup() {
   function handleClick() {
     emit('update', 42)
   }
-  // @vize-map: 2649:2748 -> 0:163
+  // @vize-map: 2673:2772 -> 0:163
 
   // ========== Template Scope (inherits from setup) ==========
   (function __template() {

@@ -382,6 +382,30 @@ pub fn generate_virtual_ts_with_offsets(
         ts.push_str("  })();\n");
     }
 
+    // Reference props destructure bindings at setup scope level.
+    // These variables are declared in user script (e.g., `const { foo } = defineProps<...>()`)
+    // but shadowed inside __template() by generate_props_variables, so void them here.
+    if let Some(destructure) = summary.macros.props_destructure() {
+        if !destructure.bindings.is_empty() {
+            ts.push_str("\n  // Reference destructured props (prevent TS6133)\n  ");
+            let mut first = true;
+            for binding in destructure.bindings.values() {
+                if !first {
+                    ts.push(' ');
+                }
+                append!(ts, "void {};", binding.local);
+                first = false;
+            }
+            if let Some(ref rest) = destructure.rest_id {
+                if !first {
+                    ts.push(' ');
+                }
+                append!(ts, "void {};", rest);
+            }
+            ts.push('\n');
+        }
+    }
+
     // Close setup function
     ts.push_str("}\n\n");
 

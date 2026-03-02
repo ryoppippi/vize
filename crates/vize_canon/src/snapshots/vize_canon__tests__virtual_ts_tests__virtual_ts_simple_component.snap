@@ -32,6 +32,7 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
+    [key: string]: any;
   }
 }
 
@@ -65,7 +66,7 @@ function __setup() {
   function increment() {
     count.value++
   }
-  // @vize-map: 2597:2707 -> 0:120
+  // @vize-map: 2621:2731 -> 0:120
 
   // ========== Template Scope (inherits from setup) ==========
   (function __template() {

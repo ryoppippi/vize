@@ -32,6 +32,7 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
+    [key: string]: any;
   }
 }
 
@@ -61,7 +62,7 @@ function __setup() {
   
   const inputRef = ref<HTMLInputElement | null>(null)
   const buttonEl = useTemplateRef('btn')
-  // @vize-map: 2613:2714 -> 0:135
+  // @vize-map: 2637:2738 -> 0:135
 
   // ========== Template Scope (inherits from setup) ==========
   (function __template() {

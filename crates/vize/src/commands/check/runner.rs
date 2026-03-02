@@ -286,7 +286,8 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
             // Then analyze script setup (reactive bindings, macros, etc.)
             if let Some(ref script_setup) = descriptor.script_setup {
-                analyzer.analyze_script_setup(&script_setup.content);
+                let generic = script_setup.attrs.get("generic").map(|s| s.as_ref());
+                analyzer.analyze_script_setup_with_generic(&script_setup.content, generic);
             }
 
             let template_offset: u32 = descriptor
