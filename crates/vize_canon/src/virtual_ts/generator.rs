@@ -94,6 +94,9 @@ pub fn generate_virtual_ts_with_offsets(
     ts.push_str(IMPORT_META_AUGMENTATION);
     ts.push('\n');
 
+    // Vue type alias (shorthand for import('vue') references)
+    ts.push_str("type $Vue = import('vue');\n\n");
+
     // Module scope: Extract imports, re-exports, and type declarations to module level.
     // Type declarations (interface, type, enum) must be at module level so they
     // are accessible from `export type Props = ...` outside __setup().
@@ -291,7 +294,7 @@ pub fn generate_virtual_ts_with_offsets(
             for name in &ref_bindings {
                 append!(
                     ts,
-                    "    var {name}: import('vue').UnwrapRef<__VizeRef_{name}> = undefined as any;\n"
+                    "    var {name}: $Vue['UnwrapRef']<__VizeRef_{name}> = undefined as any;\n"
                 );
             }
         }

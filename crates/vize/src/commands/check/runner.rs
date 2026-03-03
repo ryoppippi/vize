@@ -970,14 +970,14 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
 
     // Vue core composables (with type-preserving signatures)
     stubs.push(
-        "declare function ref<T>(value: T): import('vue').Ref<import('vue').UnwrapRef<T>>;".into(),
+        "declare function ref<T>(value: T): $Vue['Ref']<$Vue['UnwrapRef']<T>>;".into(),
     );
-    stubs.push("declare function ref<T = any>(): import('vue').Ref<T | undefined>;".into());
+    stubs.push("declare function ref<T = any>(): $Vue['Ref']<T | undefined>;".into());
     stubs.push(
-        "declare function computed<T>(getter: () => T): import('vue').ComputedRef<T>;".into(),
+        "declare function computed<T>(getter: () => T): $Vue['ComputedRef']<T>;".into(),
     );
-    stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): import('vue').WritableComputedRef<T>;".into());
-    stubs.push("declare function reactive<T extends object>(target: T): import('vue').UnwrapNestedRefs<T>;".into());
+    stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): $Vue['WritableComputedRef']<T>;".into());
+    stubs.push("declare function reactive<T extends object>(target: T): $Vue['UnwrapNestedRefs']<T>;".into());
     stubs.push("declare function readonly<T extends object>(target: T): Readonly<T>;".into());
     stubs.push(
         "declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;"
@@ -996,12 +996,12 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function onDeactivated(hook: () => any): void;".into());
     stubs.push("declare function onErrorCaptured(hook: (...args: any[]) => any): void;".into());
     stubs.push("declare function nextTick(fn?: () => void): Promise<void>;".into());
-    stubs.push("declare function toRef<T extends object, K extends keyof T>(object: T, key: K): import('vue').Ref<T[K]>;".into());
-    stubs.push("declare function toRefs<T extends object>(object: T): { [K in keyof T]: import('vue').Ref<T[K]> };".into());
-    stubs.push("declare function unref<T>(ref: T | import('vue').Ref<T>): T;".into());
-    stubs.push("declare function isRef(value: any): value is import('vue').Ref;".into());
-    stubs.push("declare function shallowRef<T>(value: T): import('vue').ShallowRef<T>;".into());
-    stubs.push("declare function triggerRef(ref: import('vue').ShallowRef): void;".into());
+    stubs.push("declare function toRef<T extends object, K extends keyof T>(object: T, key: K): $Vue['Ref']<T[K]>;".into());
+    stubs.push("declare function toRefs<T extends object>(object: T): { [K in keyof T]: $Vue['Ref']<T[K]> };".into());
+    stubs.push("declare function unref<T>(ref: T | $Vue['Ref']<T>): T;".into());
+    stubs.push("declare function isRef(value: any): value is $Vue['Ref'];".into());
+    stubs.push("declare function shallowRef<T>(value: T): $Vue['ShallowRef']<T>;".into());
+    stubs.push("declare function triggerRef(ref: $Vue['ShallowRef']): void;".into());
     stubs.push("declare function provide<T>(key: string | symbol, value: T): void;".into());
     stubs.push("declare function inject<T>(key: string | symbol, defaultValue?: T): T;".into());
     stubs.push("declare function defineAsyncComponent(source: any): any;".into());
@@ -1016,7 +1016,7 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function shallowReactive<T extends object>(target: T): T;".into());
     stubs
         .push("declare function shallowReadonly<T extends object>(target: T): Readonly<T>;".into());
-    stubs.push("declare function customRef<T>(factory: any): import('vue').Ref<T>;".into());
+    stubs.push("declare function customRef<T>(factory: any): $Vue['Ref']<T>;".into());
 
     // Vue Router
     stubs.push("declare function useRouter(): any;".into());
@@ -1045,11 +1045,11 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function useRuntimeConfig(): any;".into());
     stubs.push("declare function useAppConfig(): any;".into());
     stubs.push(
-        "declare function useState<T = any>(key: string, init?: () => T): import('vue').Ref<T>;"
+        "declare function useState<T = any>(key: string, init?: () => T): $Vue['Ref']<T>;"
             .into(),
     );
     stubs.push(
-        "declare function useCookie<T = any>(name: string, options?: any): import('vue').Ref<T>;"
+        "declare function useCookie<T = any>(name: string, options?: any): $Vue['Ref']<T>;"
             .into(),
     );
     stubs.push("declare function useHead(input: any): void;".into());

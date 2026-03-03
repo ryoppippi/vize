@@ -35,6 +35,8 @@ declare global {
   }
 }
 
+type $Vue = import('vue');
+
 // ========== Module Scope (imports) ==========
 import { ref } from 'vue'
 
@@ -55,7 +57,7 @@ function __setup() {
   function defineModel<_T = unknown>(_name?: string, _options?: any): _T { void _name; void _options; return undefined as unknown as _T; }
   function defineSlots<_T = unknown>(): _T { return undefined as unknown as _T; }
   function withDefaults<_T = unknown, _D = unknown>(_props: _T, _defaults: _D): _T & _D { void _props; void _defaults; return undefined as unknown as _T & _D; }
-  function useTemplateRef<_T extends Element | import('vue').ComponentPublicInstance = Element>(_key: string): import('vue').ShallowRef<_T | null> { void _key; return undefined as unknown as import('vue').ShallowRef<_T | null>; }
+  function useTemplateRef<_T extends Element | $Vue['ComponentPublicInstance'] = Element>(_key: string): $Vue['ShallowRef']<_T | null> { void _key; return undefined as unknown as $Vue['ShallowRef']<_T | null>; }
   // Mark compiler macros as used
   void defineProps; void defineEmits; void defineExpose; void defineModel; void defineSlots; void withDefaults; void useTemplateRef;
 
@@ -72,7 +74,7 @@ function __setup() {
   }>()
   
   const activeItem = ref<T | null>(null)
-  // @vize-map: 2626:2817 -> 0:193
+  // @vize-map: 2636:2827 -> 0:193
 
   // ========== Template Scope (inherits from setup) ==========
   // Ref type captures (before template scope shadows them)
@@ -80,10 +82,10 @@ function __setup() {
   type __VizeRef_activeItem = typeof activeItem;
   (function __template() {
     // Auto-unwrap refs (Vue template behavior)
-    var ref: import('vue').UnwrapRef<__VizeRef_ref> = undefined as any;
-    var activeItem: import('vue').UnwrapRef<__VizeRef_activeItem> = undefined as any;
+    var ref: $Vue['UnwrapRef']<__VizeRef_ref> = undefined as any;
+    var activeItem: $Vue['UnwrapRef']<__VizeRef_activeItem> = undefined as any;
     // Vue template context (delegates to ComponentPublicInstance)
-    type __VizeCtx = import('vue').ComponentPublicInstance;
+    type __VizeCtx = $Vue['ComponentPublicInstance'];
     const __ctx = undefined as unknown as __VizeCtx;
     const $attrs = __ctx.$attrs;
     const $slots = __ctx.$slots;

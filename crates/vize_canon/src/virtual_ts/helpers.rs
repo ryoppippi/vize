@@ -19,7 +19,7 @@ pub(crate) const VUE_SETUP_COMPILER_MACROS: &str = r#"  // Compiler macros (only
   function defineModel<_T = unknown>(_name?: string, _options?: any): _T { void _name; void _options; return undefined as unknown as _T; }
   function defineSlots<_T = unknown>(): _T { return undefined as unknown as _T; }
   function withDefaults<_T = unknown, _D = unknown>(_props: _T, _defaults: _D): _T & _D { void _props; void _defaults; return undefined as unknown as _T & _D; }
-  function useTemplateRef<_T extends Element | import('vue').ComponentPublicInstance = Element>(_key: string): import('vue').ShallowRef<_T | null> { void _key; return undefined as unknown as import('vue').ShallowRef<_T | null>; }
+  function useTemplateRef<_T extends Element | $Vue['ComponentPublicInstance'] = Element>(_key: string): $Vue['ShallowRef']<_T | null> { void _key; return undefined as unknown as $Vue['ShallowRef']<_T | null>; }
   // Mark compiler macros as used
   void defineProps; void defineEmits; void defineExpose; void defineModel; void defineSlots; void withDefaults; void useTemplateRef;"#;
 
@@ -65,7 +65,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
 
     // Instance type + conditional accessor helper
     ctx.push_str("    // Vue template context (delegates to ComponentPublicInstance)\n");
-    ctx.push_str("    type __VizeCtx = import('vue').ComponentPublicInstance;\n");
+    ctx.push_str("    type __VizeCtx = $Vue['ComponentPublicInstance'];\n");
     if needs_global_helper {
         ctx.push_str("    type __VizeGlobal<K extends string, F = unknown> = K extends keyof __VizeCtx ? __VizeCtx[K] : F;\n");
     }
