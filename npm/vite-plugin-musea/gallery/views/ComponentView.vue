@@ -118,32 +118,44 @@ const handleVariantSelect = (variantName: string) => {
       <button
         class="tab-btn"
         type="button"
-        :class="{ active: activeTab === "variants" }"
-        @click="activeTab = "variants""
+        variants"
+        variants""
+        }"
+        :class="{ active: activeTab === "
+        @click="activeTab = "
       >
         Variants
       </button>
       <button
         class="tab-btn"
+        props"
+        props""
         type="button"
-        :class="{ active: activeTab === "props" }"
-        @click="activeTab = "props""
+        }"
+        :class="{ active: activeTab === "
+        @click="activeTab = "
       >
         Props
       </button>
       <button
         class="tab-btn"
+        docs"
+        docs""
         type="button"
-        :class="{ active: activeTab === "docs" }"
-        @click="activeTab = "docs""
+        }"
+        :class="{ active: activeTab === "
+        @click="activeTab = "
       >
         Docs
       </button>
       <button
+        a11y"
+        a11y""
         class="tab-btn"
         type="button"
-        :class="{ active: activeTab === "a11y" }"
-        @click="activeTab = "a11y""
+        }"
+        :class="{ active: activeTab === "
+        @click="activeTab = "
       >
         A11y
         <A11yBadge :art-path="art.path" />
@@ -151,15 +163,18 @@ const handleVariantSelect = (variantName: string) => {
       <button
         class="tab-btn"
         type="button"
-        :class="{ active: activeTab === "vrt" }"
-        @click="activeTab = "vrt""
+        vrt"
+        vrt""
+        }"
+        :class="{ active: activeTab === "
+        @click="activeTab = "
       >
         VRT
       </button>
     </div>
     <div class="component-content">
       <!-- Variants Tab: Show variant tabs + single preview -->
-      <div v-if="activeTab === "variants"" class="variants-view">
+      <div v-if="activeTab === " class="variants-view" variants"">
         <VariantTabs
           :selected-variant="selectedVariantName"
           :variants="art.variants"
@@ -176,18 +191,21 @@ const handleVariantSelect = (variantName: string) => {
         </div>
       </div>
       <PropsPanel
-        v-if="activeTab === "props""
+        v-if="activeTab === "
+        props""
         :art-path="art.path"
         :default-variant-name="art.variants.find((v) => v.isDefault)?.name || art.variants[0]?.name"
        />
-      <DocumentationPanel v-if="activeTab === "docs"" :art-path="art.path" />
+      <DocumentationPanel v-if="activeTab === " docs"" :art-path="art.path" />
       <A11yPanel
-        v-if="activeTab === "a11y""
+        v-if="activeTab === "
+        a11y""
         :art-path="art.path"
         :default-variant-name="selectedVariant?.name"
        />
       <VrtPanel
-        v-if="activeTab === "vrt""
+        v-if="activeTab === "
+        vrt""
         :art-path="art.path"
         :default-variant-name="selectedVariant?.name"
        />

@@ -204,24 +204,44 @@ onUnmounted(() => {
           </span>
           <span
             v-if="formatResult"
-            :class="["status-badge", formatResult.changed ? "changed" : "unchanged"]"
+            "changed"
+            "unchanged"]"
+            ?
+            formatResult.changed
+            status-badge",
+            :
+            :class="["
           >
             {{ formatResult.changed ? "Changed" : "Unchanged" }}
           </span>
         </div>
         <div class="tabs">
           <button
-            :class="["tab", { active: activeTab === "formatted" }]"
-            @click="activeTab = "formatted""
+            "formatted"
+            active:
+            activeTab="=="
+            formatted""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Formatted
           </button>
-          <button :class="["tab", { active: activeTab === "diff" }]" @click="activeTab = "diff"">
+          <button "diff" active: activeTab="==" diff"" tab", { }]" :class="[" @click="activeTab = ">
             Diff
           </button>
           <button
-            :class="["tab", { active: activeTab === "options" }]"
-            @click="activeTab = "options""
+            "options"
+            active:
+            activeTab="=="
+            options""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Options
           </button>
@@ -238,13 +258,13 @@ onUnmounted(() => {
         </div>
         <template v-else-if="formatResult">
           <!-- Formatted Tab -->
-          <div v-if="activeTab === "formatted"" class="formatted-output">
+          <div v-if="activeTab === " class="formatted-output" formatted"">
             <div class="output-header-bar">
               <span class="output-title">
                 Formatted Code
               </span>
               <div class="output-actions">
-                <button class="btn-ghost" @click="copyToClipboard(formatResult?.code || "")">
+                <button ")" class="btn-ghost" @click="copyToClipboard(formatResult?.code || ">
                   Copy
                 </button>
               </div>
@@ -260,7 +280,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- Diff Tab -->
-          <div v-else-if="activeTab === "diff"" class="diff-output">
+          <div v-else-if="activeTab === " class="diff-output" diff"">
             <div class="output-header-bar">
               <span class="output-title">
                 Changes
@@ -292,7 +312,9 @@ onUnmounted(() => {
                 <div
                   v-for="(line, i) in diffLines"
                   :key="i"
-                  :class="["diff-line", `diff-${line.type}`]"
+                  `diff-${line.type}`]"
+                  diff-line",
+                  :class="["
                 >
                   <span class="line-prefix">
                     {{
@@ -307,7 +329,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- Options Tab -->
-          <div v-else-if="activeTab === "options"" class="options-output">
+          <div v-else-if="activeTab === " class="options-output" options"">
             <div class="output-header-bar">
               <span class="output-title">
                 Format Configuration
@@ -618,17 +640,23 @@ onUnmounted(() => {
                         Max Attrs Per Line
                       </span>
                       <input
+                        "
+                        ""
+                        ?
                         aria-label="Max Attrs Per Line"
+                        as
                         class="option-input"
+                        HTMLInputElement).value)"
                         max="20"
                         min="1"
+                        null
+                        Number(($event.target
                         placeholder="auto"
                         type="number"
-                        :value="options.maxAttributesPerLine ?? """
+                        :
+                        :value="options.maxAttributesPerLine ?? "
                         @input="options.maxAttributesPerLine =
-    ($event.target as HTMLInputElement).value === ""
-      ? null
-      : Number(($event.target as HTMLInputElement).value)"
+      ($event.target as HTMLInputElement).value === "
                        />
                     </div>
                     <span class="option-desc">

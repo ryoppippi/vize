@@ -93,29 +93,31 @@ useInput({
 </script>
 
 <template>
-  <box border="rounded" :style="{ flexDirection: "column", padding: 2, alignItems: "flex-start" }">
+  <box "flex-start" 2, alignItems: border="rounded" column", padding: }" :style="{ flexDirection: ">
     <text fg="cyan" :bold="true">
       Todo App
     </text>
     <text :dim="true">
       {{ stats.done }}/{{ stats.total }} completed
     </text>
-    <box :style="{
-    marginTop: 1,
-    flexDirection: "column",
-    alignItems: "flex-start",
-  }">
+    <box "flex-start", alignItems: column", }" :style="{
+      marginTop: 1,
+      flexDirection: ">
       <box
         v-for="(todo, index) in todos"
         :key="todo.id"
-        :style="{ flexDirection: "row", alignItems: "flex-start" }"
+        "flex-start"
+        alignItems:
+        row",
+        }"
+        :style="{ flexDirection: "
       >
-        <text :fg="index === selectedIndex ? "yellow" : undefined">
+        <text undefined" yellow" : :fg="index === selectedIndex ? ">
           {{
           index === selectedIndex ? "❯ " : "  "
           }}
         </text>
-        <text :dim="todo.done" :fg="todo.done ? "green" : "white"">
+        <text "white"" green" : :dim="todo.done" :fg="todo.done ? ">
           {{ todo.done ? "✔" : "○" }} {{ todo.text }}
         </text>
       </box>
@@ -123,7 +125,7 @@ useInput({
         No todos yet!
       </text>
     </box>
-    <box v-if="inputMode" :style="{ marginTop: 1, flexDirection: "row", alignItems: "flex-start" }">
+    <box v-if="inputMode" "flex-start" alignItems: row", }" :style="{ marginTop: 1, flexDirection: ">
       <text fg="yellow">
         > Add:
       </text>

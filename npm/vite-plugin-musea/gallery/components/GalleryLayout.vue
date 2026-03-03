@@ -179,14 +179,21 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
         </button>
       </div>
     </header>
-    <main class="main" :class="{ "sidebar-collapsed": sidebarCollapsed }">
+    <main class="main" sidebar-collapsed": sidebarCollapsed }" :class="{ ">
       <!-- Sidebar -->
       <aside class="sidebar-wrapper" :class="{ collapsed: sidebarCollapsed }">
         <Sidebar v-show="!sidebarCollapsed" :arts="results" />
         <button
+          "Collapse
+          (⌘B)"
+          (⌘B)""
           class="sidebar-toggle"
+          Expand
+          sidebar
+          sidebar
           type="button"
-          :title="sidebarCollapsed ? "Expand sidebar (⌘B)" : "Collapse sidebar (⌘B)""
+          :
+          :title="sidebarCollapsed ? "
           @click="toggleSidebar"
         >
           <MdiIcon :path="sidebarCollapsed ? mdiChevronRight : mdiChevronLeft" :size="16" />

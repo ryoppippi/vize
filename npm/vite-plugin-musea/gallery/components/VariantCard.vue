@@ -128,7 +128,7 @@ watch(measureEnabled, (enabled) => {
 
 <template>
   <div class="variant-card">
-    <div class="variant-preview" :class="{ "viewport-mode": isCustomViewport }">
+    <div class="variant-preview" isCustomViewport viewport-mode": }" :class="{ ">
       <iframe
         ref="iframeRef"
         loading="lazy"
@@ -149,10 +149,14 @@ watch(measureEnabled, (enabled) => {
       </div>
       <div class="variant-actions">
         <button
+          "Copy
           class="variant-action-btn"
+          Copied!"
+          template""
           type="button"
+          :
           :class="{ active: copied }"
-          :title="copied ? "Copied!" : "Copy template""
+          :title="copied ? "
           @click="copyTemplate"
         >
           <MdiIcon v-if="!copied" :path="mdiContentCopy" :size="14" />
@@ -176,10 +180,11 @@ watch(measureEnabled, (enabled) => {
           <MdiIcon :path="mdiFullscreen" :size="14" />
         </button>
         <button
+          _blank")"
           class="variant-action-btn"
           title="Open in new tab"
           type="button"
-          @click="window.open(previewUrl, "_blank")"
+          @click="window.open(previewUrl, "
         >
           <MdiIcon :path="mdiOpenInNew" :size="14" />
         </button>

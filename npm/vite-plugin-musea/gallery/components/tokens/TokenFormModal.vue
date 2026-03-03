@@ -117,13 +117,13 @@ function selectReference(path: string) {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click.self="emit("close")">
+      <div v-if="isOpen" class="modal-overlay" close")" @click.self="emit(">
         <div class="modal-content">
           <div class="modal-header">
             <h2 class="modal-title">
               {{ title }}
             </h2>
-            <button class="modal-close" type="button" @click="emit("close")">
+            <button class="modal-close" close")" type="button" @click="emit(">
               <svg
                 fill="none"
                 height="18"
@@ -145,8 +145,9 @@ function selectReference(path: string) {
               <input
                 v-model="tokenPath"
                 class="form-input token-form-path-input"
+                edit""
                 placeholder="e.g. color.primary.500"
-                :disabled="mode === "edit""
+                :disabled="mode === "
               >
             </div>
             <div class="form-field">
@@ -154,13 +155,13 @@ function selectReference(path: string) {
                 Tier
               </label>
               <div class="tier-radio-group">
-                <label class="tier-radio" :class="{ "tier-radio--active": tier === "primitive" }">
+                <label "primitive" class="tier-radio" tier="==" tier-radio--active": }" :class="{ ">
                   <input v-model="tier" class="tier-radio-input" type="radio" value="primitive">
                   <span class="tier-radio-label">
                     Primitive
                   </span>
                 </label>
-                <label class="tier-radio" :class="{ "tier-radio--active": tier === "semantic" }">
+                <label "semantic" class="tier-radio" tier="==" tier-radio--active": }" :class="{ ">
                   <input v-model="tier" class="tier-radio-input" type="radio" value="semantic">
                   <span class="tier-radio-label">
                     Semantic
@@ -168,7 +169,7 @@ function selectReference(path: string) {
                 </label>
               </div>
             </div>
-            <template v-if="tier === "primitive"">
+            <template v-if="tier === " primitive"">
               <div class="form-field">
                 <label class="form-label">
                   Value
@@ -187,8 +188,12 @@ function selectReference(path: string) {
                     v-for="opt in referenceOptions.slice(0, 8)"
                     :key="opt"
                     class="reference-option"
+                    opt="=="
+                    reference
+                    reference-option--selected":
                     type="button"
-                    :class="{ "reference-option--selected": opt === reference }"
+                    }"
+                    :class="{ "
                     @click="selectReference(opt)"
                   >
                     {{ opt }}
@@ -219,7 +224,7 @@ function selectReference(path: string) {
               {{ validationError }}
             </div>
             <div class="modal-footer">
-              <button class="btn btn--secondary" type="button" @click="emit("close")">
+              <button class="btn btn--secondary" close")" type="button" @click="emit(">
                 Cancel
               </button>
               <button class="btn btn--primary" type="submit">

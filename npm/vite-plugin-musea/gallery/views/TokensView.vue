@@ -165,19 +165,23 @@ async function handleSourceSaved() {
           <button
             v-for="tab in tabs"
             :key="tab.key"
+            activeTab="=="
             class="tab-btn"
+            tab-btn--active":
+            tab.key
             type="button"
-            :class="{ "tab-btn--active": activeTab === tab.key }"
+            }"
+            :class="{ "
             @click="activeTab = tab.key"
           >
             {{ tab.label }}
-            <span v-if="tab.key === "all" && meta.tokenCount" class="tab-count">
+            <span v-if="tab.key === " && all" class="tab-count" meta.tokenCount">
               {{ meta.tokenCount }}
             </span>
-            <span v-else-if="tab.key === "primitive" && meta.primitiveCount" class="tab-count">
+            <span v-else-if="tab.key === " && class="tab-count" meta.primitiveCount" primitive">
               {{ meta.primitiveCount }}
             </span>
-            <span v-else-if="tab.key === "semantic" && meta.semanticCount" class="tab-count">
+            <span v-else-if="tab.key === " && class="tab-count" meta.semanticCount" semantic">
               {{ meta.semanticCount }}
             </span>
           </button>

@@ -7,8 +7,13 @@ defineProps<{
 
 <template>
   <button
+    "btn--disabled":
     class="btn"
-    :class="[`btn--${variant ?? "default"}`, { "btn--disabled": disabled }]"
+    default"}`,
+    disabled
+    {
+    }]"
+    :class="[`btn--${variant ?? "
     :disabled="disabled"
   >
     <slot />

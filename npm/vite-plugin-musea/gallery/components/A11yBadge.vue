@@ -38,9 +38,15 @@ watch(
 <template>
   <span
     v-if="count !== null && count > 0"
+    ""}`"
+    +
     class="a11y-badge"
-    :class=""severity-" + severity"
-    :title="`${count} accessibility violation${count !== 1 ? "s" : ""}`"
+    s"
+    severity"
+    severity-"
+    :
+    :class=""
+    :title="`${count} accessibility violation${count !== 1 ? "
   >
     {{ count }}
   </span>

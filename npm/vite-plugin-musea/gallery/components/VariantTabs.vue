@@ -53,8 +53,9 @@ watch(() => props.variants, checkScrollButtons);
       v-if="showLeftArrow"
       aria-label="Scroll left"
       class="scroll-btn scroll-btn--left"
+      left")"
       type="button"
-      @click="scroll("left")"
+      @click="scroll("
     >
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <polyline points="15 18 9 12 15 6" />
@@ -64,15 +65,21 @@ watch(() => props.variants, checkScrollButtons);
       <button
         v-for="variant in variants"
         :key="variant.name"
+        "variant-tab--active":
+        "variant-tab--default":
+        ]"
+        select",
+        selectedVariant,
         type="button"
+        variant-tab",
+        variant.isDefault,
+        variant.name="=="
+        variant.name)"
+        {
+        },
         :class="[
-    "variant-tab",
-    {
-      "variant-tab--active": variant.name === selectedVariant,
-      "variant-tab--default": variant.isDefault,
-    },
-  ]"
-        @click="emit("select", variant.name)"
+      "
+        @click="emit("
       >
         <span class="variant-tab-name">
           {{ variant.name }}
@@ -86,8 +93,9 @@ watch(() => props.variants, checkScrollButtons);
       v-if="showRightArrow"
       aria-label="Scroll right"
       class="scroll-btn scroll-btn--right"
+      right")"
       type="button"
-      @click="scroll("right")"
+      @click="scroll("
     >
       <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <polyline points="9 18 15 12 9 6" />

@@ -363,17 +363,23 @@ const controlKindOptions = [
               <div class="props-mode-toggle">
                 <button
                   class="props-mode-btn"
+                  controls"
+                  controls""
                   type="button"
-                  :class="{ active: controlsMode === "controls" }"
-                  @click="controlsMode = "controls""
+                  }"
+                  :class="{ active: controlsMode === "
+                  @click="controlsMode = "
                 >
                   Controls
                 </button>
                 <button
                   class="props-mode-btn"
+                  code"
+                  code""
                   type="button"
-                  :class="{ active: controlsMode === "code" }"
-                  @click="controlsMode = "code""
+                  }"
+                  :class="{ active: controlsMode === "
+                  @click="controlsMode = "
                 >
                   Code
                 </button>
@@ -384,7 +390,7 @@ const controlKindOptions = [
             </div>
           </div>
           <!-- Controls Mode -->
-          <template v-if="controlsMode === "controls"">
+          <template v-if="controlsMode === " controls"">
             <div class="props-grid">
               <template v-for="group in (palette.groups || [])" :key="group">
                 <div v-if="group" class="props-group-header">
@@ -396,7 +402,10 @@ const controlKindOptions = [
                 >
                   <div
                     class="props-control-row"
-                    :class="{ "props-control-custom": customPropNames.has(control.name) }"
+                    customPropNames.has(control.name)
+                    props-control-custom":
+                    }"
+                    :class="{ "
                   >
                     <div class="props-control-content">
                       <component
@@ -439,7 +448,10 @@ const controlKindOptions = [
               <template v-for="control in allControls.filter(c => !c.group)" :key="control.name">
                 <div
                   class="props-control-row"
-                  :class="{ "props-control-custom": customPropNames.has(control.name) }"
+                  customPropNames.has(control.name)
+                  props-control-custom":
+                  }"
+                  :class="{ "
                 >
                   <div class="props-control-content">
                     <component

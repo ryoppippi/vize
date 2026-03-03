@@ -180,8 +180,15 @@ onUnmounted(() => {
         </div>
         <div class="tabs">
           <button
-            :class="["tab", { active: activeTab === "diagnostics" }]"
-            @click="activeTab = "diagnostics""
+            "diagnostics"
+            active:
+            activeTab="=="
+            diagnostics""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Diagnostics
             <span v-if="lintResult?.diagnostics.length" class="tab-badge">
@@ -190,7 +197,7 @@ onUnmounted(() => {
               }}
             </span>
           </button>
-          <button :class="["tab", { active: activeTab === "rules" }]" @click="activeTab = "rules"">
+          <button "rules" active: activeTab="==" rules"" tab", { }]" :class="[" @click="activeTab = ">
             Rules
             <span class="tab-count">
               {{ enabledRuleCount }}/{{ rules.length }}
@@ -209,7 +216,7 @@ onUnmounted(() => {
         </div>
         <template v-else-if="lintResult">
           <!-- Diagnostics Tab -->
-          <div v-if="activeTab === "diagnostics"" class="diagnostics-output">
+          <div v-if="activeTab === " class="diagnostics-output" diagnostics"">
             <div class="output-header-bar">
               <span class="output-title">
                 Issues
@@ -238,7 +245,9 @@ onUnmounted(() => {
               <div
                 v-for="(diagnostic, i) in lintResult.diagnostics"
                 :key="i"
-                :class="["diagnostic-item", `severity-${diagnostic.severity}`]"
+                `severity-${diagnostic.severity}`]"
+                diagnostic-item",
+                :class="["
               >
                 <div class="diagnostic-header">
                   <svg class="severity-icon" viewBox="0 0 24 24">
@@ -271,7 +280,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- Rules Tab -->
-          <div v-else-if="activeTab === "rules"" class="rules-output">
+          <div v-else-if="activeTab === " class="rules-output" rules"">
             <div class="output-header-bar">
               <span class="output-title">
                 Rule Configuration
@@ -300,7 +309,7 @@ onUnmounted(() => {
               </select>
             </div>
             <!-- Category toggle headers when filtering by category -->
-            <div v-if="selectedCategory !== "all"" class="category-toggle">
+            <div v-if="selectedCategory !== " all"" class="category-toggle">
               <label class="toggle-label">
                 <input
                   class="rule-checkbox"
@@ -321,7 +330,12 @@ onUnmounted(() => {
               <div
                 v-for="rule in filteredRules"
                 :key="rule.name"
-                :class="["rule-item", { disabled: !enabledRules.has(rule.name) }]"
+                !enabledRules.has(rule.name)
+                disabled:
+                rule-item",
+                {
+                }]"
+                :class="["
               >
                 <div class="rule-main">
                   <label class="rule-toggle">
@@ -339,7 +353,7 @@ onUnmounted(() => {
                     <span class="badge category-badge">
                       {{ rule.category }}
                     </span>
-                    <span :class="["badge", "severity-badge", rule.defaultSeverity]">
+                    <span "severity-badge", badge", rule.defaultSeverity]" :class="[">
                       {{ rule.defaultSeverity }}
                     </span>
                     <span v-if="rule.fixable" class="badge fixable-badge">

@@ -11,8 +11,16 @@ const emit = defineEmits<{
 
 <template>
   <div
-    :class="["resize-handle", `resize-handle--${direction}`, { "resize-handle--active": isResizing }]"
-    @mousedown="emit("mousedown", $event)"
+    "resize-handle--active":
+    $event)"
+    `resize-handle--${direction}`,
+    isResizing
+    mousedown",
+    resize-handle",
+    {
+    }]"
+    :class="["
+    @mousedown="emit("
   >
     <div class="resize-handle__indicator" />
   </div>

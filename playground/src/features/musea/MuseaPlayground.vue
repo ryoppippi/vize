@@ -146,19 +146,36 @@ onUnmounted(() => {
           </span>
         </div>
         <div class="tabs">
-          <button :class="["tab", { active: activeTab === "parsed" }]" @click="activeTab = "parsed"">
+          <button
+            "parsed"
+            active:
+            activeTab="=="
+            parsed""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
+          >
             Metadata
           </button>
           <button
-            :class="["tab", { active: activeTab === "variants" }]"
-            @click="activeTab = "variants""
+            "variants"
+            active:
+            activeTab="=="
+            tab",
+            variants""
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Variants
             <span v-if="variantCount > 0" class="tab-count">
               {{ variantCount }}
             </span>
           </button>
-          <button :class="["tab", { active: activeTab === "csf" }]" @click="activeTab = "csf"">
+          <button "csf" active: activeTab="==" csf"" tab", { }]" :class="[" @click="activeTab = ">
             CSF
           </button>
         </div>
@@ -174,7 +191,7 @@ onUnmounted(() => {
         </div>
         <template v-else-if="parsedArt">
           <!-- Parsed Tab -->
-          <div v-if="activeTab === "parsed"" class="parsed-output">
+          <div v-if="activeTab === " class="parsed-output" parsed"">
             <div class="output-header-bar">
               <span class="output-title">
                 Component Metadata
@@ -241,7 +258,7 @@ onUnmounted(() => {
                   <span class="meta-label">
                     Status
                   </span>
-                  <span :class="["status-badge", parsedArt.metadata.status]">
+                  <span parsedArt.metadata.status]" status-badge", :class="[">
                     {{
                     parsedArt.metadata.status
                     }}
@@ -343,7 +360,7 @@ onUnmounted(() => {
             </template>
           </div>
           <!-- Variants Tab -->
-          <div v-else-if="activeTab === "variants"" class="variants-output">
+          <div v-else-if="activeTab === " class="variants-output" variants"">
             <div class="output-header-bar">
               <span class="output-title">
                 Variants
@@ -377,7 +394,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- CSF Tab -->
-          <div v-else-if="activeTab === "csf" && csfOutput" class="csf-output">
+          <div v-else-if="activeTab === " && class="csf-output" csf" csfOutput">
             <div class="output-header-bar">
               <span class="output-title">
                 Storybook CSF

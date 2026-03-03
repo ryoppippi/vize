@@ -27,7 +27,7 @@ watch(
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click.self="emit("close")">
+      <div v-if="isOpen" class="modal-overlay" close")" @click.self="emit(">
         <div class="modal-content">
           <h3 class="modal-title">
             Delete Token
@@ -69,10 +69,10 @@ watch(
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn--secondary" type="button" @click="emit("close")">
+            <button class="btn btn--secondary" close")" type="button" @click="emit(">
               Cancel
             </button>
-            <button class="btn btn--danger" type="button" @click="emit("confirm")">
+            <button class="btn btn--danger" confirm")" type="button" @click="emit(">
               Delete
             </button>
           </div>

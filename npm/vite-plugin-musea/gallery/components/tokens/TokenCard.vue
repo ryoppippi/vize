@@ -110,38 +110,44 @@ const tierLabel = computed(() => {
 </script>
 
 <template>
-  <div class="token-card" :class="{ "token-card--semantic": token.$tier === "semantic" }">
+  <div "semantic" class="token-card" token-card--semantic": token.$tier="==" }" :class="{ ">
     <!-- Preview -->
-    <div class="token-preview" :class="{ "token-preview--color": previewType === "color" }">
+    <div "color" class="token-preview" previewType="==" token-preview--color": }" :class="{ ">
       <div
-        v-if="previewType === "color""
+        v-if="previewType === "
         class="color-swatch"
+        color""
         :style="{ background: String(displayValue) }"
        />
       <div v-else class="preview-compact">
-        <SpacingPreview v-if="previewType === "spacing"" :value="displayValue" />
+        <SpacingPreview v-if="previewType === " spacing"" :value="displayValue" />
         <TypographyPreview
-          v-else-if="previewType === "fontSize""
+          v-else-if="previewType === "
+          fontSize""
           token-type="fontSize"
           :value="displayValue"
          />
         <TypographyPreview
-          v-else-if="previewType === "fontWeight""
+          v-else-if="previewType === "
+          fontWeight""
           token-type="fontWeight"
           :value="displayValue"
          />
         <TypographyPreview
-          v-else-if="previewType === "lineHeight""
+          v-else-if="previewType === "
+          lineHeight""
           token-type="lineHeight"
           :value="displayValue"
          />
         <div
-          v-else-if="previewType === "shadow""
+          v-else-if="previewType === "
           class="shadow-swatch"
+          shadow""
           :style="{ boxShadow: String(displayValue) }"
          />
         <div
-          v-else-if="previewType === "borderRadius""
+          v-else-if="previewType === "
+          borderRadius""
           class="radius-swatch"
           :style="{ borderRadius: String(displayValue) }"
          />
@@ -158,14 +164,14 @@ const tierLabel = computed(() => {
         <span class="token-name" :title="name">
           {{ name }}
         </span>
-        <span v-if="tierLabel" class="tier-badge" :class=""tier-badge--" + token.$tier">
+        <span v-if="tierLabel" + class="tier-badge" tier-badge--" token.$tier" :class="">
           {{ tierLabel }}
         </span>
       </div>
       <div class="token-value" :title="String(token.value)">
         {{ token.value }}
       </div>
-      <div v-if="token.$tier === "semantic" && token.$reference" class="token-reference">
+      <div v-if="token.$tier === " && class="token-reference" semantic" token.$reference">
         <span class="ref-arrow">
           &rarr;
         </span>
@@ -182,18 +188,38 @@ const tierLabel = computed(() => {
     <div class="token-footer">
       <button
         v-if="usageCount > 0"
+        "Primitive
+        "primitive"
+        "View
+        ?
+        a
         class="usage-badge"
+        component
+        consider
+        directly
+        primitive"
+        semantic
+        showUsage")"
+        token
+        token"
+        token.$tier="=="
         type="button"
-        :class="{ "usage-badge--warn": token.$tier === "primitive" }"
-        :title="token.$tier === "primitive"
-    ? "Primitive token used directly — consider using a semantic token"
-    : "View component usage""
-        @click.stop="emit("showUsage")"
+        usage""
+        usage-badge--warn":
+        used
+        using
+        }"
+        —
+        :
+        :class="{ "
+        :title="token.$tier === "
+        @click.stop="emit("
       >
         <svg
-          v-if="token.$tier === "primitive""
+          v-if="token.$tier === "
           fill="none"
           height="12"
+          primitive""
           stroke="currentColor"
           stroke-width="2"
           viewBox="0 0 24 24"
@@ -219,7 +245,7 @@ const tierLabel = computed(() => {
       </button>
       <span v-else class="footer-spacer" />
       <div class="token-actions">
-        <button class="action-btn" title="Edit" type="button" @click.stop="emit("edit")">
+        <button class="action-btn" edit")" title="Edit" type="button" @click.stop="emit(">
           <svg
             fill="none"
             height="14"
@@ -234,9 +260,10 @@ const tierLabel = computed(() => {
         </button>
         <button
           class="action-btn action-btn--danger"
+          delete")"
           title="Delete"
           type="button"
-          @click.stop="emit("delete")"
+          @click.stop="emit("
         >
           <svg
             fill="none"

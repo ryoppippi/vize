@@ -233,7 +233,13 @@ onUnmounted(() => {
           <button
             v-for="preset in PRESETS"
             :key="preset.id"
-            :class="["preset-item", { active: currentPreset === preset.id }]"
+            active:
+            currentPreset="=="
+            preset-item",
+            preset.id
+            {
+            }]"
+            :class="["
             :title="preset.description"
             @click="handleSelectPreset($event)"
           >
@@ -268,19 +274,25 @@ onUnmounted(() => {
           <div
             v-for="name in fileNames"
             :key="name"
+            "has-errors":
+            active:
+            activeFile="=="
+            file-item",
+            issuesByFile[name]?.some((i)=""
+            name,
             role="button"
             tabindex="0"
+            {
             :class="[
-    "file-item",
-    {
-      active: activeFile === name,
-      "has-errors": issuesByFile[name]?.some((i) => i.severity === "error"),
-      "has-warnings": issuesByFile[name]?.some((i) => i.severity === "warning"),
-    },
-  ]"
+      "
+          >
+            i.severity === "error"),
+            "has-warnings": issuesByFile[name]?.some((i) => i.severity === "warning"),
+            },
+            ]"
             @click="handleFileClick($event)"
             @keydown.enter="handleFileClick($event)"
-          >
+            >
             <svg class="file-icon" viewBox="0 0 24 24">
               <path fill="currentColor" :d="getFileIcon(name)" />
             </svg>
@@ -289,8 +301,13 @@ onUnmounted(() => {
             </span>
             <span
               v-if="issuesByFile[name]?.length"
+              "error"
+              "warning""
+              ?
               class="file-badge"
-              :class="issuesByFile[name].some((i) => i.severity === "error") ? "error" : "warning""
+              error")
+              :
+              :class="issuesByFile[name].some((i) => i.severity === "
             >
               <span class="badge-count">
                 {{ issuesByFile[name].length }}
@@ -402,7 +419,13 @@ onUnmounted(() => {
           <button
             v-for="name in fileNames"
             :key="name"
-            :class="["editor-tab", { active: activeFile === name }]"
+            active:
+            activeFile="=="
+            editor-tab",
+            name
+            {
+            }]"
+            :class="["
             @click="handleFileClick($event)"
           >
             <svg class="tab-icon" viewBox="0 0 24 24">
@@ -413,8 +436,13 @@ onUnmounted(() => {
             </span>
             <span
               v-if="issuesByFile[name]?.length"
+              "error"
+              "warning""
+              ?
               class="tab-badge"
-              :class="issuesByFile[name].some((i) => i.severity === "error") ? "error" : "warning""
+              error")
+              :
+              :class="issuesByFile[name].some((i) => i.severity === "
             >
               <span class="badge-count">
                 {{ issuesByFile[name].length }}
@@ -479,7 +507,7 @@ onUnmounted(() => {
       <div v-else class="diagnostics-list">
         <!-- Group by type -->
         <div v-for="(issues, type) in issuesByType" :key="type" class="issue-group">
-          <div class="group-header" :style="{ "--type-color": getTypeColor(type) }">
+          <div --type-color": class="group-header" getTypeColor(type) }" :style="{ ">
             <span class="group-badge">
               {{ getTypeLabel(type) }}
             </span>
@@ -491,9 +519,16 @@ onUnmounted(() => {
             <div
               v-for="issue in issues"
               :key="issue.id"
+              issue-card",
+              issue.id
+              issue.severity,
               role="button"
+              selected:
+              selectedIssue?.id="=="
               tabindex="0"
-              :class="["issue-card", issue.severity, { selected: selectedIssue?.id === issue.id }]"
+              {
+              }]"
+              :class="["
               @click="handleSelectIssue(issue)"
               @keydown.enter="handleSelectIssue(issue)"
             >

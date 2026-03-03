@@ -129,41 +129,6 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
     ctx
 }
 
-/// Check if a type declaration is complete based on brace depth and declaration kind.
-pub(crate) fn is_type_decl_complete(trimmed: &str, brace_depth: i32, is_alias: bool) -> bool {
-    if is_alias {
-        // Type aliases end with `;` when brace depth is 0
-        brace_depth <= 0 && trimmed.ends_with(';')
-    } else {
-        // Interfaces and enums end with `}` when brace depth returns to 0
-        brace_depth <= 0 && (trimmed.ends_with('}') || trimmed.ends_with("};"))
-    }
-}
-
-/// Check if a trimmed line starts a type declaration that should be at module level.
-pub(crate) fn is_type_declaration_start(trimmed: &str) -> bool {
-    // Match: interface X, type X =, enum X, export interface X, export type X =, export enum X
-    // But NOT: export default, export function, export const, export { ... } from
-    // Also NOT: destructured props like `type = "button"` (no identifier after `type`)
-    let s = trimmed.strip_prefix("export ").unwrap_or(trimmed);
-    if s.starts_with("interface ") || s.starts_with("enum ") {
-        return true;
-    }
-    // For `type` keyword: require a valid identifier after `type `
-    // e.g., `type Foo = ...` or `type Foo<T> = ...`
-    if let Some(rest) = s.strip_prefix("type ") {
-        let rest = rest.trim_start();
-        // The next token must be an identifier (starts with letter or _)
-        if let Some(first_char) = rest.chars().next() {
-            if first_char.is_ascii_alphabetic() || first_char == '_' {
-                // Check it's followed by '=' or '<' (generic) eventually
-                return rest.contains('=');
-            }
-        }
-    }
-    false
-}
-
 /// Strip TypeScript `as Type` assertion from a v-for source expression.
 /// Returns (source_expression, Option<type_annotation>).
 /// e.g., "(expr) as OptionSponsor[]" -> ("(expr)", Some("OptionSponsor[]"))

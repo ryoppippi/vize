@@ -125,30 +125,48 @@ onUnmounted(() => {
         </span>
       </h2>
       <div class="tabs">
-        <button :class="["tab", { active: activeTab === "code" }]" @click="activeTab = "code"">
+        <button "code" active: activeTab="==" code"" tab", { }]" :class="[" @click="activeTab = ">
           Code
         </button>
-        <button :class="["tab", { active: activeTab === "ast" }]" @click="activeTab = "ast"">
+        <button "ast" active: activeTab="==" ast"" tab", { }]" :class="[" @click="activeTab = ">
           AST
         </button>
         <button
-          v-if="inputMode === "sfc""
-          :class="["tab", { active: activeTab === "bindings" }]"
-          @click="activeTab = "bindings""
+          v-if="inputMode === "
+          "bindings"
+          active:
+          activeTab="=="
+          bindings""
+          sfc""
+          tab",
+          {
+          }]"
+          :class="["
+          @click="activeTab = "
         >
           Bindings
         </button>
-        <button :class="["tab", { active: activeTab === "tokens" }]" @click="activeTab = "tokens"">
+        <button "tokens" active: activeTab="==" tab", tokens"" { }]" :class="[" @click="activeTab = ">
           Tokens ({{ tokenStats.total }})
         </button>
-        <button :class="["tab", { active: activeTab === "helpers" }]" @click="activeTab = "helpers"">
+        <button
+          "helpers"
+          active:
+          activeTab="=="
+          helpers""
+          tab",
+          {
+          }]"
+          :class="["
+          @click="activeTab = "
+        >
           Helpers
         </button>
-        <template v-if="inputMode === "sfc"">
-          <button :class="["tab", { active: activeTab === "sfc" }]" @click="activeTab = "sfc"">
+        <template v-if="inputMode === " sfc"">
+          <button "sfc" active: activeTab="==" sfc"" tab", { }]" :class="[" @click="activeTab = ">
             SFC
           </button>
-          <button :class="["tab", { active: activeTab === "css" }]" @click="activeTab = "css"">
+          <button "css" active: activeTab="==" css"" tab", { }]" :class="[" @click="activeTab = ">
             CSS
           </button>
         </template>
@@ -171,7 +189,7 @@ onUnmounted(() => {
       </div>
       <template v-else-if="output">
         <!-- Code Tab -->
-        <div v-if="activeTab === "code"" class="code-output">
+        <div v-if="activeTab === " class="code-output" code"">
           <div class="code-header">
             <h4>
               Compiled Code
@@ -179,30 +197,52 @@ onUnmounted(() => {
             <div class="code-header-actions">
               <div v-if="isTypeScript" class="code-mode-toggle">
                 <button
-                  :class="["toggle-btn", { active: codeViewMode === "ts" }]"
-                  @click="codeViewMode = "ts""
+                  "ts"
+                  active:
+                  codeViewMode="=="
+                  toggle-btn",
+                  ts""
+                  {
+                  }]"
+                  :class="["
+                  @click="codeViewMode = "
                 >
                   TS
                 </button>
                 <button
-                  :class="["toggle-btn", { active: codeViewMode === "js" }]"
-                  @click="codeViewMode = "js""
+                  "js"
+                  active:
+                  codeViewMode="=="
+                  js""
+                  toggle-btn",
+                  {
+                  }]"
+                  :class="["
+                  @click="codeViewMode = "
                 >
                   JS
                 </button>
               </div>
               <button
+                )"
+                ?
                 class="btn-ghost"
+                formattedCode
+                formattedJsCode
+                js"
+                output.code,
+                ||
+                :
                 @click="copyToClipboard(
-    isTypeScript && codeViewMode === "js" ? formattedJsCode : formattedCode || output.code,
-  )"
+      isTypeScript && codeViewMode === "
               >
                 Copy
               </button>
             </div>
           </div>
           <CodeHighlight
-            v-if="isTypeScript && codeViewMode === "js""
+            v-if="isTypeScript && codeViewMode === "
+            js""
             language="javascript"
             show-line-numbers
             :code="formattedJsCode"
@@ -210,14 +250,17 @@ onUnmounted(() => {
            />
           <CodeHighlight
             v-else
+            "javascript""
             show-line-numbers
+            typescript"
+            :
             :code="formattedCode || output.code"
-            :language="isTypeScript ? "typescript" : "javascript""
+            :language="isTypeScript ? "
             :theme
            />
         </div>
         <!-- AST Tab -->
-        <div v-else-if="activeTab === "ast"" class="ast-output">
+        <div v-else-if="activeTab === " ast"" class="ast-output">
           <div class="ast-header">
             <h4>
               Abstract Syntax Tree
@@ -249,7 +292,7 @@ onUnmounted(() => {
           <CodeHighlight language="json" show-line-numbers :code="astJson" :theme />
         </div>
         <!-- Helpers Tab -->
-        <div v-else-if="activeTab === "helpers"" class="helpers-output">
+        <div v-else-if="activeTab === " class="helpers-output" helpers"">
           <h4>
             Runtime Helpers Used ({{ output.helpers?.length ?? 0 }})
           </h4>
@@ -265,7 +308,7 @@ onUnmounted(() => {
           </p>
         </div>
         <!-- SFC Tab -->
-        <div v-else-if="activeTab === "sfc" && sfcResult" class="sfc-output">
+        <div v-else-if="activeTab === " && class="sfc-output" sfc" sfcResult">
           <h4>
             SFC Descriptor
           </h4>
@@ -318,7 +361,7 @@ onUnmounted(() => {
           </div>
         </div>
         <!-- CSS Tab -->
-        <div v-else-if="activeTab === "css"" class="css-output">
+        <div v-else-if="activeTab === " class="css-output" css"">
           <h4>
             CSS Compilation (LightningCSS)
           </h4>
@@ -382,8 +425,11 @@ onUnmounted(() => {
         </div>
         <!-- Bindings Tab -->
         <div
-          v-else-if="activeTab === "bindings" && sfcResult?.script?.bindings"
+          v-else-if="activeTab === "
+          &&
+          bindings"
           class="bindings-output"
+          sfcResult?.script?.bindings"
         >
           <h4>
             Script Setup Bindings
@@ -393,14 +439,14 @@ onUnmounted(() => {
               <span class="summary-count">
                 {{ count }}
               </span>
-              <span :class="["summary-type", `type-${type}`]">
+              <span `type-${type}`]" summary-type", :class="[">
                 {{ type }}
               </span>
             </div>
           </div>
           <div class="bindings-groups">
             <div v-for="(vars, type) in groupedBindings" :key="type" class="binding-group">
-              <div :class="["group-header", `type-${type}`]">
+              <div `type-${type}`]" group-header", :class="[">
                 <span class="group-icon">
                   {{ getBindingIcon(type as string) }}
                 </span>
@@ -412,7 +458,7 @@ onUnmounted(() => {
                 </span>
               </div>
               <div class="group-vars">
-                <span v-for="v in vars" :key="v" :class="["var-chip", `type-${type}`]">
+                <span v-for="v in vars" :key="v" `type-${type}`]" var-chip", :class="[">
                   {{
                   v
                   }}
@@ -421,13 +467,13 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <div v-else-if="activeTab === "bindings"" class="bindings-output">
+        <div v-else-if="activeTab === " bindings"" class="bindings-output">
           <p class="no-bindings">
             No bindings information available
           </p>
         </div>
         <!-- Tokens Tab -->
-        <div v-else-if="activeTab === "tokens"" class="tokens-output">
+        <div v-else-if="activeTab === " class="tokens-output" tokens"">
           <div class="token-stats">
             <div class="stat-card">
               <span class="stat-value">
@@ -469,8 +515,11 @@ onUnmounted(() => {
             <div
               v-for="(token, i) in lexicalTokens"
               :key="i"
+              --token-color":
               class="token-item"
-              :style="{ "--token-color": getTokenTypeColor(token.type) }"
+              getTokenTypeColor(token.type)
+              }"
+              :style="{ "
             >
               <span class="token-badge" :style="{ background: getTokenTypeColor(token.type) }">
                 {{ getTokenTypeIcon(token.type) }}
@@ -521,10 +570,12 @@ onUnmounted(() => {
                   <span
                     v-for="(token, i) in tokens.slice(0, 12)"
                     :key="i"
+                    --chip-color":
                     class="group-token-chip"
+                    getTokenTypeColor(String(type)),
+                    }"
                     :style="{
-    "--chip-color": getTokenTypeColor(String(type)),
-  }"
+      "
                   >
                     {{ token.name || token.value?.slice(0, 25) || token.raw.slice(0, 25) }}
                   </span>

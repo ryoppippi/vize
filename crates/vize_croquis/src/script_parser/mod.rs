@@ -23,7 +23,7 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 
 use crate::analysis::BindingMetadata;
-use crate::analysis::{InvalidExport, TypeExport};
+use crate::analysis::{ImportStatementInfo, InvalidExport, ReExportInfo, TypeExport};
 use crate::macros::MacroTracker;
 use crate::provide::ProvideInjectTracker;
 use crate::reactivity::ReactivityTracker;
@@ -61,6 +61,10 @@ pub struct ScriptParseResult {
     pub setup_context: SetupContextTracker,
     /// Flag to track if we're in a non-setup script context
     pub(crate) is_non_setup_script: bool,
+    /// Import statement spans in script content
+    pub import_statements: Vec<ImportStatementInfo>,
+    /// Re-export statement spans (`export { ... } from "..."`)
+    pub re_exports: Vec<ReExportInfo>,
     /// Definition spans for bindings (name -> (start, end) offset in script)
     pub binding_spans: FxHashMap<CompactString, (u32, u32)>,
 }

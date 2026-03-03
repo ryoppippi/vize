@@ -53,24 +53,36 @@ function selectArt(art: ArtFileInfo) {
     <div class="sidebar-section">
       <router-link
         class="sidebar-home-link"
-        :class="{ active: route.name === "home" }"
-        :to="{ name: "home" }"
+        home"
+        home"
+        }"
+        }"
+        :class="{ active: route.name === "
+        :to="{ name: "
       >
         <MdiIcon :path="mdiHome" :size="16" />
         Home
       </router-link>
       <router-link
         class="sidebar-home-link"
-        :class="{ active: route.name === "tokens" }"
-        :to="{ name: "tokens" }"
+        tokens"
+        tokens"
+        }"
+        }"
+        :class="{ active: route.name === "
+        :to="{ name: "
       >
         <MdiIcon :path="mdiPalette" :size="16" />
         Design Tokens
       </router-link>
       <router-link
         class="sidebar-home-link"
-        :class="{ active: route.name === "tests" }"
-        :to="{ name: "tests" }"
+        tests"
+        tests"
+        }"
+        }"
+        :class="{ active: route.name === "
+        :to="{ name: "
       >
         <MdiIcon :path="mdiCheckCircleOutline" :size="16" />
         Test Summary
@@ -78,8 +90,11 @@ function selectArt(art: ArtFileInfo) {
     </div>
     <div v-for="[category, items] in categoryList" :key="category" class="sidebar-section">
       <div
+        category-header--expanded":
         class="category-header"
-        :class="{ "category-header--expanded": isCategoryExpanded(category) }"
+        isCategoryExpanded(category)
+        }"
+        :class="{ "
         @click="toggleCategory(category)"
       >
         <MdiIcon class="category-icon" :path="mdiChevronRight" :size="16" />

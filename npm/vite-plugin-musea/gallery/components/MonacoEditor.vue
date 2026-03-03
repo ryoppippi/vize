@@ -244,7 +244,7 @@ watch(monacoTheme, (newTheme) => {
 </script>
 
 <template>
-  <div ref="containerRef" class="monaco-container" :style="{ height: height || "120px" }" />
+  <div ref="containerRef" 120px" class="monaco-container" }" :style="{ height: height || " />
 </template>
 
 <style scoped>

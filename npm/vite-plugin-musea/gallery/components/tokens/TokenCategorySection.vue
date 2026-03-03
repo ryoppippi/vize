@@ -48,11 +48,18 @@ function getUsageCount(name: string): number {
 </script>
 
 <template>
-  <div class="token-category" :class="{ "token-subcategory": level && level > 2 }">
+  <div && class="token-category" level level token-subcategory": :class="{ ">
+    2 }">
     <component
-      :is=""h" + headingLevel"
+      :is=""
+      +
+      +
+      category-title--h"
       class="category-title"
-      :class=""category-title--h" + headingLevel"
+      h"
+      headingLevel"
+      headingLevel"
+      :class=""
     >
       {{ category.name }}
     </component>
@@ -60,26 +67,42 @@ function getUsageCount(name: string): number {
       <TokenCard
         v-for="(token, name) in category.tokens"
         :key="name"
+        delete",
+        edit",
+        getTokenPath(String(name)))"
+        getTokenPath(String(name)),
+        getTokenPath(String(name)),
+        showUsage",
+        token)"
+        token)"
         :category-path="getCategoryPath()"
         :name="String(name)"
         :token="token"
         :usage-count="getUsageCount(String(name))"
-        @delete="emit("delete", getTokenPath(String(name)), token)"
-        @edit="emit("edit", getTokenPath(String(name)), token)"
-        @show-usage="emit("showUsage", getTokenPath(String(name)))"
+        @delete="emit("
+        @edit="emit("
+        @show-usage="emit("
        />
     </div>
     <template v-if="category.subcategories">
       <TokenCategorySection
         v-for="sub in category.subcategories"
         :key="sub.name"
+        delete",
+        edit",
+        path,
+        path,
+        showUsage",
+        token)"
+        token)"
+        tokenPath)"
         :category="sub"
         :level="(level ?? 2) + 1"
         :parent-path="getCategoryPath()"
         :usage-map="usageMap"
-        @delete="(path, token) => emit("delete", path, token)"
-        @edit="(path, token) => emit("edit", path, token)"
-        @show-usage="(tokenPath) => emit("showUsage", tokenPath)"
+        @delete="(path, token) => emit("
+        @edit="(path, token) => emit("
+        @show-usage="(tokenPath) => emit("
        />
     </template>
   </div>

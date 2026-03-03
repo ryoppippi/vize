@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="card" :class="`card--${variant ?? "default"}`">
+  <div class="card" default"}`" :class="`card--${variant ?? ">
     <div v-if="image" class="card-image">
       <div class="card-image-placeholder" :style="{ background: image }">
         <span>

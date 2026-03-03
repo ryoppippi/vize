@@ -254,7 +254,7 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="search-modal-overlay" @click.self="emit("close")">
+      <div v-if="isOpen" class="search-modal-overlay" close")" @click.self="emit(">
         <div class="search-modal" @keydown="handleKeydown">
           <!-- Search Input -->
           <div class="search-input-wrapper">
@@ -276,14 +276,25 @@ onUnmounted(() => {
             <template v-if="results.length > 0">
               <div
                 v-for="(result, index) in results"
-                :key="result.type === "nav"
-    ? `nav-${result.nav.route}`
-    : `${result.art.path}-${result.variantName || ""}`"
-                :class="["search-result", { "search-result--selected": index === selectedIndex }]"
+                :key="result.type === "
+                ""}`"
+                "search-result--selected":
+                ?
+                `${result.art.path}-${result.variantName
+                `nav-${result.nav.route}`
+                index="=="
+                nav"
+                search-result",
+                selectedIndex
+                {
+                ||
+                }]"
+                :
+                :class="["
                 @click="selectResult(result)"
                 @mouseenter="selectedIndex = index"
               >
-                <template v-if="result.type === "nav"">
+                <template v-if="result.type === " nav"">
                   <div class="result-icon">
                     <MdiIcon :path="result.nav.icon" :size="16" />
                   </div>
@@ -300,7 +311,7 @@ onUnmounted(() => {
                 </template>
                 <template v-else>
                   <div class="result-icon">
-                    <MdiIcon v-if="result.matchType === "variant"" :path="mdiDiamond" :size="16" />
+                    <MdiIcon v-if="result.matchType === " variant"" :path="mdiDiamond" :size="16" />
                     <MdiIcon v-else :path="mdiPalette" :size="16" />
                   </div>
                   <div class="result-content">

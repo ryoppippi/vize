@@ -50,7 +50,7 @@ function onEditorUpdate(value: string) {
         Invalid JSON
       </span>
     </label>
-    <div class="control-editor" :class="{ "has-error": parseError }">
+    <div class="control-editor" has-error": parseError }" :class="{ ">
       <MonacoEditor
         height="120px"
         language="json"

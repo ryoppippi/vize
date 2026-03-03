@@ -35,7 +35,7 @@ function viewComponent(artPath: string) {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click.self="emit("close")">
+      <div v-if="isOpen" class="modal-overlay" close")" @click.self="emit(">
         <div class="modal-panel">
           <div class="modal-header">
             <div>
@@ -51,7 +51,7 @@ function viewComponent(artPath: string) {
                 </span>
               </p>
             </div>
-            <button class="modal-close" type="button" @click="emit("close")">
+            <button class="modal-close" close")" type="button" @click="emit(">
               <svg
                 fill="none"
                 height="18"
@@ -66,7 +66,8 @@ function viewComponent(artPath: string) {
             </button>
           </div>
           <div class="modal-body">
-            <div v-if="token?.$tier === "primitive" && usages.length > 0" class="primitive-warning">
+            <div v-if="token?.$tier === " && primitive" usages.length>
+              0" class="primitive-warning">
               <svg
                 fill="none"
                 height="16"
@@ -102,13 +103,16 @@ function viewComponent(artPath: string) {
                   </div>
                   <svg
                     class="expand-icon"
+                    expand-icon--open":
+                    expandedArts.has(entry.artPath)
                     fill="none"
                     height="14"
                     stroke="currentColor"
                     stroke-width="2"
                     viewBox="0 0 24 24"
                     width="14"
-                    :class="{ "expand-icon--open": expandedArts.has(entry.artPath) }"
+                    }"
+                    :class="{ "
                   >
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
@@ -136,8 +140,10 @@ function viewComponent(artPath: string) {
                   </button>
                   <button
                     class="usage-action-btn usage-action-btn--edit"
+                    editSource",
+                    entry.artPath)"
                     type="button"
-                    @click="emit("editSource", entry.artPath)"
+                    @click="emit("
                   >
                     Edit Source
                   </button>

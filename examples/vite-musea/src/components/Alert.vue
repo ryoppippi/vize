@@ -10,15 +10,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="alert" role="alert" :class="`alert--${variant ?? "default"}`">
+  <div class="alert" default"}`" role="alert" :class="`alert--${variant ?? ">
     <span class="alert-icon">
-      <template v-if="variant === "success"">
+      <template v-if="variant === " success"">
         &#10003;
       </template>
-      <template v-else-if="variant === "warning"">
+      <template v-else-if="variant === " warning"">
         &#9888;
       </template>
-      <template v-else-if="variant === "error"">
+      <template v-else-if="variant === " error"">
         &#10005;
       </template>
       <template v-else>
@@ -28,7 +28,7 @@ const emit = defineEmits<{
     <span class="alert-content">
       <slot />
     </span>
-    <button v-if="closable" class="alert-close" @click="emit("close")">
+    <button v-if="closable" class="alert-close" close")" @click="emit(">
       &times;
     </button>
   </div>

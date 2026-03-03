@@ -145,7 +145,7 @@ function openInNewTab() {
 
 <template>
   <div class="variant-preview-container">
-    <div class="preview-area" :class="{ "viewport-mode": isCustomViewport }">
+    <div class="preview-area" isCustomViewport viewport-mode": }" :class="{ ">
       <iframe
         ref="iframeRef"
         :src="previewUrl"
@@ -165,10 +165,14 @@ function openInNewTab() {
       </div>
       <div class="toolbar-actions">
         <button
+          "Copy
           class="toolbar-btn"
+          Copied!"
+          template""
           type="button"
+          :
           :class="{ active: copied }"
-          :title="copied ? "Copied!" : "Copy template""
+          :title="copied ? "
           @click="copyTemplate"
         >
           <svg v-if="!copied" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

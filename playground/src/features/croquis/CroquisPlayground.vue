@@ -85,24 +85,48 @@ const {
           </span>
         </div>
         <div class="tabs">
-          <button :class="["tab", { active: activeTab === "vir" }]" @click="activeTab = "vir"">
+          <button "vir" active: activeTab="==" tab", vir"" { }]" :class="[" @click="activeTab = ">
             VIR
           </button>
-          <button :class="["tab", { active: activeTab === "stats" }]" @click="activeTab = "stats"">
+          <button "stats" active: activeTab="==" stats"" tab", { }]" :class="[" @click="activeTab = ">
             Stats
           </button>
           <button
-            :class="["tab", { active: activeTab === "bindings" }]"
-            @click="activeTab = "bindings""
+            "bindings"
+            active:
+            activeTab="=="
+            bindings""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Bindings
           </button>
-          <button :class="["tab", { active: activeTab === "scopes" }]" @click="activeTab = "scopes"">
+          <button
+            "scopes"
+            active:
+            activeTab="=="
+            scopes""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
+          >
             Scopes
           </button>
           <button
-            :class="["tab", { active: activeTab === "diagnostics" }]"
-            @click="activeTab = "diagnostics""
+            "diagnostics"
+            active:
+            activeTab="=="
+            diagnostics""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Diagnostics
             <span v-if="diagnostics.length > 0" class="tab-badge">
@@ -122,7 +146,7 @@ const {
         </div>
         <template v-else-if="analysisResult">
           <!-- VIR Tab (Primary) -->
-          <div v-if="activeTab === "vir"" class="vir-output">
+          <div v-if="activeTab === " class="vir-output" vir"">
             <div class="vir-header-bar">
               <span class="vir-title">
                 VIR — Vize Intermediate Representation
@@ -145,13 +169,17 @@ const {
                 <div
                   v-for="line in virLines"
                   :key="line.index"
-                  :class="["vir-line", `vir-line-${line.lineType}`]"
+                  `vir-line-${line.lineType}`]"
+                  vir-line",
+                  :class="["
                 >
                   <template v-if="line.tokens.length > 0">
                     <span
                       v-for="(token, ti) in line.tokens"
                       :key="ti"
-                      :class="["vir-token", `vir-${token.type}`]"
+                      `vir-${token.type}`]"
+                      vir-token",
+                      :class="["
                     >
                       {{ token.text }}
                     </span>
@@ -166,7 +194,7 @@ const {
             </div>
           </div>
           <!-- Stats Tab -->
-          <div v-else-if="activeTab === "stats"" class="stats-output">
+          <div v-else-if="activeTab === " class="stats-output" stats"">
             <div class="stats-grid">
               <div class="stat-box">
                 <div class="stat-number">
@@ -290,14 +318,14 @@ const {
             </div>
           </div>
           <!-- Bindings Tab -->
-          <div v-else-if="activeTab === "bindings"" class="bindings-output">
+          <div v-else-if="activeTab === " bindings"" class="bindings-output">
             <div v-if="bindings.length === 0" class="empty-state">
               No bindings detected
             </div>
             <template v-else>
               <div v-for="(group, source) in bindingsBySource" :key="source" class="source-group">
                 <div class="source-header">
-                  <span :class="["source-indicator", getSourceClass(String(source))]">
+                  <span getSourceClass(String(source))]" source-indicator", :class="[">
                   </span>
                   <span class="source-name">
                     {{ getSourceLabel(String(source)) }}
@@ -330,18 +358,30 @@ const {
                     </div>
                     <div class="binding-flags">
                       <span
+                        "active"
+                        "inactive"]"
+                        ?
+                        binding.bindable
+                        flag",
                         title="Can be referenced from template"
-                        :class="["flag", binding.bindable ? "active" : "inactive"]"
+                        :
+                        :class="["
                       >
                         bindable
                       </span>
                       <span
+                        "active"
+                        "inactive"]"
+                        ?
+                        binding.usedInTemplate
+                        flag",
                         title="Actually used in template"
-                        :class="["flag", binding.usedInTemplate ? "active" : "inactive"]"
+                        :
+                        :class="["
                       >
                         in-template
                       </span>
-                      <span :class="["flag", binding.isMutated ? "active" : "inactive"]">
+                      <span "active" "inactive"]" ? binding.isMutated flag", : :class="[">
                         mutated
                       </span>
                       <span
@@ -361,7 +401,7 @@ const {
             </template>
           </div>
           <!-- Scopes Tab -->
-          <div v-else-if="activeTab === "scopes"" class="scopes-output">
+          <div v-else-if="activeTab === " class="scopes-output" scopes"">
             <div v-if="scopes.length === 0" class="empty-state">
               No scopes detected
             </div>
@@ -369,11 +409,21 @@ const {
               <div
                 v-for="scope in scopes"
                 :key="scope.id"
-                :class="["scope-node", getScopeColorClass(scope.kindStr || scope.kind)]"
+                getScopeColorClass(scope.kindStr
+                scope-node",
+                scope.kind)]"
+                ||
+                :class="["
                 :style="{ marginLeft: `${(scope.depth || 0) * 20}px` }"
               >
                 <div class="scope-header">
-                  <span :class="["scope-indicator", getScopeColorClass(scope.kindStr || scope.kind)]">
+                  <span
+                    getScopeColorClass(scope.kindStr
+                    scope-indicator",
+                    scope.kind)]"
+                    ||
+                    :class="["
+                  >
                   </span>
                   <span class="scope-kind">
                     {{ scope.kindStr || scope.kind }}
@@ -393,7 +443,7 @@ const {
             </div>
           </div>
           <!-- Diagnostics Tab -->
-          <div v-else-if="activeTab === "diagnostics"" class="diagnostics-output">
+          <div v-else-if="activeTab === " class="diagnostics-output" diagnostics"">
             <div v-if="diagnostics.length === 0" class="success-state">
               <svg class="success-icon" viewBox="0 0 24 24">
                 <path fill="currentColor" :d="mdiCheck" />
@@ -406,13 +456,20 @@ const {
               <div
                 v-for="(diag, i) in diagnostics"
                 :key="i"
-                :class="["diagnostic-item", `severity-${diag.severity}`]"
+                `severity-${diag.severity}`]"
+                diagnostic-item",
+                :class="["
               >
                 <div class="diagnostic-header">
                   <svg class="severity-icon" viewBox="0 0 24 24">
                     <path
+                      ?
+                      error"
                       fill="currentColor"
-                      :d="diag.severity === "error" ? mdiCloseCircle : mdiAlert"
+                      mdiAlert"
+                      mdiCloseCircle
+                      :
+                      :d="diag.severity === "
                      />
                   </svg>
                   <span class="diagnostic-message">

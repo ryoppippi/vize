@@ -34,10 +34,11 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
           </span>
           <div class="fullscreen-actions">
             <button
+              _blank")"
               class="fullscreen-action-btn"
               title="Open in new tab"
               type="button"
-              @click="window.open(previewUrl, "_blank")"
+              @click="window.open(previewUrl, "
             >
               <MdiIcon :path="mdiOpenInNew" :size="16" />
             </button>

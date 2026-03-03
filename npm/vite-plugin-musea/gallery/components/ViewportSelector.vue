@@ -24,9 +24,11 @@ onUnmounted(() => document.removeEventListener("click", onClickOutside));
 <template>
   <div ref="selectorRef" class="viewport-selector">
     <button
+      100%"
       class="viewport-btn"
       type="button"
-      :class="{ active: viewport.width !== "100%" }"
+      }"
+      :class="{ active: viewport.width !== "
       @click="showDropdown = !showDropdown"
     >
       <svg
@@ -46,7 +48,8 @@ onUnmounted(() => document.removeEventListener("click", onClickOutside));
       </span>
     </button>
     <button
-      v-if="viewport.width !== "100%""
+      v-if="viewport.width !== "
+      100%""
       class="rotate-btn"
       title="Rotate"
       type="button"
@@ -77,7 +80,7 @@ onUnmounted(() => document.removeEventListener("click", onClickOutside));
         <span class="viewport-option-name">
           {{ preset.name }}
         </span>
-        <span v-if="preset.width !== "100%"" class="viewport-option-size">
+        <span v-if="preset.width !== " 100%"" class="viewport-option-size">
           {{ preset.width }} x {{ preset.height }}
         </span>
       </button>

@@ -192,10 +192,10 @@ onUnmounted(() => {
           </h2>
         </div>
         <div class="panel-actions">
-          <button class="btn-ghost" @click="setPreset("untyped")">
+          <button class="btn-ghost" untyped")" @click="setPreset(">
             Untyped
           </button>
-          <button class="btn-ghost" @click="setPreset("typed")">
+          <button class="btn-ghost" typed")" @click="setPreset(">
             Typed
           </button>
         </div>
@@ -227,8 +227,15 @@ onUnmounted(() => {
         </div>
         <div class="tabs">
           <button
-            :class="["tab", { active: activeTab === "diagnostics" }]"
-            @click="activeTab = "diagnostics""
+            "diagnostics"
+            active:
+            activeTab="=="
+            diagnostics""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Diagnostics
             <span v-if="diagnostics.length" class="tab-badge">
@@ -236,14 +243,28 @@ onUnmounted(() => {
             </span>
           </button>
           <button
-            :class="["tab", { active: activeTab === "virtualTs" }]"
-            @click="activeTab = "virtualTs""
+            "virtualTs"
+            active:
+            activeTab="=="
+            tab",
+            virtualTs""
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Virtual TS
           </button>
           <button
-            :class="["tab", { active: activeTab === "capabilities" }]"
-            @click="activeTab = "capabilities""
+            "capabilities"
+            active:
+            activeTab="=="
+            capabilities""
+            tab",
+            {
+            }]"
+            :class="["
+            @click="activeTab = "
           >
             Info
           </button>
@@ -260,7 +281,7 @@ onUnmounted(() => {
         </div>
         <template v-else-if="typeCheckResult">
           <!-- Diagnostics Tab -->
-          <div v-if="activeTab === "diagnostics"" class="diagnostics-output">
+          <div v-if="activeTab === " class="diagnostics-output" diagnostics"">
             <div class="output-header-bar">
               <span class="output-title">
                 Type Issues
@@ -306,7 +327,9 @@ onUnmounted(() => {
               <div
                 v-for="(diagnostic, i) in diagnostics"
                 :key="i"
-                :class="["diagnostic-item", `severity-${diagnostic.severity}`]"
+                `severity-${diagnostic.severity}`]"
+                diagnostic-item",
+                :class="["
               >
                 <div class="diagnostic-header">
                   <svg class="severity-icon" viewBox="0 0 24 24">
@@ -339,7 +362,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- Virtual TS Tab -->
-          <div v-else-if="activeTab === "virtualTs"" class="virtualts-output">
+          <div v-else-if="activeTab === " class="virtualts-output" virtualTs"">
             <div class="output-header-bar">
               <span class="output-title">
                 Generated TypeScript
@@ -364,7 +387,7 @@ onUnmounted(() => {
             </div>
           </div>
           <!-- Capabilities Tab -->
-          <div v-else-if="activeTab === "capabilities"" class="capabilities-output">
+          <div v-else-if="activeTab === " capabilities"" class="capabilities-output">
             <div class="output-header-bar">
               <span class="output-title">
                 Type Checker Capabilities
@@ -391,7 +414,7 @@ onUnmounted(() => {
                     <code class="check-name">
                       {{ check.name }}
                     </code>
-                    <span :class="["check-severity", check.severity]">
+                    <span check-severity", check.severity]" :class="[">
                       {{ check.severity }}
                     </span>
                     <p class="check-description">

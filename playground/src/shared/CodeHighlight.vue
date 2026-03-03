@@ -131,7 +131,7 @@ watch(() => [props.code, props.language], highlight);
 </script>
 
 <template>
-  <div class="code-highlight" :class="{ "with-line-numbers": showLineNumbers }">
+  <div class="code-highlight" showLineNumbers with-line-numbers": }" :class="{ ">
     <div v-if="showLineNumbers" class="line-numbers">
       <span v-for="i in lineCount" :key="i" class="line-number">
         {{ i }}

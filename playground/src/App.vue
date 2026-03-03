@@ -80,7 +80,7 @@ onMounted(async () => {
           </h1>
           <span class="version">
             Playground
-            <span :class="["wasm-status", wasmStatus]">
+            <span wasm-status", wasmStatus]" :class="[">
               {{
               wasmStatus === "loading"
               ? " (Loading...)"
@@ -93,7 +93,17 @@ onMounted(async () => {
         </div>
       </div>
       <div class="main-tabs">
-        <button :class="["main-tab", { active: mainTab === "atelier" }]" @click="mainTab = "atelier"">
+        <button
+          "atelier"
+          active:
+          atelier""
+          main-tab",
+          mainTab="=="
+          {
+          }]"
+          :class="["
+          @click="mainTab = "
+        >
           <span class="tab-name">
             Atelier
           </span>
@@ -101,7 +111,17 @@ onMounted(async () => {
             compiler
           </span>
         </button>
-        <button :class="["main-tab", { active: mainTab === "patina" }]" @click="mainTab = "patina"">
+        <button
+          "patina"
+          active:
+          main-tab",
+          mainTab="=="
+          patina""
+          {
+          }]"
+          :class="["
+          @click="mainTab = "
+        >
           <span class="tab-name">
             Patina
           </span>
@@ -109,7 +129,7 @@ onMounted(async () => {
             linter
           </span>
         </button>
-        <button :class="["main-tab", { active: mainTab === "glyph" }]" @click="mainTab = "glyph"">
+        <button "glyph" active: glyph"" main-tab", mainTab="==" { }]" :class="[" @click="mainTab = ">
           <span class="tab-name">
             Glyph
           </span>
@@ -117,7 +137,7 @@ onMounted(async () => {
             formatter
           </span>
         </button>
-        <button :class="["main-tab", { active: mainTab === "canon" }]" @click="mainTab = "canon"">
+        <button "canon" active: canon"" main-tab", mainTab="==" { }]" :class="[" @click="mainTab = ">
           <span class="tab-name">
             Canon
           </span>
@@ -125,7 +145,17 @@ onMounted(async () => {
             typecheck
           </span>
         </button>
-        <button :class="["main-tab", { active: mainTab === "croquis" }]" @click="mainTab = "croquis"">
+        <button
+          "croquis"
+          active:
+          croquis""
+          main-tab",
+          mainTab="=="
+          {
+          }]"
+          :class="["
+          @click="mainTab = "
+        >
           <span class="tab-name">
             Croquis
           </span>
@@ -134,8 +164,15 @@ onMounted(async () => {
           </span>
         </button>
         <button
-          :class="["main-tab", { active: mainTab === "cross-file" }]"
-          @click="mainTab = "cross-file""
+          "cross-file"
+          active:
+          cross-file""
+          main-tab",
+          mainTab="=="
+          {
+          }]"
+          :class="["
+          @click="mainTab = "
         >
           <span class="tab-name">
             Cross
@@ -144,7 +181,7 @@ onMounted(async () => {
             xfile
           </span>
         </button>
-        <button :class="["main-tab", { active: mainTab === "musea" }]" @click="mainTab = "musea"">
+        <button "musea" active: main-tab", mainTab="==" musea"" { }]" :class="[" @click="mainTab = ">
           <span class="tab-name">
             Musea
           </span>
@@ -155,8 +192,13 @@ onMounted(async () => {
       </div>
       <div class="options">
         <button
+          "Dark
           class="theme-toggle"
-          :title="isDark ? "Light mode" : "Dark mode""
+          Light
+          mode"
+          mode""
+          :
+          :title="isDark ? "
           @click="toggleTheme"
         >
           <svg
@@ -208,22 +250,22 @@ onMounted(async () => {
       </div>
     </header>
     <main class="main">
-      <template v-if="mainTab === "patina"">
+      <template v-if="mainTab === " patina"">
         <PatinaPlayground :compiler />
       </template>
-      <template v-else-if="mainTab === "canon"">
+      <template v-else-if="mainTab === " canon"">
         <TypeCheckPlayground :compiler />
       </template>
-      <template v-else-if="mainTab === "croquis"">
+      <template v-else-if="mainTab === " croquis"">
         <CroquisPlayground :compiler />
       </template>
-      <template v-else-if="mainTab === "cross-file"">
+      <template v-else-if="mainTab === " cross-file"">
         <CrossFilePlayground :compiler />
       </template>
-      <template v-else-if="mainTab === "musea"">
+      <template v-else-if="mainTab === " musea"">
         <MuseaPlayground :compiler />
       </template>
-      <template v-else-if="mainTab === "glyph"">
+      <template v-else-if="mainTab === " glyph"">
         <GlyphPlayground :compiler />
       </template>
       <template v-else>

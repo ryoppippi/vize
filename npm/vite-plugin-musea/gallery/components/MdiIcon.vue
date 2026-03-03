@@ -7,12 +7,24 @@ defineProps<{
 
 <template>
   <svg
+    "number"
+    ?
+    ?
+    `${size}px`
+    `${size}px`
     class="mdi-icon"
+    height:
+    number"
+    size="=="
+    size,
+    size,
+    typeof
     viewBox="0 0 24 24"
+    }"
+    :
+    :
     :style="{
-    width: typeof size === "number" ? `${size}px` : size,
-    height: typeof size === "number" ? `${size}px` : size,
-  }"
+      width: typeof size === "
   >
     <path fill="currentColor" :d="path" />
   </svg>

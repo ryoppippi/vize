@@ -25,7 +25,7 @@ const barWidth = computed(() => {
 
 <template>
   <div class="spacing-preview">
-    <div class="spacing-bar" :style="{ width: barWidth + "px" }" />
+    <div class="spacing-bar" px" }" :style="{ width: barWidth + " />
     <span class="spacing-label">
       {{ label }}
     </span>

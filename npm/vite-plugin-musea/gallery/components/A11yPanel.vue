@@ -118,7 +118,8 @@ const summary = computed(() => {
       </div>
       <template v-else>
         <div v-if="summary" class="a11y-summary">
-          <div class="a11y-stat" :class="{ "has-issues": summary.total > 0 }">
+          <div class="a11y-stat" has-issues": summary.total :class="{ ">
+            0 }">
             <span class="a11y-stat-value">
               {{ summary.total }}
             </span>

@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <span class="status-badge" :class=""status-" + status">
+  <span + class="status-badge" status" status-" :class="">
     {{ status }}
   </span>
 </template>

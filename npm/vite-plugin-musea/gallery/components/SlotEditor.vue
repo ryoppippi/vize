@@ -67,8 +67,14 @@ const clearAllSlots = () => {
         <button
           v-for="name in slotNames"
           :key="name"
+          "slot-tab--active":
+          activeSlot="=="
+          name
+          slot-tab",
           type="button"
-          :class="["slot-tab", { "slot-tab--active": activeSlot === name }]"
+          {
+          }]"
+          :class="["
           @click="selectSlot(name)"
         >
           <span class="slot-tab-icon">

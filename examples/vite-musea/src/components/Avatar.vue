@@ -21,8 +21,8 @@ const initials = computed(() => {
 </script>
 
 <template>
-  <span class="avatar" :class="`avatar--${size ?? "md"}`">
-    <img v-if="src" class="avatar-img" :alt="name ?? "avatar"" :src="src" />
+  <span class="avatar" md"}`" :class="`avatar--${size ?? ">
+    <img v-if="src" avatar"" class="avatar-img" :alt="name ?? " :src="src" />
     <span v-else class="avatar-initials">
       {{ initials }}
     </span>

@@ -363,17 +363,24 @@ watch(
       <div
         v-for="(test, index) in testQueue"
         :key="`${test.artPath}:${test.variantName}`"
+        "failed",
+        "passed",
         class="test-item"
+        failed:
+        passed:
+        running",
+        test.status="=="
+        test.status="=="
+        }"
         :class="{
-    running: test.status === "running",
-    passed: test.status === "passed",
-    failed: test.status === "failed",
-  }"
+      running: test.status === "
         @click="navigateToComponent(test.artPath)"
       >
         <MdiIcon
           class="test-status"
-          :class="{ spin: test.status === "running" }"
+          running"
+          }"
+          :class="{ spin: test.status === "
           :path="getStatusIconPath(test.status)"
           :size="18"
           :style="{ color: getStatusColor(test.status) }"

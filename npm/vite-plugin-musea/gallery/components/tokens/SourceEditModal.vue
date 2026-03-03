@@ -56,7 +56,7 @@ async function handleSave() {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click.self="emit("close")">
+      <div v-if="isOpen" class="modal-overlay" close")" @click.self="emit(">
         <div class="modal-panel">
           <div class="modal-header">
             <div>
@@ -67,7 +67,7 @@ async function handleSave() {
                 {{ artTitle }}
               </p>
             </div>
-            <button class="modal-close" type="button" @click="emit("close")">
+            <button class="modal-close" close")" type="button" @click="emit(">
               <svg
                 fill="none"
                 height="18"
@@ -101,7 +101,7 @@ async function handleSave() {
               Cmd+S / Ctrl+S to save
             </span>
             <div class="modal-footer-actions">
-              <button class="btn btn--secondary" type="button" @click="emit("close")">
+              <button class="btn btn--secondary" close")" type="button" @click="emit(">
                 Cancel
               </button>
               <button

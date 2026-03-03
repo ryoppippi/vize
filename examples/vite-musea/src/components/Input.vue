@@ -15,13 +15,23 @@ defineEmits<{
 <template>
   <div class="input-wrapper">
     <input
+      "input--disabled":
+      ($event.target
+      as
       class="input"
-      :class="{ "input--error": error, "input--disabled": disabled }"
+      disabled
+      error,
+      HTMLInputElement).value)"
+      input--error":
+      text""
+      update:modelValue",
+      }"
+      :class="{ "
       :disabled="disabled"
       :placeholder="placeholder"
-      :type="type ?? "text""
+      :type="type ?? "
       :value="modelValue"
-      @input="$emit("update:modelValue", ($event.target as HTMLInputElement).value)"
+      @input="$emit("
     >
     <span v-if="error" class="input-error">
       {{ error }}

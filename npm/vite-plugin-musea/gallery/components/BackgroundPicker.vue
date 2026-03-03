@@ -25,9 +25,19 @@ function onCustomColorInput(event: Event) {
         @click="setBackground(background?.name === preset.name ? null : preset)"
       >
         <span
+          ?
+          background:
+          checkerboard"
           class="bg-preset-swatch"
-          :class="{ checkerboard: preset.pattern === "checkerboard" }"
-          :style="preset.color !== "transparent" ? { background: preset.color } : {}"
+          preset.color
+          transparent"
+          {
+          {}"
+          }
+          }"
+          :
+          :class="{ checkerboard: preset.pattern === "
+          :style="preset.color !== "
          />
         <span class="bg-preset-label">
           {{ preset.name }}

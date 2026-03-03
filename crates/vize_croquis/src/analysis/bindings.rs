@@ -139,6 +139,20 @@ pub enum TypeExportKind {
     Interface = 1,
 }
 
+/// Span of an import statement in script content.
+#[derive(Debug, Clone, Copy)]
+pub struct ImportStatementInfo {
+    pub start: u32,
+    pub end: u32,
+}
+
+/// Span of a re-export statement (`export { ... } from "..."`) in script content.
+#[derive(Debug, Clone, Copy)]
+pub struct ReExportInfo {
+    pub start: u32,
+    pub end: u32,
+}
+
 /// Invalid export in script setup
 #[derive(Debug, Clone)]
 pub struct InvalidExport {

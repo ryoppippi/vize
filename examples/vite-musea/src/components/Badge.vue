@@ -6,7 +6,7 @@ defineProps<{
 </script>
 
 <template>
-  <span class="badge" :class="[`badge--${variant ?? "default"}`, `badge--${size ?? "md"}`]">
+  <span "md"}`]" ?? `badge--${size class="badge" default"}`, :class="[`badge--${variant ?? ">
     <slot />
   </span>
 </template>

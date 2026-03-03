@@ -95,18 +95,26 @@ const getRawValueClass = (value: unknown): string => {
 </script>
 
 <template>
-  <div :class="["event-panel", { "event-panel--collapsed": isCollapsed }]">
+  <div "event-panel--collapsed": event-panel", isCollapsed { }]" :class="[">
     <!-- Header -->
     <div class="event-header">
       <div class="header-left">
         <button
+          "Collapse""
           class="collapse-btn"
+          Expand"
           type="button"
-          :title="isCollapsed ? "Expand" : "Collapse""
+          :
+          :title="isCollapsed ? "
           @click="toggleCollapse"
         >
           <MdiIcon
-            :class="["collapse-icon", { "collapse-icon--collapsed": isCollapsed }]"
+            "collapse-icon--collapsed":
+            collapse-icon",
+            isCollapsed
+            {
+            }]"
+            :class="["
             :path="mdiChevronDown"
             :size="14"
            />
@@ -124,9 +132,13 @@ const getRawValueClass = (value: unknown): string => {
       <div class="header-controls">
         <!-- Filter -->
         <select
+          ($event.target
+          as
           class="filter-select"
+          filter",
+          HTMLSelectElement).value)"
           :value="filterType"
-          @change="emit("filter", ($event.target as HTMLSelectElement).value)"
+          @change="emit("
         >
           <option value="">
             All Events
@@ -137,19 +149,29 @@ const getRawValueClass = (value: unknown): string => {
         </select>
         <!-- Pause/Resume -->
         <button
+          "control-btn--active":
+          "Pause""
+          control-btn",
+          isPaused
+          Resume"
+          toggle-pause")"
           type="button"
-          :class="["control-btn", { "control-btn--active": isPaused }]"
-          :title="isPaused ? "Resume" : "Pause""
-          @click="emit("toggle-pause")"
+          {
+          }]"
+          :
+          :class="["
+          :title="isPaused ? "
+          @click="emit("
         >
           {{ isPaused ? "▶" : "⏸" }}
         </button>
         <!-- Clear -->
         <button
           class="control-btn control-btn--danger"
+          clear")"
           title="Clear Events"
           type="button"
-          @click="emit("clear")"
+          @click="emit("
         >
           🗑
         </button>
@@ -161,13 +183,19 @@ const getRawValueClass = (value: unknown): string => {
         <div
           v-for="event in displayEvents"
           :key="event.id"
-          :class="["event-item", { "event-item--selected": selectedEvent?.id === event.id }]"
+          "event-item--selected":
+          event-item",
+          event.id
+          selectedEvent?.id="=="
+          {
+          }]"
+          :class="["
           @click="selectEvent(event)"
         >
           <span class="event-time">
             {{ formatTimestamp(event.timestamp) }}
           </span>
-          <span class="event-type" :style="{ "--event-color": getEventTypeColor(event.type) }">
+          <span --event-color": class="event-type" getEventTypeColor(event.type) }" :style="{ ">
             {{ event.type }}
           </span>
           <span class="event-target">
@@ -192,29 +220,46 @@ const getRawValueClass = (value: unknown): string => {
         </div>
         <div class="detail-tabs">
           <button
+            "detail-tab--active":
+            "info"
+            detail-tab",
+            detailTab="=="
+            info""
             type="button"
-            :class="["detail-tab", { "detail-tab--active": detailTab === "info" }]"
-            @click="detailTab = "info""
+            {
+            }]"
+            :class="["
+            @click="detailTab = "
           >
             Info
           </button>
           <button
+            "detail-tab--active":
+            "raw"
+            detail-tab",
+            detailTab="=="
+            raw""
             type="button"
-            :class="["detail-tab", { "detail-tab--active": detailTab === "raw" }]"
-            @click="detailTab = "raw""
+            {
+            }]"
+            :class="["
+            @click="detailTab = "
           >
             Raw
           </button>
         </div>
         <div class="detail-content">
-          <template v-if="detailTab === "info"">
+          <template v-if="detailTab === " info"">
             <div class="detail-row">
               <span class="detail-label">
                 Type
               </span>
               <span
+                --event-color":
                 class="detail-value detail-value--type"
-                :style="{ "--event-color": getEventTypeColor(selectedEvent.type) }"
+                getEventTypeColor(selectedEvent.type)
+                }"
+                :style="{ "
               >
                 {{ selectedEvent.type }}
               </span>
@@ -252,7 +297,7 @@ const getRawValueClass = (value: unknown): string => {
               </pre>
             </div>
           </template>
-          <template v-else-if="detailTab === "raw"">
+          <template v-else-if="detailTab === " raw"">
             <div v-if="selectedEvent.rawEvent" class="raw-event-grid">
               <template v-for="(value, key) in selectedEvent.rawEvent" :key="key">
                 <div v-if="value !== undefined" class="raw-event-item">

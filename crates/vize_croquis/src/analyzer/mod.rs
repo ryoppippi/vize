@@ -190,6 +190,8 @@ impl Analyzer {
         self.summary.invalid_exports = result.invalid_exports;
         self.summary.scopes = result.scopes;
         self.summary.provide_inject = result.provide_inject;
+        self.summary.import_statements = result.import_statements;
+        self.summary.re_exports = result.re_exports;
         self.summary.binding_spans = result.binding_spans;
         self.summary.setup_context = result.setup_context;
 
@@ -215,6 +217,8 @@ impl Analyzer {
         self.summary.invalid_exports = result.invalid_exports;
         self.summary.scopes = result.scopes;
         self.summary.provide_inject = result.provide_inject;
+        self.summary.import_statements = result.import_statements;
+        self.summary.re_exports = result.re_exports;
         self.summary.binding_spans = result.binding_spans;
         self.summary.setup_context = result.setup_context;
 
