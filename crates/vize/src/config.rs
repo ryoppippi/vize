@@ -249,6 +249,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "requires pkl runtime installed"]
     fn load_config_parses_pkl() {
         let dir = tempfile::tempdir().unwrap();
         let pkl_path = dir.path().join("vize.config.pkl");
