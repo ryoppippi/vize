@@ -969,15 +969,14 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     let stubs = &mut options.auto_import_stubs;
 
     // Vue core composables (with type-preserving signatures)
-    stubs.push(
-        "declare function ref<T>(value: T): $Vue['Ref']<$Vue['UnwrapRef']<T>>;".into(),
-    );
+    stubs.push("declare function ref<T>(value: T): $Vue['Ref']<$Vue['UnwrapRef']<T>>;".into());
     stubs.push("declare function ref<T = any>(): $Vue['Ref']<T | undefined>;".into());
-    stubs.push(
-        "declare function computed<T>(getter: () => T): $Vue['ComputedRef']<T>;".into(),
-    );
+    stubs.push("declare function computed<T>(getter: () => T): $Vue['ComputedRef']<T>;".into());
     stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): $Vue['WritableComputedRef']<T>;".into());
-    stubs.push("declare function reactive<T extends object>(target: T): $Vue['UnwrapNestedRefs']<T>;".into());
+    stubs.push(
+        "declare function reactive<T extends object>(target: T): $Vue['UnwrapNestedRefs']<T>;"
+            .into(),
+    );
     stubs.push("declare function readonly<T extends object>(target: T): Readonly<T>;".into());
     stubs.push(
         "declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;"
@@ -1045,12 +1044,10 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function useRuntimeConfig(): any;".into());
     stubs.push("declare function useAppConfig(): any;".into());
     stubs.push(
-        "declare function useState<T = any>(key: string, init?: () => T): $Vue['Ref']<T>;"
-            .into(),
+        "declare function useState<T = any>(key: string, init?: () => T): $Vue['Ref']<T>;".into(),
     );
     stubs.push(
-        "declare function useCookie<T = any>(name: string, options?: any): $Vue['Ref']<T>;"
-            .into(),
+        "declare function useCookie<T = any>(name: string, options?: any): $Vue['Ref']<T>;".into(),
     );
     stubs.push("declare function useHead(input: any): void;".into());
     stubs.push(
