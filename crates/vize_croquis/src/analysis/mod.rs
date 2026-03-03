@@ -37,6 +37,7 @@ mod vir;
 pub use bindings::{
     BindingMetadata, ImportStatementInfo, InvalidExport, InvalidExportKind, ReExportInfo,
     TypeExport, TypeExportKind, UndefinedRef, UnusedTemplateVar, UnusedVarContext,
+    COMPILER_MACRO_NAMES,
 };
 pub use croquis::AnalysisStats;
 pub use template::{

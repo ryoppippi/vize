@@ -17,8 +17,7 @@ use oxc_ast::ast::{Declaration, Expression, Statement};
 use oxc_span::GetSpan;
 
 use crate::analysis::{
-    ImportStatementInfo, InvalidExport, InvalidExportKind, ReExportInfo, TypeExport,
-    TypeExportKind,
+    ImportStatementInfo, InvalidExport, InvalidExportKind, ReExportInfo, TypeExport, TypeExportKind,
 };
 use crate::scope::{BlockKind, BlockScopeData, ClosureScopeData, ExternalModuleScopeData};
 use crate::ScopeBinding;

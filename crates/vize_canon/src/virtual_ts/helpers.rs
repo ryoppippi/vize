@@ -60,7 +60,8 @@ declare global {
 pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
     let mut ctx = String::default();
 
-    let needs_global_helper = !options.template_globals.is_empty() || !options.css_modules.is_empty();
+    let needs_global_helper =
+        !options.template_globals.is_empty() || !options.css_modules.is_empty();
 
     // Instance type + conditional accessor helper
     ctx.push_str("    // Vue template context (delegates to ComponentPublicInstance)\n");

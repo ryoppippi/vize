@@ -187,7 +187,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
         virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions},
     };
     use vize_carton::Bump;
-    use vize_croquis::{Analyzer, AnalyzerOptions};
+    use vize_croquis::{Analyzer, AnalyzerOptions, ImportStatementInfo, ReExportInfo, TypeExport};
 
     use super::reporting::map_diagnostic_position;
 
@@ -260,12 +260,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             let css_modules: Vec<vize_carton::String> = descriptor
                 .styles
                 .iter()
-                .filter_map(|style| {
-                    style
-                        .module
-                        .as_ref()
-                        .map(|m| m.to_compact_string())
-                })
+                .filter_map(|style| style.module.as_ref().map(|m| m.to_compact_string()))
                 .collect();
 
             // Build per-file options with CSS modules
@@ -305,11 +300,28 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
             // Analyze - need to analyze both script and script_setup if both exist
             let mut analyzer = Analyzer::with_options(AnalyzerOptions::full());
+            let has_both_scripts =
+                descriptor.script.is_some() && descriptor.script_setup.is_some();
 
             // Analyze plain script first (exports types, interfaces, etc.)
             if let Some(ref script) = descriptor.script {
                 analyzer.analyze_script_plain(&script.content);
             }
+
+            // Save plain script's module-level spans before setup analysis overwrites them
+            let plain_spans: Option<(
+                Vec<ImportStatementInfo>,
+                Vec<ReExportInfo>,
+                Vec<TypeExport>,
+            )> = if has_both_scripts {
+                Some((
+                    analyzer.summary().import_statements.clone(),
+                    analyzer.summary().re_exports.clone(),
+                    analyzer.summary().type_exports.clone(),
+                ))
+            } else {
+                None
+            };
 
             // Then analyze script setup (reactive bindings, macros, etc.)
             if let Some(ref script_setup) = descriptor.script_setup {
@@ -331,7 +343,34 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                 None
             };
 
-            let summary = analyzer.finish();
+            let mut summary = analyzer.finish();
+
+            // When both script blocks exist, the combined content is
+            // "{script.content}\n{setup.content}" but Croquis spans are relative
+            // to each block individually. Adjust setup spans and merge plain spans.
+            if let (Some((plain_imports, plain_reexports, plain_types)), Some(ref script)) =
+                (plain_spans, descriptor.script.as_ref())
+            {
+                let plain_len = script.content.len() as u32 + 1; // +1 for \n separator
+                // Croquis currently has setup spans (relative to setup content).
+                // Shift them to be relative to the combined content.
+                for imp in &mut summary.import_statements {
+                    imp.start += plain_len;
+                    imp.end += plain_len;
+                }
+                for re in &mut summary.re_exports {
+                    re.start += plain_len;
+                    re.end += plain_len;
+                }
+                for te in &mut summary.type_exports {
+                    te.start += plain_len;
+                    te.end += plain_len;
+                }
+                // Merge plain script's spans (already at offset 0 in combined content)
+                summary.import_statements.extend(plain_imports);
+                summary.re_exports.extend(plain_reexports);
+                summary.type_exports.extend(plain_types);
+            }
 
             // Generate Virtual TS using canon's implementation
             let output = generate_virtual_ts_with_offsets(
@@ -830,7 +869,10 @@ fn parse_dts_globals(
         if brace_depth <= 0 {
             // Flush any pending member
             if let Some(name) = current_name.take() {
-                let type_ann = current_type.split_whitespace().collect::<Vec<_>>().join(" ");
+                let type_ann = current_type
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 globals.push(TemplateGlobal {
                     name,
                     type_annotation: type_ann.into(),
@@ -854,7 +896,10 @@ fn parse_dts_globals(
 
             if is_type_complete(&current_type) {
                 let name = current_name.take().unwrap();
-                let type_ann = current_type.split_whitespace().collect::<Vec<_>>().join(" ");
+                let type_ann = current_type
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ");
                 globals.push(TemplateGlobal {
                     name,
                     type_annotation: type_ann.into(),
@@ -923,13 +968,20 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     let stubs = &mut options.auto_import_stubs;
 
     // Vue core composables (with type-preserving signatures)
-    stubs.push("declare function ref<T>(value: T): import('vue').Ref<import('vue').UnwrapRef<T>>;".into());
+    stubs.push(
+        "declare function ref<T>(value: T): import('vue').Ref<import('vue').UnwrapRef<T>>;".into(),
+    );
     stubs.push("declare function ref<T = any>(): import('vue').Ref<T | undefined>;".into());
-    stubs.push("declare function computed<T>(getter: () => T): import('vue').ComputedRef<T>;".into());
+    stubs.push(
+        "declare function computed<T>(getter: () => T): import('vue').ComputedRef<T>;".into(),
+    );
     stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): import('vue').WritableComputedRef<T>;".into());
     stubs.push("declare function reactive<T extends object>(target: T): import('vue').UnwrapNestedRefs<T>;".into());
     stubs.push("declare function readonly<T extends object>(target: T): Readonly<T>;".into());
-    stubs.push("declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;".into());
+    stubs.push(
+        "declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;"
+            .into(),
+    );
     stubs.push("declare function watchEffect(effect: () => void, options?: any): any;".into());
     stubs.push("declare function watchPostEffect(effect: () => void): any;".into());
     stubs.push("declare function watchSyncEffect(effect: () => void): any;".into());
@@ -961,7 +1013,8 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function getCurrentScope(): any;".into());
     stubs.push("declare function onScopeDispose(fn: () => void): void;".into());
     stubs.push("declare function shallowReactive<T extends object>(target: T): T;".into());
-    stubs.push("declare function shallowReadonly<T extends object>(target: T): Readonly<T>;".into());
+    stubs
+        .push("declare function shallowReadonly<T extends object>(target: T): Readonly<T>;".into());
     stubs.push("declare function customRef<T>(factory: any): import('vue').Ref<T>;".into());
 
     // Vue Router
@@ -971,27 +1024,46 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     // Nuxt core composables
     stubs.push("declare function definePageMeta(meta: any): void;".into());
     stubs.push("declare function useSeoMeta(meta: any): void;".into());
-    stubs.push("declare function useFetch<T = any>(url: string | (() => string), options?: any): any;".into());
+    stubs.push(
+        "declare function useFetch<T = any>(url: string | (() => string), options?: any): any;"
+            .into(),
+    );
     stubs.push("declare function useAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
-    stubs.push("declare function useLazyFetch<T = any>(url: string | (() => string), options?: any): any;".into());
+    stubs.push(
+        "declare function useLazyFetch<T = any>(url: string | (() => string), options?: any): any;"
+            .into(),
+    );
     stubs.push("declare function useLazyAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
     stubs.push("declare function navigateTo(to: string | any, options?: any): any;".into());
     stubs.push("declare function createError(input: string | { statusCode?: number; statusMessage?: string; message?: string; data?: any; fatal?: boolean }): any;".into());
     stubs.push("declare function showError(error: any): any;".into());
-    stubs.push("declare function clearError(options?: { redirect?: string }): Promise<void>;".into());
+    stubs.push(
+        "declare function clearError(options?: { redirect?: string }): Promise<void>;".into(),
+    );
     stubs.push("declare function useNuxtApp(): any;".into());
     stubs.push("declare function useRuntimeConfig(): any;".into());
     stubs.push("declare function useAppConfig(): any;".into());
-    stubs.push("declare function useState<T = any>(key: string, init?: () => T): import('vue').Ref<T>;".into());
-    stubs.push("declare function useCookie<T = any>(name: string, options?: any): import('vue').Ref<T>;".into());
+    stubs.push(
+        "declare function useState<T = any>(key: string, init?: () => T): import('vue').Ref<T>;"
+            .into(),
+    );
+    stubs.push(
+        "declare function useCookie<T = any>(name: string, options?: any): import('vue').Ref<T>;"
+            .into(),
+    );
     stubs.push("declare function useHead(input: any): void;".into());
-    stubs.push("declare function useRequestHeaders(headers?: string[]): Record<string, string>;".into());
+    stubs.push(
+        "declare function useRequestHeaders(headers?: string[]): Record<string, string>;".into(),
+    );
     stubs.push("declare function useRequestURL(): URL;".into());
     stubs.push("declare function defineNuxtComponent(options: any): any;".into());
     stubs.push("declare function defineNuxtRouteMiddleware(middleware: any): any;".into());
     stubs.push("declare function useError(): any;".into());
     stubs.push("declare function abortNavigation(err?: any): any;".into());
-    stubs.push("declare function addRouteMiddleware(name: string, middleware: any, options?: any): void;".into());
+    stubs.push(
+        "declare function addRouteMiddleware(name: string, middleware: any, options?: any): void;"
+            .into(),
+    );
     stubs.push("declare function defineNuxtPlugin(plugin: any): any;".into());
     stubs.push("declare function setPageLayout(layout: string): void;".into());
     stubs.push("declare function setResponseStatus(code: number, message?: string): void;".into());
@@ -1002,9 +1074,14 @@ fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptio
     stubs.push("declare function callOnce(key: string, fn: () => any): Promise<void>;".into());
     stubs.push("declare function callOnce(fn: () => any): Promise<void>;".into());
     stubs.push("declare function onNuxtReady(callback: () => any): void;".into());
-    stubs.push("declare function preloadComponents(components: string | string[]): Promise<void>;".into());
-    stubs.push("declare function prefetchComponents(components: string | string[]): Promise<void>;".into());
+    stubs.push(
+        "declare function preloadComponents(components: string | string[]): Promise<void>;".into(),
+    );
+    stubs.push(
+        "declare function prefetchComponents(components: string | string[]): Promise<void>;".into(),
+    );
     stubs.push("declare function useRequestEvent(): any;".into());
     stubs.push("declare function useRequestFetch(): typeof globalThis.fetch;".into());
-    stubs.push("declare function useResponseHeaders(headers?: Record<string, string>): any;".into());
+    stubs
+        .push("declare function useResponseHeaders(headers?: Record<string, string>): any;".into());
 }

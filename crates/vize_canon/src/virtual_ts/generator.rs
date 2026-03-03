@@ -3,7 +3,7 @@
 //! Contains the public `generate_virtual_ts` and `generate_virtual_ts_with_offsets`
 //! functions that orchestrate the full virtual TypeScript generation pipeline.
 
-use vize_croquis::{BindingType, Croquis, ScopeData, ScopeKind};
+use vize_croquis::{BindingType, Croquis, ScopeData, ScopeKind, COMPILER_MACRO_NAMES};
 
 use super::{
     helpers::{
@@ -129,16 +129,7 @@ pub fn generate_virtual_ts_with_offsets(
 
         // Void-reference imported names that match compiler macro names.
         // These get shadowed by __setup() declarations, causing TS6133 at module level.
-        let compiler_macro_names = [
-            "defineProps",
-            "defineEmits",
-            "defineExpose",
-            "defineModel",
-            "defineSlots",
-            "withDefaults",
-            "useTemplateRef",
-        ];
-        let shadowed_imports: Vec<&&str> = compiler_macro_names
+        let shadowed_imports: Vec<&&str> = COMPILER_MACRO_NAMES
             .iter()
             .filter(|&&name| summary.bindings.bindings.contains_key(name))
             .collect();
@@ -156,12 +147,12 @@ pub fn generate_virtual_ts_with_offsets(
         let mut has_header = false;
         for stub in &options.auto_import_stubs {
             // Extract function name from "declare function NAME<..." or "declare function NAME(..."
-            let name = stub
-                .strip_prefix("declare function ")
-                .and_then(|rest| {
-                    let end = rest.find(|c: char| c == '<' || c == '(').unwrap_or(rest.len());
-                    Some(&rest[..end])
-                });
+            let name = stub.strip_prefix("declare function ").and_then(|rest| {
+                let end = rest
+                    .find(|c: char| c == '<' || c == '(')
+                    .unwrap_or(rest.len());
+                Some(&rest[..end])
+            });
             if let Some(name) = name {
                 // Skip if already imported or declared in script bindings
                 if summary.bindings.bindings.contains_key(name) {
@@ -280,12 +271,7 @@ pub fn generate_virtual_ts_with_offsets(
             .bindings
             .bindings
             .iter()
-            .filter(|(_, bt)| {
-                matches!(
-                    bt,
-                    BindingType::SetupRef | BindingType::SetupMaybeRef
-                )
-            })
+            .filter(|(_, bt)| matches!(bt, BindingType::SetupRef | BindingType::SetupMaybeRef))
             .map(|(name, _)| name.as_str())
             .collect();
 
@@ -294,10 +280,7 @@ pub fn generate_virtual_ts_with_offsets(
         if !ref_bindings.is_empty() {
             ts.push_str("  // Ref type captures (before template scope shadows them)\n");
             for name in &ref_bindings {
-                append!(
-                    ts,
-                    "  type __VizeRef_{name} = typeof {name};\n"
-                );
+                append!(ts, "  type __VizeRef_{name} = typeof {name};\n");
             }
         }
 
