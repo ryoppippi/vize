@@ -1,278 +1,177 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { DesignToken } from "../../api";
-import SpacingPreview from "./SpacingPreview.vue";
-import TypographyPreview from "./TypographyPreview.vue";
+import { computed } from 'vue'
+import type { DesignToken } from '../../api'
+import SpacingPreview from './SpacingPreview.vue'
+import TypographyPreview from './TypographyPreview.vue'
 
-const props = withDefaults(
-  defineProps<{
-    name: string;
-    token: DesignToken;
-    categoryPath?: string;
-    usageCount?: number;
-  }>(),
-  {
-    usageCount: 0,
-  },
-);
+const props = withDefaults(defineProps<{
+  name: string
+  token: DesignToken
+  categoryPath?: string
+  usageCount?: number
+}>(), {
+  usageCount: 0,
+})
 
 const emit = defineEmits<{
-  edit: [];
-  delete: [];
-  showUsage: [];
-}>();
+  edit: []
+  delete: []
+  showUsage: []
+}>()
 
 const isColor = computed(() => {
-  if (props.token.type === "color") return true;
-  if (typeof props.token.value !== "string") return false;
+  if (props.token.type === 'color') return true
+  if (typeof props.token.value !== 'string') return false
   return (
-    props.token.value.startsWith("#") ||
-    props.token.value.startsWith("rgb") ||
-    props.token.value.startsWith("hsl")
-  );
-});
+    props.token.value.startsWith('#') ||
+    props.token.value.startsWith('rgb') ||
+    props.token.value.startsWith('hsl')
+  )
+})
 
 const displayValue = computed(() => {
-  if (props.token.$tier === "semantic" && props.token.$resolvedValue !== undefined) {
-    return props.token.$resolvedValue;
+  if (props.token.$tier === 'semantic' && props.token.$resolvedValue !== undefined) {
+    return props.token.$resolvedValue
   }
-  return props.token.value;
-});
+  return props.token.value
+})
 
-const previewType = computed<
-  | "color"
-  | "spacing"
-  | "fontSize"
-  | "fontWeight"
-  | "lineHeight"
-  | "shadow"
-  | "borderRadius"
-  | "generic"
->(() => {
-  if (isColor.value) return "color";
+const previewType = computed<'color' | 'spacing' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'shadow' | 'borderRadius' | 'generic'>(() => {
+  if (isColor.value) return 'color'
 
-  const path = props.categoryPath?.toLowerCase() ?? "";
-  const type = props.token.type?.toLowerCase() ?? "";
-  const name = props.name.toLowerCase();
+  const path = props.categoryPath?.toLowerCase() ?? ''
+  const type = props.token.type?.toLowerCase() ?? ''
+  const name = props.name.toLowerCase()
 
-  if (type === "dimension" || type === "spacing") {
-    if (
-      path.includes("spacing") ||
-      name.includes("spacing") ||
-      name.includes("gap") ||
-      name.includes("padding") ||
-      name.includes("margin")
-    ) {
-      return "spacing";
+  if (type === 'dimension' || type === 'spacing') {
+    if (path.includes('spacing') || name.includes('spacing') || name.includes('gap') || name.includes('padding') || name.includes('margin')) {
+      return 'spacing'
     }
-    if (
-      path.includes("font-size") ||
-      path.includes("fontsize") ||
-      name.includes("font-size") ||
-      name.includes("fontsize")
-    ) {
-      return "fontSize";
+    if (path.includes('font-size') || path.includes('fontsize') || name.includes('font-size') || name.includes('fontsize')) {
+      return 'fontSize'
     }
-    if (
-      path.includes("border-radius") ||
-      path.includes("borderradius") ||
-      name.includes("radius")
-    ) {
-      return "borderRadius";
+    if (path.includes('border-radius') || path.includes('borderradius') || name.includes('radius')) {
+      return 'borderRadius'
     }
   }
 
-  if (
-    type === "fontweight" ||
-    name.includes("font-weight") ||
-    name.includes("fontweight") ||
-    name.includes("weight")
-  ) {
-    return "fontWeight";
+  if (type === 'fontweight' || name.includes('font-weight') || name.includes('fontweight') || name.includes('weight')) {
+    return 'fontWeight'
   }
 
-  if (type === "lineheight" || name.includes("line-height") || name.includes("lineheight")) {
-    return "lineHeight";
+  if (type === 'lineheight' || name.includes('line-height') || name.includes('lineheight')) {
+    return 'lineHeight'
   }
 
-  if (type === "shadow" || name.includes("shadow")) {
-    return "shadow";
+  if (type === 'shadow' || name.includes('shadow')) {
+    return 'shadow'
   }
 
-  return "generic";
-});
+  return 'generic'
+})
 
 const tierLabel = computed(() => {
-  if (props.token.$tier === "semantic") return "Semantic";
-  if (props.token.$tier === "primitive") return "Primitive";
-  return null;
-});
+  if (props.token.$tier === 'semantic') return 'Semantic'
+  if (props.token.$tier === 'primitive') return 'Primitive'
+  return null
+})
 </script>
 
 <template>
-  <div "semantic" class="token-card" token-card--semantic": token.$tier="==" }" :class="{ ">
+  <div class="token-card" :class="{ 'token-card--semantic': token.$tier === 'semantic' }">
     <!-- Preview -->
-    <div "color" class="token-preview" previewType="==" token-preview--color": }" :class="{ ">
+    <div class="token-preview" :class="{ 'token-preview--color': previewType === 'color' }">
       <div
-        v-if="previewType === "
+        v-if="previewType === 'color'"
         class="color-swatch"
-        color""
         :style="{ background: String(displayValue) }"
-       />
+      />
       <div v-else class="preview-compact">
-        <SpacingPreview v-if="previewType === " spacing"" :value="displayValue" />
+        <SpacingPreview
+          v-if="previewType === 'spacing'"
+          :value="displayValue"
+        />
         <TypographyPreview
-          v-else-if="previewType === "
-          fontSize""
+          v-else-if="previewType === 'fontSize'"
+          :value="displayValue"
           token-type="fontSize"
-          :value="displayValue"
-         />
+        />
         <TypographyPreview
-          v-else-if="previewType === "
-          fontWeight""
+          v-else-if="previewType === 'fontWeight'"
+          :value="displayValue"
           token-type="fontWeight"
-          :value="displayValue"
-         />
+        />
         <TypographyPreview
-          v-else-if="previewType === "
-          lineHeight""
-          token-type="lineHeight"
+          v-else-if="previewType === 'lineHeight'"
           :value="displayValue"
-         />
+          token-type="lineHeight"
+        />
         <div
-          v-else-if="previewType === "
+          v-else-if="previewType === 'shadow'"
           class="shadow-swatch"
-          shadow""
           :style="{ boxShadow: String(displayValue) }"
-         />
+        />
         <div
-          v-else-if="previewType === "
-          borderRadius""
+          v-else-if="previewType === 'borderRadius'"
           class="radius-swatch"
           :style="{ borderRadius: String(displayValue) }"
-         />
+        />
         <div v-else class="generic-preview">
-          <span class="generic-value-icon">
-            T
-          </span>
+          <span class="generic-value-icon">T</span>
         </div>
       </div>
     </div>
+
     <!-- Info -->
     <div class="token-body">
       <div class="token-header">
-        <span class="token-name" :title="name">
-          {{ name }}
-        </span>
-        <span v-if="tierLabel" + class="tier-badge" tier-badge--" token.$tier" :class="">
+        <span class="token-name" :title="name">{{ name }}</span>
+        <span v-if="tierLabel" class="tier-badge" :class="'tier-badge--' + token.$tier">
           {{ tierLabel }}
         </span>
       </div>
-      <div class="token-value" :title="String(token.value)">
-        {{ token.value }}
-      </div>
-      <div v-if="token.$tier === " && class="token-reference" semantic" token.$reference">
-        <span class="ref-arrow">
-          &rarr;
-        </span>
-        {{ token.$reference }}
+      <div class="token-value" :title="String(token.value)">{{ token.value }}</div>
+      <div v-if="token.$tier === 'semantic' && token.$reference" class="token-reference">
+        <span class="ref-arrow">&rarr;</span> {{ token.$reference }}
         <span v-if="token.$resolvedValue !== undefined" class="ref-resolved">
           ({{ token.$resolvedValue }})
         </span>
       </div>
-      <div v-if="token.description" class="token-desc">
-        {{ token.description }}
-      </div>
+      <div v-if="token.description" class="token-desc">{{ token.description }}</div>
     </div>
+
     <!-- Footer -->
     <div class="token-footer">
       <button
         v-if="usageCount > 0"
-        "Primitive
-        "primitive"
-        "View
-        ?
-        a
-        class="usage-badge"
-        component
-        consider
-        directly
-        primitive"
-        semantic
-        showUsage")"
-        token
-        token"
-        token.$tier="=="
         type="button"
-        usage""
-        usage-badge--warn":
-        used
-        using
-        }"
-        —
-        :
-        :class="{ "
-        :title="token.$tier === "
-        @click.stop="emit("
+        class="usage-badge"
+        :class="{ 'usage-badge--warn': token.$tier === 'primitive' }"
+        :title="token.$tier === 'primitive' ? 'Primitive token used directly — consider using a semantic token' : 'View component usage'"
+        @click.stop="emit('showUsage')"
       >
-        <svg
-          v-if="token.$tier === "
-          fill="none"
-          height="12"
-          primitive""
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="12"
-        >
+        <svg v-if="token.$tier === 'primitive'" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-          <line x1="12" x2="12" y1="9" y2="13" />
-          <line x1="12" x2="12.01" y1="17" y2="17" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
         </svg>
-        <svg
-          v-else
-          fill="none"
-          height="12"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
-          width="12"
-        >
+        <svg v-else width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
           <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
         </svg>
         {{ usageCount }}
       </button>
       <span v-else class="footer-spacer" />
+
       <div class="token-actions">
-        <button class="action-btn" edit")" title="Edit" type="button" @click.stop="emit(">
-          <svg
-            fill="none"
-            height="14"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="14"
-          >
+        <button type="button" class="action-btn" title="Edit" @click.stop="emit('edit')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
         </button>
-        <button
-          class="action-btn action-btn--danger"
-          delete")"
-          title="Delete"
-          type="button"
-          @click.stop="emit("
-        >
-          <svg
-            fill="none"
-            height="14"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="14"
-          >
+        <button type="button" class="action-btn action-btn--danger" title="Delete" @click.stop="emit('delete')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6" />
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
@@ -301,12 +200,13 @@ const tierLabel = computed(() => {
   opacity: 1;
 }
 
+/* Preview area */
 .token-preview {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 48px;
-  padding: .75rem;
+  padding: 0.75rem;
 }
 
 .token-preview--color {
@@ -337,7 +237,7 @@ const tierLabel = computed(() => {
   width: 48px;
   height: 48px;
   border: 2px solid var(--musea-accent);
-  background: none;
+  background: transparent;
 }
 
 .generic-preview {
@@ -357,8 +257,9 @@ const tierLabel = computed(() => {
   font-weight: 600;
 }
 
+/* Body / info */
 .token-body {
-  padding: .625rem .875rem .5rem;
+  padding: 0.625rem 0.875rem 0.5rem;
   flex: 1;
   min-width: 0;
 }
@@ -366,54 +267,54 @@ const tierLabel = computed(() => {
 .token-header {
   display: flex;
   align-items: center;
-  gap: .5rem;
-  margin-bottom: .125rem;
+  gap: 0.5rem;
+  margin-bottom: 0.125rem;
 }
 
 .token-name {
   font-weight: 600;
   font-family: var(--musea-font-mono);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .tier-badge {
-  font-size: .5625rem;
-  padding: .0625rem .3125rem;
+  font-size: 0.5625rem;
+  padding: 0.0625rem 0.3125rem;
   border-radius: 9999px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .025em;
+  letter-spacing: 0.025em;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .tier-badge--primitive {
-  background: #3b82f626;
+  background: rgba(59, 130, 246, 0.15);
   color: #60a5fa;
 }
 
 .tier-badge--semantic {
-  background: #a855f726;
+  background: rgba(168, 85, 247, 0.15);
   color: #c084fc;
 }
 
 .token-value {
   color: var(--musea-text-muted);
   font-family: var(--musea-font-mono);
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .token-reference {
-  font-size: .625rem;
+  font-size: 0.625rem;
   color: var(--musea-text-muted);
   font-family: var(--musea-font-mono);
-  margin-top: .125rem;
+  margin-top: 0.125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -424,23 +325,24 @@ const tierLabel = computed(() => {
 }
 
 .ref-resolved {
-  opacity: .7;
+  opacity: 0.7;
 }
 
 .token-desc {
   color: var(--musea-text-muted);
-  font-size: .6875rem;
-  margin-top: .25rem;
+  font-size: 0.6875rem;
+  margin-top: 0.25rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Footer */
 .token-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .375rem .875rem;
+  padding: 0.375rem 0.875rem;
   border-top: 1px solid var(--musea-border);
   min-height: 34px;
 }
@@ -452,13 +354,13 @@ const tierLabel = computed(() => {
 .usage-badge {
   display: flex;
   align-items: center;
-  gap: .25rem;
-  padding: .125rem .5rem;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
   border: 1px solid var(--musea-border);
   border-radius: 9999px;
-  background: none;
+  background: transparent;
   color: var(--musea-text-muted);
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   font-family: var(--musea-font-mono);
   cursor: pointer;
   transition: border-color var(--musea-transition), color var(--musea-transition);
@@ -467,7 +369,7 @@ const tierLabel = computed(() => {
 }
 
 .usage-badge--warn {
-  border-color: #f59e0b66;
+  border-color: rgba(245, 158, 11, 0.4);
   color: #f59e0b;
 }
 
@@ -483,7 +385,7 @@ const tierLabel = computed(() => {
 
 .token-actions {
   display: flex;
-  gap: .125rem;
+  gap: 0.125rem;
   opacity: 0;
   transition: opacity var(--musea-transition);
   margin-left: auto;
@@ -496,7 +398,7 @@ const tierLabel = computed(() => {
   width: 26px;
   height: 26px;
   border: none;
-  background: none;
+  background: transparent;
   color: var(--musea-text-muted);
   border-radius: var(--musea-radius-sm, 4px);
   cursor: pointer;
@@ -509,7 +411,7 @@ const tierLabel = computed(() => {
 }
 
 .action-btn--danger:hover {
-  background: #ef444426;
+  background: rgba(239, 68, 68, 0.15);
   color: #ef4444;
 }
 </style>

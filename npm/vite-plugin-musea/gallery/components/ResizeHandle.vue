@@ -1,26 +1,22 @@
 <script setup lang="ts">
 defineProps<{
-  direction: "horizontal" | "vertical";
+  direction: 'horizontal' | 'vertical';
   isResizing?: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: "mousedown", event: MouseEvent): void;
+  (e: 'mousedown', event: MouseEvent): void;
 }>();
 </script>
 
 <template>
   <div
-    "resize-handle--active":
-    $event)"
-    `resize-handle--${direction}`,
-    isResizing
-    mousedown",
-    resize-handle",
-    {
-    }]"
-    :class="["
-    @mousedown="emit("
+    :class="[
+      'resize-handle',
+      `resize-handle--${direction}`,
+      { 'resize-handle--active': isResizing }
+    ]"
+    @mousedown="emit('mousedown', $event)"
   >
     <div class="resize-handle__indicator" />
   </div>
@@ -30,8 +26,8 @@ const emit = defineEmits<{
 .resize-handle {
   position: relative;
   flex-shrink: 0;
-  background: none;
-  transition: background-color .15s;
+  background: transparent;
+  transition: background-color 0.15s;
   z-index: 10;
 }
 
@@ -45,14 +41,15 @@ const emit = defineEmits<{
   cursor: row-resize;
 }
 
-.resize-handle:hover, .resize-handle--active {
-  background: #e070484d;
+.resize-handle:hover,
+.resize-handle--active {
+  background: rgba(224, 112, 72, 0.3);
 }
 
 .resize-handle__indicator {
   position: absolute;
   background: var(--musea-border);
-  transition: background-color .15s;
+  transition: background-color 0.15s;
 }
 
 .resize-handle--horizontal .resize-handle__indicator {
@@ -71,7 +68,8 @@ const emit = defineEmits<{
   transform: translateY(-50%);
 }
 
-.resize-handle:hover .resize-handle__indicator, .resize-handle--active .resize-handle__indicator {
+.resize-handle:hover .resize-handle__indicator,
+.resize-handle--active .resize-handle__indicator {
   background: var(--musea-accent);
 }
 </style>

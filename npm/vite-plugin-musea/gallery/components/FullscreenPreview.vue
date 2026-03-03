@@ -1,27 +1,23 @@
-<script lang="ts">
-const window = globalThis.window;
-</script>
-
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
-import { mdiOpenInNew, mdiClose } from "@mdi/js";
-import { useAddons } from "../composables/useAddons";
-import { getPreviewUrl } from "../api";
-import MdiIcon from "./MdiIcon.vue";
+import { computed, onMounted, onUnmounted } from 'vue'
+import { mdiOpenInNew, mdiClose } from '@mdi/js'
+import { useAddons } from '../composables/useAddons'
+import { getPreviewUrl } from '../api'
+import MdiIcon from './MdiIcon.vue'
 
-const { fullscreenVariant, closeFullscreen } = useAddons();
+const { fullscreenVariant, closeFullscreen } = useAddons()
 
 const previewUrl = computed(() => {
-  if (!fullscreenVariant.value) return "";
-  return getPreviewUrl(fullscreenVariant.value.artPath, fullscreenVariant.value.variantName);
-});
+  if (!fullscreenVariant.value) return ''
+  return getPreviewUrl(fullscreenVariant.value.artPath, fullscreenVariant.value.variantName)
+})
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === "Escape") closeFullscreen();
+  if (e.key === 'Escape') closeFullscreen()
 }
 
-onMounted(() => document.addEventListener("keydown", onKeydown));
-onUnmounted(() => document.removeEventListener("keydown", onKeydown));
+onMounted(() => document.addEventListener('keydown', onKeydown))
+onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -29,25 +25,17 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
     <div v-if="fullscreenVariant" class="fullscreen-overlay" @click.self="closeFullscreen()">
       <div class="fullscreen-container">
         <div class="fullscreen-header">
-          <span class="fullscreen-title">
-            {{ fullscreenVariant.variantName }}
-          </span>
+          <span class="fullscreen-title">{{ fullscreenVariant.variantName }}</span>
           <div class="fullscreen-actions">
             <button
-              _blank")"
+              type="button"
               class="fullscreen-action-btn"
               title="Open in new tab"
-              type="button"
-              @click="window.open(previewUrl, "
+              @click="window.open(previewUrl, '_blank')"
             >
               <MdiIcon :path="mdiOpenInNew" :size="16" />
             </button>
-            <button
-              class="fullscreen-close-btn"
-              title="Close (Esc)"
-              type="button"
-              @click="closeFullscreen()"
-            >
+            <button type="button" class="fullscreen-close-btn" title="Close (Esc)" @click="closeFullscreen()">
               <MdiIcon :path="mdiClose" :size="18" />
             </button>
           </div>
@@ -57,6 +45,10 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
     </div>
   </Teleport>
 </template>
+
+<script lang="ts">
+const window = globalThis.window
+</script>
 
 <style scoped>
 .fullscreen-overlay {
@@ -69,17 +61,12 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  animation: .15s fadeIn;
+  animation: fadeIn 0.15s ease;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .fullscreen-container {
@@ -97,7 +84,7 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .75rem 1rem;
+  padding: 0.75rem 1rem;
   background: var(--musea-bg-secondary);
   border-bottom: 1px solid var(--musea-border);
   flex-shrink: 0;
@@ -105,16 +92,17 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
 .fullscreen-title {
   font-weight: 600;
-  font-size: .875rem;
+  font-size: 0.875rem;
   color: var(--musea-text);
 }
 
 .fullscreen-actions {
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
-.fullscreen-action-btn, .fullscreen-close-btn {
+.fullscreen-action-btn,
+.fullscreen-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,7 +116,8 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
   transition: all var(--musea-transition);
 }
 
-.fullscreen-action-btn:hover, .fullscreen-close-btn:hover {
+.fullscreen-action-btn:hover,
+.fullscreen-close-btn:hover {
   background: var(--musea-bg-elevated);
   color: var(--musea-text);
 }

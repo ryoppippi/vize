@@ -7,13 +7,8 @@ defineProps<{
 
 <template>
   <button
-    "btn--disabled":
     class="btn"
-    default"}`,
-    disabled
-    {
-    }]"
-    :class="[`btn--${variant ?? "
+    :class="[`btn--${variant ?? 'default'}`, { 'btn--disabled': disabled }]"
     :disabled="disabled"
   >
     <slot />
@@ -22,12 +17,12 @@ defineProps<{
 
 <style scoped>
 .btn {
-  padding: .5rem 1rem;
+  padding: 0.5rem 1rem;
   border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1rem;
-  transition: all .2s;
+  transition: all 0.2s;
 }
 
 .btn--default {
@@ -60,7 +55,7 @@ defineProps<{
 }
 
 .btn--disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 </style>

@@ -1,63 +1,60 @@
 <script setup lang="ts">
-import { ref, watch, computed, defineAsyncComponent } from "vue";
+import { ref, watch, computed, defineAsyncComponent } from 'vue'
 
-const MonacoEditor = defineAsyncComponent(() => import("./MonacoEditor.vue"));
+const MonacoEditor = defineAsyncComponent(() => import('./MonacoEditor.vue'))
 
 const props = defineProps<{
-  slots: Record<string, string>;
-  availableSlots?: string[];
-}>();
+  slots: Record<string, string>
+  availableSlots?: string[]
+}>()
 
 const emit = defineEmits<{
-  (e: "update", slots: Record<string, string>): void;
-}>();
+  (e: 'update', slots: Record<string, string>): void
+}>()
 
-const activeSlot = ref("default");
-const localSlots = ref<Record<string, string>>({});
+const activeSlot = ref('default')
+const localSlots = ref<Record<string, string>>({})
 
 // Initialize local slots from props
-watch(
-  () => props.slots,
-  (newSlots) => {
-    localSlots.value = { ...newSlots };
-  },
-  { immediate: true, deep: true },
-);
+watch(() => props.slots, (newSlots) => {
+  localSlots.value = { ...newSlots }
+}, { immediate: true, deep: true })
 
 const slotNames = computed(() => {
-  const names = new Set(["default"]);
+  const names = new Set(['default'])
   if (props.availableSlots) {
     for (const name of props.availableSlots) {
-      names.add(name);
+      names.add(name)
     }
   }
   for (const name of Object.keys(localSlots.value)) {
-    names.add(name);
+    names.add(name)
   }
-  return Array.from(names);
-});
+  return Array.from(names)
+})
 
 const currentContent = computed({
-  get: () => localSlots.value[activeSlot.value] || "",
+  get: () => localSlots.value[activeSlot.value] || '',
   set: (value: string) => {
-    localSlots.value[activeSlot.value] = value;
-    emit("update", { ...localSlots.value });
-  },
-});
+    localSlots.value[activeSlot.value] = value
+    emit('update', { ...localSlots.value })
+  }
+})
 
 const selectSlot = (name: string) => {
-  activeSlot.value = name;
-};
+  activeSlot.value = name
+}
 
 const clearSlot = () => {
-  localSlots.value[activeSlot.value] = "";
-  emit("update", { ...localSlots.value });
-};
+  localSlots.value[activeSlot.value] = ''
+  emit('update', { ...localSlots.value })
+}
 
 const clearAllSlots = () => {
-  localSlots.value = {};
-  emit("update", {});
-};
+  localSlots.value = {}
+  emit('update', {})
+}
+
 </script>
 
 <template>
@@ -67,49 +64,35 @@ const clearAllSlots = () => {
         <button
           v-for="name in slotNames"
           :key="name"
-          "slot-tab--active":
-          activeSlot="=="
-          name
-          slot-tab",
           type="button"
-          {
-          }]"
-          :class="["
+          :class="['slot-tab', { 'slot-tab--active': activeSlot === name }]"
           @click="selectSlot(name)"
         >
-          <span class="slot-tab-icon">
-            #
-          </span>
+          <span class="slot-tab-icon">#</span>
           {{ name }}
         </button>
       </div>
       <div class="slot-actions">
-        <button class="slot-action" title="Clear current slot" type="button" @click="clearSlot">
+        <button type="button" class="slot-action" @click="clearSlot" title="Clear current slot">
           Clear
         </button>
-        <button
-          class="slot-action slot-action--danger"
-          title="Clear all slots"
-          type="button"
-          @click="clearAllSlots"
-        >
+        <button type="button" class="slot-action slot-action--danger" @click="clearAllSlots" title="Clear all slots">
           Clear All
         </button>
       </div>
     </div>
+
     <div class="slot-content">
-      <MonacoEditor v-model="currentContent" height="150px" language="html" />
+      <MonacoEditor
+        v-model="currentContent"
+        language="html"
+        height="150px"
+      />
     </div>
+
     <div class="slot-footer">
       <div class="slot-hint">
-        <code>
-          &lt;slot&gt;
-        </code>
-        = default,
-        <code>
-          &lt;slot name="foo"&gt;
-        </code>
-        = #foo
+        <code>&lt;slot&gt;</code> = default, <code>&lt;slot name="foo"&gt;</code> = #foo
       </div>
     </div>
   </div>
@@ -128,28 +111,28 @@ const clearAllSlots = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: .5rem;
+  padding: 0.5rem;
   background: var(--musea-bg-tertiary);
   border-bottom: 1px solid var(--musea-border);
 }
 
 .slot-tabs {
   display: flex;
-  gap: .25rem;
+  gap: 0.25rem;
 }
 
 .slot-tab {
   display: flex;
   align-items: center;
-  gap: .25rem;
-  padding: .375rem .625rem;
-  background: none;
-  border: 1px solid #0000;
+  gap: 0.25rem;
+  padding: 0.375rem 0.625rem;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 4px;
-  font-size: .75rem;
+  font-size: 0.75rem;
   color: var(--musea-text-muted);
   cursor: pointer;
-  transition: all .15s;
+  transition: all 0.15s;
 }
 
 .slot-tab:hover {
@@ -170,18 +153,18 @@ const clearAllSlots = () => {
 
 .slot-actions {
   display: flex;
-  gap: .25rem;
+  gap: 0.25rem;
 }
 
 .slot-action {
-  padding: .25rem .5rem;
-  background: none;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
   border: 1px solid var(--musea-border);
   border-radius: 3px;
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
   cursor: pointer;
-  transition: all .15s;
+  transition: all 0.15s;
 }
 
 .slot-action:hover {
@@ -200,18 +183,18 @@ const clearAllSlots = () => {
 }
 
 .slot-footer {
-  padding: .375rem .75rem;
+  padding: 0.375rem 0.75rem;
   background: var(--musea-bg-tertiary);
   border-top: 1px solid var(--musea-border);
 }
 
 .slot-hint {
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
 }
 
 .slot-hint code {
-  padding: .0625rem .25rem;
+  padding: 0.0625rem 0.25rem;
   background: var(--musea-bg-primary);
   border-radius: 2px;
   font-family: var(--musea-font-mono);

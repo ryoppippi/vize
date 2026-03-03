@@ -1,52 +1,42 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { fetchA11y } from "../api";
+import { ref, watch } from 'vue'
+import { fetchA11y } from '../api'
 
 const props = defineProps<{
-  artPath: string;
-  variantName?: string;
-}>();
+  artPath: string
+  variantName?: string
+}>()
 
-const count = ref<number | null>(null);
-const severity = ref<string>("none");
+const count = ref<number | null>(null)
+const severity = ref<string>('none')
 
-watch(
-  () => [props.artPath, props.variantName],
-  async ([path, variant]) => {
-    if (!path || !variant) {
-      count.value = null;
-      return;
+watch(() => [props.artPath, props.variantName], async ([path, variant]) => {
+  if (!path || !variant) {
+    count.value = null
+    return
+  }
+  try {
+    const data = await fetchA11y(path as string, variant as string)
+    count.value = data.violations.length
+    if (data.violations.length > 0) {
+      const hasCritical = data.violations.some(v => v.impact === 'critical')
+      const hasSerious = data.violations.some(v => v.impact === 'serious')
+      severity.value = hasCritical ? 'critical' : hasSerious ? 'serious' : 'moderate'
+    } else {
+      severity.value = 'none'
     }
-    try {
-      const data = await fetchA11y(path as string, variant as string);
-      count.value = data.violations.length;
-      if (data.violations.length > 0) {
-        const hasCritical = data.violations.some((v) => v.impact === "critical");
-        const hasSerious = data.violations.some((v) => v.impact === "serious");
-        severity.value = hasCritical ? "critical" : hasSerious ? "serious" : "moderate";
-      } else {
-        severity.value = "none";
-      }
-    } catch {
-      count.value = null;
-    }
-  },
-  { immediate: true },
-);
+  } catch {
+    count.value = null
+  }
+}, { immediate: true })
 </script>
 
 <template>
   <span
     v-if="count !== null && count > 0"
-    ""}`"
-    +
     class="a11y-badge"
-    s"
-    severity"
-    severity-"
-    :
-    :class=""
-    :title="`${count} accessibility violation${count !== 1 ? "
+    :class="'severity-' + severity"
+    :title="`${count} accessibility violation${count !== 1 ? 's' : ''}`"
   >
     {{ count }}
   </span>
@@ -59,25 +49,25 @@ watch(
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 .25rem;
+  padding: 0 0.25rem;
   border-radius: 9px;
-  font-size: .625rem;
+  font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
 }
 
 .severity-moderate {
-  background: #fbbf2433;
+  background: rgba(251, 191, 36, 0.2);
   color: var(--musea-warning);
 }
 
 .severity-serious {
-  background: #f8717133;
+  background: rgba(248, 113, 113, 0.2);
   color: var(--musea-error);
 }
 
 .severity-critical {
-  background: #f871714d;
+  background: rgba(248, 113, 113, 0.3);
   color: var(--musea-error);
 }
 </style>

@@ -1,112 +1,84 @@
-<script lang="ts">
-// Recursive component self-reference
-import { defineComponent } from "vue";
-export default defineComponent({
-  name: "TokenCategorySection",
-});
-</script>
-
 <script setup lang="ts">
-import type { TokenCategory, DesignToken, TokenUsageMap } from "../../api";
-import TokenCard from "./TokenCard.vue";
+import type { TokenCategory, DesignToken, TokenUsageMap } from '../../api'
+import TokenCard from './TokenCard.vue'
 
-const props = withDefaults(
-  defineProps<{
-    category: TokenCategory;
-    level?: number;
-    parentPath?: string;
-    usageMap?: TokenUsageMap;
-  }>(),
-  {
-    usageMap: () => ({}),
-  },
-);
+const props = withDefaults(defineProps<{
+  category: TokenCategory
+  level?: number
+  parentPath?: string
+  usageMap?: TokenUsageMap
+}>(), {
+  usageMap: () => ({}),
+})
 
 const emit = defineEmits<{
-  edit: [path: string, token: DesignToken];
-  delete: [path: string, token: DesignToken];
-  showUsage: [tokenPath: string];
-}>();
+  edit: [path: string, token: DesignToken]
+  delete: [path: string, token: DesignToken]
+  showUsage: [tokenPath: string]
+}>()
 
-const headingLevel = Math.min(props.level ?? 2, 6);
+const headingLevel = Math.min((props.level ?? 2), 6)
 
 function getCategoryPath(): string {
-  const catKey = props.category.name.toLowerCase().replace(/\s+/g, "-");
-  return props.parentPath ? `${props.parentPath}.${catKey}` : catKey;
+  const catKey = props.category.name.toLowerCase().replace(/\s+/g, '-')
+  return props.parentPath ? `${props.parentPath}.${catKey}` : catKey
 }
 
 function getTokenPath(name: string): string {
-  return `${getCategoryPath()}.${name}`;
+  return `${getCategoryPath()}.${name}`
 }
 
 function getUsageCount(name: string): number {
-  const tokenPath = getTokenPath(name);
-  const entries = props.usageMap[tokenPath];
-  if (!entries) return 0;
-  return entries.reduce((sum, entry) => sum + entry.matches.length, 0);
+  const tokenPath = getTokenPath(name)
+  const entries = props.usageMap[tokenPath]
+  if (!entries) return 0
+  return entries.reduce((sum, entry) => sum + entry.matches.length, 0)
 }
 </script>
 
 <template>
-  <div && class="token-category" level level token-subcategory": :class="{ ">
-    2 }">
-    <component
-      :is=""
-      +
-      +
-      category-title--h"
-      class="category-title"
-      h"
-      headingLevel"
-      headingLevel"
-      :class=""
-    >
+  <div class="token-category" :class="{ 'token-subcategory': level && level > 2 }">
+    <component :is="'h' + headingLevel" class="category-title" :class="'category-title--h' + headingLevel">
       {{ category.name }}
     </component>
+
     <div v-if="Object.keys(category.tokens).length > 0" class="tokens-grid">
       <TokenCard
         v-for="(token, name) in category.tokens"
         :key="name"
-        delete",
-        edit",
-        getTokenPath(String(name)))"
-        getTokenPath(String(name)),
-        getTokenPath(String(name)),
-        showUsage",
-        token)"
-        token)"
-        :category-path="getCategoryPath()"
         :name="String(name)"
         :token="token"
+        :category-path="getCategoryPath()"
         :usage-count="getUsageCount(String(name))"
-        @delete="emit("
-        @edit="emit("
-        @show-usage="emit("
-       />
+        @edit="emit('edit', getTokenPath(String(name)), token)"
+        @delete="emit('delete', getTokenPath(String(name)), token)"
+        @show-usage="emit('showUsage', getTokenPath(String(name)))"
+      />
     </div>
+
     <template v-if="category.subcategories">
       <TokenCategorySection
         v-for="sub in category.subcategories"
         :key="sub.name"
-        delete",
-        edit",
-        path,
-        path,
-        showUsage",
-        token)"
-        token)"
-        tokenPath)"
         :category="sub"
         :level="(level ?? 2) + 1"
         :parent-path="getCategoryPath()"
         :usage-map="usageMap"
-        @delete="(path, token) => emit("
-        @edit="(path, token) => emit("
-        @show-usage="(tokenPath) => emit("
-       />
+        @edit="(path, token) => emit('edit', path, token)"
+        @delete="(path, token) => emit('delete', path, token)"
+        @show-usage="(tokenPath) => emit('showUsage', tokenPath)"
+      />
     </template>
   </div>
 </template>
+
+<script lang="ts">
+// Recursive component self-reference
+import { defineComponent } from 'vue'
+export default defineComponent({
+  name: 'TokenCategorySection',
+})
+</script>
 
 <style scoped>
 .token-category {
@@ -122,7 +94,7 @@ function getUsageCount(name: string): number {
 .category-title {
   font-weight: 600;
   margin-bottom: 1rem;
-  padding-bottom: .5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--musea-border);
 }
 
@@ -131,14 +103,16 @@ function getUsageCount(name: string): number {
 }
 
 .category-title--h3 {
-  font-size: .9375rem;
+  font-size: 0.9375rem;
   color: var(--musea-text-secondary);
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.category-title--h4, .category-title--h5, .category-title--h6 {
-  font-size: .875rem;
+.category-title--h4,
+.category-title--h5,
+.category-title--h6 {
+  font-size: 0.875rem;
   color: var(--musea-text-muted);
   border-bottom: none;
   padding-bottom: 0;

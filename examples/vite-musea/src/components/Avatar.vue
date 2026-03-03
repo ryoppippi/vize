@@ -1,31 +1,29 @@
-<script lang="ts">
-import { computed } from "vue";
-</script>
-
 <script setup lang="ts">
 const props = defineProps<{
-  name?: string;
-  src?: string;
-  size?: "sm" | "md" | "lg";
-}>();
+  name?: string
+  src?: string
+  size?: 'sm' | 'md' | 'lg'
+}>()
 
 const initials = computed(() => {
-  if (!props.name) return "?";
+  if (!props.name) return '?'
   return props.name
-    .split(" ")
+    .split(' ')
     .map((w) => w[0])
-    .join("")
+    .join('')
     .slice(0, 2)
-    .toUpperCase();
-});
+    .toUpperCase()
+})
+</script>
+
+<script lang="ts">
+import { computed } from 'vue'
 </script>
 
 <template>
-  <span class="avatar" md"}`" :class="`avatar--${size ?? ">
-    <img v-if="src" avatar"" class="avatar-img" :alt="name ?? " :src="src" />
-    <span v-else class="avatar-initials">
-      {{ initials }}
-    </span>
+  <span class="avatar" :class="`avatar--${size ?? 'md'}`">
+    <img v-if="src" :src="src" :alt="name ?? 'avatar'" class="avatar-img" />
+    <span v-else class="avatar-initials">{{ initials }}</span>
   </span>
 </template>
 
@@ -37,7 +35,7 @@ const initials = computed(() => {
   border-radius: 50%;
   background: #6b5090;
   color: #e6e2d6;
-  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: 600;
   overflow: hidden;
   flex-shrink: 0;
@@ -46,13 +44,13 @@ const initials = computed(() => {
 .avatar--sm {
   width: 28px;
   height: 28px;
-  font-size: .625rem;
+  font-size: 0.625rem;
 }
 
 .avatar--md {
   width: 40px;
   height: 40px;
-  font-size: .8125rem;
+  font-size: 0.8125rem;
 }
 
 .avatar--lg {
@@ -72,8 +70,8 @@ const initials = computed(() => {
 }
 </style>
 
-<art>
-<variant name="Default" default>
+<art title="Avatar" category="Components" status="ready" tags="avatar,user,profile">
+  <variant name="Default" default>
     <Self name="Jane Doe" />
   </variant>
   <variant name="With Image">

@@ -1,78 +1,57 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import type { DesignToken } from "../../api";
+import { ref, watch } from 'vue'
+import type { DesignToken } from '../../api'
 
 const props = defineProps<{
-  isOpen: boolean;
-  tokenPath: string;
-  token?: DesignToken;
-  dependents?: string[];
-}>();
+  isOpen: boolean
+  tokenPath: string
+  token?: DesignToken
+  dependents?: string[]
+}>()
 
 const emit = defineEmits<{
-  close: [];
-  confirm: [];
-}>();
+  close: []
+  confirm: []
+}>()
 
-const confirming = ref(false);
+const confirming = ref(false)
 
-watch(
-  () => props.isOpen,
-  (open) => {
-    if (open) confirming.value = false;
-  },
-);
+watch(() => props.isOpen, (open) => {
+  if (open) confirming.value = false
+})
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" close")" @click.self="emit(">
+      <div v-if="isOpen" class="modal-overlay" @click.self="emit('close')">
         <div class="modal-content">
-          <h3 class="modal-title">
-            Delete Token
-          </h3>
+          <h3 class="modal-title">Delete Token</h3>
+
           <p class="delete-message">
-            Are you sure you want to delete
-            <code class="token-path">
-              {{ tokenPath }}
-            </code>
-            ?
+            Are you sure you want to delete <code class="token-path">{{ tokenPath }}</code>?
           </p>
+
           <div v-if="dependents && dependents.length > 0" class="dependents-warning">
-            <svg
-              fill="none"
-              height="16"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-              width="16"
-            >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" x2="12" y1="9" y2="13" />
-              <line x1="12" x2="12.01" y1="17" y2="17" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <div>
-              <p class="warning-text">
-                The following semantic tokens reference this token:
-              </p>
+              <p class="warning-text">The following semantic tokens reference this token:</p>
               <ul class="dependents-list">
                 <li v-for="dep in dependents" :key="dep" class="dependent-item">
-                  <code>
-                    {{ dep }}
-                  </code>
+                  <code>{{ dep }}</code>
                 </li>
               </ul>
-              <p class="warning-note">
-                Deleting this token will leave these references unresolved.
-              </p>
+              <p class="warning-note">Deleting this token will leave these references unresolved.</p>
             </div>
           </div>
+
           <div class="modal-footer">
-            <button class="btn btn--secondary" close")" type="button" @click="emit(">
-              Cancel
-            </button>
-            <button class="btn btn--danger" confirm")" type="button" @click="emit(">
+            <button type="button" class="btn btn--secondary" @click="emit('close')">Cancel</button>
+            <button type="button" class="btn btn--danger" @click="emit('confirm')">
               Delete
             </button>
           </div>
@@ -111,25 +90,25 @@ watch(
 }
 
 .delete-message {
-  font-size: .875rem;
+  font-size: 0.875rem;
   color: var(--musea-text);
   margin-bottom: 1rem;
 }
 
 .token-path {
   font-family: var(--musea-font-mono);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   background: var(--musea-border);
-  padding: .125rem .375rem;
+  padding: 0.125rem 0.375rem;
   border-radius: var(--musea-radius-sm, 4px);
 }
 
 .dependents-warning {
   display: flex;
-  gap: .75rem;
-  padding: .75rem;
-  background: #f59e0b1a;
-  border: 1px solid #f59e0b4d;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: var(--musea-radius-md);
   margin-bottom: 1rem;
   color: #fbbf24;
@@ -137,23 +116,23 @@ watch(
 
 .dependents-warning svg {
   flex-shrink: 0;
-  margin-top: .125rem;
+  margin-top: 0.125rem;
 }
 
 .warning-text {
-  font-size: .8125rem;
-  margin-bottom: .375rem;
+  font-size: 0.8125rem;
+  margin-bottom: 0.375rem;
 }
 
 .dependents-list {
   list-style: none;
   padding: 0;
-  margin-bottom: .375rem;
+  margin-bottom: 0.375rem;
 }
 
 .dependent-item {
-  font-size: .75rem;
-  margin-bottom: .125rem;
+  font-size: 0.75rem;
+  margin-bottom: 0.125rem;
 }
 
 .dependent-item code {
@@ -161,21 +140,21 @@ watch(
 }
 
 .warning-note {
-  font-size: .75rem;
-  opacity: .8;
+  font-size: 0.75rem;
+  opacity: 0.8;
 }
 
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .btn {
-  padding: .5rem 1rem;
+  padding: 0.5rem 1rem;
   border: none;
   border-radius: var(--musea-radius-md);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--musea-transition);
@@ -199,23 +178,27 @@ watch(
   background: #dc2626;
 }
 
-.modal-enter-active, .modal-leave-active {
-  transition: opacity .2s;
+/* Transition */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.modal-enter-active .modal-content, .modal-leave-active .modal-content {
-  transition: transform .2s;
+.modal-enter-active .modal-content,
+.modal-leave-active .modal-content {
+  transition: transform 0.2s ease;
 }
 
-.modal-enter-from, .modal-leave-to {
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
 }
 
 .modal-enter-from .modal-content {
-  transform: scale(.95);
+  transform: scale(0.95);
 }
 
 .modal-leave-to .modal-content {
-  transform: scale(.95);
+  transform: scale(0.95);
 }
 </style>

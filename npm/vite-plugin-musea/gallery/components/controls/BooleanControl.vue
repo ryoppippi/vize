@@ -1,26 +1,26 @@
 <script setup lang="ts">
-const model = defineModel<boolean>({ default: false });
+const model = defineModel<boolean>({ default: false })
 
 defineProps<{
-  label: string;
-  description?: string;
-  required?: boolean;
-}>();
+  label: string
+  description?: string
+  required?: boolean
+}>()
 </script>
 
 <template>
   <div class="control">
     <label class="control-label">
-      <input v-model="model" class="control-checkbox" type="checkbox">
+      <input
+        v-model="model"
+        type="checkbox"
+        class="control-checkbox"
+      >
       <span class="control-toggle" :class="{ active: model }" />
       {{ label }}
-      <span v-if="required" class="control-required">
-        *
-      </span>
+      <span v-if="required" class="control-required">*</span>
     </label>
-    <span v-if="description" class="control-desc">
-      {{ description }}
-    </span>
+    <span v-if="description" class="control-desc">{{ description }}</span>
   </div>
 </template>
 
@@ -28,16 +28,16 @@ defineProps<{
 .control {
   display: flex;
   flex-direction: column;
-  gap: .375rem;
+  gap: 0.375rem;
 }
 
 .control-label {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--musea-text-secondary);
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   cursor: pointer;
 }
 
@@ -56,8 +56,8 @@ defineProps<{
   flex-shrink: 0;
 }
 
-.control-toggle:after {
-  content: "";
+.control-toggle::after {
+  content: '';
   position: absolute;
   top: 2px;
   left: 2px;
@@ -73,9 +73,9 @@ defineProps<{
   border-color: var(--musea-accent);
 }
 
-.control-toggle.active:after {
+.control-toggle.active::after {
   left: 16px;
-  background: #fff;
+  background: white;
 }
 
 .control-required {
@@ -83,7 +83,7 @@ defineProps<{
 }
 
 .control-desc {
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
   margin-left: 2.5rem;
 }

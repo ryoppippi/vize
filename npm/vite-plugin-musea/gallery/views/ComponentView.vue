@@ -30,7 +30,9 @@ const {
 const { gridDensity } = useAddons();
 const { setCurrentVariant } = useEventCapture();
 
-const activeTab = ref<"variants" | "props" | "docs" | "a11y" | "vrt">("variants");
+const activeTab = ref<"variants" | "props" | "docs" | "a11y" | "vrt">(
+  "variants",
+);
 const actionCount = computed(() => events.value.length);
 const actionsExpanded = ref(false);
 
@@ -46,7 +48,8 @@ const art = computed(() => getArt(artPath.value));
 const selectedVariant = computed(() => {
   if (!art.value) return null;
   return (
-    art.value.variants.find((v) => v.name === selectedVariantName.value) || art.value.variants[0]
+    art.value.variants.find((v) => v.name === selectedVariantName.value) ||
+    art.value.variants[0]
   );
 });
 
@@ -55,7 +58,8 @@ watch(
   art,
   (newArt) => {
     if (newArt) {
-      const defaultVariant = newArt.variants.find((v) => v.isDefault) || newArt.variants[0];
+      const defaultVariant =
+        newArt.variants.find((v) => v.isDefault) || newArt.variants[0];
       selectedVariantName.value = defaultVariant?.name || "";
       setCurrentVariant(selectedVariantName.value);
       setActionsVariant(selectedVariantName.value);
@@ -89,9 +93,7 @@ const handleVariantSelect = (variantName: string) => {
   <div v-if="art" class="component-view">
     <div class="component-header">
       <div class="component-title-row">
-        <h1 class="component-title">
-          {{ art.metadata.title }}
-        </h1>
+        <h1 class="component-title">{{ art.metadata.title }}</h1>
         <StatusBadge :status="art.metadata.status" />
       </div>
       <p v-if="art.metadata.description" class="component-description">
@@ -101,7 +103,7 @@ const handleVariantSelect = (variantName: string) => {
         <span class="meta-tag">
           <MdiIcon :path="mdiViewGrid" :size="12" />
           {{ art.variants.length }} variant{{
-          art.variants.length !== 1 ? "s" : ""
+            art.variants.length !== 1 ? "s" : ""
           }}
         </span>
         <span v-if="art.metadata.category" class="meta-tag">
@@ -113,130 +115,123 @@ const handleVariantSelect = (variantName: string) => {
         </span>
       </div>
     </div>
+
     <AddonToolbar />
+
     <div class="component-tabs">
       <button
-        class="tab-btn"
         type="button"
-        variants"
-        variants""
-        }"
-        :class="{ active: activeTab === "
-        @click="activeTab = "
+        class="tab-btn"
+        :class="{ active: activeTab === 'variants' }"
+        @click="activeTab = 'variants'"
       >
         Variants
       </button>
       <button
-        class="tab-btn"
-        props"
-        props""
         type="button"
-        }"
-        :class="{ active: activeTab === "
-        @click="activeTab = "
+        class="tab-btn"
+        :class="{ active: activeTab === 'props' }"
+        @click="activeTab = 'props'"
       >
         Props
       </button>
       <button
-        class="tab-btn"
-        docs"
-        docs""
         type="button"
-        }"
-        :class="{ active: activeTab === "
-        @click="activeTab = "
+        class="tab-btn"
+        :class="{ active: activeTab === 'docs' }"
+        @click="activeTab = 'docs'"
       >
         Docs
       </button>
       <button
-        a11y"
-        a11y""
-        class="tab-btn"
         type="button"
-        }"
-        :class="{ active: activeTab === "
-        @click="activeTab = "
+        class="tab-btn"
+        :class="{ active: activeTab === 'a11y' }"
+        @click="activeTab = 'a11y'"
       >
         A11y
         <A11yBadge :art-path="art.path" />
       </button>
       <button
-        class="tab-btn"
         type="button"
-        vrt"
-        vrt""
-        }"
-        :class="{ active: activeTab === "
-        @click="activeTab = "
+        class="tab-btn"
+        :class="{ active: activeTab === 'vrt' }"
+        @click="activeTab = 'vrt'"
       >
         VRT
       </button>
     </div>
+
     <div class="component-content">
       <!-- Variants Tab: Show variant tabs + single preview -->
-      <div v-if="activeTab === " class="variants-view" variants"">
+      <div v-if="activeTab === 'variants'" class="variants-view">
         <VariantTabs
-          :selected-variant="selectedVariantName"
           :variants="art.variants"
+          :selected-variant="selectedVariantName"
           @select="handleVariantSelect"
-         />
+        />
         <div class="variant-preview-area">
           <VariantCard
             v-if="selectedVariant"
             :key="selectedVariant.name"
             :art-path="art.path"
-            :component-name="art.metadata.title"
             :variant="selectedVariant"
-           />
+            :component-name="art.metadata.title"
+          />
         </div>
       </div>
+
       <PropsPanel
-        v-if="activeTab === "
-        props""
+        v-if="activeTab === 'props'"
         :art-path="art.path"
-        :default-variant-name="art.variants.find((v) => v.isDefault)?.name || art.variants[0]?.name"
-       />
-      <DocumentationPanel v-if="activeTab === " docs"" :art-path="art.path" />
+        :default-variant-name="
+          art.variants.find((v) => v.isDefault)?.name || art.variants[0]?.name
+        "
+      />
+
+      <DocumentationPanel v-if="activeTab === 'docs'" :art-path="art.path" />
+
       <A11yPanel
-        v-if="activeTab === "
-        a11y""
+        v-if="activeTab === 'a11y'"
         :art-path="art.path"
         :default-variant-name="selectedVariant?.name"
-       />
+      />
+
       <VrtPanel
-        v-if="activeTab === "
-        vrt""
+        v-if="activeTab === 'vrt'"
         :art-path="art.path"
         :default-variant-name="selectedVariant?.name"
-       />
+      />
     </div>
+
     <!-- Actions Footer Panel (sticky bottom) -->
     <div class="actions-footer" :class="{ expanded: actionsExpanded }">
       <div v-if="actionsExpanded" class="actions-footer-content">
         <ActionsPanel />
       </div>
-      <button class="actions-footer-toggle" type="button" @click="actionsExpanded = !actionsExpanded">
-        <MdiIcon :path="actionsExpanded ? mdiChevronDown : mdiChevronUp" :size="14" />
+      <button
+        type="button"
+        class="actions-footer-toggle"
+        @click="actionsExpanded = !actionsExpanded"
+      >
+        <MdiIcon
+          :path="actionsExpanded ? mdiChevronDown : mdiChevronUp"
+          :size="14"
+        />
         Actions
-        <span v-if="actionCount > 0" class="action-count-badge">
-          {{
+        <span v-if="actionCount > 0" class="action-count-badge">{{
           actionCount > 99 ? "99+" : actionCount
-          }}
-        </span>
+        }}</span>
       </button>
     </div>
+
     <FullscreenPreview />
   </div>
+
   <div v-else class="component-not-found">
-    <h2>
-      Component not found
-    </h2>
-    <p>
-      The requested component could not be found.
-    </p>
-    <router-link class="back-link" to="/">
-      Back to home
-    </router-link>
+    <h2>Component not found</h2>
+    <p>The requested component could not be found.</p>
+    <router-link to="/" class="back-link">Back to home</router-link>
   </div>
 </template>
 
@@ -254,8 +249,8 @@ const handleVariantSelect = (variantName: string) => {
 .component-title-row {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  margin-bottom: .5rem;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .component-title {
@@ -265,27 +260,27 @@ const handleVariantSelect = (variantName: string) => {
 
 .component-description {
   color: var(--musea-text-muted);
-  font-size: .9375rem;
+  font-size: 0.9375rem;
   max-width: 600px;
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
 .component-meta {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .meta-tag {
   display: inline-flex;
   align-items: center;
-  gap: .375rem;
-  padding: .25rem .625rem;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
   background: var(--musea-bg-secondary);
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-sm);
-  font-size: .75rem;
+  font-size: 0.75rem;
   color: var(--musea-text-muted);
 }
 
@@ -300,7 +295,7 @@ const handleVariantSelect = (variantName: string) => {
 
 .component-tabs {
   display: flex;
-  gap: .25rem;
+  gap: 0.25rem;
   border-bottom: 1px solid var(--musea-border);
   margin-bottom: 1.5rem;
 }
@@ -312,15 +307,15 @@ const handleVariantSelect = (variantName: string) => {
 .tab-btn {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   background: none;
   border: none;
   color: var(--musea-text-muted);
-  font-size: .875rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  padding: .75rem 1rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  border-bottom: 2px solid #0000;
+  border-bottom: 2px solid transparent;
   transition: all var(--musea-transition);
 }
 
@@ -339,11 +334,11 @@ const handleVariantSelect = (variantName: string) => {
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 .375rem;
+  padding: 0 0.375rem;
   border-radius: 9px;
   background: var(--musea-accent);
   color: #fff;
-  font-size: .625rem;
+  font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
 }
@@ -365,7 +360,7 @@ const handleVariantSelect = (variantName: string) => {
 
 .gallery-grid.density-compact {
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: .75rem;
+  gap: 0.75rem;
 }
 
 .gallery-grid.density-comfortable {
@@ -390,13 +385,13 @@ const handleVariantSelect = (variantName: string) => {
 .actions-footer-toggle {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: .625rem 1rem;
+  padding: 0.625rem 1rem;
   background: var(--musea-bg-secondary);
   border: none;
   color: var(--musea-text-muted);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--musea-transition);
@@ -425,7 +420,7 @@ const handleVariantSelect = (variantName: string) => {
 
 .component-not-found h2 {
   color: var(--musea-text);
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 .back-link {

@@ -1,88 +1,75 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import {
-  mdiMagnify,
-  mdiWeatherSunny,
-  mdiWeatherNight,
-  mdiThemeLightDark,
-  mdiChevronLeft,
-  mdiChevronRight,
-} from "@mdi/js";
-import { useArts } from "../composables/useArts";
-import { useSearch } from "../composables/useSearch";
-import { useTheme } from "../composables/useTheme";
-import SearchBar from "./SearchBar.vue";
-import Sidebar from "./Sidebar.vue";
-import SearchModal from "./SearchModal.vue";
-import MdiIcon from "./MdiIcon.vue";
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { mdiMagnify, mdiWeatherSunny, mdiWeatherNight, mdiThemeLightDark, mdiChevronLeft, mdiChevronRight } from '@mdi/js'
+import { useArts } from '../composables/useArts'
+import { useSearch } from '../composables/useSearch'
+import { useTheme } from '../composables/useTheme'
+import SearchBar from './SearchBar.vue'
+import Sidebar from './Sidebar.vue'
+import SearchModal from './SearchModal.vue'
+import MdiIcon from './MdiIcon.vue'
 
-const router = useRouter();
-const { arts, load } = useArts();
-const { query, results } = useSearch(arts);
-const { currentTheme, cycleTheme } = useTheme();
+const router = useRouter()
+const { arts, load } = useArts()
+const { query, results } = useSearch(arts)
+const { currentTheme, cycleTheme } = useTheme()
 
-const searchModalOpen = ref(false);
-const sidebarCollapsed = ref(false);
+const searchModalOpen = ref(false)
+const sidebarCollapsed = ref(false)
 
 function toggleSidebar() {
-  sidebarCollapsed.value = !sidebarCollapsed.value;
+  sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
 const themeIcon = computed(() => {
   switch (currentTheme.value) {
-    case "dark":
-      return mdiWeatherNight;
-    case "system":
-      return mdiThemeLightDark;
-    default:
-      return mdiWeatherSunny;
+    case 'dark': return mdiWeatherNight
+    case 'system': return mdiThemeLightDark
+    default: return mdiWeatherSunny
   }
-});
+})
 
 const themeLabel = computed(() => {
   switch (currentTheme.value) {
-    case "dark":
-      return "Dark";
-    case "system":
-      return "System";
-    default:
-      return "Light";
+    case 'dark': return 'Dark'
+    case 'system': return 'System'
+    default: return 'Light'
   }
-});
+})
 
 // Global keyboard shortcuts
 const handleKeydown = (e: KeyboardEvent) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-    e.preventDefault();
-    searchModalOpen.value = !searchModalOpen.value;
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault()
+    searchModalOpen.value = !searchModalOpen.value
   }
-  if ((e.metaKey || e.ctrlKey) && e.key === "b") {
-    e.preventDefault();
-    toggleSidebar();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+    e.preventDefault()
+    toggleSidebar()
   }
-};
+}
 
 onMounted(() => {
-  load();
-  document.addEventListener("keydown", handleKeydown);
-});
+  load()
+  document.addEventListener('keydown', handleKeydown)
+})
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", handleKeydown);
-});
+  document.removeEventListener('keydown', handleKeydown)
+})
 
 const handleSearchSelect = (art: { path: string }, variantName?: string) => {
-  router.push({ name: "component", params: { path: art.path } });
-};
+  router.push({ name: 'component', params: { path: art.path } })
+}
 </script>
 
 <template>
   <div class="gallery-layout">
     <header class="header">
       <div class="header-left">
-        <router-link class="logo" to="/">
-          <svg class="logo-svg" fill="none" height="32" viewBox="0 0 200 200" width="32">
+        <router-link to="/" class="logo">
+          <svg class="logo-svg" width="32" height="32" viewBox="0 0 200 200" fill="none">
             <g transform="translate(30, 25) scale(1.2)">
               <g transform="translate(15, 10) skewX(-15)">
                 <path d="M 65 0 L 40 60 L 70 20 L 65 0 Z" fill="currentColor" />
@@ -90,127 +77,61 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
               </g>
             </g>
             <g transform="translate(110, 120)">
-              <line
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-width="3"
-                x1="5"
-                x2="5"
-                y1="10"
-                y2="50"
-               />
-              <line
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-width="3"
-                x1="60"
-                x2="60"
-                y1="10"
-                y2="50"
-               />
-              <path
-                d="M 0 10 L 32.5 0 L 65 10"
-                fill="none"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-               />
-              <rect
-                fill="none"
-                height="12"
-                opacity="0.7"
-                rx="1"
-                stroke="currentColor"
-                stroke-width="1.5"
-                width="14"
-                x="15"
-                y="18"
-               />
-              <rect
-                fill="none"
-                height="12"
-                opacity="0.7"
-                rx="1"
-                stroke="currentColor"
-                stroke-width="1.5"
-                width="14"
-                x="36"
-                y="18"
-               />
-              <rect
-                fill="none"
-                height="12"
-                opacity="0.6"
-                rx="1"
-                stroke="currentColor"
-                stroke-width="1.5"
-                width="18"
-                x="23"
-                y="35"
-               />
+              <line x1="5" y1="10" x2="5" y2="50" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+              <line x1="60" y1="10" x2="60" y2="50" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+              <path d="M 0 10 L 32.5 0 L 65 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <rect x="15" y="18" width="14" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7" />
+              <rect x="36" y="18" width="14" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7" />
+              <rect x="23" y="35" width="18" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6" />
             </g>
           </svg>
           Musea
         </router-link>
-        <span class="header-subtitle">
-          Component Gallery
-        </span>
+        <span class="header-subtitle">Component Gallery</span>
       </div>
+
       <div class="header-center">
-        <button class="search-trigger" type="button" @click="searchModalOpen = true">
+        <button type="button" class="search-trigger" @click="searchModalOpen = true">
           <MdiIcon class="search-icon" :path="mdiMagnify" :size="16" />
-          <span>
-            Search components...
-          </span>
-          <kbd>
-            ⌘K
-          </kbd>
+          <span>Search components...</span>
+          <kbd>⌘K</kbd>
         </button>
       </div>
+
       <div class="header-right">
-        <button
-          class="theme-toggle"
-          type="button"
-          :title="`Theme: ${themeLabel}`"
-          @click="cycleTheme"
-        >
+        <button type="button" class="theme-toggle" :title="`Theme: ${themeLabel}`" @click="cycleTheme">
           <MdiIcon :path="themeIcon" :size="18" />
         </button>
       </div>
     </header>
-    <main class="main" sidebar-collapsed": sidebarCollapsed }" :class="{ ">
+
+    <main class="main" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <!-- Sidebar -->
       <aside class="sidebar-wrapper" :class="{ collapsed: sidebarCollapsed }">
         <Sidebar v-show="!sidebarCollapsed" :arts="results" />
         <button
-          "Collapse
-          (⌘B)"
-          (⌘B)""
-          class="sidebar-toggle"
-          Expand
-          sidebar
-          sidebar
           type="button"
-          :
-          :title="sidebarCollapsed ? "
+          class="sidebar-toggle"
+          :title="sidebarCollapsed ? 'Expand sidebar (⌘B)' : 'Collapse sidebar (⌘B)'"
           @click="toggleSidebar"
         >
           <MdiIcon :path="sidebarCollapsed ? mdiChevronRight : mdiChevronLeft" :size="16" />
         </button>
       </aside>
+
       <!-- Main Content -->
       <section class="content">
         <router-view />
       </section>
     </main>
+
     <!-- Search Modal -->
     <SearchModal
       :arts="arts"
       :is-open="searchModalOpen"
       @close="searchModalOpen = false"
       @select="handleSearchSelect"
-     />
+    />
   </div>
 </template>
 
@@ -250,7 +171,7 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
 .logo {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   font-size: 1.125rem;
   font-weight: 700;
   color: var(--musea-accent);
@@ -265,7 +186,7 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
 
 .header-subtitle {
   color: var(--musea-text-muted);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   padding-left: 1.5rem;
   border-left: 1px solid var(--musea-border);
@@ -274,14 +195,14 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
 .search-trigger {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: .5rem .75rem;
+  padding: 0.5rem 0.75rem;
   background: var(--musea-bg-tertiary);
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-md);
   color: var(--musea-text-muted);
-  font-size: .875rem;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all var(--musea-transition);
 }
@@ -303,11 +224,11 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
 }
 
 .search-trigger kbd {
-  padding: .125rem .375rem;
+  padding: 0.125rem 0.375rem;
   background: var(--musea-bg-primary);
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-sm);
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-family: var(--musea-font-mono);
 }
 
@@ -341,7 +262,7 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
   flex: 1;
   overflow: hidden;
   height: calc(100vh - var(--musea-header-height));
-  transition: grid-template-columns .2s;
+  transition: grid-template-columns 0.2s ease;
 }
 
 .main.sidebar-collapsed {
@@ -370,8 +291,8 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
 
 .sidebar-toggle {
   position: absolute;
-  bottom: .75rem;
-  right: .75rem;
+  bottom: 0.75rem;
+  right: 0.75rem;
   width: 24px;
   height: 24px;
   display: flex;
@@ -404,19 +325,16 @@ const handleSearchSelect = (art: { path: string }, variantName?: string) => {
   height: calc(100vh - var(--musea-header-height));
 }
 
-@media (width <= 768px) {
+@media (max-width: 768px) {
   .main {
     grid-template-columns: 1fr !important;
   }
-
   .sidebar-wrapper {
     display: none;
   }
-
   .header-subtitle {
     display: none;
   }
-
   .header-center {
     display: none;
   }

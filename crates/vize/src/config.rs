@@ -252,11 +252,7 @@ mod tests {
     fn load_config_parses_pkl() {
         let dir = tempfile::tempdir().unwrap();
         let pkl_path = dir.path().join("vize.config.pkl");
-        std::fs::write(
-            &pkl_path,
-            "check {\n    globals = \"globals.d.ts\"\n}\n",
-        )
-        .unwrap();
+        std::fs::write(&pkl_path, "check {\n    globals = \"globals.d.ts\"\n}\n").unwrap();
 
         let config = load_config(Some(dir.path()));
         assert_eq!(config.check.globals.as_deref(), Some("globals.d.ts"));

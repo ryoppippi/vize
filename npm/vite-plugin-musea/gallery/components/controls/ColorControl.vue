@@ -1,28 +1,33 @@
 <script setup lang="ts">
-const model = defineModel<string>({ default: "#000000" });
+const model = defineModel<string>({ default: '#000000' })
 
 defineProps<{
-  label: string;
-  description?: string;
-  required?: boolean;
-}>();
+  label: string
+  description?: string
+  required?: boolean
+}>()
 </script>
 
 <template>
   <div class="control">
     <label class="control-label">
       {{ label }}
-      <span v-if="required" class="control-required">
-        *
-      </span>
+      <span v-if="required" class="control-required">*</span>
     </label>
     <div class="control-color-row">
-      <input v-model="model" class="control-color" type="color">
-      <input v-model="model" class="control-color-text" placeholder="#000000" type="text">
+      <input
+        v-model="model"
+        type="color"
+        class="control-color"
+      >
+      <input
+        v-model="model"
+        type="text"
+        class="control-color-text"
+        placeholder="#000000"
+      >
     </div>
-    <span v-if="description" class="control-desc">
-      {{ description }}
-    </span>
+    <span v-if="description" class="control-desc">{{ description }}</span>
   </div>
 </template>
 
@@ -30,11 +35,11 @@ defineProps<{
 .control {
   display: flex;
   flex-direction: column;
-  gap: .375rem;
+  gap: 0.375rem;
 }
 
 .control-label {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--musea-text-secondary);
 }
@@ -46,7 +51,7 @@ defineProps<{
 .control-color-row {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .control-color {
@@ -56,7 +61,7 @@ defineProps<{
   border-radius: var(--musea-radius-sm);
   padding: 2px;
   cursor: pointer;
-  background: none;
+  background: transparent;
 }
 
 .control-color::-webkit-color-swatch-wrapper {
@@ -73,9 +78,9 @@ defineProps<{
   background: var(--musea-bg-tertiary);
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-sm);
-  padding: .375rem .625rem;
+  padding: 0.375rem 0.625rem;
   color: var(--musea-text);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   font-family: var(--musea-font-mono);
   outline: none;
   transition: border-color var(--musea-transition);
@@ -86,7 +91,7 @@ defineProps<{
 }
 
 .control-desc {
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
 }
 </style>

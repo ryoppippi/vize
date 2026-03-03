@@ -1,67 +1,63 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { Marked } from "marked";
-import { markedHighlight } from "marked-highlight";
-import hljs from "highlight.js/lib/core";
-import xml from "highlight.js/lib/languages/xml";
-import javascript from "highlight.js/lib/languages/javascript";
-import typescript from "highlight.js/lib/languages/typescript";
-import css from "highlight.js/lib/languages/css";
-import bash from "highlight.js/lib/languages/bash";
-import { fetchDocs } from "../api";
+import { ref, computed, watch } from 'vue'
+import { Marked } from 'marked'
+import { markedHighlight } from 'marked-highlight'
+import hljs from 'highlight.js/lib/core'
+import xml from 'highlight.js/lib/languages/xml'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import css from 'highlight.js/lib/languages/css'
+import bash from 'highlight.js/lib/languages/bash'
+import { fetchDocs } from '../api'
 
-hljs.registerLanguage("xml", xml);
-hljs.registerLanguage("html", xml);
-hljs.registerLanguage("vue", xml);
-hljs.registerLanguage("javascript", javascript);
-hljs.registerLanguage("js", javascript);
-hljs.registerLanguage("typescript", typescript);
-hljs.registerLanguage("ts", typescript);
-hljs.registerLanguage("css", css);
-hljs.registerLanguage("bash", bash);
-hljs.registerLanguage("sh", bash);
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('vue', xml)
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('sh', bash)
 
 const markedInstance = new Marked(
   markedHighlight({
     highlight(code: string, lang: string) {
       if (lang && hljs.getLanguage(lang)) {
-        return hljs.highlight(code, { language: lang }).value;
+        return hljs.highlight(code, { language: lang }).value
       }
-      return code;
+      return code
     },
   }),
-);
+)
 
 const props = defineProps<{
-  artPath: string;
-}>();
+  artPath: string
+}>()
 
-const markdown = ref("");
-const loading = ref(false);
-const error = ref<string | null>(null);
+const markdown = ref('')
+const loading = ref(false)
+const error = ref<string | null>(null)
 
 const renderedHtml = computed(() => {
-  if (!markdown.value) return "";
-  return markedInstance.parse(markdown.value) as string;
-});
+  if (!markdown.value) return ''
+  return markedInstance.parse(markdown.value) as string
+})
 
-watch(
-  () => props.artPath,
-  async (path) => {
-    if (!path) return;
-    loading.value = true;
-    error.value = null;
-    try {
-      const data = await fetchDocs(path);
-      markdown.value = data.markdown;
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e);
-    } finally {
-      loading.value = false;
-    }
-  },
-  { immediate: true },
-);
+watch(() => props.artPath, async (path) => {
+  if (!path) return
+  loading.value = true
+  error.value = null
+  try {
+    const data = await fetchDocs(path)
+    markdown.value = data.markdown
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    loading.value = false
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -70,29 +66,30 @@ watch(
       <div class="loading-spinner" />
       Loading documentation...
     </div>
+
     <div v-else-if="error" class="docs-error">
       {{ error }}
     </div>
+
     <div v-else-if="markdown" class="docs-content">
       <div class="docs-markdown" v-html="renderedHtml" />
     </div>
+
     <div v-else class="docs-empty">
-      <p>
-        No documentation available for this component.
-      </p>
+      <p>No documentation available for this component.</p>
     </div>
   </div>
 </template>
 
 <style scoped>
 .docs-panel {
-  padding: .5rem;
+  padding: 0.5rem;
 }
 
 .docs-loading {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
   justify-content: center;
   min-height: 200px;
   color: var(--musea-text-muted);
@@ -104,22 +101,20 @@ watch(
   border: 2px solid var(--musea-border);
   border-top-color: var(--musea-accent);
   border-radius: 50%;
-  animation: .8s linear infinite spin;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .docs-error {
   padding: 1rem;
   color: var(--musea-error);
-  background: #f871711a;
-  border: 1px solid #f8717133;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
   border-radius: var(--musea-radius-md);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
 }
 
 .docs-content {
@@ -131,7 +126,7 @@ watch(
 
 .docs-markdown {
   padding: 1.5rem;
-  font-size: .875rem;
+  font-size: 0.875rem;
   line-height: 1.7;
   color: var(--musea-text-secondary);
 }
@@ -141,7 +136,7 @@ watch(
   font-weight: 700;
   color: var(--musea-text);
   margin-bottom: 1rem;
-  padding-bottom: .5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--musea-border);
 }
 
@@ -150,7 +145,7 @@ watch(
   font-weight: 600;
   color: var(--musea-text);
   margin-top: 1.5rem;
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
 .docs-markdown :deep(h3) {
@@ -158,28 +153,29 @@ watch(
   font-weight: 600;
   color: var(--musea-text);
   margin-top: 1.25rem;
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 .docs-markdown :deep(p) {
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
-.docs-markdown :deep(ul), .docs-markdown :deep(ol) {
+.docs-markdown :deep(ul),
+.docs-markdown :deep(ol) {
   padding-left: 1.5rem;
-  margin-bottom: .75rem;
+  margin-bottom: 0.75rem;
 }
 
 .docs-markdown :deep(li) {
-  margin-bottom: .25rem;
+  margin-bottom: 0.25rem;
 }
 
 .docs-markdown :deep(code) {
   background: var(--musea-bg-tertiary);
-  padding: .125rem .375rem;
+  padding: 0.125rem 0.375rem;
   border-radius: 4px;
-  font-family: SF Mono, Fira Code, Consolas, monospace;
-  font-size: .8125rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8125rem;
 }
 
 .docs-markdown :deep(pre) {
@@ -195,7 +191,7 @@ watch(
 .docs-markdown :deep(pre code) {
   background: none;
   padding: 0;
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   line-height: 1.6;
   white-space: pre;
   tab-size: 2;
@@ -207,11 +203,12 @@ watch(
   margin-bottom: 1rem;
 }
 
-.docs-markdown :deep(th), .docs-markdown :deep(td) {
-  padding: .5rem .75rem;
+.docs-markdown :deep(th),
+.docs-markdown :deep(td) {
+  padding: 0.5rem 0.75rem;
   border: 1px solid var(--musea-border);
   text-align: left;
-  font-size: .8125rem;
+  font-size: 0.8125rem;
 }
 
 .docs-markdown :deep(th) {
@@ -223,7 +220,7 @@ watch(
 .docs-markdown :deep(blockquote) {
   border-left: 3px solid var(--musea-accent);
   padding-left: 1rem;
-  margin: .75rem 0;
+  margin: 0.75rem 0;
   color: var(--musea-text-muted);
 }
 
@@ -247,6 +244,6 @@ watch(
   padding: 2rem;
   text-align: center;
   color: var(--musea-text-muted);
-  font-size: .875rem;
+  font-size: 0.875rem;
 }
 </style>

@@ -11,11 +11,7 @@ use vize_croquis::Croquis;
 /// Generate Props type definition at module level.
 /// When `generic_param` is present (e.g., `"T extends Foo, P extends Bar"`),
 /// the Props type is emitted with generic parameters: `export type Props<T, P> = ...;`
-pub(crate) fn generate_props_type(
-    ts: &mut String,
-    summary: &Croquis,
-    generic_param: Option<&str>,
-) {
+pub(crate) fn generate_props_type(ts: &mut String, summary: &Croquis, generic_param: Option<&str>) {
     let props = summary.macros.props();
     let has_props = !props.is_empty();
     let define_props_type_args = summary
@@ -87,7 +83,10 @@ pub(crate) fn generate_props_variables(
     if has_props || define_props_type_args.is_some() {
         ts.push_str("  // Props are available in template as variables\n");
         ts.push_str("  // Access via `propName` or `props.propName`\n");
-        append!(*ts, "  const props: {props_type_ref} = {{}} as {props_type_ref};\n");
+        append!(
+            *ts,
+            "  const props: {props_type_ref} = {{}} as {props_type_ref};\n"
+        );
         ts.push_str("  void props; // Mark as used to avoid TS6133\n");
 
         if has_props {
@@ -225,10 +224,7 @@ fn extract_generic_names(generic_param: &str) -> String {
                 let trimmed = current_name.trim();
                 if !trimmed.is_empty() {
                     // Extract just the name (before "extends")
-                    let name = trimmed
-                        .split_whitespace()
-                        .next()
-                        .unwrap_or(trimmed);
+                    let name = trimmed.split_whitespace().next().unwrap_or(trimmed);
                     if !names.is_empty() {
                         names.push_str(", ");
                     }
@@ -248,10 +244,7 @@ fn extract_generic_names(generic_param: &str) -> String {
     // Handle the last parameter
     let trimmed = current_name.trim();
     if !trimmed.is_empty() {
-        let name = trimmed
-            .split_whitespace()
-            .next()
-            .unwrap_or(trimmed);
+        let name = trimmed.split_whitespace().next().unwrap_or(trimmed);
         if !names.is_empty() {
             names.push_str(", ");
         }

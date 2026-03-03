@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useAddons, BG_PRESETS } from "../composables/useAddons";
+import { ref } from 'vue'
+import { useAddons, BG_PRESETS } from '../composables/useAddons'
 
-const { background, setBackground, setCustomBackground } = useAddons();
-const customColor = ref("#ffffff");
+const { background, setBackground, setCustomBackground } = useAddons()
+const customColor = ref('#ffffff')
 
 function onCustomColorInput(event: Event) {
-  const value = (event.target as HTMLInputElement).value;
-  customColor.value = value;
-  setCustomBackground(value);
+  const value = (event.target as HTMLInputElement).value
+  customColor.value = value
+  setCustomBackground(value)
 }
 </script>
 
@@ -18,38 +18,26 @@ function onCustomColorInput(event: Event) {
       <button
         v-for="preset in BG_PRESETS"
         :key="preset.name"
-        class="bg-preset-btn"
         type="button"
+        class="bg-preset-btn"
         :class="{ active: background?.name === preset.name }"
         :title="preset.name"
         @click="setBackground(background?.name === preset.name ? null : preset)"
       >
         <span
-          ?
-          background:
-          checkerboard"
           class="bg-preset-swatch"
-          preset.color
-          transparent"
-          {
-          {}"
-          }
-          }"
-          :
-          :class="{ checkerboard: preset.pattern === "
-          :style="preset.color !== "
-         />
-        <span class="bg-preset-label">
-          {{ preset.name }}
-        </span>
+          :class="{ 'checkerboard': preset.pattern === 'checkerboard' }"
+          :style="preset.color !== 'transparent' ? { background: preset.color } : {}"
+        />
+        <span class="bg-preset-label">{{ preset.name }}</span>
       </button>
     </div>
     <div class="bg-custom">
       <input
-        class="bg-color-input"
-        title="Custom color"
         type="color"
         :value="customColor"
+        class="bg-color-input"
+        title="Custom color"
         @input="onCustomColorInput"
       >
     </div>
@@ -60,24 +48,24 @@ function onCustomColorInput(event: Event) {
 .bg-picker {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .bg-presets {
   display: flex;
-  gap: .25rem;
+  gap: 0.25rem;
 }
 
 .bg-preset-btn {
   display: flex;
   align-items: center;
-  gap: .375rem;
-  padding: .25rem .5rem;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-sm);
   background: var(--musea-bg-tertiary);
   color: var(--musea-text-muted);
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   cursor: pointer;
   transition: all var(--musea-transition);
 }
@@ -102,7 +90,11 @@ function onCustomColorInput(event: Event) {
 }
 
 .bg-preset-swatch.checkerboard {
-  background-image: linear-gradient(45deg, #ccc 25%, #0000 25%), linear-gradient(-45deg, #ccc 25%, #0000 25%), linear-gradient(45deg, #0000 75%, #ccc 75%), linear-gradient(-45deg, #0000 75%, #ccc 75%);
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
   background-size: 8px 8px;
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }

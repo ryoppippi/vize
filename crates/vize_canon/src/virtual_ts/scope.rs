@@ -257,9 +257,7 @@ fn generate_component_props(
                         .scopes
                         .iter()
                         .find(|p| p.id == pid)
-                        .is_none_or(|p| {
-                            !matches!(p.kind, ScopeKind::VFor | ScopeKind::VSlot)
-                        })
+                        .is_none_or(|p| !matches!(p.kind, ScopeKind::VFor | ScopeKind::VSlot))
                 })
         })
         .map(|s| s.id.as_u32())
@@ -565,8 +563,7 @@ fn generate_closure_component_props_recursive(
 
             let is_numeric = source_expr.trim().parse::<u64>().is_ok();
 
-            let is_simple_identifier =
-                source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
+            let is_simple_identifier = source_expr.chars().all(|c| c.is_alphanumeric() || c == '_');
             let element_type = if is_numeric {
                 "number".into()
             } else if let Some(ref ta) = type_annotation {

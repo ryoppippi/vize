@@ -1,34 +1,34 @@
 <script setup lang="ts">
-const model = defineModel<unknown>();
+const model = defineModel<unknown>()
 
 defineProps<{
-  label: string;
-  description?: string;
-  required?: boolean;
-  options: Array<{ label: string; value: unknown }>;
-}>();
+  label: string
+  description?: string
+  required?: boolean
+  options: Array<{ label: string; value: unknown }>
+}>()
 </script>
 
 <template>
   <div class="control">
     <label class="control-label">
       {{ label }}
-      <span v-if="required" class="control-required">
-        *
-      </span>
+      <span v-if="required" class="control-required">*</span>
     </label>
     <select
       class="control-select"
       :value="JSON.stringify(model)"
       @change="model = JSON.parse(($event.target as HTMLSelectElement).value)"
     >
-      <option v-for="opt in options" :key="String(opt.value)" :value="JSON.stringify(opt.value)">
+      <option
+        v-for="opt in options"
+        :key="String(opt.value)"
+        :value="JSON.stringify(opt.value)"
+      >
         {{ opt.label }}
       </option>
     </select>
-    <span v-if="description" class="control-desc">
-      {{ description }}
-    </span>
+    <span v-if="description" class="control-desc">{{ description }}</span>
   </div>
 </template>
 
@@ -36,11 +36,11 @@ defineProps<{
 .control {
   display: flex;
   flex-direction: column;
-  gap: .375rem;
+  gap: 0.375rem;
 }
 
 .control-label {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--musea-text-secondary);
 }
@@ -53,9 +53,9 @@ defineProps<{
   background: var(--musea-bg-tertiary);
   border: 1px solid var(--musea-border);
   border-radius: var(--musea-radius-sm);
-  padding: .375rem .625rem;
+  padding: 0.375rem 0.625rem;
   color: var(--musea-text);
-  font-size: .8125rem;
+  font-size: 0.8125rem;
   outline: none;
   transition: border-color var(--musea-transition);
   cursor: pointer;
@@ -66,7 +66,7 @@ defineProps<{
 }
 
 .control-desc {
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
 }
 </style>

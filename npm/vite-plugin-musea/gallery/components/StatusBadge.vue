@@ -1,11 +1,14 @@
 <script setup lang="ts">
 defineProps<{
-  status: "draft" | "ready" | "deprecated";
-}>();
+  status: 'draft' | 'ready' | 'deprecated'
+}>()
 </script>
 
 <template>
-  <span + class="status-badge" status" status-" :class="">
+  <span
+    class="status-badge"
+    :class="'status-' + status"
+  >
     {{ status }}
   </span>
 </template>
@@ -14,26 +17,26 @@ defineProps<{
 .status-badge {
   display: inline-flex;
   align-items: center;
-  font-size: .625rem;
+  font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: .04em;
-  padding: .1875rem .5rem;
+  letter-spacing: 0.04em;
+  padding: 0.1875rem 0.5rem;
   border-radius: 4px;
 }
 
 .status-draft {
-  background: #fbbf2426;
+  background: rgba(251, 191, 36, 0.15);
   color: var(--musea-warning);
 }
 
 .status-ready {
-  background: #4ade8026;
+  background: rgba(74, 222, 128, 0.15);
   color: var(--musea-success);
 }
 
 .status-deprecated {
-  background: #f8717126;
+  background: rgba(248, 113, 113, 0.15);
   color: var(--musea-error);
 }
 </style>

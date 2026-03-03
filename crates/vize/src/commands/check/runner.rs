@@ -200,7 +200,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     // Build VirtualTsOptions from config (.d.ts file) or default (empty).
     let mut vts_options = if let Some(ref dts_path) = config.check.globals {
         let resolved = std::path::Path::new(dts_path);
-        match parse_dts_globals(&resolved) {
+        match parse_dts_globals(resolved) {
             Ok(globals) => VirtualTsOptions {
                 template_globals: globals,
                 ..Default::default()
@@ -300,8 +300,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
             // Analyze - need to analyze both script and script_setup if both exist
             let mut analyzer = Analyzer::with_options(AnalyzerOptions::full());
-            let has_both_scripts =
-                descriptor.script.is_some() && descriptor.script_setup.is_some();
+            let has_both_scripts = descriptor.script.is_some() && descriptor.script_setup.is_some();
 
             // Analyze plain script first (exports types, interfaces, etc.)
             if let Some(ref script) = descriptor.script {
@@ -348,12 +347,12 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             // When both script blocks exist, the combined content is
             // "{script.content}\n{setup.content}" but Croquis spans are relative
             // to each block individually. Adjust setup spans and merge plain spans.
-            if let (Some((plain_imports, plain_reexports, plain_types)), Some(ref script)) =
+            if let (Some((plain_imports, plain_reexports, plain_types)), Some(script)) =
                 (plain_spans, descriptor.script.as_ref())
             {
                 let plain_len = script.content.len() as u32 + 1; // +1 for \n separator
-                // Croquis currently has setup spans (relative to setup content).
-                // Shift them to be relative to the combined content.
+                                                                 // Croquis currently has setup spans (relative to setup content).
+                                                                 // Shift them to be relative to the combined content.
                 for imp in &mut summary.import_statements {
                     imp.start += plain_len;
                     imp.end += plain_len;
@@ -671,22 +670,24 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
     // JSON output
     if args.format == "json" {
+        let mut files: Vec<JsonFileResult> = generated
+            .iter()
+            .map(|g| {
+                let diags = all_diagnostics
+                    .iter()
+                    .find(|(f, _)| f == &g.original)
+                    .map(|(_, d)| d.clone())
+                    .unwrap_or_default();
+                JsonFileResult {
+                    file: g.original.clone(),
+                    virtual_ts: g.virtual_ts.clone(),
+                    diagnostics: diags,
+                }
+            })
+            .collect();
+        files.sort_by(|a, b| a.file.cmp(&b.file));
         let json_output = JsonOutput {
-            files: generated
-                .iter()
-                .map(|g| {
-                    let diags = all_diagnostics
-                        .iter()
-                        .find(|(f, _)| f == &g.original)
-                        .map(|(_, d)| d.clone())
-                        .unwrap_or_default();
-                    JsonFileResult {
-                        file: g.original.clone(),
-                        virtual_ts: g.virtual_ts.clone(),
-                        diagnostics: diags,
-                    }
-                })
-                .collect(),
+            files,
             error_count: total_errors,
             file_count: generated.len(),
         };
@@ -834,13 +835,13 @@ fn parse_dts_globals(
     let mut globals = Vec::new();
 
     // Find the ComponentCustomProperties interface block
-    let mut lines = content.lines().peekable();
+    let lines = content.lines();
     let mut in_interface = false;
     let mut brace_depth: i32 = 0;
     let mut current_name: Option<vize_carton::String> = None;
     let mut current_type = vize_carton::String::default();
 
-    while let Some(line) = lines.next() {
+    for line in lines {
         let trimmed = line.trim();
 
         if !in_interface {

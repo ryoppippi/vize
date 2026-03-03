@@ -1,38 +1,32 @@
 <script setup lang="ts">
-const model = defineModel<number>({ default: 0 });
+const model = defineModel<number>({ default: 0 })
 
 defineProps<{
-  label: string;
-  description?: string;
-  required?: boolean;
-  min?: number;
-  max?: number;
-  step?: number;
-}>();
+  label: string
+  description?: string
+  required?: boolean
+  min?: number
+  max?: number
+  step?: number
+}>()
 </script>
 
 <template>
   <div class="control">
     <label class="control-label">
       {{ label }}
-      <span v-if="required" class="control-required">
-        *
-      </span>
-      <span class="control-value">
-        {{ model }}
-      </span>
+      <span v-if="required" class="control-required">*</span>
+      <span class="control-value">{{ model }}</span>
     </label>
     <input
       v-model.number="model"
-      class="control-range"
       type="range"
-      :max="max ?? 100"
+      class="control-range"
       :min="min ?? 0"
+      :max="max ?? 100"
       :step="step ?? 1"
     >
-    <span v-if="description" class="control-desc">
-      {{ description }}
-    </span>
+    <span v-if="description" class="control-desc">{{ description }}</span>
   </div>
 </template>
 
@@ -40,16 +34,16 @@ defineProps<{
 .control {
   display: flex;
   flex-direction: column;
-  gap: .375rem;
+  gap: 0.375rem;
 }
 
 .control-label {
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--musea-text-secondary);
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .control-required {
@@ -59,10 +53,10 @@ defineProps<{
 .control-value {
   margin-left: auto;
   font-family: var(--musea-font-mono);
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
   background: var(--musea-bg-tertiary);
-  padding: .0625rem .375rem;
+  padding: 0.0625rem 0.375rem;
   border-radius: 4px;
 }
 
@@ -87,7 +81,7 @@ defineProps<{
 }
 
 .control-desc {
-  font-size: .6875rem;
+  font-size: 0.6875rem;
   color: var(--musea-text-muted);
 }
 </style>

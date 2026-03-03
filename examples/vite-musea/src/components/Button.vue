@@ -1,23 +1,15 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: "default" | "primary" | "secondary";
-  size?: "sm" | "md" | "lg";
-  disabled?: boolean;
-}>();
+  variant?: 'default' | 'primary' | 'secondary'
+  size?: 'sm' | 'md' | 'lg'
+  disabled?: boolean
+}>()
 </script>
 
 <template>
   <button
-    "btn--disabled":
-    "md"}`,
-    ??
-    `btn--${size
     class="btn"
-    default"}`,
-    disabled
-    {
-    }]"
-    :class="[`btn--${variant ?? "
+    :class="[`btn--${variant ?? 'default'}`, `btn--${size ?? 'md'}`, { 'btn--disabled': disabled }]"
     :disabled="disabled"
   >
     <slot />
@@ -30,22 +22,22 @@ defineProps<{
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
-  transition: all .15s;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  transition: all 0.15s ease;
 }
 
 .btn--sm {
-  padding: .25rem .625rem;
-  font-size: .75rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
 }
 
 .btn--md {
-  padding: .5rem 1rem;
-  font-size: .875rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
 }
 
 .btn--lg {
-  padding: .625rem 1.5rem;
+  padding: 0.625rem 1.5rem;
   font-size: 1rem;
 }
 
@@ -82,13 +74,13 @@ defineProps<{
 }
 
 .btn--disabled {
-  opacity: .5;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 </style>
 
-<art>
-<variant name="Default" default>
+<art title="Button" category="Components" status="ready">
+  <variant name="Default" default>
     <Self>Default Button</Self>
   </variant>
   <variant name="Primary">

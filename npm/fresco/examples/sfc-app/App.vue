@@ -93,54 +93,54 @@ useInput({
 </script>
 
 <template>
-  <box "flex-start" 2, alignItems: border="rounded" column", padding: }" :style="{ flexDirection: ">
-    <text fg="cyan" :bold="true">
-      Todo App
-    </text>
-    <text :dim="true">
-      {{ stats.done }}/{{ stats.total }} completed
-    </text>
-    <box "flex-start", alignItems: column", }" :style="{
-      marginTop: 1,
-      flexDirection: ">
+  <box
+    :style="{ flexDirection: 'column', padding: 2, alignItems: 'flex-start' }"
+    border="rounded"
+  >
+    <text :bold="true" fg="cyan">Todo App</text>
+    <text :dim="true">{{ stats.done }}/{{ stats.total }} completed</text>
+
+    <box
+      :style="{
+        marginTop: 1,
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+      }"
+    >
       <box
         v-for="(todo, index) in todos"
         :key="todo.id"
-        "flex-start"
-        alignItems:
-        row",
-        }"
-        :style="{ flexDirection: "
+        :style="{ flexDirection: 'row', alignItems: 'flex-start' }"
       >
-        <text undefined" yellow" : :fg="index === selectedIndex ? ">
-          {{
+        <text :fg="index === selectedIndex ? 'yellow' : undefined">{{
           index === selectedIndex ? "❯ " : "  "
-          }}
-        </text>
-        <text "white"" green" : :dim="todo.done" :fg="todo.done ? ">
-          {{ todo.done ? "✔" : "○" }} {{ todo.text }}
-        </text>
+        }}</text>
+        <text :fg="todo.done ? 'green' : 'white'" :dim="todo.done"
+          >{{ todo.done ? "✔" : "○" }} {{ todo.text }}</text
+        >
       </box>
-      <text v-if="todos.length === 0" :dim="true">
-        No todos yet!
-      </text>
+
+      <text v-if="todos.length === 0" :dim="true">No todos yet!</text>
     </box>
-    <box v-if="inputMode" "flex-start" alignItems: row", }" :style="{ marginTop: 1, flexDirection: ">
-      <text fg="yellow">
-        > Add:
-      </text>
+
+    <box
+      v-if="inputMode"
+      :style="{ marginTop: 1, flexDirection: 'row', alignItems: 'flex-start' }"
+    >
+      <text fg="yellow">> Add: </text>
       <TextInput
         v-model="newTodoText"
-        fg="yellow"
         :focus="true"
-        @cancel="cancelInput"
+        fg="yellow"
         @submit="addTodo"
-       />
+        @cancel="cancelInput"
+      />
     </box>
+
     <box :style="{ marginTop: 1 }">
-      <text :dim="true">
-        ↑/↓: move, space: toggle, d: delete, a: add, Esc: cancel
-      </text>
+      <text :dim="true"
+        >↑/↓: move, space: toggle, d: delete, a: add, Esc: cancel</text
+      >
     </box>
   </box>
 </template>

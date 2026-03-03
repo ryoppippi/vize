@@ -147,11 +147,9 @@ pub fn generate_virtual_ts_with_offsets(
         let mut has_header = false;
         for stub in &options.auto_import_stubs {
             // Extract function name from "declare function NAME<..." or "declare function NAME(..."
-            let name = stub.strip_prefix("declare function ").and_then(|rest| {
-                let end = rest
-                    .find(|c: char| c == '<' || c == '(')
-                    .unwrap_or(rest.len());
-                Some(&rest[..end])
+            let name = stub.strip_prefix("declare function ").map(|rest| {
+                let end = rest.find(['<', '(']).unwrap_or(rest.len());
+                &rest[..end]
             });
             if let Some(name) = name {
                 // Skip if already imported or declared in script bindings
@@ -196,7 +194,7 @@ pub fn generate_virtual_ts_with_offsets(
             ts.push_str("  const __import_meta: any = {};\n");
         }
 
-        for (_i, line) in lines.iter().enumerate() {
+        for line in lines.iter() {
             // Skip lines that overlap with module-level spans (imports, re-exports, type decls)
             let line_start = src_byte_offset;
             let line_end = line_start + line.len();
