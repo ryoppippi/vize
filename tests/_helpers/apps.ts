@@ -561,6 +561,75 @@ export const vuefesApp: AppConfig = {
   },
 };
 
+export const antDesignVueApp: AppConfig = {
+  name: "ant-design-vue",
+  cwd: path.join(GIT_DIR, "ant-design-vue"),
+  command: "npx",
+  args: ["pnpm@10", "dev"],
+  port: 5316,
+  url: "http://localhost:5316",
+  mountSelector: "#app",
+  readyPattern: /Local:\s+http:\/\/localhost:5316/,
+  allowNon200: true,
+  waitUntil: "load",
+  readyDelay: 10_000,
+  startupTimeout: 120_000,
+  check: {
+    cwd: path.join(GIT_DIR, "ant-design-vue"),
+    patterns: ["components/**/*.vue", "site/**/*.vue"],
+  },
+  lint: {
+    cwd: path.join(GIT_DIR, "ant-design-vue"),
+    patterns: ["components/**/*.vue", "site/**/*.vue"],
+  },
+};
+
+export const nuxtUiApp: AppConfig = {
+  name: "nuxt-ui",
+  cwd: path.join(GIT_DIR, "nuxt-ui"),
+  command: "npx",
+  args: ["pnpm@10", "dev"],
+  port: 5317,
+  url: "http://localhost:5317",
+  mountSelector: "#app",
+  readyPattern: /Local:\s+http:\/\/localhost:5317/,
+  allowNon200: true,
+  waitUntil: "load",
+  readyDelay: 10_000,
+  startupTimeout: 120_000,
+  check: {
+    cwd: path.join(GIT_DIR, "nuxt-ui"),
+    patterns: ["src/**/*.vue"],
+  },
+  lint: {
+    cwd: path.join(GIT_DIR, "nuxt-ui"),
+    patterns: ["src/**/*.vue"],
+  },
+};
+
+export const rekaUiApp: AppConfig = {
+  name: "reka-ui",
+  cwd: path.join(GIT_DIR, "reka-ui"),
+  command: "npx",
+  args: ["pnpm@10", "dev"],
+  port: 5318,
+  url: "http://localhost:5318",
+  mountSelector: "#app",
+  readyPattern: /Local:\s+http:\/\/localhost:5318/,
+  allowNon200: true,
+  waitUntil: "load",
+  readyDelay: 10_000,
+  startupTimeout: 120_000,
+  check: {
+    cwd: path.join(GIT_DIR, "reka-ui"),
+    patterns: ["packages/**/*.vue"],
+  },
+  lint: {
+    cwd: path.join(GIT_DIR, "reka-ui"),
+    patterns: ["packages/**/*.vue"],
+  },
+};
+
 export const SCREENSHOT_DIR = path.resolve(TESTS_DIR, "app", "screenshots");
 export const VIZE_BIN = path.resolve(TESTS_DIR, "../target/release/vize");
 export const TSGO_BIN = path.resolve(TESTS_DIR, "../node_modules/.bin/tsgo");
