@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const TESTS_DIR = path.resolve(__dirname, "..");
 const GIT_DIR = path.join(TESTS_DIR, "_fixtures", "_git");
+const PROJECTS_DIR = path.join(TESTS_DIR, "_fixtures", "_projects");
 const NPM_DIR = path.resolve(__dirname, "../../npm");
 
 export interface AppConfig {
@@ -627,6 +628,54 @@ export const rekaUiApp: AppConfig = {
   lint: {
     cwd: path.join(GIT_DIR, "reka-ui"),
     patterns: ["packages/**/*.vue"],
+  },
+};
+
+export const typecheckErrorsApp: AppConfig = {
+  name: "typecheck-errors",
+  cwd: path.join(PROJECTS_DIR, "typecheck-errors"),
+  command: "",
+  args: [],
+  port: 0,
+  url: "",
+  mountSelector: "",
+  readyPattern: /./,
+  startupTimeout: 0,
+  check: {
+    cwd: path.join(PROJECTS_DIR, "typecheck-errors"),
+    patterns: ["src/**/*.vue"],
+  },
+};
+
+export const compilerMacrosApp: AppConfig = {
+  name: "compiler-macros",
+  cwd: path.join(PROJECTS_DIR, "compiler-macros"),
+  command: "",
+  args: [],
+  port: 0,
+  url: "",
+  mountSelector: "",
+  readyPattern: /./,
+  startupTimeout: 0,
+  check: {
+    cwd: path.join(PROJECTS_DIR, "compiler-macros"),
+    patterns: ["src/**/*.vue"],
+  },
+};
+
+export const stylePreprocessorsApp: AppConfig = {
+  name: "style-preprocessors",
+  cwd: path.join(PROJECTS_DIR, "style-preprocessors"),
+  command: "",
+  args: [],
+  port: 0,
+  url: "",
+  mountSelector: "",
+  readyPattern: /./,
+  startupTimeout: 0,
+  check: {
+    cwd: path.join(PROJECTS_DIR, "style-preprocessors"),
+    patterns: ["src/**/*.vue"],
   },
 };
 
