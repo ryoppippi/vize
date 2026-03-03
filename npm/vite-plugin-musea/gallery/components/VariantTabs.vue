@@ -1,94 +1,95 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import type { ArtVariant } from '../../src/types/index.js'
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import type { ArtVariant } from "../../src/types/index.js";
 
 const props = defineProps<{
-  variants: ArtVariant[]
-  selectedVariant: string
-}>()
+  variants: ArtVariant[];
+  selectedVariant: string;
+}>();
 
 const emit = defineEmits<{
-  (e: 'select', variantName: string): void
-}>()
+  (e: "select", variantName: string): void;
+}>();
 
-const tabsRef = ref<HTMLElement | null>(null)
-const showLeftArrow = ref(false)
-const showRightArrow = ref(false)
+const tabsRef = ref<HTMLElement | null>(null);
+const showLeftArrow = ref(false);
+const showRightArrow = ref(false);
 
-const defaultVariant = computed(() =>
-  props.variants.find(v => v.isDefault)?.name || props.variants[0]?.name
-)
+const defaultVariant = computed(
+  () => props.variants.find((v) => v.isDefault)?.name || props.variants[0]?.name,
+);
 
 const checkScrollButtons = () => {
-  if (!tabsRef.value) return
-  const el = tabsRef.value
-  showLeftArrow.value = el.scrollLeft > 0
-  showRightArrow.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 1
-}
+  if (!tabsRef.value) return;
+  const el = tabsRef.value;
+  showLeftArrow.value = el.scrollLeft > 0;
+  showRightArrow.value = el.scrollLeft < el.scrollWidth - el.clientWidth - 1;
+};
 
-const scroll = (direction: 'left' | 'right') => {
-  if (!tabsRef.value) return
-  const scrollAmount = 200
+const scroll = (direction: "left" | "right") => {
+  if (!tabsRef.value) return;
+  const scrollAmount = 200;
   tabsRef.value.scrollBy({
-    left: direction === 'left' ? -scrollAmount : scrollAmount,
-    behavior: 'smooth'
-  })
-}
+    left: direction === "left" ? -scrollAmount : scrollAmount,
+    behavior: "smooth",
+  });
+};
 
 onMounted(() => {
-  checkScrollButtons()
-  window.addEventListener('resize', checkScrollButtons)
-})
+  checkScrollButtons();
+  window.addEventListener("resize", checkScrollButtons);
+});
 
 onUnmounted(() => {
-  window.removeEventListener('resize', checkScrollButtons)
-})
+  window.removeEventListener("resize", checkScrollButtons);
+});
 
-watch(() => props.variants, checkScrollButtons)
+watch(() => props.variants, checkScrollButtons);
 </script>
 
 <template>
   <div class="variant-tabs-container">
     <button
       v-if="showLeftArrow"
-      type="button"
-      class="scroll-btn scroll-btn--left"
-      @click="scroll('left')"
       aria-label="Scroll left"
+      class="scroll-btn scroll-btn--left"
+      type="button"
+      @click="scroll("left")"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <polyline points="15 18 9 12 15 6" />
       </svg>
     </button>
-
-    <div
-      ref="tabsRef"
-      class="variant-tabs"
-      @scroll="checkScrollButtons"
-    >
+    <div ref="tabsRef" class="variant-tabs" @scroll="checkScrollButtons">
       <button
         v-for="variant in variants"
         :key="variant.name"
         type="button"
-        :class="['variant-tab', {
-          'variant-tab--active': variant.name === selectedVariant,
-          'variant-tab--default': variant.isDefault
-        }]"
-        @click="emit('select', variant.name)"
+        :class="[
+    "variant-tab",
+    {
+      "variant-tab--active": variant.name === selectedVariant,
+      "variant-tab--default": variant.isDefault,
+    },
+  ]"
+        @click="emit("select", variant.name)"
       >
-        <span class="variant-tab-name">{{ variant.name }}</span>
-        <span v-if="variant.isDefault" class="variant-tab-badge">Default</span>
+        <span class="variant-tab-name">
+          {{ variant.name }}
+        </span>
+        <span v-if="variant.isDefault" class="variant-tab-badge">
+          Default
+        </span>
       </button>
     </div>
-
     <button
       v-if="showRightArrow"
-      type="button"
-      class="scroll-btn scroll-btn--right"
-      @click="scroll('right')"
       aria-label="Scroll right"
+      class="scroll-btn scroll-btn--right"
+      type="button"
+      @click="scroll("right")"
     >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <polyline points="9 18 15 12 9 6" />
       </svg>
     </button>
@@ -111,8 +112,8 @@ watch(() => props.variants, checkScrollButtons)
   scrollbar-width: none;
   -ms-overflow-style: none;
   flex: 1;
-  gap: 0.125rem;
-  padding: 0.125rem 0.25rem;
+  gap: .125rem;
+  padding: .125rem .25rem;
 }
 
 .variant-tabs::-webkit-scrollbar {
@@ -122,17 +123,17 @@ watch(() => props.variants, checkScrollButtons)
 .variant-tab {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  background: transparent;
-  border: 1px solid transparent;
+  gap: .25rem;
+  padding: .25rem .5rem;
+  background: none;
+  border: 1px solid #0000;
   border-radius: 2px;
   color: var(--musea-text-muted);
-  font-size: 0.625rem;
+  font-size: .625rem;
   font-weight: 500;
   white-space: nowrap;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all .15s;
 }
 
 .variant-tab:hover {
@@ -155,19 +156,19 @@ watch(() => props.variants, checkScrollButtons)
 }
 
 .variant-tab-badge {
-  font-size: 0.5rem;
+  font-size: .5rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.0625rem 0.25rem;
+  letter-spacing: .04em;
+  padding: .0625rem .25rem;
   border-radius: 2px;
   background: var(--musea-accent);
-  color: white;
+  color: #fff;
 }
 
 .variant-tab--active .variant-tab-badge {
   background: var(--musea-accent);
-  color: white;
+  color: #fff;
 }
 
 .scroll-btn {
@@ -180,7 +181,7 @@ watch(() => props.variants, checkScrollButtons)
   color: var(--musea-text-muted);
   cursor: pointer;
   flex-shrink: 0;
-  transition: all 0.15s;
+  transition: all .15s;
 }
 
 .scroll-btn:hover {

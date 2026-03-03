@@ -131,18 +131,16 @@ watch(() => [props.code, props.language], highlight);
 </script>
 
 <template>
-  <div class="code-highlight" :class="{ 'with-line-numbers': showLineNumbers }">
+  <div class="code-highlight" :class="{ "with-line-numbers": showLineNumbers }">
     <div v-if="showLineNumbers" class="line-numbers">
-      <span v-for="i in lineCount" :key="i" class="line-number">{{ i }}</span>
+      <span v-for="i in lineCount" :key="i" class="line-number">
+        {{ i }}
+      </span>
     </div>
     <div class="code-content">
       <!-- @vize:forget shiki output is pre-escaped -->
-      <div
-        v-for="(line, index) in highlightedLines"
-        :key="index"
-        class="code-line"
-        v-html="line"
-      ></div>
+      <div v-for="(line, index) in highlightedLines" :key="index" class="code-line" v-html="line">
+      </div>
     </div>
   </div>
 </template>
@@ -150,7 +148,7 @@ watch(() => [props.code, props.language], highlight);
 <style scoped>
 .code-highlight {
   display: flex;
-  font-family: "JetBrains Mono", monospace;
+  font-family: JetBrains Mono, monospace;
   font-size: 13px;
   line-height: 20px;
   border-radius: 4px;
@@ -203,7 +201,6 @@ watch(() => [props.code, props.language], highlight);
 }
 </style>
 
-<!-- Unscoped: theme switching via body[data-theme] -->
 <style>
 body[data-theme="dark"] .code-highlight .code-line span {
   color: var(--d);

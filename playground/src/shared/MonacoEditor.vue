@@ -217,11 +217,10 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="containerRef" class="monaco-container"></div>
+  <div ref="containerRef" class="monaco-container">
+  </div>
 </template>
 
 <style scoped>
-/* NOTE: Main .monaco-container styles are in styles.css (global)
-   due to Vize compiler not extracting scoped styles in production builds.
-   See: styles.css -> Monaco Container section */
+
 </style>

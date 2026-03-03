@@ -1,33 +1,28 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-import { mdiSquareOutline, mdiRulerSquare } from '@mdi/js'
-import { useAddons } from '../composables/useAddons'
-import ViewportSelector from './ViewportSelector.vue'
-import BackgroundPicker from './BackgroundPicker.vue'
-import MdiIcon from './MdiIcon.vue'
+import { onMounted, onUnmounted } from "vue";
+import { mdiSquareOutline, mdiRulerSquare } from "@mdi/js";
+import { useAddons } from "../composables/useAddons";
+import ViewportSelector from "./ViewportSelector.vue";
+import BackgroundPicker from "./BackgroundPicker.vue";
+import MdiIcon from "./MdiIcon.vue";
 
-const {
-  outlineEnabled,
-  measureEnabled,
-  toggleOutline,
-  toggleMeasure,
-} = useAddons()
+const { outlineEnabled, measureEnabled, toggleOutline, toggleMeasure } = useAddons();
 
 function onKeydown(e: KeyboardEvent) {
   // Alt+O: toggle outline
-  if (e.altKey && e.key === 'o') {
-    e.preventDefault()
-    toggleOutline()
+  if (e.altKey && e.key === "o") {
+    e.preventDefault();
+    toggleOutline();
   }
   // Alt+M: toggle measure
-  if (e.altKey && e.key === 'm') {
-    e.preventDefault()
-    toggleMeasure()
+  if (e.altKey && e.key === "m") {
+    e.preventDefault();
+    toggleMeasure();
   }
 }
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
+onMounted(() => document.addEventListener("keydown", onKeydown));
+onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 </script>
 
 <template>
@@ -35,38 +30,41 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     <div class="toolbar-group">
       <ViewportSelector />
     </div>
-
     <div class="toolbar-separator" />
-
     <div class="toolbar-group">
       <BackgroundPicker />
     </div>
-
     <div class="toolbar-separator" />
-
     <div class="toolbar-group">
       <button
-        type="button"
         class="toolbar-toggle"
-        :class="{ active: outlineEnabled }"
         title="Toggle Outline (Alt+O)"
+        type="button"
+        :class="{ active: outlineEnabled }"
         @click="toggleOutline()"
       >
         <MdiIcon :path="mdiSquareOutline" :size="14" />
-        <span>Outline</span>
-        <kbd class="toolbar-kbd">Alt+O</kbd>
+        <span>
+          Outline
+        </span>
+        <kbd class="toolbar-kbd">
+          Alt+O
+        </kbd>
       </button>
-
       <button
-        type="button"
         class="toolbar-toggle"
-        :class="{ active: measureEnabled }"
         title="Toggle Measure (Alt+M)"
+        type="button"
+        :class="{ active: measureEnabled }"
         @click="toggleMeasure()"
       >
         <MdiIcon :path="mdiRulerSquare" :size="14" />
-        <span>Measure</span>
-        <kbd class="toolbar-kbd">Alt+M</kbd>
+        <span>
+          Measure
+        </span>
+        <kbd class="toolbar-kbd">
+          Alt+M
+        </kbd>
       </button>
     </div>
   </div>
@@ -76,8 +74,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 .addon-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.25rem;
+  gap: .25rem;
+  padding: .125rem .25rem;
   background: var(--musea-bg-secondary);
   border: 1px solid var(--musea-border);
   border-radius: 2px;
@@ -87,7 +85,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 .toolbar-group {
   display: flex;
   align-items: center;
-  gap: 0.125rem;
+  gap: .125rem;
 }
 
 .toolbar-separator {
@@ -100,13 +98,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 .toolbar-toggle {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0.25rem;
+  gap: .25rem;
+  padding: .125rem .25rem;
   border: 1px solid var(--musea-border);
   border-radius: 2px;
   background: var(--musea-bg-tertiary);
   color: var(--musea-text-muted);
-  font-size: 0.5625rem;
+  font-size: .5625rem;
   cursor: pointer;
   transition: all var(--musea-transition);
 }
@@ -129,17 +127,17 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 .toolbar-kbd {
   display: none;
-  padding: 0 0.125rem;
+  padding: 0 .125rem;
   border: 1px solid var(--musea-border);
   border-radius: 2px;
   background: var(--musea-bg-primary);
   font-family: var(--musea-font-mono, monospace);
-  font-size: 0.5rem;
+  font-size: .5rem;
   color: var(--musea-text-muted);
   line-height: 1.2;
 }
 
-@media (min-width: 1024px) {
+@media (width >= 1024px) {
   .toolbar-kbd {
     display: inline-block;
   }

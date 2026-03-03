@@ -140,59 +140,80 @@ onUnmounted(() => {
     <div class="panel input-panel">
       <div class="panel-header">
         <div class="header-title">
-          <svg class="icon" viewBox="0 0 24 24"><path :d="mdiAlert" fill="currentColor" /></svg>
-          <h2>Source</h2>
+          <svg class="icon" viewBox="0 0 24 24">
+            <path fill="currentColor" :d="mdiAlert" />
+          </svg>
+          <h2>
+            Source
+          </h2>
         </div>
         <div class="panel-actions">
-          <button class="btn-ghost" @click="source = LINT_PRESET">Reset</button>
+          <button class="btn-ghost" @click="source = LINT_PRESET">
+            Reset
+          </button>
         </div>
       </div>
       <div class="editor-container">
         <MonacoEditor ref="editorRef" v-model="source" language="vue" :diagnostics :theme />
       </div>
     </div>
-
     <div class="panel output-panel">
       <div class="panel-header">
         <div class="header-title">
           <svg class="icon" viewBox="0 0 24 24">
-            <path :d="mdiCheckCircle" fill="currentColor" />
+            <path fill="currentColor" :d="mdiCheckCircle" />
           </svg>
-          <h2>Lint Analysis</h2>
-          <span v-if="lintTime !== null" class="perf-badge"> {{ lintTime.toFixed(2) }}ms </span>
+          <h2>
+            Lint Analysis
+          </h2>
+          <span v-if="lintTime !== null" class="perf-badge">
+            {{ lintTime.toFixed(2) }}ms
+          </span>
           <template v-if="lintResult">
-            <span v-if="errorCount > 0" class="count-badge errors">{{ errorCount }}</span>
-            <span v-if="warningCount > 0" class="count-badge warnings">{{ warningCount }}</span>
+            <span v-if="errorCount > 0" class="count-badge errors">
+              {{ errorCount }}
+            </span>
+            <span v-if="warningCount > 0" class="count-badge warnings">
+              {{ warningCount }}
+            </span>
           </template>
         </div>
         <div class="tabs">
           <button
-            :class="['tab', { active: activeTab === 'diagnostics' }]"
-            @click="activeTab = 'diagnostics'"
+            :class="["tab", { active: activeTab === "diagnostics" }]"
+            @click="activeTab = "diagnostics""
           >
             Diagnostics
-            <span v-if="lintResult?.diagnostics.length" class="tab-badge">{{
+            <span v-if="lintResult?.diagnostics.length" class="tab-badge">
+              {{
               lintResult.diagnostics.length
-            }}</span>
+              }}
+            </span>
           </button>
-          <button :class="['tab', { active: activeTab === 'rules' }]" @click="activeTab = 'rules'">
+          <button :class="["tab", { active: activeTab === "rules" }]" @click="activeTab = "rules"">
             Rules
-            <span class="tab-count">{{ enabledRuleCount }}/{{ rules.length }}</span>
+            <span class="tab-count">
+              {{ enabledRuleCount }}/{{ rules.length }}
+            </span>
           </button>
         </div>
       </div>
-
       <div class="output-content">
         <div v-if="error" class="error-panel">
-          <div class="error-header">Lint Error</div>
-          <pre class="error-content">{{ error }}</pre>
+          <div class="error-header">
+            Lint Error
+          </div>
+          <pre class="error-content">
+            {{ error }}
+          </pre>
         </div>
-
         <template v-else-if="lintResult">
           <!-- Diagnostics Tab -->
-          <div v-if="activeTab === 'diagnostics'" class="diagnostics-output">
+          <div v-if="activeTab === "diagnostics"" class="diagnostics-output">
             <div class="output-header-bar">
-              <span class="output-title">Issues</span>
+              <span class="output-title">
+                Issues
+              </span>
               <div class="locale-selector">
                 <select
                   v-model="currentLocale"
@@ -205,122 +226,141 @@ onUnmounted(() => {
                 </select>
               </div>
             </div>
-
             <div v-if="lintResult.diagnostics.length === 0" class="success-state">
               <svg class="success-icon" viewBox="0 0 24 24">
-                <path :d="mdiCheck" fill="currentColor" />
+                <path fill="currentColor" :d="mdiCheck" />
               </svg>
-              <span>No issues found</span>
+              <span>
+                No issues found
+              </span>
             </div>
-
             <div v-else class="diagnostics-list">
               <div
                 v-for="(diagnostic, i) in lintResult.diagnostics"
                 :key="i"
-                :class="['diagnostic-item', `severity-${diagnostic.severity}`]"
+                :class="["diagnostic-item", `severity-${diagnostic.severity}`]"
               >
                 <div class="diagnostic-header">
                   <svg class="severity-icon" viewBox="0 0 24 24">
-                    <path :d="getSeverityIcon(diagnostic.severity)" fill="currentColor" />
+                    <path fill="currentColor" :d="getSeverityIcon(diagnostic.severity)" />
                   </svg>
-                  <code class="rule-id">{{ diagnostic.rule }}</code>
+                  <code class="rule-id">
+                    {{ diagnostic.rule }}
+                  </code>
                   <span class="location-badge">
                     {{ diagnostic.location.start.line }}:{{ diagnostic.location.start.column }}
                   </span>
                 </div>
-                <div class="diagnostic-message">{{ diagnostic.message }}</div>
+                <div class="diagnostic-message">
+                  {{ diagnostic.message }}
+                </div>
                 <div v-if="diagnostic.help" class="diagnostic-help">
                   <div class="help-header">
-                    <span class="help-icon">?</span>
-                    <span class="help-label">Hint</span>
+                    <span class="help-icon">
+                      ?
+                    </span>
+                    <span class="help-label">
+                      Hint
+                    </span>
                   </div>
                   <!-- @vize:forget formatHelp output is pre-escaped -->
-                  <div class="help-content" v-html="formatHelp(diagnostic.help)"></div>
+                  <div class="help-content" v-html="formatHelp(diagnostic.help)">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
           <!-- Rules Tab -->
-          <div v-else-if="activeTab === 'rules'" class="rules-output">
+          <div v-else-if="activeTab === "rules"" class="rules-output">
             <div class="output-header-bar">
-              <span class="output-title">Rule Configuration</span>
+              <span class="output-title">
+                Rule Configuration
+              </span>
               <div class="rules-actions">
-                <button class="btn-action" @click="enableAllRules">Enable All</button>
-                <button class="btn-action" @click="disableAllRules">Disable All</button>
+                <button class="btn-action" @click="enableAllRules">
+                  Enable All
+                </button>
+                <button class="btn-action" @click="disableAllRules">
+                  Disable All
+                </button>
               </div>
             </div>
-
             <div class="rules-toolbar">
               <input
                 v-model="searchQuery"
-                type="text"
-                placeholder="Search rules..."
                 aria-label="Search rules"
                 class="search-input"
-              />
-              <select
-                v-model="selectedCategory"
-                aria-label="Category filter"
-                class="category-select"
-              >
+                placeholder="Search rules..."
+                type="text"
+               />
+              <select v-model="selectedCategory" aria-label="Category filter" class="category-select">
                 <option v-for="cat in categories" :key="cat" :value="cat">
                   {{ cat === "all" ? "All Categories" : cat }}
                 </option>
               </select>
             </div>
-
             <!-- Category toggle headers when filtering by category -->
-            <div v-if="selectedCategory !== 'all'" class="category-toggle">
+            <div v-if="selectedCategory !== "all"" class="category-toggle">
               <label class="toggle-label">
                 <input
+                  class="rule-checkbox"
                   type="checkbox"
                   :checked="isCategoryFullyEnabled(selectedCategory)"
                   :indeterminate="isCategoryPartiallyEnabled(selectedCategory)"
-                  class="rule-checkbox"
                   @change="toggleCategory(selectedCategory, $event.target.checked)"
-                />
-                <span class="category-label">{{ selectedCategory }}</span>
-                <span class="category-count">{{ filteredRules.length }} rules</span>
+                 />
+                <span class="category-label">
+                  {{ selectedCategory }}
+                </span>
+                <span class="category-count">
+                  {{ filteredRules.length }} rules
+                </span>
               </label>
             </div>
-
             <div class="rules-list">
               <div
                 v-for="rule in filteredRules"
                 :key="rule.name"
-                :class="['rule-item', { disabled: !enabledRules.has(rule.name) }]"
+                :class="["rule-item", { disabled: !enabledRules.has(rule.name) }]"
               >
                 <div class="rule-main">
                   <label class="rule-toggle">
                     <input
+                      class="rule-checkbox"
                       type="checkbox"
                       :checked="enabledRules.has(rule.name)"
-                      class="rule-checkbox"
                       @change="toggleRule(rule.name)"
-                    />
-                    <code class="rule-id">{{ rule.name }}</code>
+                     />
+                    <code class="rule-id">
+                      {{ rule.name }}
+                    </code>
                   </label>
                   <div class="rule-badges">
-                    <span class="badge category-badge">{{ rule.category }}</span>
-                    <span :class="['badge', 'severity-badge', rule.defaultSeverity]">
+                    <span class="badge category-badge">
+                      {{ rule.category }}
+                    </span>
+                    <span :class="["badge", "severity-badge", rule.defaultSeverity]">
                       {{ rule.defaultSeverity }}
                     </span>
-                    <span v-if="rule.fixable" class="badge fixable-badge">fix</span>
+                    <span v-if="rule.fixable" class="badge fixable-badge">
+                      fix
+                    </span>
                   </div>
                 </div>
-                <div class="rule-description">{{ rule.description }}</div>
+                <div class="rule-description">
+                  {{ rule.description }}
+                </div>
               </div>
-
               <div v-if="filteredRules.length === 0" class="empty-state">
                 No rules match your search
               </div>
             </div>
           </div>
         </template>
-
         <div v-else class="loading-state">
-          <span>Enter Vue code to see lint results</span>
+          <span>
+            Enter Vue code to see lint results
+          </span>
         </div>
       </div>
     </div>

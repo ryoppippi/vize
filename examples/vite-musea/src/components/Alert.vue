@@ -1,26 +1,36 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: 'default' | 'success' | 'warning' | 'error'
-  closable?: boolean
-}>()
+  variant?: "default" | "success" | "warning" | "error";
+  closable?: boolean;
+}>();
 
 const emit = defineEmits<{
-  close: []
-}>()
+  close: [];
+}>();
 </script>
 
 <template>
-  <div class="alert" :class="`alert--${variant ?? 'default'}`" role="alert">
+  <div class="alert" role="alert" :class="`alert--${variant ?? "default"}`">
     <span class="alert-icon">
-      <template v-if="variant === 'success'">&#10003;</template>
-      <template v-else-if="variant === 'warning'">&#9888;</template>
-      <template v-else-if="variant === 'error'">&#10005;</template>
-      <template v-else>&#8505;</template>
+      <template v-if="variant === "success"">
+        &#10003;
+      </template>
+      <template v-else-if="variant === "warning"">
+        &#9888;
+      </template>
+      <template v-else-if="variant === "error"">
+        &#10005;
+      </template>
+      <template v-else>
+        &#8505;
+      </template>
     </span>
     <span class="alert-content">
       <slot />
     </span>
-    <button v-if="closable" class="alert-close" @click="emit('close')">&times;</button>
+    <button v-if="closable" class="alert-close" @click="emit("close")">
+      &times;
+    </button>
   </div>
 </template>
 
@@ -28,11 +38,11 @@ const emit = defineEmits<{
 .alert {
   display: flex;
   align-items: flex-start;
-  gap: 0.625rem;
-  padding: 0.75rem 1rem;
+  gap: .625rem;
+  padding: .75rem 1rem;
   border-radius: 6px;
-  font-size: 0.875rem;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: .875rem;
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   border: 1px solid;
 }
@@ -44,20 +54,20 @@ const emit = defineEmits<{
 }
 
 .alert--success {
-  background: rgba(45, 106, 53, 0.08);
-  border-color: rgba(45, 106, 53, 0.2);
+  background: #2d6a3514;
+  border-color: #2d6a3533;
   color: #2d6a35;
 }
 
 .alert--warning {
-  background: rgba(139, 112, 64, 0.08);
-  border-color: rgba(139, 112, 64, 0.2);
+  background: #8b704014;
+  border-color: #8b704033;
   color: #8b7040;
 }
 
 .alert--error {
-  background: rgba(160, 64, 64, 0.08);
-  border-color: rgba(160, 64, 64, 0.2);
+  background: #a0404014;
+  border-color: #a0404033;
   color: #a04040;
 }
 
@@ -80,8 +90,8 @@ const emit = defineEmits<{
   line-height: 1;
   padding: 0;
   color: inherit;
-  opacity: 0.6;
-  transition: opacity 0.15s ease;
+  opacity: .6;
+  transition: opacity .15s;
 
   &:hover {
     opacity: 1;
@@ -89,8 +99,8 @@ const emit = defineEmits<{
 }
 </style>
 
-<art title="Alert" category="Feedback" status="ready" tags="alert,message,feedback">
-  <variant name="Default" default>
+<art>
+<variant name="Default" default>
     <Self>This is a default informational alert.</Self>
   </variant>
   <variant name="Success">

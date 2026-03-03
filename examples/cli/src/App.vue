@@ -1,25 +1,33 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed } from "vue";
 
-const count = ref(0)
-const doubled = computed(() => count.value * 2)
+const count = ref(0);
+const doubled = computed(() => count.value * 2);
 
 function increment() {
-  count.value++
+  count.value++;
 }
 
 function decrement() {
-  count.value--
+  count.value--;
 }
 </script>
 
 <template>
   <div class="container">
-    <h1>{{ count }}</h1>
-    <p>Doubled: {{ doubled }}</p>
+    <h1>
+      {{ count }}
+    </h1>
+    <p>
+      Doubled: {{ doubled }}
+    </p>
     <div class="buttons">
-      <button @click="decrement">-1</button>
-      <button @click="increment">+1</button>
+      <button @click="decrement">
+        -1
+      </button>
+      <button @click="increment">
+        +1
+      </button>
     </div>
   </div>
 </template>

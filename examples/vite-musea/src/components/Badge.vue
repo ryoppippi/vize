@@ -1,15 +1,12 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: 'default' | 'success' | 'warning' | 'error' | 'info'
-  size?: 'sm' | 'md' | 'lg'
-}>()
+  variant?: "default" | "success" | "warning" | "error" | "info";
+  size?: "sm" | "md" | "lg";
+}>();
 </script>
 
 <template>
-  <span
-    class="badge"
-    :class="[`badge--${variant ?? 'default'}`, `badge--${size ?? 'md'}`]"
-  >
+  <span class="badge" :class="[`badge--${variant ?? "default"}`, `badge--${size ?? "md"}`]">
     <slot />
   </span>
 </template>
@@ -24,18 +21,18 @@ defineProps<{
 }
 
 .badge--sm {
-  padding: 0.125rem 0.5rem;
-  font-size: 0.625rem;
+  padding: .125rem .5rem;
+  font-size: .625rem;
 }
 
 .badge--md {
-  padding: 0.25rem 0.625rem;
-  font-size: 0.75rem;
+  padding: .25rem .625rem;
+  font-size: .75rem;
 }
 
 .badge--lg {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
+  padding: .375rem .75rem;
+  font-size: .875rem;
 }
 
 .badge--default {
@@ -44,28 +41,28 @@ defineProps<{
 }
 
 .badge--success {
-  background: rgba(45, 106, 53, 0.12);
+  background: #2d6a351f;
   color: #2d6a35;
 }
 
 .badge--warning {
-  background: rgba(139, 112, 64, 0.12);
+  background: #8b70401f;
   color: #8b7040;
 }
 
 .badge--error {
-  background: rgba(160, 64, 64, 0.1);
+  background: #a040401a;
   color: #a04040;
 }
 
 .badge--info {
-  background: rgba(74, 107, 138, 0.12);
+  background: #4a6b8a1f;
   color: #4a6b8a;
 }
 </style>
 
-<art title="Badge" category="Components" status="ready" tags="badge,tag,label">
-  <variant name="Default" default>
+<art>
+<variant name="Default" default>
     <Self>Default</Self>
   </variant>
   <variant name="Variants">

@@ -185,67 +185,86 @@ onUnmounted(() => {
       <div class="panel-header">
         <div class="header-title">
           <svg class="icon" viewBox="0 0 24 24">
-            <path :d="mdiCodeTags" fill="currentColor" />
+            <path fill="currentColor" :d="mdiCodeTags" />
           </svg>
-          <h2>Source</h2>
+          <h2>
+            Source
+          </h2>
         </div>
         <div class="panel-actions">
-          <button class="btn-ghost" @click="setPreset('untyped')">Untyped</button>
-          <button class="btn-ghost" @click="setPreset('typed')">Typed</button>
+          <button class="btn-ghost" @click="setPreset("untyped")">
+            Untyped
+          </button>
+          <button class="btn-ghost" @click="setPreset("typed")">
+            Typed
+          </button>
         </div>
       </div>
       <div class="editor-container">
         <MonacoEditor v-model="source" language="vue" :diagnostics :theme />
       </div>
     </div>
-
     <div class="panel output-panel">
       <div class="panel-header">
         <div class="header-title">
           <svg class="icon" viewBox="0 0 24 24">
-            <path :d="mdiCheckDecagram" fill="currentColor" />
+            <path fill="currentColor" :d="mdiCheckDecagram" />
           </svg>
-          <h2>Type Analysis</h2>
-          <span v-if="checkTime !== null" class="perf-badge"> {{ checkTime.toFixed(2) }}ms </span>
+          <h2>
+            Type Analysis
+          </h2>
+          <span v-if="checkTime !== null" class="perf-badge">
+            {{ checkTime.toFixed(2) }}ms
+          </span>
           <template v-if="typeCheckResult">
-            <span v-if="errorCount > 0" class="count-badge errors">{{ errorCount }}</span>
-            <span v-if="warningCount > 0" class="count-badge warnings">{{ warningCount }}</span>
+            <span v-if="errorCount > 0" class="count-badge errors">
+              {{ errorCount }}
+            </span>
+            <span v-if="warningCount > 0" class="count-badge warnings">
+              {{ warningCount }}
+            </span>
           </template>
         </div>
         <div class="tabs">
           <button
-            :class="['tab', { active: activeTab === 'diagnostics' }]"
-            @click="activeTab = 'diagnostics'"
+            :class="["tab", { active: activeTab === "diagnostics" }]"
+            @click="activeTab = "diagnostics""
           >
             Diagnostics
-            <span v-if="diagnostics.length" class="tab-badge">{{ diagnostics.length }}</span>
+            <span v-if="diagnostics.length" class="tab-badge">
+              {{ diagnostics.length }}
+            </span>
           </button>
           <button
-            :class="['tab', { active: activeTab === 'virtualTs' }]"
-            @click="activeTab = 'virtualTs'"
+            :class="["tab", { active: activeTab === "virtualTs" }]"
+            @click="activeTab = "virtualTs""
           >
             Virtual TS
           </button>
           <button
-            :class="['tab', { active: activeTab === 'capabilities' }]"
-            @click="activeTab = 'capabilities'"
+            :class="["tab", { active: activeTab === "capabilities" }]"
+            @click="activeTab = "capabilities""
           >
             Info
           </button>
         </div>
       </div>
-
       <div class="output-content">
         <div v-if="error" class="error-panel">
-          <div class="error-header">Type Check Error</div>
-          <pre class="error-content">{{ error }}</pre>
+          <div class="error-header">
+            Type Check Error
+          </div>
+          <pre class="error-content">
+            {{ error }}
+          </pre>
         </div>
-
         <template v-else-if="typeCheckResult">
           <!-- Diagnostics Tab -->
-          <div v-if="activeTab === 'diagnostics'" class="diagnostics-output">
+          <div v-if="activeTab === "diagnostics"" class="diagnostics-output">
             <div class="output-header-bar">
-              <span class="output-title">Type Issues</span>
+              <span class="output-title">
+                Type Issues
+              </span>
               <div class="options-toggle">
                 <label class="option-label">
                   <input v-model="strictMode" type="checkbox" />
@@ -253,7 +272,6 @@ onUnmounted(() => {
                 </label>
               </div>
             </div>
-
             <div class="options-panel">
               <label class="option-label highlight">
                 <input v-model="useMonacoTs" type="checkbox" />
@@ -276,47 +294,56 @@ onUnmounted(() => {
                 Show Virtual TS
               </label>
             </div>
-
             <div v-if="diagnostics.length === 0" class="success-state">
               <svg class="success-icon" viewBox="0 0 24 24">
-                <path :d="mdiCheck" fill="currentColor" />
+                <path fill="currentColor" :d="mdiCheck" />
               </svg>
-              <span>No type issues found</span>
+              <span>
+                No type issues found
+              </span>
             </div>
-
             <div v-else class="diagnostics-list">
               <div
                 v-for="(diagnostic, i) in diagnostics"
                 :key="i"
-                :class="['diagnostic-item', `severity-${diagnostic.severity}`]"
+                :class="["diagnostic-item", `severity-${diagnostic.severity}`]"
               >
                 <div class="diagnostic-header">
                   <svg class="severity-icon" viewBox="0 0 24 24">
-                    <path :d="getSeverityIcon(diagnostic.severity)" fill="currentColor" />
+                    <path fill="currentColor" :d="getSeverityIcon(diagnostic.severity)" />
                   </svg>
-                  <code v-if="diagnostic.code" class="error-code">TS{{ diagnostic.code }}</code>
+                  <code v-if="diagnostic.code" class="error-code">
+                    TS{{ diagnostic.code }}
+                  </code>
                   <span class="location-badge">
                     {{ diagnostic.startLine }}:{{ diagnostic.startColumn }}
                   </span>
                 </div>
                 <!-- @vize:forget formatMessage output is pre-escaped -->
-                <div class="diagnostic-message" v-html="formatMessage(diagnostic.message)"></div>
+                <div class="diagnostic-message" v-html="formatMessage(diagnostic.message)">
+                </div>
                 <div v-if="diagnostic.help" class="diagnostic-help">
                   <div class="help-header">
-                    <span class="help-icon">?</span>
-                    <span class="help-label">Hint</span>
+                    <span class="help-icon">
+                      ?
+                    </span>
+                    <span class="help-label">
+                      Hint
+                    </span>
                   </div>
                   <!-- @vize:forget formatHelp output is pre-escaped -->
-                  <div class="help-content" v-html="formatHelp(diagnostic.help)"></div>
+                  <div class="help-content" v-html="formatHelp(diagnostic.help)">
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
           <!-- Virtual TS Tab -->
-          <div v-else-if="activeTab === 'virtualTs'" class="virtualts-output">
+          <div v-else-if="activeTab === "virtualTs"" class="virtualts-output">
             <div class="output-header-bar">
-              <span class="output-title">Generated TypeScript</span>
+              <span class="output-title">
+                Generated TypeScript
+              </span>
             </div>
             <div class="virtual-ts-notice">
               Virtual TS is generated internally for type checking. It is not portable and the
@@ -324,43 +351,59 @@ onUnmounted(() => {
             </div>
             <div v-if="typeCheckResult.virtualTs" class="editor-container">
               <MonacoEditor
-                :model-value="typeCheckResult.virtualTs"
                 language="typescript"
+                :model-value="typeCheckResult.virtualTs"
                 :read-only="true"
                 :theme
-              />
+               />
             </div>
             <div v-else class="empty-state">
-              <span>Enable "Generate Virtual TS" option to see generated TypeScript</span>
+              <span>
+                Enable "Generate Virtual TS" option to see generated TypeScript
+              </span>
             </div>
           </div>
-
           <!-- Capabilities Tab -->
-          <div v-else-if="activeTab === 'capabilities'" class="capabilities-output">
+          <div v-else-if="activeTab === "capabilities"" class="capabilities-output">
             <div class="output-header-bar">
-              <span class="output-title">Type Checker Capabilities</span>
+              <span class="output-title">
+                Type Checker Capabilities
+              </span>
             </div>
-
             <div v-if="capabilities" class="capabilities-content">
               <div class="capability-section">
-                <h3>Mode</h3>
-                <code class="mode-badge">{{ capabilities.mode }}</code>
-                <p>{{ capabilities.description }}</p>
+                <h3>
+                  Mode
+                </h3>
+                <code class="mode-badge">
+                  {{ capabilities.mode }}
+                </code>
+                <p>
+                  {{ capabilities.description }}
+                </p>
               </div>
-
               <div class="capability-section">
-                <h3>Available Checks</h3>
+                <h3>
+                  Available Checks
+                </h3>
                 <div class="checks-list">
                   <div v-for="check in capabilities.checks" :key="check.name" class="check-item">
-                    <code class="check-name">{{ check.name }}</code>
-                    <span :class="['check-severity', check.severity]">{{ check.severity }}</span>
-                    <p class="check-description">{{ check.description }}</p>
+                    <code class="check-name">
+                      {{ check.name }}
+                    </code>
+                    <span :class="["check-severity", check.severity]">
+                      {{ check.severity }}
+                    </span>
+                    <p class="check-description">
+                      {{ check.description }}
+                    </p>
                   </div>
                 </div>
               </div>
-
               <div class="capability-section">
-                <h3>Notes</h3>
+                <h3>
+                  Notes
+                </h3>
                 <ul class="notes-list">
                   <li v-for="(note, i) in capabilities.notes" :key="i">
                     {{ note }}
@@ -370,9 +413,10 @@ onUnmounted(() => {
             </div>
           </div>
         </template>
-
         <div v-else class="loading-state">
-          <span>Enter Vue code to see type analysis</span>
+          <span>
+            Enter Vue code to see type analysis
+          </span>
         </div>
       </div>
     </div>

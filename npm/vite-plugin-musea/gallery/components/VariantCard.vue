@@ -1,12 +1,11 @@
+<script lang="ts">
+// Expose window for template
+const window = globalThis.window;
+</script>
+
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import {
-  mdiContentCopy,
-  mdiCheck,
-  mdiCodeTags,
-  mdiFullscreen,
-  mdiOpenInNew,
-} from "@mdi/js";
+import { mdiContentCopy, mdiCheck, mdiCodeTags, mdiFullscreen, mdiOpenInNew } from "@mdi/js";
 import type { ArtVariant } from "../../src/types/index.js";
 import { getPreviewUrl } from "../api";
 import { useAddons } from "../composables/useAddons";
@@ -29,9 +28,7 @@ function resolveSelfReferences(template: string): string {
     .replace(/<\/Self>/g, `</${props.componentName}>`);
 }
 
-const resolvedTemplate = computed(() =>
-  resolveSelfReferences(props.variant.template),
-);
+const resolvedTemplate = computed(() => resolveSelfReferences(props.variant.template));
 
 async function copyTemplate() {
   try {
@@ -45,9 +42,7 @@ async function copyTemplate() {
   }
 }
 
-const previewUrl = computed(() =>
-  getPreviewUrl(props.artPath, props.variant.name),
-);
+const previewUrl = computed(() => getPreviewUrl(props.artPath, props.variant.name));
 
 const iframeRef = ref<HTMLIFrameElement | null>(null);
 const iframeReady = ref(false);
@@ -133,69 +128,66 @@ watch(measureEnabled, (enabled) => {
 
 <template>
   <div class="variant-card">
-    <div class="variant-preview" :class="{ 'viewport-mode': isCustomViewport }">
+    <div class="variant-preview" :class="{ "viewport-mode": isCustomViewport }">
       <iframe
         ref="iframeRef"
-        :src="previewUrl"
         loading="lazy"
-        :title="variant.name"
+        :src="previewUrl"
         :style="viewportStyle"
+        :title="variant.name"
         @load="onIframeLoad"
-      />
+       />
     </div>
-
     <div class="variant-info">
       <div class="variant-left">
-        <span class="variant-name">{{ variant.name }}</span>
-        <span v-if="variant.isDefault" class="variant-badge">Default</span>
+        <span class="variant-name">
+          {{ variant.name }}
+        </span>
+        <span v-if="variant.isDefault" class="variant-badge">
+          Default
+        </span>
       </div>
       <div class="variant-actions">
         <button
-          type="button"
           class="variant-action-btn"
-          :title="copied ? 'Copied!' : 'Copy template'"
+          type="button"
           :class="{ active: copied }"
+          :title="copied ? "Copied!" : "Copy template""
           @click="copyTemplate"
         >
           <MdiIcon v-if="!copied" :path="mdiContentCopy" :size="14" />
           <MdiIcon v-else :path="mdiCheck" :size="14" />
         </button>
         <button
-          type="button"
           class="variant-action-btn"
           title="View source"
+          type="button"
           :class="{ active: showSource }"
           @click="showSource = !showSource"
         >
           <MdiIcon :path="mdiCodeTags" :size="14" />
         </button>
         <button
-          type="button"
           class="variant-action-btn"
           title="Fullscreen"
+          type="button"
           @click="openFullscreen(artPath, variant.name)"
         >
           <MdiIcon :path="mdiFullscreen" :size="14" />
         </button>
         <button
-          type="button"
           class="variant-action-btn"
           title="Open in new tab"
-          @click="window.open(previewUrl, '_blank')"
+          type="button"
+          @click="window.open(previewUrl, "_blank")"
         >
           <MdiIcon :path="mdiOpenInNew" :size="14" />
         </button>
       </div>
     </div>
-
     <VariantSourceCode v-if="showSource" :code="resolvedTemplate" />
   </div>
 </template>
-
-<script lang="ts">
-// Expose window for template
-const window = globalThis.window;
-</script>
 
 <style scoped>
 .variant-card {
@@ -233,7 +225,7 @@ const window = globalThis.window;
   width: 70%;
   height: 100%;
   border: none;
-  background: white;
+  background: #fff;
 }
 
 .variant-preview.viewport-mode iframe {
@@ -251,20 +243,20 @@ const window = globalThis.window;
 .variant-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: .5rem;
 }
 
 .variant-name {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: .875rem;
 }
 
 .variant-badge {
-  font-size: 0.625rem;
+  font-size: .625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.1875rem 0.5rem;
+  letter-spacing: .04em;
+  padding: .1875rem .5rem;
   border-radius: 4px;
   background: var(--musea-accent-subtle);
   color: var(--musea-accent);
@@ -272,7 +264,7 @@ const window = globalThis.window;
 
 .variant-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: .5rem;
 }
 
 .variant-action-btn {

@@ -1,29 +1,31 @@
 <script setup lang="ts">
 defineProps<{
-  modelValue?: string
-  placeholder?: string
-  type?: 'text' | 'email' | 'password' | 'search'
-  disabled?: boolean
-  error?: string
-}>()
+  modelValue?: string;
+  placeholder?: string;
+  type?: "text" | "email" | "password" | "search";
+  disabled?: boolean;
+  error?: string;
+}>();
 
 defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  "update:modelValue": [value: string];
+}>();
 </script>
 
 <template>
   <div class="input-wrapper">
     <input
       class="input"
-      :class="{ 'input--error': error, 'input--disabled': disabled }"
-      :type="type ?? 'text'"
-      :value="modelValue"
-      :placeholder="placeholder"
+      :class="{ "input--error": error, "input--disabled": disabled }"
       :disabled="disabled"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      :placeholder="placeholder"
+      :type="type ?? "text""
+      :value="modelValue"
+      @input="$emit("update:modelValue", ($event.target as HTMLInputElement).value)"
     >
-    <span v-if="error" class="input-error">{{ error }}</span>
+    <span v-if="error" class="input-error">
+      {{ error }}
+    </span>
   </div>
 </template>
 
@@ -31,17 +33,17 @@ defineEmits<{
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: .25rem;
 }
 
 .input {
-  padding: 0.5rem 0.75rem;
+  padding: .5rem .75rem;
   border: 1px solid #c8c4b8;
   border-radius: 6px;
-  font-size: 0.875rem;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: .875rem;
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color .15s, box-shadow .15s;
   width: 100%;
   background: #e6e2d6;
   color: #121212;
@@ -53,7 +55,7 @@ defineEmits<{
 
 .input:focus {
   border-color: #121212;
-  box-shadow: 0 0 0 3px rgba(18, 18, 18, 0.08);
+  box-shadow: 0 0 0 3px #12121214;
 }
 
 .input--error {
@@ -61,23 +63,23 @@ defineEmits<{
 }
 
 .input--error:focus {
-  box-shadow: 0 0 0 3px rgba(160, 64, 64, 0.12);
+  box-shadow: 0 0 0 3px #a040401f;
 }
 
 .input--disabled {
-  opacity: 0.5;
+  opacity: .5;
   cursor: not-allowed;
   background: #ddd9cd;
 }
 
 .input-error {
   color: #a04040;
-  font-size: 0.75rem;
+  font-size: .75rem;
 }
 </style>
 
-<art title="Input" category="Forms" status="ready" tags="input,form,text">
-  <variant name="Default" default>
+<art>
+<variant name="Default" default>
     <Self placeholder="Enter text..." />
   </variant>
   <variant name="With Value">

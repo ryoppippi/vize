@@ -1,51 +1,54 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { fetchArtSource, updateArtSource } from '../../api'
-import MonacoEditor from '../MonacoEditor.vue'
+import { ref, watch } from "vue";
+import { fetchArtSource, updateArtSource } from "../../api";
+import MonacoEditor from "../MonacoEditor.vue";
 
 const props = defineProps<{
-  isOpen: boolean
-  artPath: string
-  artTitle: string
-  tokenPaths?: string[]
-}>()
+  isOpen: boolean;
+  artPath: string;
+  artTitle: string;
+  tokenPaths?: string[];
+}>();
 
 const emit = defineEmits<{
-  close: []
-  saved: []
-}>()
+  close: [];
+  saved: [];
+}>();
 
-const source = ref('')
-const loading = ref(false)
-const saving = ref(false)
-const error = ref<string | null>(null)
+const source = ref("");
+const loading = ref(false);
+const saving = ref(false);
+const error = ref<string | null>(null);
 
-watch(() => props.isOpen, async (open) => {
-  if (open && props.artPath) {
-    loading.value = true
-    error.value = null
-    try {
-      const data = await fetchArtSource(props.artPath)
-      source.value = data.source
-    } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
-    } finally {
-      loading.value = false
+watch(
+  () => props.isOpen,
+  async (open) => {
+    if (open && props.artPath) {
+      loading.value = true;
+      error.value = null;
+      try {
+        const data = await fetchArtSource(props.artPath);
+        source.value = data.source;
+      } catch (e) {
+        error.value = e instanceof Error ? e.message : String(e);
+      } finally {
+        loading.value = false;
+      }
     }
-  }
-})
+  },
+);
 
 async function handleSave() {
-  saving.value = true
-  error.value = null
+  saving.value = true;
+  error.value = null;
   try {
-    await updateArtSource(props.artPath, source.value)
-    emit('saved')
-    emit('close')
+    await updateArtSource(props.artPath, source.value);
+    emit("saved");
+    emit("close");
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    error.value = e instanceof Error ? e.message : String(e);
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 </script>
@@ -53,39 +56,61 @@ async function handleSave() {
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="isOpen" class="modal-overlay" @click.self="emit('close')">
+      <div v-if="isOpen" class="modal-overlay" @click.self="emit("close")">
         <div class="modal-panel">
           <div class="modal-header">
             <div>
-              <h2 class="modal-title">Edit Source</h2>
-              <p class="modal-subtitle">{{ artTitle }}</p>
+              <h2 class="modal-title">
+                Edit Source
+              </h2>
+              <p class="modal-subtitle">
+                {{ artTitle }}
+              </p>
             </div>
-            <button type="button" class="modal-close" @click="emit('close')">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
+            <button class="modal-close" type="button" @click="emit("close")">
+              <svg
+                fill="none"
+                height="18"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="18"
+              >
+                <line x1="18" x2="6" y1="6" y2="18" />
+                <line x1="6" x2="18" y1="6" y2="18" />
               </svg>
             </button>
           </div>
-
           <div class="modal-body">
-            <div v-if="loading" class="editor-loading">Loading source...</div>
+            <div v-if="loading" class="editor-loading">
+              Loading source...
+            </div>
             <MonacoEditor
               v-else
               v-model="source"
-              language="html"
               height="500px"
+              language="html"
               :completion-items="tokenPaths"
-            />
-            <p v-if="error" class="editor-error">{{ error }}</p>
+             />
+            <p v-if="error" class="editor-error">
+              {{ error }}
+            </p>
           </div>
-
           <div class="modal-footer">
-            <span class="save-hint">Cmd+S / Ctrl+S to save</span>
+            <span class="save-hint">
+              Cmd+S / Ctrl+S to save
+            </span>
             <div class="modal-footer-actions">
-              <button type="button" class="btn btn--secondary" @click="emit('close')">Cancel</button>
-              <button type="button" class="btn btn--primary" :disabled="saving || loading" @click="handleSave">
-                {{ saving ? 'Saving...' : 'Save' }}
+              <button class="btn btn--secondary" type="button" @click="emit("close")">
+                Cancel
+              </button>
+              <button
+                class="btn btn--primary"
+                type="button"
+                :disabled="saving || loading"
+                @click="handleSave"
+              >
+                {{ saving ? "Saving..." : "Save" }}
               </button>
             </div>
           </div>
@@ -132,11 +157,11 @@ async function handleSave() {
 .modal-title {
   font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 0.125rem;
+  margin-bottom: .125rem;
 }
 
 .modal-subtitle {
-  font-size: 0.75rem;
+  font-size: .75rem;
   color: var(--musea-text-muted);
   font-family: var(--musea-font-mono);
 }
@@ -148,7 +173,7 @@ async function handleSave() {
   width: 28px;
   height: 28px;
   border: none;
-  background: transparent;
+  background: none;
   color: var(--musea-text-muted);
   border-radius: var(--musea-radius-sm, 4px);
   cursor: pointer;
@@ -176,31 +201,31 @@ async function handleSave() {
 
 .editor-error {
   color: #ef4444;
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
+  font-size: .75rem;
+  margin-top: .5rem;
 }
 
 .modal-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
+  padding: .75rem 1.5rem;
   border-top: 1px solid var(--musea-border);
 }
 
 .save-hint {
-  font-size: 0.6875rem;
+  font-size: .6875rem;
   color: var(--musea-text-muted);
 }
 
 .modal-footer-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: .5rem;
 }
 
 .btn {
-  padding: 0.375rem 1rem;
-  font-size: 0.8125rem;
+  padding: .375rem 1rem;
+  font-size: .8125rem;
   font-weight: 500;
   border-radius: var(--musea-radius-sm, 4px);
   cursor: pointer;
@@ -209,7 +234,7 @@ async function handleSave() {
 }
 
 .btn--secondary {
-  background: transparent;
+  background: none;
   color: var(--musea-text-muted);
 }
 
@@ -229,30 +254,27 @@ async function handleSave() {
 }
 
 .btn--primary:disabled {
-  opacity: 0.5;
+  opacity: .5;
   cursor: not-allowed;
 }
 
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
+.modal-enter-active, .modal-leave-active {
+  transition: opacity .2s;
 }
 
-.modal-enter-active .modal-panel,
-.modal-leave-active .modal-panel {
-  transition: transform 0.2s ease;
+.modal-enter-active .modal-panel, .modal-leave-active .modal-panel {
+  transition: transform .2s;
 }
 
-.modal-enter-from,
-.modal-leave-to {
+.modal-enter-from, .modal-leave-to {
   opacity: 0;
 }
 
 .modal-enter-from .modal-panel {
-  transform: scale(0.95);
+  transform: scale(.95);
 }
 
 .modal-leave-to .modal-panel {
-  transform: scale(0.95);
+  transform: scale(.95);
 }
 </style>

@@ -1,29 +1,31 @@
-<script setup lang="ts">
-const props = defineProps<{
-  name?: string
-  src?: string
-  size?: 'sm' | 'md' | 'lg'
-}>()
-
-const initials = computed(() => {
-  if (!props.name) return '?'
-  return props.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-})
+<script lang="ts">
+import { computed } from "vue";
 </script>
 
-<script lang="ts">
-import { computed } from 'vue'
+<script setup lang="ts">
+const props = defineProps<{
+  name?: string;
+  src?: string;
+  size?: "sm" | "md" | "lg";
+}>();
+
+const initials = computed(() => {
+  if (!props.name) return "?";
+  return props.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+});
 </script>
 
 <template>
-  <span class="avatar" :class="`avatar--${size ?? 'md'}`">
-    <img v-if="src" :src="src" :alt="name ?? 'avatar'" class="avatar-img" />
-    <span v-else class="avatar-initials">{{ initials }}</span>
+  <span class="avatar" :class="`avatar--${size ?? "md"}`">
+    <img v-if="src" class="avatar-img" :alt="name ?? "avatar"" :src="src" />
+    <span v-else class="avatar-initials">
+      {{ initials }}
+    </span>
   </span>
 </template>
 
@@ -35,7 +37,7 @@ import { computed } from 'vue'
   border-radius: 50%;
   background: #6b5090;
   color: #e6e2d6;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
   font-weight: 600;
   overflow: hidden;
   flex-shrink: 0;
@@ -44,13 +46,13 @@ import { computed } from 'vue'
 .avatar--sm {
   width: 28px;
   height: 28px;
-  font-size: 0.625rem;
+  font-size: .625rem;
 }
 
 .avatar--md {
   width: 40px;
   height: 40px;
-  font-size: 0.8125rem;
+  font-size: .8125rem;
 }
 
 .avatar--lg {
@@ -70,8 +72,8 @@ import { computed } from 'vue'
 }
 </style>
 
-<art title="Avatar" category="Components" status="ready" tags="avatar,user,profile">
-  <variant name="Default" default>
+<art>
+<variant name="Default" default>
     <Self name="Jane Doe" />
   </variant>
   <variant name="With Image">

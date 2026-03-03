@@ -217,41 +217,50 @@ onUnmounted(() => {
   <div
     ref="containerRef"
     class="cross-file-playground"
-    :style="gridStyle"
     :class="{ resizing: isResizingSidebar || isResizingDiagnostics }"
+    :style="gridStyle"
   >
     <!-- Sidebar: File Tree & Dependency Graph -->
-    <aside class="sidebar" aria-label="File tree and dependency graph">
+    <aside aria-label="File tree and dependency graph" class="sidebar">
       <!-- Preset Selector -->
       <div class="sidebar-section preset-section">
         <div class="section-header">
-          <h3>Presets</h3>
+          <h3>
+            Presets
+          </h3>
         </div>
         <div class="preset-list">
           <button
             v-for="preset in PRESETS"
             :key="preset.id"
-            :class="['preset-item', { active: currentPreset === preset.id }]"
+            :class="["preset-item", { active: currentPreset === preset.id }]"
             :title="preset.description"
             @click="handleSelectPreset($event)"
           >
             <svg class="preset-icon" viewBox="0 0 24 24">
-              <path :d="preset.icon" fill="currentColor" />
+              <path fill="currentColor" :d="preset.icon" />
             </svg>
-            <span class="preset-name">{{ preset.name }}</span>
+            <span class="preset-name">
+              {{ preset.name }}
+            </span>
           </button>
         </div>
       </div>
-
       <div class="sidebar-section">
         <div class="section-header">
-          <h3>Project Files</h3>
+          <h3>
+            Project Files
+          </h3>
           <div class="section-actions">
             <button class="icon-btn" title="Add file" @click="addFile">
-              <svg viewBox="0 0 24 24"><path :d="mdiPlus" fill="currentColor" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" :d="mdiPlus" />
+              </svg>
             </button>
             <button class="icon-btn" title="Reset" @click="resetProject">
-              <svg viewBox="0 0 24 24"><path :d="mdiRefresh" fill="currentColor" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" :d="mdiRefresh" />
+              </svg>
             </button>
           </div>
         </div>
@@ -262,107 +271,130 @@ onUnmounted(() => {
             role="button"
             tabindex="0"
             :class="[
-              'file-item',
-              {
-                active: activeFile === name,
-                'has-errors': issuesByFile[name]?.some((i) => i.severity === 'error'),
-                'has-warnings': issuesByFile[name]?.some((i) => i.severity === 'warning'),
-              },
-            ]"
+    "file-item",
+    {
+      active: activeFile === name,
+      "has-errors": issuesByFile[name]?.some((i) => i.severity === "error"),
+      "has-warnings": issuesByFile[name]?.some((i) => i.severity === "warning"),
+    },
+  ]"
             @click="handleFileClick($event)"
             @keydown.enter="handleFileClick($event)"
           >
             <svg class="file-icon" viewBox="0 0 24 24">
-              <path :d="getFileIcon(name)" fill="currentColor" />
+              <path fill="currentColor" :d="getFileIcon(name)" />
             </svg>
-            <span class="file-name">{{ name }}</span>
+            <span class="file-name">
+              {{ name }}
+            </span>
             <span
               v-if="issuesByFile[name]?.length"
               class="file-badge"
-              :class="issuesByFile[name].some((i) => i.severity === 'error') ? 'error' : 'warning'"
+              :class="issuesByFile[name].some((i) => i.severity === "error") ? "error" : "warning""
             >
-              <span class="badge-count">{{ issuesByFile[name].length }}</span>
+              <span class="badge-count">
+                {{ issuesByFile[name].length }}
+              </span>
             </span>
             <button v-if="fileNames.length > 1" class="file-delete" @click.stop="removeFile(name)">
-              <svg viewBox="0 0 24 24"><path :d="mdiClose" fill="currentColor" /></svg>
+              <svg viewBox="0 0 24 24">
+                <path fill="currentColor" :d="mdiClose" />
+              </svg>
             </button>
           </div>
         </nav>
       </div>
-
       <div class="sidebar-section">
         <div class="section-header">
-          <h3>Dependencies</h3>
+          <h3>
+            Dependencies
+          </h3>
         </div>
         <div class="dependency-graph">
           <div v-for="(deps, file) in dependencyGraph" :key="file" class="dep-node">
-            <span class="dep-file">{{ file }}</span>
+            <span class="dep-file">
+              {{ file }}
+            </span>
             <div v-if="deps.length" class="dep-arrows">
               <div v-for="dep in deps" :key="dep" class="dep-edge">
                 <svg class="dep-arrow" viewBox="0 0 24 24">
-                  <path :d="mdiArrowRight" fill="currentColor" />
+                  <path fill="currentColor" :d="mdiArrowRight" />
                 </svg>
                 <span
+                  class="dep-target"
                   role="button"
                   tabindex="0"
-                  class="dep-target"
                   @click="handleFileClick($event)"
                   @keydown.enter="handleFileClick($event)"
-                  >{{ dep }}</span
                 >
+                  {{ dep }}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       <div class="sidebar-section options-section">
         <div class="section-header">
-          <h3>Analyzers</h3>
+          <h3>
+            Analyzers
+          </h3>
           <span
             class="analysis-mode-badge"
             title="Strict Static Analysis: No heuristics, all issues are based on precise AST analysis"
-            >STRICT</span
           >
+            STRICT
+          </span>
         </div>
         <div class="options-grid">
           <label class="option-toggle">
             <input v-model="options.provideInject" type="checkbox" />
-            <span>Provide/Inject</span>
+            <span>
+              Provide/Inject
+            </span>
           </label>
           <label class="option-toggle">
             <input v-model="options.componentEmits" type="checkbox" />
-            <span>Component Emits</span>
+            <span>
+              Component Emits
+            </span>
           </label>
           <label class="option-toggle">
             <input v-model="options.fallthroughAttrs" type="checkbox" />
-            <span>Fallthrough Attrs</span>
+            <span>
+              Fallthrough Attrs
+            </span>
           </label>
           <label class="option-toggle">
             <input v-model="options.reactivityTracking" type="checkbox" />
-            <span>Reactivity</span>
+            <span>
+              Reactivity
+            </span>
           </label>
           <label class="option-toggle">
             <input v-model="options.uniqueIds" type="checkbox" />
-            <span>Unique IDs</span>
+            <span>
+              Unique IDs
+            </span>
           </label>
           <label class="option-toggle">
             <input v-model="options.serverClientBoundary" type="checkbox" />
-            <span>SSR Boundary</span>
+            <span>
+              SSR Boundary
+            </span>
           </label>
         </div>
       </div>
     </aside>
-
     <!-- Resize Handle: Sidebar -->
     <div
+      class="resize-handle resize-handle-left"
       role="button"
       tabindex="0"
-      class="resize-handle resize-handle-left"
-      @mousedown="startSidebarResize"
       @keydown.enter="startSidebarResize"
-    ></div>
-
+      @mousedown="startSidebarResize"
+    >
+    </div>
     <!-- Main Content: Editor -->
     <main class="editor-pane">
       <div class="editor-header">
@@ -370,69 +402,90 @@ onUnmounted(() => {
           <button
             v-for="name in fileNames"
             :key="name"
-            :class="['editor-tab', { active: activeFile === name }]"
+            :class="["editor-tab", { active: activeFile === name }]"
             @click="handleFileClick($event)"
           >
             <svg class="tab-icon" viewBox="0 0 24 24">
-              <path :d="getFileIcon(name)" fill="currentColor" />
+              <path fill="currentColor" :d="getFileIcon(name)" />
             </svg>
-            <span class="tab-name">{{ name }}</span>
+            <span class="tab-name">
+              {{ name }}
+            </span>
             <span
               v-if="issuesByFile[name]?.length"
               class="tab-badge"
-              :class="issuesByFile[name].some((i) => i.severity === 'error') ? 'error' : 'warning'"
+              :class="issuesByFile[name].some((i) => i.severity === "error") ? "error" : "warning""
             >
-              <span class="badge-count">{{ issuesByFile[name].length }}</span>
+              <span class="badge-count">
+                {{ issuesByFile[name].length }}
+              </span>
             </span>
           </button>
         </div>
         <div class="editor-status">
-          <span v-if="isAnalyzing" class="status-analyzing">Analyzing...</span>
-          <span v-else class="status-time">{{ analysisTime.toFixed(1) }}ms</span>
+          <span v-if="isAnalyzing" class="status-analyzing">
+            Analyzing...
+          </span>
+          <span v-else class="status-time">
+            {{ analysisTime.toFixed(1) }}ms
+          </span>
         </div>
       </div>
       <div class="editor-content">
         <MonacoEditor
           ref="monacoEditorRef"
           v-model="currentSource"
-          :language="editorLanguage"
           :diagnostics="currentDiagnostics"
+          :language="editorLanguage"
           :theme
-        />
+         />
       </div>
     </main>
-
     <!-- Resize Handle: Diagnostics -->
     <div
+      class="resize-handle resize-handle-right"
       role="button"
       tabindex="0"
-      class="resize-handle resize-handle-right"
-      @mousedown="startDiagnosticsResize"
       @keydown.enter="startDiagnosticsResize"
-    ></div>
-
+      @mousedown="startDiagnosticsResize"
+    >
+    </div>
     <!-- Right Panel: Diagnostics -->
-    <aside class="diagnostics-pane" aria-label="Diagnostics">
+    <aside aria-label="Diagnostics" class="diagnostics-pane">
       <div class="diagnostics-header">
-        <h3>Diagnostics</h3>
+        <h3>
+          Diagnostics
+        </h3>
         <div class="diagnostics-stats">
-          <span v-if="stats.errors" class="stat-chip error">{{ stats.errors }} errors</span>
-          <span v-if="stats.warnings" class="stat-chip warning">{{ stats.warnings }} warnings</span>
-          <span v-if="stats.infos" class="stat-chip info">{{ stats.infos }} info</span>
+          <span v-if="stats.errors" class="stat-chip error">
+            {{ stats.errors }} errors
+          </span>
+          <span v-if="stats.warnings" class="stat-chip warning">
+            {{ stats.warnings }} warnings
+          </span>
+          <span v-if="stats.infos" class="stat-chip info">
+            {{ stats.infos }} info
+          </span>
         </div>
       </div>
-
       <div v-if="crossFileIssues.length === 0" class="diagnostics-empty">
-        <svg class="empty-icon" viewBox="0 0 24 24"><path :d="mdiCheck" fill="currentColor" /></svg>
-        <span>No issues detected</span>
+        <svg class="empty-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" :d="mdiCheck" />
+        </svg>
+        <span>
+          No issues detected
+        </span>
       </div>
-
       <div v-else class="diagnostics-list">
         <!-- Group by type -->
         <div v-for="(issues, type) in issuesByType" :key="type" class="issue-group">
-          <div class="group-header" :style="{ '--type-color': getTypeColor(type) }">
-            <span class="group-badge">{{ getTypeLabel(type) }}</span>
-            <span class="group-count">{{ issues.length }}</span>
+          <div class="group-header" :style="{ "--type-color": getTypeColor(type) }">
+            <span class="group-badge">
+              {{ getTypeLabel(type) }}
+            </span>
+            <span class="group-count">
+              {{ issues.length }}
+            </span>
           </div>
           <div class="group-issues">
             <div
@@ -440,28 +493,40 @@ onUnmounted(() => {
               :key="issue.id"
               role="button"
               tabindex="0"
-              :class="['issue-card', issue.severity, { selected: selectedIssue?.id === issue.id }]"
+              :class="["issue-card", issue.severity, { selected: selectedIssue?.id === issue.id }]"
               @click="handleSelectIssue(issue)"
               @keydown.enter="handleSelectIssue(issue)"
             >
               <div class="issue-header">
                 <svg class="severity-icon" viewBox="0 0 24 24">
-                  <path :d="getSeverityIcon(issue.severity)" fill="currentColor" />
+                  <path fill="currentColor" :d="getSeverityIcon(issue.severity)" />
                 </svg>
-                <span class="issue-code">{{ issue.code }}</span>
-                <span class="issue-location">{{ issue.file }}:{{ issue.line }}</span>
+                <span class="issue-code">
+                  {{ issue.code }}
+                </span>
+                <span class="issue-location">
+                  {{ issue.file }}:{{ issue.line }}
+                </span>
               </div>
-              <div class="issue-message">{{ issue.message }}</div>
+              <div class="issue-message">
+                {{ issue.message }}
+              </div>
               <div v-if="issue.suggestion" class="issue-suggestion">
                 <svg class="suggestion-icon" viewBox="0 0 24 24">
-                  <path :d="mdiArrowRight" fill="currentColor" />
+                  <path fill="currentColor" :d="mdiArrowRight" />
                 </svg>
-                <span class="suggestion-text">{{ issue.suggestion }}</span>
+                <span class="suggestion-text">
+                  {{ issue.suggestion }}
+                </span>
               </div>
               <div v-if="issue.relatedLocations?.length" class="issue-related">
                 <div v-for="(rel, i) in issue.relatedLocations" :key="i" class="related-item">
-                  <span class="related-loc">{{ rel.file }}:{{ rel.line }}</span>
-                  <span class="related-msg">{{ rel.message }}</span>
+                  <span class="related-loc">
+                    {{ rel.file }}:{{ rel.line }}
+                  </span>
+                  <span class="related-msg">
+                    {{ rel.message }}
+                  </span>
                 </div>
               </div>
             </div>
