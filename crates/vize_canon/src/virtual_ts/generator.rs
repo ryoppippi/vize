@@ -3,12 +3,12 @@
 //! Contains the public `generate_virtual_ts` and `generate_virtual_ts_with_offsets`
 //! functions that orchestrate the full virtual TypeScript generation pipeline.
 
-use vize_croquis::{Croquis, ScopeData, ScopeKind};
+use vize_croquis::{BindingType, Croquis, ScopeData, ScopeKind};
 
 use super::{
     helpers::{
         generate_template_context, is_type_decl_complete, is_type_declaration_start,
-        IMPORT_META_AUGMENTATION, VUE_SETUP_COMPILER_MACROS,
+        to_safe_identifier, IMPORT_META_AUGMENTATION, VUE_SETUP_COMPILER_MACROS,
     },
     props::{generate_props_type, generate_props_variables},
     scope::generate_scope_closures,
@@ -186,11 +186,86 @@ pub fn generate_virtual_ts_with_offsets(
             }
             script_byte_offset += line.len() + 1; // +1 for newline
         }
+
+        // Void-reference imported names that match compiler macro names.
+        // These get shadowed by __setup() declarations, causing TS6133 at module level.
+        // Must handle multi-line imports (e.g., `import {\n  useTemplateRef,\n} from "vue";`)
+        let compiler_macro_names = [
+            "defineProps",
+            "defineEmits",
+            "defineExpose",
+            "defineModel",
+            "defineSlots",
+            "withDefaults",
+            "useTemplateRef",
+        ];
+        let mut shadowed_imports: Vec<&str> = Vec::new();
+        let mut in_value_import = false;
+        for line in lines.iter() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("import ") {
+                if trimmed.starts_with("import type ") {
+                    in_value_import = false;
+                } else {
+                    in_value_import = true;
+                    for name in &compiler_macro_names {
+                        if trimmed.contains(name) && !shadowed_imports.contains(name) {
+                            shadowed_imports.push(name);
+                        }
+                    }
+                    if trimmed.ends_with(';') || trimmed.contains(" from ") {
+                        in_value_import = false;
+                    }
+                }
+            } else if in_value_import {
+                for name in &compiler_macro_names {
+                    if trimmed.contains(name) && !shadowed_imports.contains(name) {
+                        shadowed_imports.push(name);
+                    }
+                }
+                if trimmed.ends_with(';') {
+                    in_value_import = false;
+                }
+            }
+        }
+        if !shadowed_imports.is_empty() {
+            ts.push_str("// Prevent TS6133 for imports shadowed by setup-scope compiler macros\n");
+            for name in &shadowed_imports {
+                append!(ts, "void {name};\n");
+            }
+        }
+    }
+
+    // Auto-import stubs (e.g., Nuxt composables)
+    // Only emit stubs for names NOT already declared via imports or bindings.
+    if !options.auto_import_stubs.is_empty() {
+        let mut has_header = false;
+        for stub in &options.auto_import_stubs {
+            // Extract function name from "declare function NAME<..." or "declare function NAME(..."
+            let name = stub
+                .strip_prefix("declare function ")
+                .and_then(|rest| {
+                    let end = rest.find(|c: char| c == '<' || c == '(').unwrap_or(rest.len());
+                    Some(&rest[..end])
+                });
+            if let Some(name) = name {
+                // Skip if already imported or declared in script bindings
+                if summary.bindings.bindings.contains_key(name) {
+                    continue;
+                }
+            }
+            if !has_header {
+                ts.push_str("\n// Auto-import stubs (framework-provided globals)\n");
+                has_header = true;
+            }
+            ts.push_str(stub);
+            ts.push('\n');
+        }
     }
     ts.push('\n');
 
     // Props type (defined at module level so it's available inside __setup)
-    generate_props_type(&mut ts, summary);
+    generate_props_type(&mut ts, summary, generic_param);
 
     // Setup scope: function that contains compiler macros and script content
     ts.push_str("// ========== Setup Scope ==========\n");
@@ -213,7 +288,7 @@ pub fn generate_virtual_ts_with_offsets(
         // This avoids TS1343 when module is not set to es2020+.
         let uses_import_meta = script.contains("import.meta");
         if uses_import_meta {
-            ts.push_str("  const __import_meta = {} as any as ImportMeta;\n");
+            ts.push_str("  const __import_meta: any = {};\n");
         }
 
         for (i, line) in lines.iter().enumerate() {
@@ -280,14 +355,53 @@ pub fn generate_virtual_ts_with_offsets(
     // Template scope (nested inside setup)
     if template_ast.is_some() {
         ts.push_str("  // ========== Template Scope (inherits from setup) ==========\n");
+
+        // Collect ref bindings for auto-unwrapping in template
+        let ref_bindings: Vec<&str> = summary
+            .bindings
+            .bindings
+            .iter()
+            .filter(|(_, bt)| {
+                matches!(
+                    bt,
+                    BindingType::SetupRef | BindingType::SetupMaybeRef
+                )
+            })
+            .map(|(name, _)| name.as_str())
+            .collect();
+
+        // Capture ref types BEFORE template scope to avoid circular references.
+        // `typeof count` here refers to the setup-scope Ref<number>.
+        if !ref_bindings.is_empty() {
+            ts.push_str("  // Ref type captures (before template scope shadows them)\n");
+            for name in &ref_bindings {
+                append!(
+                    ts,
+                    "  type __VizeRef_{name} = typeof {name};\n"
+                );
+            }
+        }
+
         ts.push_str("  (function __template() {\n");
+
+        // Shadow ref bindings with unwrapped types.
+        // `var` allows reassignment (Vue templates can assign to refs).
+        if !ref_bindings.is_empty() {
+            ts.push_str("    // Auto-unwrap refs (Vue template behavior)\n");
+            for name in &ref_bindings {
+                append!(
+                    ts,
+                    "    var {name}: import('vue').UnwrapRef<__VizeRef_{name}> = undefined as any;\n"
+                );
+            }
+        }
 
         // Vue template context (available in template expressions)
         ts.push_str(&generate_template_context(options));
         ts.push('\n');
 
         // Props are available in template as variables
-        generate_props_variables(&mut ts, summary, script_content);
+        generate_props_variables(&mut ts, summary, script_content, generic_param);
 
         // Generate scope closures
         generate_scope_closures(&mut ts, &mut mappings, summary, template_offset);
@@ -307,12 +421,14 @@ pub fn generate_virtual_ts_with_offsets(
                     );
                     has_unresolved = true;
                 }
-                append!(ts, "  const {name}: any = undefined as any;\n");
+                let safe = to_safe_identifier(name);
+                append!(ts, "  const {safe}: any = undefined as any;\n");
             }
 
             ts.push_str("\n  // Mark used components as referenced\n");
             for component in &summary.used_components {
-                append!(ts, "  void {component};\n");
+                let safe = to_safe_identifier(component.as_str());
+                append!(ts, "  void {safe};\n");
             }
         }
 

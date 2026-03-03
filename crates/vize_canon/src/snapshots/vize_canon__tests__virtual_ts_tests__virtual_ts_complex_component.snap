@@ -32,7 +32,6 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
-    [key: string]: any;
   }
 }
 
@@ -85,17 +84,30 @@ function __setup() {
   watch(count, (newVal) => {
     console.log('Count changed:', newVal)
   })
-  // @vize-map: 2731:3114 -> 0:501
+  // @vize-map: 2707:3090 -> 0:501
 
   // ========== Template Scope (inherits from setup) ==========
+  // Ref type captures (before template scope shadows them)
+  type __VizeRef_count = typeof count;
+  type __VizeRef_doubled = typeof doubled;
+  type __VizeRef_computed = typeof computed;
+  type __VizeRef_ref = typeof ref;
+  type __VizeRef_watch = typeof watch;
   (function __template() {
-    // Vue instance context (available in template)
-    const $attrs: Record<string, unknown> = {} as any;
-    const $slots: Record<string, (...args: any[]) => any> = {} as any;
-    const $refs: Record<string, any> = {} as any;
-    const $emit: (...args: any[]) => void = (() => {}) as any;
-    // Mark template context as used
-    void $attrs; void $slots; void $refs; void $emit;
+    // Auto-unwrap refs (Vue template behavior)
+    var count: import('vue').UnwrapRef<__VizeRef_count> = undefined as any;
+    var doubled: import('vue').UnwrapRef<__VizeRef_doubled> = undefined as any;
+    var computed: import('vue').UnwrapRef<__VizeRef_computed> = undefined as any;
+    var ref: import('vue').UnwrapRef<__VizeRef_ref> = undefined as any;
+    var watch: import('vue').UnwrapRef<__VizeRef_watch> = undefined as any;
+    // Vue template context (delegates to ComponentPublicInstance)
+    type __VizeCtx = import('vue').ComponentPublicInstance;
+    const __ctx = undefined as unknown as __VizeCtx;
+    const $attrs = __ctx.$attrs;
+    const $slots = __ctx.$slots;
+    const $refs = __ctx.$refs;
+    const $emit = __ctx.$emit;
+    void __ctx; void $attrs; void $slots; void $refs; void $emit;
 
   // Props are available in template as variables
   // Access via `propName` or `props.propName`

@@ -32,7 +32,6 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
-    [key: string]: any;
   }
 }
 
@@ -63,17 +62,28 @@ function __setup() {
   const status = ref<'loading' | 'error' | 'success'>('loading')
   const message = ref('')
   const data = ref<string[]>([])
-  // @vize-map: 2621:2751 -> 0:146
+  // @vize-map: 2597:2727 -> 0:146
 
   // ========== Template Scope (inherits from setup) ==========
+  // Ref type captures (before template scope shadows them)
+  type __VizeRef_ref = typeof ref;
+  type __VizeRef_status = typeof status;
+  type __VizeRef_data = typeof data;
+  type __VizeRef_message = typeof message;
   (function __template() {
-    // Vue instance context (available in template)
-    const $attrs: Record<string, unknown> = {} as any;
-    const $slots: Record<string, (...args: any[]) => any> = {} as any;
-    const $refs: Record<string, any> = {} as any;
-    const $emit: (...args: any[]) => void = (() => {}) as any;
-    // Mark template context as used
-    void $attrs; void $slots; void $refs; void $emit;
+    // Auto-unwrap refs (Vue template behavior)
+    var ref: import('vue').UnwrapRef<__VizeRef_ref> = undefined as any;
+    var status: import('vue').UnwrapRef<__VizeRef_status> = undefined as any;
+    var data: import('vue').UnwrapRef<__VizeRef_data> = undefined as any;
+    var message: import('vue').UnwrapRef<__VizeRef_message> = undefined as any;
+    // Vue template context (delegates to ComponentPublicInstance)
+    type __VizeCtx = import('vue').ComponentPublicInstance;
+    const __ctx = undefined as unknown as __VizeCtx;
+    const $attrs = __ctx.$attrs;
+    const $slots = __ctx.$slots;
+    const $refs = __ctx.$refs;
+    const $emit = __ctx.$emit;
+    void __ctx; void $attrs; void $slots; void $refs; void $emit;
 
   void (status === 'loading'); // VIf
   // @vize-map: expr -> 215:235

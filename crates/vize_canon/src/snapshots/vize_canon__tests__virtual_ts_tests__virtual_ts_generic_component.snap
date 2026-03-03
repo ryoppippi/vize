@@ -32,7 +32,6 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
-    [key: string]: any;
   }
 }
 
@@ -73,17 +72,24 @@ function __setup() {
   }>()
   
   const activeItem = ref<T | null>(null)
-  // @vize-map: 2650:2841 -> 0:193
+  // @vize-map: 2626:2817 -> 0:193
 
   // ========== Template Scope (inherits from setup) ==========
+  // Ref type captures (before template scope shadows them)
+  type __VizeRef_ref = typeof ref;
+  type __VizeRef_activeItem = typeof activeItem;
   (function __template() {
-    // Vue instance context (available in template)
-    const $attrs: Record<string, unknown> = {} as any;
-    const $slots: Record<string, (...args: any[]) => any> = {} as any;
-    const $refs: Record<string, any> = {} as any;
-    const $emit: (...args: any[]) => void = (() => {}) as any;
-    // Mark template context as used
-    void $attrs; void $slots; void $refs; void $emit;
+    // Auto-unwrap refs (Vue template behavior)
+    var ref: import('vue').UnwrapRef<__VizeRef_ref> = undefined as any;
+    var activeItem: import('vue').UnwrapRef<__VizeRef_activeItem> = undefined as any;
+    // Vue template context (delegates to ComponentPublicInstance)
+    type __VizeCtx = import('vue').ComponentPublicInstance;
+    const __ctx = undefined as unknown as __VizeCtx;
+    const $attrs = __ctx.$attrs;
+    const $slots = __ctx.$slots;
+    const $refs = __ctx.$refs;
+    const $emit = __ctx.$emit;
+    void __ctx; void $attrs; void $slots; void $refs; void $emit;
 
   // Props are available in template as variables
   // Access via `propName` or `props.propName`

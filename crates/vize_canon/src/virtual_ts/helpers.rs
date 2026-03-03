@@ -48,41 +48,63 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
-    [key: string]: any;
   }
 }
 "#;
 
 /// Generate Vue template context declarations dynamically.
-/// Includes Vue core globals ($attrs, $slots, $refs, $emit) and
-/// user-configurable plugin globals ($t, $route, etc.).
+///
+/// Derives `$`-prefixed globals from `ComponentPublicInstance` so that
+/// type resolution is delegated to tsgo via Vue's type system
+/// (including `ComponentCustomProperties` augmentations from plugins).
 pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
     let mut ctx = String::default();
 
-    // Vue core globals (always present)
-    ctx.push_str("    // Vue instance context (available in template)\n");
-    ctx.push_str("    const $attrs: Record<string, unknown> = {} as any;\n");
-    ctx.push_str("    const $slots: Record<string, (...args: any[]) => any> = {} as any;\n");
-    ctx.push_str("    const $refs: Record<string, any> = {} as any;\n");
-    ctx.push_str("    const $emit: (...args: any[]) => void = (() => {}) as any;\n");
+    let needs_global_helper = !options.template_globals.is_empty() || !options.css_modules.is_empty();
 
-    // Plugin globals (configurable)
+    // Instance type + conditional accessor helper
+    ctx.push_str("    // Vue template context (delegates to ComponentPublicInstance)\n");
+    ctx.push_str("    type __VizeCtx = import('vue').ComponentPublicInstance;\n");
+    if needs_global_helper {
+        ctx.push_str("    type __VizeGlobal<K extends string, F = unknown> = K extends keyof __VizeCtx ? __VizeCtx[K] : F;\n");
+    }
+    ctx.push_str("    const __ctx = undefined as unknown as __VizeCtx;\n");
+
+    // Core Vue globals (always present on ComponentPublicInstance)
+    ctx.push_str("    const $attrs = __ctx.$attrs;\n");
+    ctx.push_str("    const $slots = __ctx.$slots;\n");
+    ctx.push_str("    const $refs = __ctx.$refs;\n");
+    ctx.push_str("    const $emit = __ctx.$emit;\n");
+
+    // Plugin globals (resolved via ComponentCustomProperties if augmented,
+    // otherwise falls back to the configured type_annotation)
     if !options.template_globals.is_empty() {
-        ctx.push_str("    // Plugin globals (configurable via --globals)\n");
+        ctx.push_str("    // Plugin globals (via ComponentCustomProperties)\n");
         for global in &options.template_globals {
             append!(
                 ctx,
-                "    const {}: {} = {};\n",
+                "    const {}: __VizeGlobal<'{}', {}> = undefined as any;\n",
                 global.name,
-                global.type_annotation,
-                global.default_value
+                global.name,
+                global.type_annotation
+            );
+        }
+    }
+
+    // CSS module globals (resolved via ComponentCustomProperties if augmented,
+    // otherwise falls back to Record<string, string>)
+    if !options.css_modules.is_empty() {
+        ctx.push_str("    // CSS modules (from <style module>)\n");
+        for module_name in &options.css_modules {
+            append!(
+                ctx,
+                "    const {module_name}: __VizeGlobal<'{module_name}', Record<string, string>> = undefined as any;\n"
             );
         }
     }
 
     // Mark all as used
-    ctx.push_str("    // Mark template context as used\n");
-    ctx.push_str("    void $attrs; void $slots; void $refs; void $emit;\n");
+    ctx.push_str("    void __ctx; void $attrs; void $slots; void $refs; void $emit;\n");
     if !options.template_globals.is_empty() {
         ctx.push_str("    ");
         for (i, global) in options.template_globals.iter().enumerate() {
@@ -90,6 +112,16 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
                 ctx.push(' ');
             }
             append!(ctx, "void {};", global.name);
+        }
+        ctx.push('\n');
+    }
+    if !options.css_modules.is_empty() {
+        ctx.push_str("    ");
+        for (i, module_name) in options.css_modules.iter().enumerate() {
+            if i > 0 {
+                ctx.push(' ');
+            }
+            append!(ctx, "void {module_name};");
         }
         ctx.push('\n');
     }

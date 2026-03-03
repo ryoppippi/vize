@@ -197,25 +197,28 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     let config = crate::config::load_config(None);
     crate::config::write_schema(None);
 
-    // Build VirtualTsOptions from CLI args or config.
-    // Priority: CLI --globals > vize.config.json check.globals > default (empty)
-    let vts_options = if let Some(ref globals_str) = args.globals {
-        if globals_str == "none" {
-            VirtualTsOptions {
-                template_globals: vec![],
+    // Build VirtualTsOptions from config (.d.ts file) or default (empty).
+    let mut vts_options = if let Some(ref dts_path) = config.check.globals {
+        let resolved = std::path::Path::new(dts_path);
+        match parse_dts_globals(&resolved) {
+            Ok(globals) => VirtualTsOptions {
+                template_globals: globals,
+                ..Default::default()
+            },
+            Err(e) => {
+                eprintln!(
+                    "\x1b[33mWarning:\x1b[0m Failed to parse globals from {}: {}",
+                    dts_path, e
+                );
+                VirtualTsOptions::default()
             }
-        } else {
-            VirtualTsOptions {
-                template_globals: parse_globals_str(globals_str),
-            }
-        }
-    } else if let Some(ref globals_list) = config.check.globals {
-        VirtualTsOptions {
-            template_globals: globals_list.iter().map(|s| parse_global_entry(s)).collect(),
         }
     } else {
         VirtualTsOptions::default()
     };
+
+    // Detect Nuxt project and add auto-import stubs
+    detect_nuxt_auto_imports(&mut vts_options);
 
     // Collect .vue files
     let collect_start = Instant::now();
@@ -250,6 +253,30 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                 ..Default::default()
             };
             let descriptor = parse_sfc(&source, parse_opts).ok()?;
+
+            // Extract CSS module names from <style module> blocks
+            // Parser sets module to "$style" for bare `<style module>`,
+            // or the attribute value for `<style module="custom">`
+            let css_modules: Vec<vize_carton::String> = descriptor
+                .styles
+                .iter()
+                .filter_map(|style| {
+                    style
+                        .module
+                        .as_ref()
+                        .map(|m| m.to_compact_string())
+                })
+                .collect();
+
+            // Build per-file options with CSS modules
+            let file_vts_options = if css_modules.is_empty() {
+                None
+            } else {
+                let mut opts = vts_options.clone();
+                opts.css_modules = css_modules;
+                Some(opts)
+            };
+            let effective_options = file_vts_options.as_ref().unwrap_or(&vts_options);
 
             // Get script content (combine both script and script setup if both exist)
             let (script_content, script_offset): (Option<vize_carton::String>, u32) =
@@ -313,7 +340,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                 template_ast.as_ref(),
                 script_offset,
                 template_offset,
-                &vts_options,
+                effective_options,
             );
 
             Some(GeneratedFile {
@@ -755,31 +782,229 @@ pub(crate) fn collect_vue_files(patterns: &[std::string::String]) -> Vec<PathBuf
         .collect()
 }
 
-/// Parse a single global entry string into a `TemplateGlobal`.
+/// Parse a `.d.ts` file containing `ComponentCustomProperties` augmentation.
 ///
-/// Format: `"$name"` (typed as `any`) or `"$name:TypeAnnotation"`.
-pub(crate) fn parse_global_entry(entry: &str) -> vize_canon::virtual_ts::TemplateGlobal {
+/// Extracts `name: type` members from an `interface ComponentCustomProperties { ... }` block.
+/// Handles multi-line types via delimiter balancing (`()`, `<>`, `{}`).
+fn parse_dts_globals(
+    path: &std::path::Path,
+) -> Result<Vec<vize_canon::virtual_ts::TemplateGlobal>, std::io::Error> {
     use vize_canon::virtual_ts::TemplateGlobal;
-    if let Some((name, type_ann)) = entry.split_once(':') {
-        TemplateGlobal {
-            name: name.trim().to_compact_string(),
-            type_annotation: type_ann.trim().to_compact_string(),
-            default_value: "{} as any".into(),
+
+    let content = fs::read_to_string(path)?;
+    let mut globals = Vec::new();
+
+    // Find the ComponentCustomProperties interface block
+    let mut lines = content.lines().peekable();
+    let mut in_interface = false;
+    let mut brace_depth: i32 = 0;
+    let mut current_name: Option<vize_carton::String> = None;
+    let mut current_type = vize_carton::String::default();
+
+    while let Some(line) = lines.next() {
+        let trimmed = line.trim();
+
+        if !in_interface {
+            if trimmed.contains("interface ComponentCustomProperties") {
+                in_interface = true;
+                // Account for opening brace on same line or next
+                for ch in trimmed.chars() {
+                    if ch == '{' {
+                        brace_depth += 1;
+                    }
+                }
+            }
+            continue;
         }
-    } else {
-        TemplateGlobal {
-            name: entry.trim().to_compact_string(),
-            type_annotation: "any".into(),
-            default_value: "{} as any".into(),
+
+        // Inside the interface — track brace depth
+        for ch in trimmed.chars() {
+            if ch == '{' {
+                brace_depth += 1;
+            } else if ch == '}' {
+                brace_depth -= 1;
+            }
+        }
+
+        // Interface closed
+        if brace_depth <= 0 {
+            // Flush any pending member
+            if let Some(name) = current_name.take() {
+                let type_ann = current_type.split_whitespace().collect::<Vec<_>>().join(" ");
+                globals.push(TemplateGlobal {
+                    name,
+                    type_annotation: type_ann.into(),
+                    default_value: "{} as any".into(),
+                });
+            }
+            break;
+        }
+
+        // Skip empty lines or brace-only lines
+        if trimmed.is_empty() || trimmed == "{" || trimmed == "}" {
+            continue;
+        }
+
+        // Inside the interface body (brace_depth >= 1)
+        // Either continuing a multi-line type or starting a new member
+        if current_name.is_some() {
+            // Continuing multi-line type — append
+            current_type.push(' ');
+            current_type.push_str(trimmed.trim_end_matches(';'));
+
+            if is_type_complete(&current_type) {
+                let name = current_name.take().unwrap();
+                let type_ann = current_type.split_whitespace().collect::<Vec<_>>().join(" ");
+                globals.push(TemplateGlobal {
+                    name,
+                    type_annotation: type_ann.into(),
+                    default_value: "{} as any".into(),
+                });
+                current_type = vize_carton::String::default();
+            }
+            continue;
+        }
+
+        // New member: "name: type" or "name?: type"
+        if let Some((name_part, type_part)) = trimmed.split_once(':') {
+            let name = name_part.trim().trim_end_matches('?').trim();
+            if name.is_empty() {
+                continue;
+            }
+            let type_str = type_part.trim().trim_end_matches(';');
+
+            if is_type_complete(type_str) {
+                let type_ann = type_str.split_whitespace().collect::<Vec<_>>().join(" ");
+                globals.push(TemplateGlobal {
+                    name: name.into(),
+                    type_annotation: type_ann.into(),
+                    default_value: "{} as any".into(),
+                });
+            } else {
+                current_name = Some(name.into());
+                current_type = vize_carton::String::from(type_str);
+            }
         }
     }
+
+    Ok(globals)
 }
 
-/// Parse a comma-separated globals string from CLI `--globals` flag.
-fn parse_globals_str(globals_str: &str) -> Vec<vize_canon::virtual_ts::TemplateGlobal> {
-    globals_str
-        .split(',')
-        .filter(|s| !s.is_empty())
-        .map(parse_global_entry)
-        .collect()
+/// Check if a type annotation string has balanced delimiters.
+fn is_type_complete(s: &str) -> bool {
+    let mut paren = 0i32;
+    let mut angle = 0i32;
+    let mut brace = 0i32;
+    for ch in s.chars() {
+        match ch {
+            '(' => paren += 1,
+            ')' => paren -= 1,
+            '<' => angle += 1,
+            '>' => angle -= 1,
+            '{' => brace += 1,
+            '}' => brace -= 1,
+            _ => {}
+        }
+    }
+    paren <= 0 && angle <= 0 && brace <= 0
+}
+
+/// Detect Nuxt project and add auto-import stubs to VirtualTsOptions.
+/// Checks for `nuxt.config.ts` or `nuxt.config.js` in the current directory.
+fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptions) {
+    let is_nuxt = std::path::Path::new("nuxt.config.ts").exists()
+        || std::path::Path::new("nuxt.config.js").exists()
+        || std::path::Path::new("nuxt.config.mts").exists();
+
+    if !is_nuxt {
+        return;
+    }
+
+    let stubs = &mut options.auto_import_stubs;
+
+    // Vue core composables (with type-preserving signatures)
+    stubs.push("declare function ref<T>(value: T): import('vue').Ref<import('vue').UnwrapRef<T>>;".into());
+    stubs.push("declare function ref<T = any>(): import('vue').Ref<T | undefined>;".into());
+    stubs.push("declare function computed<T>(getter: () => T): import('vue').ComputedRef<T>;".into());
+    stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): import('vue').WritableComputedRef<T>;".into());
+    stubs.push("declare function reactive<T extends object>(target: T): import('vue').UnwrapNestedRefs<T>;".into());
+    stubs.push("declare function readonly<T extends object>(target: T): Readonly<T>;".into());
+    stubs.push("declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;".into());
+    stubs.push("declare function watchEffect(effect: () => void, options?: any): any;".into());
+    stubs.push("declare function watchPostEffect(effect: () => void): any;".into());
+    stubs.push("declare function watchSyncEffect(effect: () => void): any;".into());
+    stubs.push("declare function onMounted(hook: () => any): void;".into());
+    stubs.push("declare function onUnmounted(hook: () => any): void;".into());
+    stubs.push("declare function onBeforeMount(hook: () => any): void;".into());
+    stubs.push("declare function onBeforeUnmount(hook: () => any): void;".into());
+    stubs.push("declare function onBeforeUpdate(hook: () => any): void;".into());
+    stubs.push("declare function onUpdated(hook: () => any): void;".into());
+    stubs.push("declare function onActivated(hook: () => any): void;".into());
+    stubs.push("declare function onDeactivated(hook: () => any): void;".into());
+    stubs.push("declare function onErrorCaptured(hook: (...args: any[]) => any): void;".into());
+    stubs.push("declare function nextTick(fn?: () => void): Promise<void>;".into());
+    stubs.push("declare function toRef<T extends object, K extends keyof T>(object: T, key: K): import('vue').Ref<T[K]>;".into());
+    stubs.push("declare function toRefs<T extends object>(object: T): { [K in keyof T]: import('vue').Ref<T[K]> };".into());
+    stubs.push("declare function unref<T>(ref: T | import('vue').Ref<T>): T;".into());
+    stubs.push("declare function isRef(value: any): value is import('vue').Ref;".into());
+    stubs.push("declare function shallowRef<T>(value: T): import('vue').ShallowRef<T>;".into());
+    stubs.push("declare function triggerRef(ref: import('vue').ShallowRef): void;".into());
+    stubs.push("declare function provide<T>(key: string | symbol, value: T): void;".into());
+    stubs.push("declare function inject<T>(key: string | symbol, defaultValue?: T): T;".into());
+    stubs.push("declare function defineAsyncComponent(source: any): any;".into());
+    stubs.push("declare function h(type: any, ...args: any[]): any;".into());
+    stubs.push("declare function useAttrs(): Record<string, unknown>;".into());
+    stubs.push("declare function useSlots(): Record<string, (...args: any[]) => any>;".into());
+    stubs.push("declare function toRaw<T>(observed: T): T;".into());
+    stubs.push("declare function markRaw<T extends object>(value: T): T;".into());
+    stubs.push("declare function effectScope(detached?: boolean): any;".into());
+    stubs.push("declare function getCurrentScope(): any;".into());
+    stubs.push("declare function onScopeDispose(fn: () => void): void;".into());
+    stubs.push("declare function shallowReactive<T extends object>(target: T): T;".into());
+    stubs.push("declare function shallowReadonly<T extends object>(target: T): Readonly<T>;".into());
+    stubs.push("declare function customRef<T>(factory: any): import('vue').Ref<T>;".into());
+
+    // Vue Router
+    stubs.push("declare function useRouter(): any;".into());
+    stubs.push("declare function useRoute(): any;".into());
+
+    // Nuxt core composables
+    stubs.push("declare function definePageMeta(meta: any): void;".into());
+    stubs.push("declare function useSeoMeta(meta: any): void;".into());
+    stubs.push("declare function useFetch<T = any>(url: string | (() => string), options?: any): any;".into());
+    stubs.push("declare function useAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
+    stubs.push("declare function useLazyFetch<T = any>(url: string | (() => string), options?: any): any;".into());
+    stubs.push("declare function useLazyAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
+    stubs.push("declare function navigateTo(to: string | any, options?: any): any;".into());
+    stubs.push("declare function createError(input: string | { statusCode?: number; statusMessage?: string; message?: string; data?: any; fatal?: boolean }): any;".into());
+    stubs.push("declare function showError(error: any): any;".into());
+    stubs.push("declare function clearError(options?: { redirect?: string }): Promise<void>;".into());
+    stubs.push("declare function useNuxtApp(): any;".into());
+    stubs.push("declare function useRuntimeConfig(): any;".into());
+    stubs.push("declare function useAppConfig(): any;".into());
+    stubs.push("declare function useState<T = any>(key: string, init?: () => T): import('vue').Ref<T>;".into());
+    stubs.push("declare function useCookie<T = any>(name: string, options?: any): import('vue').Ref<T>;".into());
+    stubs.push("declare function useHead(input: any): void;".into());
+    stubs.push("declare function useRequestHeaders(headers?: string[]): Record<string, string>;".into());
+    stubs.push("declare function useRequestURL(): URL;".into());
+    stubs.push("declare function defineNuxtComponent(options: any): any;".into());
+    stubs.push("declare function defineNuxtRouteMiddleware(middleware: any): any;".into());
+    stubs.push("declare function useError(): any;".into());
+    stubs.push("declare function abortNavigation(err?: any): any;".into());
+    stubs.push("declare function addRouteMiddleware(name: string, middleware: any, options?: any): void;".into());
+    stubs.push("declare function defineNuxtPlugin(plugin: any): any;".into());
+    stubs.push("declare function setPageLayout(layout: string): void;".into());
+    stubs.push("declare function setResponseStatus(code: number, message?: string): void;".into());
+    stubs.push("declare function prerenderRoutes(routes: string | string[]): void;".into());
+    stubs.push("declare function refreshNuxtData(keys?: string | string[]): Promise<void>;".into());
+    stubs.push("declare function clearNuxtData(keys?: string | string[]): void;".into());
+    stubs.push("declare function reloadNuxtApp(options?: any): void;".into());
+    stubs.push("declare function callOnce(key: string, fn: () => any): Promise<void>;".into());
+    stubs.push("declare function callOnce(fn: () => any): Promise<void>;".into());
+    stubs.push("declare function onNuxtReady(callback: () => any): void;".into());
+    stubs.push("declare function preloadComponents(components: string | string[]): Promise<void>;".into());
+    stubs.push("declare function prefetchComponents(components: string | string[]): Promise<void>;".into());
+    stubs.push("declare function useRequestEvent(): any;".into());
+    stubs.push("declare function useRequestFetch(): typeof globalThis.fetch;".into());
+    stubs.push("declare function useResponseHeaders(headers?: Record<string, string>): any;".into());
 }

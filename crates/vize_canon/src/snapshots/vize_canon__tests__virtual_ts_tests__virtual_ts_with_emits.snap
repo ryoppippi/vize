@@ -32,7 +32,6 @@ declare global {
     };
     glob(pattern: string, options?: any): Record<string, any>;
     glob(pattern: string[], options?: any): Record<string, any>;
-    [key: string]: any;
   }
 }
 
@@ -68,17 +67,18 @@ function __setup() {
   function handleClick() {
     emit('update', 42)
   }
-  // @vize-map: 2673:2772 -> 0:163
+  // @vize-map: 2649:2748 -> 0:163
 
   // ========== Template Scope (inherits from setup) ==========
   (function __template() {
-    // Vue instance context (available in template)
-    const $attrs: Record<string, unknown> = {} as any;
-    const $slots: Record<string, (...args: any[]) => any> = {} as any;
-    const $refs: Record<string, any> = {} as any;
-    const $emit: (...args: any[]) => void = (() => {}) as any;
-    // Mark template context as used
-    void $attrs; void $slots; void $refs; void $emit;
+    // Vue template context (delegates to ComponentPublicInstance)
+    type __VizeCtx = import('vue').ComponentPublicInstance;
+    const __ctx = undefined as unknown as __VizeCtx;
+    const $attrs = __ctx.$attrs;
+    const $slots = __ctx.$slots;
+    const $refs = __ctx.$refs;
+    const $emit = __ctx.$emit;
+    void __ctx; void $attrs; void $slots; void $refs; void $emit;
 
   void (emit('close')); // VOn
   // @vize-map: expr -> 266:287
