@@ -188,7 +188,10 @@ pub fn generate_virtual_ts_with_offsets(
     if let Some(script) = script_content {
         ts.push_str("  // User setup code\n");
         let script_gen_start = ts.len();
-        let lines: Vec<&str> = script.lines().collect();
+        // Use split('\n') to correctly track byte offsets for CRLF files.
+        // Rust's lines() strips \r from CRLF but +1 for \n undercounts,
+        // causing src_byte_offset drift that incorrectly skips user code.
+        let raw_lines: Vec<&str> = script.split('\n').collect();
         let mut src_byte_offset: usize = 0; // offset within script content
 
         // Check if script uses import.meta and add a polyfill variable.
@@ -198,15 +201,20 @@ pub fn generate_virtual_ts_with_offsets(
             ts.push_str("  const __import_meta: any = {};\n");
         }
 
-        for line in lines.iter() {
+        for raw_line in raw_lines.iter() {
+            // Strip trailing \r for output (normalize CRLF to LF)
+            let line = raw_line.strip_suffix('\r').unwrap_or(raw_line);
+            // raw_line.len() includes \r if present; +1 for the \n from split
+            let raw_byte_len = raw_line.len() + 1;
+
             // Skip lines that overlap with module-level spans (imports, re-exports, type decls)
             let line_start = src_byte_offset;
-            let line_end = line_start + line.len();
+            let line_end = line_start + raw_line.len(); // use raw length for span check
             let is_module_level = module_spans
                 .iter()
                 .any(|&(s, e)| line_start < e as usize && line_end > s as usize);
             if is_module_level {
-                src_byte_offset += line.len() + 1; // +1 for newline
+                src_byte_offset += raw_byte_len;
                 continue;
             }
             let gen_line_start = ts.len();
@@ -215,7 +223,7 @@ pub fn generate_virtual_ts_with_offsets(
 
             // Process the line: strip `export` keyword (invalid inside function),
             // replace import.meta with polyfill variable
-            let mut output_line = std::borrow::Cow::Borrowed(*line);
+            let mut output_line = std::borrow::Cow::Borrowed(line);
 
             // Strip `export` from non-import lines inside setup scope
             let trimmed_line = output_line.trim_start();
@@ -254,7 +262,7 @@ pub fn generate_virtual_ts_with_offsets(
                 });
             }
             let _ = gen_line_start; // suppress unused warning
-            src_byte_offset += line.len() + 1; // +1 for newline
+            src_byte_offset += raw_byte_len;
         }
         let script_gen_end = ts.len();
         append!(

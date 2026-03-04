@@ -601,7 +601,12 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                             // without a full project context. This is NOT a virtual TS bug.
                             if matches!(
                                 code_num,
-                                Some(2307) | Some(2666) | Some(6133) | Some(7043) | Some(7044)
+                                Some(2307)
+                                    | Some(2666)
+                                    | Some(6133)
+                                    | Some(7006)
+                                    | Some(7043)
+                                    | Some(7044)
                             ) {
                                 continue;
                             }

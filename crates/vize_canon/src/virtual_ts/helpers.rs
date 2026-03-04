@@ -12,11 +12,11 @@ use vize_carton::String;
 /// Parameters and type parameters are prefixed with _ to avoid "unused" warnings.
 pub(crate) const VUE_SETUP_COMPILER_MACROS: &str = r#"  // Compiler macros (only valid in setup scope, not global)
   // Emit type helper: converts { event: [args] } to callable emit function
-  type __EmitFn<T> = T extends Record<string, any[]> ? <K extends keyof T>(event: K, ...args: T[K]) => void : T;
+  type __EmitFn<T> = <K extends keyof T>(event: K, ...args: T[K] extends any[] ? T[K] : any[]) => void;
   // Vue ref type aliases (resolved from node_modules/vue)
   type __Ref<T> = import('vue').Ref<T>;
   type __ShallowRef<T> = import('vue').ShallowRef<T>;
-  function defineProps<_T = unknown>(): _T { return undefined as unknown as _T; }
+  function defineProps<_T = unknown>(_props?: any): _T { void _props; return undefined as unknown as _T; }
   function defineEmits<_T = unknown>(): __EmitFn<_T> { return (() => {}) as any; }
   function defineExpose<_T = unknown>(_exposed?: _T): void { void _exposed; }
   function defineModel<_T = unknown>(_name?: string, _options?: any): __Ref<_T> { void _name; void _options; return undefined as unknown as __Ref<_T>; }
