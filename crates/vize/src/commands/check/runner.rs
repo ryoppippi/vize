@@ -599,7 +599,10 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                             // Module resolution: fundamental limitation of single-file mode.
                             // tsgo cannot resolve .vue imports, path aliases, or npm packages
                             // without a full project context. This is NOT a virtual TS bug.
-                            if matches!(code_num, Some(2307) | Some(2666) | Some(6133) | Some(7043) | Some(7044)) {
+                            if matches!(
+                                code_num,
+                                Some(2307) | Some(2666) | Some(6133) | Some(7043) | Some(7044)
+                            ) {
                                 continue;
                             }
 
