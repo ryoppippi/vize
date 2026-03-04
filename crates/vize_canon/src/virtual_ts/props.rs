@@ -97,12 +97,8 @@ pub(crate) fn generate_props_variables(
             }
         } else if let Some(type_args) = define_props_type_args {
             // Type-only defineProps<TypeName>(): extract fields
-            // type_args may include angle brackets (e.g., "<Props>"), strip them
-            let type_name = type_args
-                .trim()
-                .strip_prefix('<')
-                .and_then(|s| s.strip_suffix('>'))
-                .unwrap_or(type_args.trim());
+            // type_args may include angle brackets (e.g., "<Props>", "<Foo<T>>"), strip outer pair
+            let type_name = strip_outer_angle_brackets(type_args.trim());
 
             // Try TypeResolver first (handles inline object types and registered types)
             let type_properties = summary.types.extract_properties(type_name);
@@ -170,12 +166,50 @@ pub(crate) fn extract_interface_fields(script: &str, type_name: &str) -> Vec<Str
     fields
 }
 
+/// Strip the outermost `<...>` pair from a type_args string, handling nested generics.
+/// e.g., `"<Props>"` → `"Props"`, `"<Foo<T>>"` → `"Foo<T>"`, `"Props"` → `"Props"`
+fn strip_outer_angle_brackets(s: &str) -> &str {
+    let s = s.trim();
+    if !s.starts_with('<') {
+        return s;
+    }
+    // Find the matching '>' for the opening '<'
+    let mut depth = 0i32;
+    for (i, c) in s.char_indices() {
+        match c {
+            '<' => depth += 1,
+            '>' => {
+                depth -= 1;
+                if depth == 0 && i == s.len() - 1 {
+                    // The opening '<' matches the final '>' — strip them
+                    return &s[1..i];
+                }
+            }
+            _ => {}
+        }
+    }
+    s
+}
+
+/// Strip generic parameters from a type name for interface lookup.
+/// e.g., `"ContextMenuContentProps<T>"` → `"ContextMenuContentProps"`
+fn strip_generic_params(type_name: &str) -> &str {
+    match type_name.find('<') {
+        Some(pos) => &type_name[..pos],
+        None => type_name,
+    }
+}
+
 /// Find the body of an interface or type declaration in script content.
 fn find_type_body<'a>(script: &'a str, type_name: &str) -> Option<&'a str> {
+    // Strip generic params from name for searching (e.g., "Foo<T>" → "Foo")
+    let base_name = strip_generic_params(type_name);
     for pattern in &[
-        cstr!("interface {type_name} "),
-        cstr!("interface {type_name}{{"),
-        cstr!("type {type_name} "),
+        cstr!("interface {base_name} "),
+        cstr!("interface {base_name}{{"),
+        cstr!("interface {base_name}<"),
+        cstr!("type {base_name} "),
+        cstr!("type {base_name}<"),
     ] {
         if let Some(pos) = script.find(pattern.as_str()) {
             let rest = &script[pos..];
