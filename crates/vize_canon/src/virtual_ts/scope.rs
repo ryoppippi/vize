@@ -507,7 +507,7 @@ fn generate_event_handler_expressions(
 
             let gen_start = ts.len();
             if data.has_implicit_event && is_simple_identifier && !content.is_empty() {
-                append!(*ts, "{indent}{content}($event);  // handler expression\n",);
+                append!(*ts, "{indent}({content} as (...args: any[]) => any)($event);  // handler expression\n",);
             } else {
                 append!(*ts, "{indent}{content};  // handler expression\n");
             }

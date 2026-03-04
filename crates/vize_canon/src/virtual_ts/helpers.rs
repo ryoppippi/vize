@@ -13,41 +13,32 @@ use vize_carton::String;
 pub(crate) const VUE_SETUP_COMPILER_MACROS: &str = r#"  // Compiler macros (only valid in setup scope, not global)
   // Emit type helper: converts { event: [args] } to callable emit function
   type __EmitFn<T> = T extends Record<string, any[]> ? <K extends keyof T>(event: K, ...args: T[K]) => void : T;
+  // Vue ref type aliases (resolved from node_modules/vue)
+  type __Ref<T> = import('vue').Ref<T>;
+  type __ShallowRef<T> = import('vue').ShallowRef<T>;
   function defineProps<_T = unknown>(): _T { return undefined as unknown as _T; }
   function defineEmits<_T = unknown>(): __EmitFn<_T> { return (() => {}) as any; }
   function defineExpose<_T = unknown>(_exposed?: _T): void { void _exposed; }
-  function defineModel<_T = unknown>(_name?: string, _options?: any): _T { void _name; void _options; return undefined as unknown as _T; }
+  function defineModel<_T = unknown>(_name?: string, _options?: any): __Ref<_T> { void _name; void _options; return undefined as unknown as __Ref<_T>; }
   function defineSlots<_T = unknown>(): _T { return undefined as unknown as _T; }
   function withDefaults<_T = unknown, _D = unknown>(_props: _T, _defaults: _D): _T & _D { void _props; void _defaults; return undefined as unknown as _T & _D; }
-  function useTemplateRef<_T extends Element | $Vue['ComponentPublicInstance'] = Element>(_key: string): $Vue['ShallowRef']<_T | null> { void _key; return undefined as unknown as $Vue['ShallowRef']<_T | null>; }
+  function useTemplateRef<_T = Element>(_key: string): __ShallowRef<_T | null> { void _key; return undefined as unknown as __ShallowRef<_T | null>; }
   // Mark compiler macros as used
   void defineProps; void defineEmits; void defineExpose; void defineModel; void defineSlots; void withDefaults; void useTemplateRef;"#;
 
 /// ImportMeta augmentation for Vite/Nuxt projects.
-/// Uses `declare global` to merge with the built-in ImportMeta interface,
-/// so `import.meta.client`, `import.meta.env`, etc. are recognized.
-pub(crate) const IMPORT_META_AUGMENTATION: &str = r#"// ImportMeta augmentation (Vite/Nuxt)
+/// Uses `/// <reference types="..." />` to pull in existing type definitions
+/// from frameworks like Vite, Nuxt, etc. when available.
+pub(crate) const IMPORT_META_AUGMENTATION: &str = r#"// ImportMeta augmentation (reference existing framework types)
+/// <reference types="vite/client" />
 declare global {
+  // Extend ImportMeta with Nuxt-specific properties not covered by vite/client
   interface ImportMeta {
-    readonly env: Record<string, string | boolean | undefined>;
     readonly client: boolean;
     readonly server: boolean;
     readonly dev: boolean;
     readonly prod: boolean;
     readonly ssr: boolean;
-    readonly hot?: {
-      readonly data: any;
-      accept(): void;
-      accept(cb: (mod: any) => void): void;
-      accept(dep: string, cb: (mod: any) => void): void;
-      accept(deps: readonly string[], cb: (mods: any[]) => void): void;
-      dispose(cb: (data: any) => void): void;
-      decline(): void;
-      invalidate(message?: string): void;
-      on(event: string, cb: (...args: any[]) => void): void;
-    };
-    glob(pattern: string, options?: any): Record<string, any>;
-    glob(pattern: string[], options?: any): Record<string, any>;
   }
 }
 "#;
@@ -65,11 +56,11 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
 
     // Instance type + conditional accessor helper
     ctx.push_str("    // Vue template context (delegates to ComponentPublicInstance)\n");
-    ctx.push_str("    type __VizeCtx = $Vue['ComponentPublicInstance'];\n");
+    ctx.push_str("    type __Ctx = $Vue['ComponentPublicInstance'];\n");
     if needs_global_helper {
-        ctx.push_str("    type __VizeGlobal<K extends string, F = unknown> = K extends keyof __VizeCtx ? __VizeCtx[K] : F;\n");
+        ctx.push_str("    type __Global<K extends string, F = unknown> = K extends keyof __Ctx ? __Ctx[K] : F;\n");
     }
-    ctx.push_str("    const __ctx = undefined as unknown as __VizeCtx;\n");
+    ctx.push_str("    const __ctx = undefined as unknown as __Ctx;\n");
 
     // Core Vue globals (always present on ComponentPublicInstance)
     ctx.push_str("    const $attrs = __ctx.$attrs;\n");
@@ -84,7 +75,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
         for global in &options.template_globals {
             append!(
                 ctx,
-                "    const {}: __VizeGlobal<'{}', {}> = undefined as any;\n",
+                "    const {}: __Global<'{}', {}> = undefined as any;\n",
                 global.name,
                 global.name,
                 global.type_annotation
@@ -99,7 +90,7 @@ pub(crate) fn generate_template_context(options: &VirtualTsOptions) -> String {
         for module_name in &options.css_modules {
             append!(
                 ctx,
-                "    const {module_name}: __VizeGlobal<'{module_name}', Record<string, string>> = undefined as any;\n"
+                "    const {module_name}: __Global<'{module_name}', Record<string, string>> = undefined as any;\n"
             );
         }
     }

@@ -189,7 +189,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     use vize_carton::Bump;
     use vize_croquis::{Analyzer, AnalyzerOptions, ImportStatementInfo, ReExportInfo, TypeExport};
 
-    use super::reporting::map_diagnostic_position;
+    use super::reporting::{has_source_mapping, map_diagnostic_position};
 
     let start = Instant::now();
 
@@ -599,7 +599,18 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                             // Module resolution: fundamental limitation of single-file mode.
                             // tsgo cannot resolve .vue imports, path aliases, or npm packages
                             // without a full project context. This is NOT a virtual TS bug.
-                            if matches!(code_num, Some(2307) | Some(2666)) {
+                            if matches!(code_num, Some(2307) | Some(2666) | Some(6133) | Some(7043) | Some(7044)) {
+                                continue;
+                            }
+
+                            // Filter diagnostics in generated code (compiler macros, type helpers).
+                            // Only report errors that map back to user source code.
+                            if !has_source_mapping(
+                                &g.virtual_ts,
+                                &g.source_map,
+                                diag.range.start.line,
+                                diag.range.start.character,
+                            ) {
                                 continue;
                             }
 

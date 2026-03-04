@@ -83,8 +83,8 @@ impl TsgoLspClient {
 
         eprintln!("\x1b[90m[tsgo] Using: {tsgo}\x1b[0m");
 
-        // Determine project root (for tsgo binary search)
-        let _project_root = working_dir
+        // Determine project root (for node_modules resolution)
+        let project_root = working_dir
             .map(std::path::PathBuf::from)
             .or_else(|| std::env::current_dir().ok())
             .and_then(|p| p.canonicalize().ok());
@@ -95,6 +95,33 @@ impl TsgoLspClient {
         let temp_dir_path = std::env::temp_dir().join(&*cstr!("vize-tsgo-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir_path)
             .map_err(|e| cstr!("Failed to create temp directory: {e}"))?;
+
+        // Find and symlink node_modules so tsgo can resolve packages (e.g., 'vue').
+        // Walk up from project root to find node_modules that contains 'vue'.
+        let node_modules_path = project_root.as_ref().and_then(|root| {
+            let mut dir = root.as_path();
+            loop {
+                let nm = dir.join("node_modules");
+                if nm.join("vue").is_dir() {
+                    return Some(nm);
+                }
+                dir = dir.parent()?;
+            }
+        });
+        if let Some(ref nm_path) = node_modules_path {
+            let symlink_target = temp_dir_path.join("node_modules");
+            // Remove stale symlink if exists
+            let _ = std::fs::remove_file(&symlink_target);
+            #[cfg(unix)]
+            {
+                let _ = std::os::unix::fs::symlink(nm_path, &symlink_target);
+            }
+            #[cfg(windows)]
+            {
+                let _ = std::os::windows::fs::symlink_dir(nm_path, &symlink_target);
+            }
+        }
+
         let tsconfig_content = serde_json::json!({
             "compilerOptions": {
                 "target": "ES2022",

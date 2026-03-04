@@ -62,6 +62,20 @@ pub(crate) fn map_diagnostic_position(
     (vts_line + 1, vts_character + 1)
 }
 
+/// Check if a virtual TS position has a source mapping to user code.
+/// Returns false for positions in generated code (compiler macros, type helpers, etc.)
+pub(crate) fn has_source_mapping(
+    virtual_ts: &str,
+    source_map: &[vize_canon::virtual_ts::VizeMapping],
+    vts_line: u32,
+    vts_character: u32,
+) -> bool {
+    let vts_offset = line_col_to_offset(virtual_ts, vts_line, vts_character);
+    source_map
+        .iter()
+        .any(|m| vts_offset >= m.gen_range.start && vts_offset < m.gen_range.end)
+}
+
 /// Convert line/column (0-based) to byte offset in content.
 fn line_col_to_offset(content: &str, line: u32, col: u32) -> usize {
     let mut current_line = 0u32;

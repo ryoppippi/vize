@@ -94,7 +94,8 @@ pub fn generate_virtual_ts_with_offsets(
     ts.push_str(IMPORT_META_AUGMENTATION);
     ts.push('\n');
 
-    // Vue type alias (shorthand for import('vue') references)
+    // Vue type alias (shorthand for import('vue') type references).
+    // Requires node_modules/vue to be resolvable (symlinked in temp dir).
     ts.push_str("type $Vue = import('vue');\n\n");
 
     // Module scope: Extract imports, re-exports, and type declarations to module level.
@@ -281,20 +282,23 @@ pub fn generate_virtual_ts_with_offsets(
         if !ref_bindings.is_empty() {
             ts.push_str("  // Ref type captures (before template scope shadows them)\n");
             for name in &ref_bindings {
-                append!(ts, "  type __VizeRef_{name} = typeof {name};\n");
+                append!(ts, "  type __Ref_{name} = typeof {name};\n");
             }
         }
 
-        ts.push_str("  (function __template() {\n");
+        // Semicolon prevents ASI issues when user script doesn't end with `;`
+        // (e.g., `console.log(x)\n(function...)` would be parsed as a call)
+        ts.push_str("  ;(function __template() {\n");
 
         // Shadow ref bindings with unwrapped types.
         // `var` allows reassignment (Vue templates can assign to refs).
         if !ref_bindings.is_empty() {
             ts.push_str("    // Auto-unwrap refs (Vue template behavior)\n");
+            ts.push_str("    type __UnwrapRef<T> = import('vue').UnwrapRef<T>;\n");
             for name in &ref_bindings {
                 append!(
                     ts,
-                    "    var {name}: $Vue['UnwrapRef']<__VizeRef_{name}> = undefined as any;\n"
+                    "    var {name}: __UnwrapRef<__Ref_{name}> = undefined as any;\n"
                 );
             }
         }
@@ -425,12 +429,29 @@ pub fn generate_virtual_ts_with_offsets(
         }
     }
 
+    // Return exposed object from __setup() so its type can be extracted at module level.
+    // This keeps the runtime args expression in scope (where the bindings are defined).
+    let has_runtime_expose = summary
+        .macros
+        .define_expose()
+        .is_some_and(|e| e.type_args.is_none() && e.runtime_args.is_some());
+    if has_runtime_expose {
+        let runtime_args = summary
+            .macros
+            .define_expose()
+            .unwrap()
+            .runtime_args
+            .as_ref()
+            .unwrap();
+        append!(ts, "\n  return ({runtime_args});\n");
+    }
+
     // Close setup function
     ts.push_str("}\n\n");
 
-    // Invoke setup
+    // Invoke setup (void suppresses TS2349 for async/generic functions)
     ts.push_str("// Invoke setup to verify types\n");
-    ts.push_str("__setup();\n\n");
+    ts.push_str("void __setup();\n\n");
 
     // Emits type
     let emits_already_defined = summary
@@ -464,8 +485,10 @@ pub fn generate_virtual_ts_with_offsets(
                 .and_then(|s| s.strip_suffix('>'))
                 .unwrap_or(type_args.as_str());
             append!(ts, "export type Exposed = {inner_type};\n");
-        } else if let Some(ref runtime_args) = expose.runtime_args {
-            append!(ts, "export type Exposed = typeof ({runtime_args});\n",);
+        } else if expose.runtime_args.is_some() {
+            // Runtime args are returned from __setup() to keep them in scope.
+            // Use Awaited<ReturnType<...>> to handle both sync and async setup.
+            ts.push_str("export type Exposed = Awaited<ReturnType<typeof __setup>>;\n");
         }
     }
     ts.push('\n');
