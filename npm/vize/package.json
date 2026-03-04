@@ -16,7 +16,9 @@
     "./config": {
       "import": "./dist/config.js",
       "types": "./dist/config.d.ts"
-    }
+    },
+    "./pkl/*": "./pkl/*",
+    "./schemas/*": "./schemas/*"
   },
   "bin": {
     "vize": "bin/vize"
@@ -24,7 +26,9 @@
   "files": [
     "bin",
     "dist",
-    "src"
+    "src",
+    "pkl",
+    "schemas"
   ],
   "scripts": {
     "build": "tsdown",
@@ -51,6 +55,7 @@
     "node": ">=18"
   },
   "optionalDependencies": {
+    "@pkl-community/pkl": "^0.27.0",
     "@vizejs/native-darwin-x64": "0.0.1-alpha.114",
     "@vizejs/native-darwin-arm64": "0.0.1-alpha.114",
     "@vizejs/native-win32-x64-msvc": "0.0.1-alpha.114",

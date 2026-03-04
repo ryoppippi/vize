@@ -7,6 +7,26 @@ rust = "latest"
 _.path = ["~/.cargo/bin"]
 
 # =============================================================================
+# Code Generation (Pkl → JSON Schema → TypeScript)
+# =============================================================================
+
+[tasks."gen:schema"]
+description = "Generate JSON Schema from Pkl"
+run = "cd npm/vize/pkl && npx @pkl-community/pkl eval -f json jsonschema/generate.pkl -o ../schemas/vize.config.schema.json"
+
+[tasks."gen:types"]
+description = "Generate TS types from JSON Schema"
+depends = ["gen:schema"]
+run = """
+npx json2ts -i npm/vize/schemas/vize.config.schema.json -o npm/vize/src/types/generated.ts
+node --experimental-strip-types scripts/postprocess-types.ts
+"""
+
+[tasks.gen]
+description = "Full Pkl → JSON Schema → TypeScript pipeline"
+depends = ["gen:types"]
+
+# =============================================================================
 # Setup
 # =============================================================================
 

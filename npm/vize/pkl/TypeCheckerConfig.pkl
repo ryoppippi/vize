@@ -1,0 +1,29 @@
+/// Type checker configuration for Vize.
+module vize.TypeCheckerConfig
+
+/// Enable type checking.
+/// Default: false
+enabled: Boolean?
+
+/// Enable strict mode.
+/// Default: false
+strict: Boolean?
+
+/// Check component props.
+/// Default: true
+checkProps: Boolean?
+
+/// Check component emits.
+/// Default: true
+checkEmits: Boolean?
+
+/// Check template bindings.
+/// Default: true
+checkTemplateBindings: Boolean?
+
+/// Path to tsconfig.json.
+/// Default: auto-detected
+tsconfig: String?
+
+/// Path to tsgo binary.
+tsgoPath: String?

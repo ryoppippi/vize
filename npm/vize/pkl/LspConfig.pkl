@@ -1,0 +1,34 @@
+/// LSP configuration for Vize.
+module vize.LspConfig
+
+/// Enable LSP.
+/// Default: true
+enabled: Boolean?
+
+/// Enable diagnostics.
+/// Default: true
+diagnostics: Boolean?
+
+/// Enable completions.
+/// Default: true
+completion: Boolean?
+
+/// Enable hover information.
+/// Default: true
+hover: Boolean?
+
+/// Enable go-to-definition.
+/// Default: true
+definition: Boolean?
+
+/// Enable formatting via LSP.
+/// Default: true
+formatting: Boolean?
+
+/// Enable code actions.
+/// Default: true
+codeActions: Boolean?
+
+/// Use tsgo for type checking in LSP.
+/// Default: false
+tsgo: Boolean?

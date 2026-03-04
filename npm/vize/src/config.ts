@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
+import { execFileSync } from "node:child_process";
 import { transform } from "oxc-transform";
 import type {
   VizeConfig,
@@ -12,6 +13,7 @@ import type {
 } from "./types/index.js";
 
 const CONFIG_FILE_NAMES = [
+  "vize.config.pkl",
   "vize.config.ts",
   "vize.config.js",
   "vize.config.mjs",
@@ -55,45 +57,41 @@ export async function loadConfig(
 
   // Search for config file
   if (mode === "auto") {
-    const configPath = findConfigFileAuto(root);
-    if (!configPath) {
-      return null;
-    }
-    return loadConfigFile(configPath, env);
+    return loadConfigFromDirAuto(root, env);
   }
 
   // mode === "root"
-  const configPath = findConfigFileInDir(root);
-  if (!configPath) {
-    return null;
-  }
-  return loadConfigFile(configPath, env);
+  return loadConfigFromDir(root, env);
 }
 
 /**
- * Find config file in a specific directory
+ * Try loading config from each supported file name in a directory.
+ * Falls back to next format if pkl fails (e.g. pkl CLI not installed).
  */
-function findConfigFileInDir(dir: string): string | null {
+async function loadConfigFromDir(dir: string, env?: ConfigEnv): Promise<VizeConfig | null> {
   for (const name of CONFIG_FILE_NAMES) {
     const filePath = path.join(dir, name);
     if (fs.existsSync(filePath)) {
-      return filePath;
+      const config = await loadConfigFile(filePath, env);
+      if (config !== null) {
+        return config;
+      }
     }
   }
   return null;
 }
 
 /**
- * Find config file by searching from cwd upward
+ * Search from cwd upward until finding a loadable config file.
  */
-function findConfigFileAuto(startDir: string): string | null {
+async function loadConfigFromDirAuto(startDir: string, env?: ConfigEnv): Promise<VizeConfig | null> {
   let currentDir = path.resolve(startDir);
   const root = path.parse(currentDir).root;
 
   while (currentDir !== root) {
-    const configPath = findConfigFileInDir(currentDir);
-    if (configPath) {
-      return configPath;
+    const config = await loadConfigFromDir(currentDir, env);
+    if (config !== null) {
+      return config;
     }
     currentDir = path.dirname(currentDir);
   }
@@ -111,6 +109,10 @@ async function loadConfigFile(filePath: string, env?: ConfigEnv): Promise<VizeCo
 
   const ext = path.extname(filePath);
 
+  if (ext === ".pkl") {
+    return loadPklConfig(filePath);
+  }
+
   if (ext === ".json") {
     const content = fs.readFileSync(filePath, "utf-8");
     return JSON.parse(content);
@@ -122,6 +124,60 @@ async function loadConfigFile(filePath: string, env?: ConfigEnv): Promise<VizeCo
 
   // .js, .mjs - ESM
   return loadESMConfig(filePath, env);
+}
+
+/**
+ * Find the pkl binary from @pkl-community/pkl or PATH
+ */
+function findPklBinary(): string | null {
+  // Try @pkl-community/pkl package first
+  try {
+    const pklPkgPath = import.meta.resolve?.("@pkl-community/pkl");
+    if (pklPkgPath) {
+      const pklDir = path.dirname(new URL(pklPkgPath).pathname);
+      const pklBin = path.join(pklDir, "pkl");
+      if (fs.existsSync(pklBin)) {
+        return pklBin;
+      }
+    }
+  } catch {
+    // package not installed
+  }
+
+  // Try PATH
+  try {
+    execFileSync("pkl", ["--version"], { stdio: "ignore" });
+    return "pkl";
+  } catch {
+    // pkl not on PATH
+  }
+
+  return null;
+}
+
+/**
+ * Load Pkl config file by evaluating it to JSON
+ */
+function loadPklConfig(filePath: string): VizeConfig | null {
+  const pklBin = findPklBinary();
+  if (!pklBin) {
+    console.warn(
+      "[vize] pkl CLI not found. Install @pkl-community/pkl or add pkl to PATH. " +
+        "Falling back to next config format.",
+    );
+    return null;
+  }
+
+  try {
+    const output = execFileSync(pklBin, ["eval", "-f", "json", filePath], {
+      encoding: "utf-8",
+      timeout: 30_000,
+    });
+    return JSON.parse(output);
+  } catch (e) {
+    console.warn(`[vize] Failed to evaluate ${filePath}:`, e);
+    return null;
+  }
 }
 
 /**

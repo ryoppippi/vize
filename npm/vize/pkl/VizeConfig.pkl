@@ -1,0 +1,45 @@
+/// Root configuration module for Vize.
+///
+/// Usage in `vize.config.pkl`:
+/// ```
+/// amends "node_modules/vize/pkl/VizeConfig.pkl"
+///
+/// compiler {
+///   mode = "module"
+///   vapor = true
+/// }
+/// ```
+module vize.VizeConfig
+
+import "CompilerConfig.pkl"
+import "VitePluginConfig.pkl"
+import "LinterConfig.pkl"
+import "TypeCheckerConfig.pkl"
+import "FormatterConfig.pkl"
+import "LspConfig.pkl"
+import "MuseaConfig.pkl"
+import "GlobalTypesConfig.pkl"
+
+/// Vue compiler options.
+compiler: CompilerConfig?
+
+/// Vite plugin options.
+vite: VitePluginConfig?
+
+/// Linter options.
+linter: LinterConfig?
+
+/// Type checker options.
+typeChecker: TypeCheckerConfig?
+
+/// Formatter options.
+formatter: FormatterConfig?
+
+/// LSP options.
+lsp: LspConfig?
+
+/// Musea component gallery options.
+musea: MuseaConfig?
+
+/// Global type declarations.
+globalTypes: GlobalTypesConfig?

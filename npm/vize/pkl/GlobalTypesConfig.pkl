@@ -1,0 +1,16 @@
+/// Global type declarations configuration for Vize.
+module vize.GlobalTypesConfig
+
+/// A global type declaration.
+class TypeDeclaration {
+  /// TypeScript type string.
+  type: String
+
+  /// Default value.
+  defaultValue: String?
+}
+
+/// Global type declarations.
+/// Keys are the global property names (e.g. "$t", "$route").
+/// Values can be a TypeDeclaration object or a plain type string (shorthand).
+types: Mapping<String, TypeDeclaration>?

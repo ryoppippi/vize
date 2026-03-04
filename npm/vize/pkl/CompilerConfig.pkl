@@ -1,0 +1,46 @@
+/// Compiler configuration for Vize.
+module vize.CompilerConfig
+
+/// Compilation mode.
+/// Default: "module"
+mode: ("module"|"function")?
+
+/// Enable Vapor mode compilation.
+/// Default: false
+vapor: Boolean?
+
+/// Enable SSR mode.
+/// Default: false
+ssr: Boolean?
+
+/// Enable source map generation.
+/// Default: true in development, false in production
+sourceMap: Boolean?
+
+/// Prefix template identifiers with _ctx.
+/// Default: false
+prefixIdentifiers: Boolean?
+
+/// Hoist static nodes.
+/// Default: true
+hoistStatic: Boolean?
+
+/// Cache v-on handlers.
+/// Default: true
+cacheHandlers: Boolean?
+
+/// Enable TypeScript parsing in <script> blocks.
+/// Default: true
+isTs: Boolean?
+
+/// Script file extension for generated output.
+/// Default: "ts"
+scriptExt: ("ts"|"js")?
+
+/// Module name for runtime imports.
+/// Default: "vue"
+runtimeModuleName: String?
+
+/// Global variable name for runtime (IIFE builds).
+/// Default: "Vue"
+runtimeGlobalName: String?

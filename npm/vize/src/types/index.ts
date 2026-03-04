@@ -1,16 +1,20 @@
 export type {
-  MaybePromise,
-  ConfigEnv,
-  UserConfigExport,
   RuleSeverity,
   RuleCategory,
   VizeConfig,
-} from "./core.js";
+  CompilerConfig,
+  VitePluginConfig,
+  LinterConfig,
+  TypeCheckerConfig,
+  FormatterConfig,
+  LspConfig,
+  MuseaVrtConfig,
+  MuseaA11yConfig,
+  MuseaAutogenConfig,
+  MuseaConfig,
+  MuseaViewport,
+  GlobalTypeDeclaration,
+  GlobalTypesConfig,
+} from "./generated.js";
 
-export type { CompilerConfig, VitePluginConfig } from "./compiler.js";
-
-export type { LinterConfig, TypeCheckerConfig, FormatterConfig, LspConfig } from "./tools.js";
-
-export type { MuseaVrtConfig, MuseaA11yConfig, MuseaAutogenConfig, MuseaConfig } from "./musea.js";
-
-export type { GlobalTypeDeclaration, GlobalTypesConfig, LoadConfigOptions } from "./loader.js";
+export type { MaybePromise, ConfigEnv, UserConfigExport, LoadConfigOptions } from "./runtime.js";

@@ -100,58 +100,10 @@ pub fn load_config(dir: Option<&Path>) -> VizeConfig {
 }
 
 /// JSON Schema for `vize.config.json`.
-pub const VIZE_CONFIG_SCHEMA: &str = r#"{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Vize Configuration",
-  "description": "Configuration file for vize - High-performance Vue.js toolchain",
-  "type": "object",
-  "properties": {
-    "$schema": {
-      "type": "string",
-      "description": "JSON Schema reference for editor autocompletion"
-    },
-    "check": {
-      "type": "object",
-      "description": "Type checking configuration",
-      "properties": {
-        "globals": {
-          "type": "string",
-          "description": "Path to a .d.ts file that augments ComponentCustomProperties with template globals (e.g. $t, $route). Resolved relative to vize.config.json.",
-          "examples": ["globals.d.ts", "./types/globals.d.ts"]
-        }
-      },
-      "additionalProperties": false
-    },
-    "fmt": {
-      "type": "object",
-      "description": "Formatting configuration (Prettier-compatible)",
-      "properties": {
-        "printWidth": { "type": "integer", "default": 100, "description": "Maximum line width" },
-        "tabWidth": { "type": "integer", "default": 2, "description": "Number of spaces per indentation level" },
-        "useTabs": { "type": "boolean", "default": false, "description": "Use tabs instead of spaces" },
-        "semi": { "type": "boolean", "default": true, "description": "Print semicolons at the ends of statements" },
-        "singleQuote": { "type": "boolean", "default": false, "description": "Use single quotes instead of double quotes" },
-        "jsxSingleQuote": { "type": "boolean", "default": false, "description": "Use single quotes in JSX" },
-        "trailingComma": { "type": "string", "enum": ["none", "es5", "all"], "default": "all", "description": "Print trailing commas wherever possible" },
-        "bracketSpacing": { "type": "boolean", "default": true, "description": "Print spaces between brackets in object literals" },
-        "bracketSameLine": { "type": "boolean", "default": false, "description": "Put > of multi-line element at end of last line" },
-        "arrowParens": { "type": "string", "enum": ["always", "avoid"], "default": "always", "description": "Include parens around sole arrow function parameter" },
-        "endOfLine": { "type": "string", "enum": ["lf", "crlf", "cr", "auto"], "default": "lf", "description": "End of line style" },
-        "quoteProps": { "type": "string", "enum": ["as-needed", "consistent", "preserve"], "default": "as-needed" },
-        "singleAttributePerLine": { "type": "boolean", "default": false, "description": "Put each HTML attribute on its own line" },
-        "vueIndentScriptAndStyle": { "type": "boolean", "default": false, "description": "Indent script and style tags in Vue files" },
-        "sortAttributes": { "type": "boolean", "default": true, "description": "Sort HTML attributes in template" },
-        "attributeSortOrder": { "type": "string", "enum": ["alphabetical", "as-written"], "default": "alphabetical", "description": "Sort order within attribute groups" },
-        "mergeBindAndNonBindAttrs": { "type": "boolean", "default": false, "description": "Merge :xxx and xxx attributes for sorting" },
-        "maxAttributesPerLine": { "type": "integer", "minimum": 1, "description": "Max attributes per line before wrapping" },
-        "attributeGroups": { "type": "array", "items": { "type": "array", "items": { "type": "string" } }, "description": "Custom attribute sort groups (overrides Vue style guide order)" },
-        "normalizeDirectiveShorthands": { "type": "boolean", "default": true, "description": "Normalize v-bind:/v-on:/v-slot: to :/@ /#" }
-      },
-      "additionalProperties": false
-    }
-  },
-  "additionalProperties": false
-}"#;
+///
+/// Generated from Pkl schema definitions in `npm/vize/pkl/`.
+pub const VIZE_CONFIG_SCHEMA: &str =
+    include_str!("../../../npm/vize/schemas/vize.config.schema.json");
 
 #[cfg(all(test, feature = "glyph"))]
 mod tests {

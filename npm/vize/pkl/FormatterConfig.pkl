@@ -1,0 +1,26 @@
+/// Formatter configuration for Vize.
+module vize.FormatterConfig
+
+/// Max line width.
+/// Default: 80
+printWidth: Int?
+
+/// Indentation width.
+/// Default: 2
+tabWidth: Int?
+
+/// Use tabs for indentation.
+/// Default: false
+useTabs: Boolean?
+
+/// Print semicolons.
+/// Default: true
+semi: Boolean?
+
+/// Use single quotes.
+/// Default: false
+singleQuote: Boolean?
+
+/// Trailing commas.
+/// Default: "all"
+trailingComma: ("all"|"none"|"es5")?
