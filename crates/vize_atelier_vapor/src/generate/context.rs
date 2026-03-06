@@ -16,6 +16,16 @@ pub(crate) struct ForScope {
     pub(crate) depth: usize,
 }
 
+/// Slot scope entry for scoped slots
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub(crate) struct SlotScope {
+    /// Destructured variable names (e.g., ["item", "index"] from "{ item, index }")
+    pub(crate) names: std::vec::Vec<String>,
+    /// Slot props variable (e.g., "_slotProps0")
+    pub(crate) slot_props_var: String,
+}
+
 /// Generate context
 pub(crate) struct GenerateContext<'a> {
     pub(crate) code: String,
@@ -33,10 +43,23 @@ pub(crate) struct GenerateContext<'a> {
     pub(crate) is_fragment: bool,
     /// For-loop scope stack
     pub(crate) for_scopes: std::vec::Vec<ForScope>,
+    /// Slot scope stack for scoped slots
+    #[allow(dead_code)]
+    pub(crate) slot_scopes: std::vec::Vec<SlotScope>,
+    /// Counter for slot scope variable names
+    #[allow(dead_code)]
+    pub(crate) slot_scope_count: usize,
+    /// Components that have already been resolved (to avoid duplicate resolveComponent calls)
+    pub(crate) resolved_components: FxHashSet<String>,
+    /// Element IDs that are standalone text nodes (no _txt needed)
+    pub(crate) standalone_text_elements: &'a FxHashSet<usize>,
 }
 
 impl<'a> GenerateContext<'a> {
-    pub(crate) fn new(element_template_map: &'a FxHashMap<usize, usize>) -> Self {
+    pub(crate) fn new(
+        element_template_map: &'a FxHashMap<usize, usize>,
+        standalone_text_elements: &'a FxHashSet<usize>,
+    ) -> Self {
         Self {
             code: String::with_capacity(4096),
             indent_level: 0,
@@ -47,6 +70,10 @@ impl<'a> GenerateContext<'a> {
             text_nodes: FxHashMap::default(),
             is_fragment: false,
             for_scopes: std::vec::Vec::new(),
+            slot_scopes: std::vec::Vec::new(),
+            slot_scope_count: 0,
+            resolved_components: FxHashSet::default(),
+            standalone_text_elements,
         }
     }
 
@@ -117,7 +144,20 @@ impl<'a> GenerateContext<'a> {
                 }
             }
         }
-        // Not a for-loop variable, use _ctx prefix
+        // Check slot scopes (innermost first)
+        for scope in self.slot_scopes.iter().rev() {
+            for name in &scope.names {
+                if trimmed == name.as_str() {
+                    return cstr!("{}.{}", scope.slot_props_var, name);
+                }
+                let member_prefix = [name.as_str(), "."].concat();
+                if trimmed.starts_with(&member_prefix) {
+                    return cstr!("{}.{}", scope.slot_props_var, trimmed);
+                }
+            }
+        }
+
+        // Not a for-loop or slot variable, use _ctx prefix
         cstr!("_ctx.{}", trimmed)
     }
 
@@ -171,7 +211,24 @@ impl<'a> GenerateContext<'a> {
                     result.push(ch);
                     chars.next();
                 }
-                '[' | ']' | ' ' | '\n' | '\t' => {
+                '[' => {
+                    // Computed property key: [expr] - contents should be prefixed
+                    if in_object && is_key_position {
+                        // Save state, temporarily treat as value position
+                        is_key_position = false;
+                    }
+                    result.push(ch);
+                    chars.next();
+                }
+                ']' => {
+                    // After computed key, we're back to key position until ':'
+                    if in_object {
+                        is_key_position = true;
+                    }
+                    result.push(ch);
+                    chars.next();
+                }
+                ' ' | '\n' | '\t' => {
                     result.push(ch);
                     chars.next();
                 }
@@ -267,6 +324,30 @@ impl<'a> GenerateContext<'a> {
         use std::fmt::Write as _;
         self.write_fmt(args).unwrap();
         self.code.push('\n');
+    }
+
+    /// Push a slot scope for scoped slots. Returns the slot props variable name.
+    #[allow(dead_code)]
+    pub(crate) fn push_slot_scope(&mut self, destructure_pattern: &str) -> String {
+        let slot_props_var = cstr!("_slotProps{}", self.slot_scope_count);
+        self.slot_scope_count += 1;
+
+        let names = parse_destructure_names(destructure_pattern)
+            .into_iter()
+            .map(|s| s.to_compact_string())
+            .collect();
+
+        self.slot_scopes.push(SlotScope {
+            names,
+            slot_props_var: slot_props_var.clone(),
+        });
+        slot_props_var
+    }
+
+    /// Pop the current slot scope
+    #[allow(dead_code)]
+    pub(crate) fn pop_slot_scope(&mut self) {
+        self.slot_scopes.pop();
     }
 
     pub(crate) fn next_temp(&mut self) -> String {

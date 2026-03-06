@@ -27,6 +27,8 @@ pub fn transform_v_bind<'a>(
             is_component: el.tag_type == ElementType::Component,
         },
         tag: el.tag.clone(),
+        camel: has_modifier(dir, "camel"),
+        prop_modifier: has_modifier(dir, "prop"),
     };
 
     Some(OperationNode::SetProp(set_prop))

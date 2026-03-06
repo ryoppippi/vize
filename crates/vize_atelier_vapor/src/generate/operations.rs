@@ -3,10 +3,10 @@
 //! Each function emits JavaScript code for a specific IR operation node.
 
 use crate::ir::{
-    CreateComponentIRNode, DirectiveIRNode, ForIRNode, GetTextChildIRNode, IfIRNode,
-    InsertNodeIRNode, NegativeBranch, OperationNode, PrependNodeIRNode, SetDynamicPropsIRNode,
-    SetEventIRNode, SetHtmlIRNode, SetPropIRNode, SetTemplateRefIRNode, SetTextIRNode,
-    SlotOutletIRNode,
+    ChildRefIRNode, ComponentKind, CreateComponentIRNode, DirectiveIRNode, ForIRNode,
+    GetTextChildIRNode, IRSlot, IfIRNode, InsertNodeIRNode, NegativeBranch, NextRefIRNode,
+    OperationNode, PrependNodeIRNode, SetDynamicPropsIRNode, SetEventIRNode, SetHtmlIRNode,
+    SetPropIRNode, SetTemplateRefIRNode, SetTextIRNode, SlotOutletIRNode,
 };
 use vize_atelier_core::ExpressionNode;
 use vize_carton::{cstr, FxHashMap, String, ToCompactString};
@@ -54,13 +54,19 @@ pub(crate) fn generate_operation(
             generate_for(ctx, for_node, element_template_map);
         }
         OperationNode::CreateComponent(component) => {
-            generate_create_component(ctx, component);
+            generate_create_component(ctx, component, element_template_map);
         }
         OperationNode::SlotOutlet(slot) => {
             generate_slot_outlet(ctx, slot);
         }
         OperationNode::GetTextChild(get_text) => {
             generate_get_text_child(ctx, get_text);
+        }
+        OperationNode::ChildRef(child_ref) => {
+            generate_child_ref(ctx, child_ref);
+        }
+        OperationNode::NextRef(next_ref) => {
+            generate_next_ref(ctx, next_ref);
         }
     }
 }
@@ -71,7 +77,22 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
     let key = &set_prop.prop.key.content;
     let is_svg = is_svg_tag(set_prop.tag.as_str());
 
-    let value = if let Some(first) = set_prop.prop.values.first() {
+    // Build value handling multiple values (static+dynamic merge)
+    let value = if set_prop.prop.values.len() > 1 {
+        let parts: Vec<vize_carton::String> = set_prop
+            .prop
+            .values
+            .iter()
+            .map(|v| {
+                if v.is_static {
+                    cstr!("\"{}\"", v.content)
+                } else {
+                    ctx.resolve_expression(&v.content)
+                }
+            })
+            .collect();
+        cstr!("[{}]", parts.join(", "))
+    } else if let Some(first) = set_prop.prop.values.first() {
         if first.is_static {
             cstr!("\"{}\"", first.content)
         } else {
@@ -97,6 +118,14 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
             ctx.use_helper("setStyle");
             ctx.push_line_fmt(format_args!("_setStyle({element}, {value})"));
         }
+    } else if set_prop.prop_modifier {
+        ctx.use_helper("setDOMProp");
+        ctx.push_line_fmt(format_args!("_setDOMProp({element}, \"{key}\", {value})"));
+    } else if set_prop.camel && is_svg {
+        ctx.use_helper("setAttr");
+        ctx.push_line_fmt(format_args!(
+            "_setAttr({element}, \"{key}\", {value}, true)"
+        ));
     } else {
         ctx.use_helper("setProp");
         ctx.push_line_fmt(format_args!("_setProp({element}, \"{key}\", {value})"));
@@ -115,14 +144,23 @@ fn generate_set_dynamic_props(ctx: &mut GenerateContext, set_props: &SetDynamicP
             ctx.push_line_fmt(format_args!("_setDynamicEvents({}, {})", element, resolved));
         }
     } else {
-        for prop in set_props.props.iter() {
-            let expr = if prop.is_static {
-                cstr!("\"{}\"", prop.content)
-            } else {
-                vize_carton::CompactString::from(prop.content.as_str())
-            };
-            ctx.push_line_fmt(format_args!("Object.assign({}, {})", element, expr));
-        }
+        ctx.use_helper("setDynamicProps");
+        let props_parts: std::vec::Vec<vize_carton::String> = set_props
+            .props
+            .iter()
+            .map(|p| {
+                if p.is_static {
+                    cstr!("\"{}\"", p.content)
+                } else {
+                    ctx.resolve_expression(&p.content)
+                }
+            })
+            .collect();
+        ctx.push_line_fmt(format_args!(
+            "_setDynamicProps({}, [{}])",
+            element,
+            props_parts.join(", ")
+        ));
     }
 }
 
@@ -683,90 +721,277 @@ fn generate_for_key_function(for_node: &ForIRNode<'_>) -> Option<String> {
     }
 }
 
-/// Generate CreateComponent
-fn generate_create_component(ctx: &mut GenerateContext, component: &CreateComponentIRNode<'_>) {
-    ctx.use_helper("resolveComponent");
-    ctx.use_helper("createComponentWithFallback");
-
-    let tag = &component.tag;
-    let component_var = ["_component_", tag.as_str()].concat();
-
-    // Resolve component
-    ctx.push_line(
-        &[
-            "const ",
-            &component_var,
-            " = _resolveComponent(\"",
-            tag.as_str(),
-            "\")",
-        ]
-        .concat(),
-    );
-
-    // Props object
-    let props = if component.props.is_empty() {
-        "null".to_compact_string()
-    } else {
-        let prop_strs: Vec<String> = component
-            .props
-            .iter()
-            .map(|p| {
-                let key = &p.key.content;
-                let is_event = key.as_str().starts_with("on") && key.len() > 2;
-
-                let value: String = if let Some(first) = p.values.first() {
-                    if first.content.starts_with("__RAW__") {
-                        String::from(&first.content.as_str()[7..])
-                    } else if first.is_static {
-                        ["() => (\"", first.content.as_str(), "\")"].concat().into()
-                    } else if is_event {
-                        ["() => _ctx.", first.content.as_str()].concat().into()
-                    } else {
-                        ["() => (_ctx.", first.content.as_str(), ")"]
-                            .concat()
-                            .into()
-                    }
+/// Generate props object string for a component
+fn generate_component_props_str(
+    ctx: &GenerateContext,
+    component: &CreateComponentIRNode<'_>,
+) -> String {
+    if component.props.is_empty() {
+        return "null".to_compact_string();
+    }
+    let prop_strs: std::vec::Vec<String> = component
+        .props
+        .iter()
+        .map(|p| {
+            let key = &p.key.content;
+            let is_event = key.as_str().starts_with("on") && key.len() > 2;
+            let value: String = if let Some(first) = p.values.first() {
+                if first.content.starts_with("__RAW__") {
+                    String::from(&first.content.as_str()[7..])
+                } else if first.is_static {
+                    ["() => (\"", first.content.as_str(), "\")"].concat().into()
+                } else if is_event {
+                    let resolved = ctx.resolve_expression(first.content.as_str());
+                    ["() => ", &resolved].concat().into()
                 } else {
-                    "undefined".to_compact_string()
-                };
-                if key.contains(':') {
-                    ["\"", key.as_str(), "\": ", &value].concat().into()
-                } else {
-                    [key.as_str(), ": ", &value].concat().into()
+                    let resolved = ctx.resolve_expression(first.content.as_str());
+                    ["() => (", &resolved, ")"].concat().into()
                 }
-            })
-            .collect();
-        // Use multi-line format for 2+ props
-        if prop_strs.len() >= 2 {
-            let mut result = String::from("{\n");
-            for (i, prop_str) in prop_strs.iter().enumerate() {
-                result.push_str("    ");
-                result.push_str(prop_str);
-                if i < prop_strs.len() - 1 {
-                    result.push(',');
-                }
-                result.push('\n');
+            } else {
+                "undefined".to_compact_string()
+            };
+            if key.contains(':') {
+                ["\"", key.as_str(), "\": ", &value].concat().into()
+            } else {
+                [key.as_str(), ": ", &value].concat().into()
             }
-            result.push_str("  }");
-            result
-        } else {
-            ["{ ", &prop_strs.join(", "), " }"].concat().into()
+        })
+        .collect();
+    if prop_strs.len() >= 2 {
+        let mut result = String::from("{\n");
+        for (i, prop_str) in prop_strs.iter().enumerate() {
+            result.push_str("    ");
+            result.push_str(prop_str);
+            if i < prop_strs.len() - 1 {
+                result.push(',');
+            }
+            result.push('\n');
+        }
+        result.push_str("  }");
+        result
+    } else {
+        ["{ ", &prop_strs.join(", "), " }"].concat().into()
+    }
+}
+
+/// Generate a single slot function body
+fn generate_slot_fn(
+    ctx: &mut GenerateContext,
+    slot: &IRSlot<'_>,
+    element_template_map: &FxHashMap<usize, usize>,
+    use_with_vapor_ctx: bool,
+) {
+    let slot_props_var = slot
+        .fn_exp
+        .as_ref()
+        .map(|fn_exp| ctx.push_slot_scope(fn_exp.content.as_str()));
+    if use_with_vapor_ctx {
+        ctx.use_helper("withVaporCtx");
+        let param: String = slot_props_var
+            .as_ref()
+            .map(|v| cstr!(" _withVaporCtx(({}) => {{\n", v))
+            .unwrap_or_else(|| String::from(" _withVaporCtx(() => {\n"));
+        ctx.push(&param);
+    } else {
+        let param: String = slot_props_var
+            .as_ref()
+            .map(|v| cstr!(" ({}) => {{\n", v))
+            .unwrap_or_else(|| String::from(" () => {\n"));
+        ctx.push(&param);
+    }
+    ctx.indent();
+    generate_block(ctx, &slot.block, element_template_map);
+    ctx.deindent();
+    ctx.push_indent();
+    ctx.push("}");
+    if use_with_vapor_ctx {
+        ctx.push(")");
+    }
+    if slot_props_var.is_some() {
+        ctx.pop_slot_scope();
+    }
+}
+
+/// Generate CreateComponent
+fn generate_create_component(
+    ctx: &mut GenerateContext,
+    component: &CreateComponentIRNode<'_>,
+    element_template_map: &FxHashMap<usize, usize>,
+) {
+    let tag = &component.tag;
+    let kind = component.kind;
+    let use_with_vapor_ctx = kind == ComponentKind::Suspense || kind == ComponentKind::KeepAlive;
+
+    // Track if this component was already resolved by a parent (Suspense/KeepAlive)
+    let was_already_resolved = ctx.resolved_components.contains(tag);
+
+    // For Suspense/KeepAlive, resolve inner components FIRST (before the outer component)
+    if use_with_vapor_ctx {
+        for slot in component.slots.iter() {
+            for op in slot.block.operation.iter() {
+                if let OperationNode::CreateComponent(inner_comp) = op {
+                    if (inner_comp.kind == ComponentKind::Regular
+                        || inner_comp.kind == ComponentKind::Suspense)
+                        && !ctx.resolved_components.contains(&inner_comp.tag)
+                    {
+                        ctx.use_helper("resolveComponent");
+                        ctx.push_line(&cstr!(
+                            "const _component_{} = _resolveComponent(\"{}\")",
+                            inner_comp.tag,
+                            inner_comp.tag
+                        ));
+                        ctx.resolved_components.insert(inner_comp.tag.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    // Determine component variable and creation function based on kind
+    let (component_var, create_fn): (String, &str) = match kind {
+        ComponentKind::Dynamic => {
+            ctx.use_helper("createDynamicComponent");
+            let is_arg = if let Some(ref is_exp) = component.is_expr {
+                let resolved = ctx.resolve_expression(is_exp.content.as_str());
+                cstr!("() => ({})", resolved)
+            } else {
+                "null".to_compact_string()
+            };
+            (is_arg, "createDynamicComponent")
+        }
+        ComponentKind::Teleport => {
+            ctx.use_helper("VaporTeleport");
+            ctx.use_helper("createComponent");
+            ("_VaporTeleport".to_compact_string(), "createComponent")
+        }
+        ComponentKind::KeepAlive => {
+            ctx.use_helper("VaporKeepAlive");
+            ctx.use_helper("createComponent");
+            ("_VaporKeepAlive".to_compact_string(), "createComponent")
+        }
+        ComponentKind::Suspense => {
+            ctx.use_helper("resolveComponent");
+            ctx.use_helper("createComponentWithFallback");
+            let comp_var: String = cstr!("_component_{}", tag);
+            if !ctx.resolved_components.contains(tag) {
+                ctx.push_line(&cstr!(
+                    "const {} = _resolveComponent(\"{}\")",
+                    comp_var,
+                    tag
+                ));
+                ctx.resolved_components.insert(tag.clone());
+            }
+            (comp_var, "createComponentWithFallback")
+        }
+        ComponentKind::Regular => {
+            ctx.use_helper("resolveComponent");
+            ctx.use_helper("createComponentWithFallback");
+            let comp_var: String = cstr!("_component_{}", tag);
+            if !ctx.resolved_components.contains(tag) {
+                ctx.push_line(&cstr!(
+                    "const {} = _resolveComponent(\"{}\")",
+                    comp_var,
+                    tag
+                ));
+                ctx.resolved_components.insert(tag.clone());
+            }
+            (comp_var, "createComponentWithFallback")
         }
     };
 
-    // Generate component creation
-    ctx.push_line(
-        &[
-            "const n",
-            &component.id.to_compact_string(),
-            " = _createComponentWithFallback(",
-            &component_var,
-            ", ",
-            &props,
-            ", null, true)",
-        ]
-        .concat(),
-    );
+    let props = generate_component_props_str(ctx, component);
+    let has_slots = !component.slots.is_empty();
+
+    // Check if this is a simple inner component (pre-resolved, no props, no slots)
+    // In that case, emit simplified call: _createComponentWithFallback(_component_Foo)
+    let is_pre_resolved = was_already_resolved;
+    if is_pre_resolved && !has_slots && props == "null" {
+        ctx.push_line(&cstr!(
+            "const n{} = _{}({})",
+            component.id,
+            create_fn,
+            component_var
+        ));
+        return;
+    }
+
+    // Start component creation line
+    ctx.push_indent();
+    ctx.push(&cstr!(
+        "const n{} = _{}({}, {}",
+        component.id,
+        create_fn,
+        component_var,
+        props
+    ));
+
+    if has_slots {
+        ctx.push(", {\n");
+        ctx.indent();
+
+        let mut static_slots: std::vec::Vec<&IRSlot<'_>> = std::vec::Vec::new();
+        let mut dynamic_slots: std::vec::Vec<&IRSlot<'_>> = std::vec::Vec::new();
+        for slot in component.slots.iter() {
+            if slot.name.is_static {
+                static_slots.push(slot);
+            } else {
+                dynamic_slots.push(slot);
+            }
+        }
+
+        for (i, slot) in static_slots.iter().enumerate() {
+            ctx.push_indent();
+            ctx.push(&cstr!("\"{}\":", slot.name.content));
+            generate_slot_fn(ctx, slot, element_template_map, use_with_vapor_ctx);
+            if i < static_slots.len() - 1 || !dynamic_slots.is_empty() {
+                ctx.push(",");
+            }
+            ctx.push("\n");
+        }
+
+        if !dynamic_slots.is_empty() {
+            ctx.push_line("$: [");
+            ctx.indent();
+            for (i, slot) in dynamic_slots.iter().enumerate() {
+                ctx.push_indent();
+                ctx.push("() => ({\n");
+                ctx.indent();
+                let name_resolved = ctx.resolve_expression(slot.name.content.as_str());
+                ctx.push_line(&cstr!("name: {},", name_resolved));
+                ctx.push_indent();
+                ctx.push("fn:");
+                generate_slot_fn(ctx, slot, element_template_map, false);
+                ctx.push("\n");
+                ctx.deindent();
+                ctx.push_indent();
+                ctx.push("})");
+                if i < dynamic_slots.len() - 1 {
+                    ctx.push(",");
+                }
+                ctx.push("\n");
+                ctx.deindent();
+            }
+            ctx.deindent();
+            ctx.push_line("]");
+        }
+
+        ctx.deindent();
+        ctx.push_indent();
+        ctx.push("}, true)\n");
+    } else {
+        ctx.push(", null, true)\n");
+    }
+
+    // v-show after component creation
+    if let Some(ref v_show) = component.v_show {
+        ctx.use_helper("applyVShow");
+        let resolved = ctx.resolve_expression(v_show.content.as_str());
+        ctx.push_line(&cstr!(
+            "_applyVShow(n{}, () => ({}))",
+            component.id,
+            resolved
+        ));
+    }
 }
 
 /// Generate SlotOutlet
@@ -790,6 +1015,24 @@ fn generate_get_text_child(ctx: &mut GenerateContext, get_text: &GetTextChildIRN
     let child = ctx.next_temp();
 
     ctx.push_line_fmt(format_args!("const {} = {}.firstChild", child, parent));
+}
+
+/// Generate ChildRef (_child helper)
+fn generate_child_ref(ctx: &mut GenerateContext, child_ref: &ChildRefIRNode) {
+    ctx.use_helper("child");
+    ctx.push_line_fmt(format_args!(
+        "const n{} = _child(n{})",
+        child_ref.child_id, child_ref.parent_id
+    ));
+}
+
+/// Generate NextRef (_next helper)
+fn generate_next_ref(ctx: &mut GenerateContext, next_ref: &NextRefIRNode) {
+    ctx.use_helper("next");
+    ctx.push_line_fmt(format_args!(
+        "const n{} = _next(n{}, {})",
+        next_ref.child_id, next_ref.prev_id, next_ref.offset
+    ));
 }
 
 /// Check if handler is an inline statement (not a function reference)

@@ -27,7 +27,7 @@ pub struct VaporGenerateResult {
 
 /// Generate Vapor code from IR
 pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
-    let mut ctx = GenerateContext::new(&ir.element_template_map);
+    let mut ctx = GenerateContext::new(&ir.element_template_map, &ir.standalone_text_elements);
 
     // Template helper is always used if we have templates
     if !ir.templates.is_empty() {
@@ -58,23 +58,35 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
     // Generate template declarations (to separate string, we'll prepend imports later)
     let mut template_code = String::default();
     for (i, template) in ir.templates.iter().enumerate() {
-        if root_template_indices.contains(&i) {
-            writeln!(
+        let is_root = root_template_indices.contains(&i);
+        let is_svg = template.starts_with("<svg");
+        match (is_root, is_svg) {
+            (true, true) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", true, 1)",
+                i,
+                escape_template(template)
+            ),
+            (true, false) => writeln!(
                 template_code,
                 "const t{} = _template(\"{}\", true)",
                 i,
                 escape_template(template)
-            )
-            .ok();
-        } else {
-            writeln!(
+            ),
+            (false, true) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", false, 1)",
+                i,
+                escape_template(template)
+            ),
+            (false, false) => writeln!(
                 template_code,
                 "const t{} = _template(\"{}\")",
                 i,
                 escape_template(template)
-            )
-            .ok();
+            ),
         }
+        .ok();
     }
 
     // First pass: collect delegate events
@@ -143,19 +155,31 @@ fn generate_block(
         }
     }
 
-    // Generate text node references for effects in this block
+    // Generate ChildRef/NextRef operations first (before text refs, since text refs
+    // may reference child nodes created by these operations)
+    for op in block.operation.iter() {
+        if matches!(op, OperationNode::ChildRef(_) | OperationNode::NextRef(_)) {
+            generate_operation(ctx, op, element_template_map);
+        }
+    }
+
+    // Generate text node references for effects in this block.
+    // Skip _txt() for standalone text elements (interpolations with their own template)
+    // since the element itself IS the text node.
     for effect in block.effect.iter() {
         for op in effect.operations.iter() {
             if let OperationNode::SetText(set_text) = op {
-                ctx.use_helper("txt");
-                let var_name = ctx.next_text_node(set_text.element);
-                let mut line = String::with_capacity(32);
-                line.push_str("const ");
-                line.push_str(&var_name);
-                line.push_str(" = _txt(n");
-                line.push_str(&set_text.element.to_compact_string());
-                line.push(')');
-                ctx.push_line(&line);
+                if !ctx.standalone_text_elements.contains(&set_text.element) {
+                    ctx.use_helper("txt");
+                    let var_name = ctx.next_text_node(set_text.element);
+                    let mut line = String::with_capacity(32);
+                    line.push_str("const ");
+                    line.push_str(&var_name);
+                    line.push_str(" = _txt(n");
+                    line.push_str(&set_text.element.to_compact_string());
+                    line.push(')');
+                    ctx.push_line(&line);
+                }
             }
         }
     }
@@ -184,9 +208,11 @@ fn generate_block(
         ));
     }
 
-    // Generate operations
+    // Generate remaining operations (skip ChildRef/NextRef already generated above)
     for op in block.operation.iter() {
-        generate_operation(ctx, op, element_template_map);
+        if !matches!(op, OperationNode::ChildRef(_) | OperationNode::NextRef(_)) {
+            generate_operation(ctx, op, element_template_map);
+        }
     }
 
     // Generate effects

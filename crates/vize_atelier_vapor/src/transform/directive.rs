@@ -10,6 +10,7 @@ use crate::ir::{
 };
 use vize_atelier_core::{
     DirectiveNode, ElementNode, ElementType, ExpressionNode, PropNode, SimpleExpressionNode,
+    SourceLocation,
 };
 
 use super::{context::TransformContext, transform_children};
@@ -32,11 +33,58 @@ pub(crate) fn transform_directive<'a>(
                     }
                 }
             }
-            // v-bind - SetProp
+
+            // Check modifiers
+            let has_camel = dir.modifiers.iter().any(|m| m.content.as_str() == "camel");
+            let has_prop = dir.modifiers.iter().any(|m| m.content.as_str() == "prop");
+
             if let Some(ref arg) = dir.arg {
                 if let ExpressionNode::Simple(key_exp) = arg {
+                    // Dynamic attribute name (e.g. :[attr]="value") -> SetDynamicProps
+                    if !key_exp.is_static {
+                        if let Some(ref exp) = dir.exp {
+                            if let ExpressionNode::Simple(val_exp) = exp {
+                                let mut props = Vec::new_in(ctx.allocator);
+                                // Create an expression that represents { [key]: value }
+                                let obj_content = {
+                                    let mut s = vize_carton::String::from("{ [");
+                                    s.push_str(key_exp.content.as_str());
+                                    s.push_str("]: ");
+                                    s.push_str(val_exp.content.as_str());
+                                    s.push_str(" }");
+                                    s
+                                };
+                                let obj_node = SimpleExpressionNode::new(
+                                    obj_content,
+                                    false,
+                                    key_exp.loc.clone(),
+                                );
+                                props.push(Box::new_in(obj_node, ctx.allocator));
+
+                                let set_dynamic = crate::ir::SetDynamicPropsIRNode {
+                                    element: element_id,
+                                    props,
+                                    is_event: false,
+                                };
+                                let mut effect_ops = Vec::new_in(ctx.allocator);
+                                effect_ops.push(OperationNode::SetDynamicProps(set_dynamic));
+                                block.effect.push(IREffect {
+                                    operations: effect_ops,
+                                });
+                            }
+                        }
+                        return;
+                    }
+
+                    // Apply .camel modifier: camelize the key
+                    let key_content = if has_camel {
+                        camelize(&key_exp.content)
+                    } else {
+                        key_exp.content.clone()
+                    };
+
                     let key_node = SimpleExpressionNode::new(
-                        key_exp.content.clone(),
+                        key_content,
                         key_exp.is_static,
                         key_exp.loc.clone(),
                     );
@@ -59,14 +107,23 @@ pub(crate) fn transform_directive<'a>(
                         Vec::new_in(ctx.allocator)
                     };
 
+                    // Check for static class attribute to merge
+                    let final_values = if key_exp.content.as_str() == "class" {
+                        merge_static_class(ctx, el, values)
+                    } else {
+                        values
+                    };
+
                     let set_prop = SetPropIRNode {
                         element: element_id,
                         prop: IRProp {
                             key,
-                            values,
+                            values: final_values,
                             is_component: el.tag_type == ElementType::Component,
                         },
                         tag: el.tag.clone(),
+                        camel: has_camel,
+                        prop_modifier: has_prop,
                     };
 
                     // Reactive prop - add to effects
@@ -75,6 +132,30 @@ pub(crate) fn transform_directive<'a>(
                     block.effect.push(IREffect {
                         operations: effect_ops,
                     });
+                }
+            } else {
+                // v-bind without arg = v-bind object (v-bind="attrs")
+                if let Some(ref exp) = dir.exp {
+                    if let ExpressionNode::Simple(val_exp) = exp {
+                        let mut props = Vec::new_in(ctx.allocator);
+                        let val_node = SimpleExpressionNode::new(
+                            val_exp.content.clone(),
+                            val_exp.is_static,
+                            val_exp.loc.clone(),
+                        );
+                        props.push(Box::new_in(val_node, ctx.allocator));
+
+                        let set_dynamic = crate::ir::SetDynamicPropsIRNode {
+                            element: element_id,
+                            props,
+                            is_event: false,
+                        };
+                        let mut effect_ops = Vec::new_in(ctx.allocator);
+                        effect_ops.push(OperationNode::SetDynamicProps(set_dynamic));
+                        block.effect.push(IREffect {
+                            operations: effect_ops,
+                        });
+                    }
                 }
             }
         }
@@ -394,6 +475,55 @@ fn is_delegatable_event(name: &str) -> bool {
             | "dragover"
             | "drop"
     )
+}
+
+/// Camelize a hyphenated string (e.g. "view-box" -> "viewBox")
+fn camelize(s: &str) -> vize_carton::String {
+    let mut result = vize_carton::String::default();
+    let mut capitalize_next = false;
+    for c in s.chars() {
+        if c == '-' {
+            capitalize_next = true;
+        } else if capitalize_next {
+            result.push(c.to_ascii_uppercase());
+            capitalize_next = false;
+        } else {
+            result.push(c);
+        }
+    }
+    result
+}
+
+/// Merge static class attribute value into the dynamic class values
+fn merge_static_class<'a>(
+    ctx: &mut TransformContext<'a>,
+    el: &ElementNode<'a>,
+    dynamic_values: Vec<'a, Box<'a, SimpleExpressionNode<'a>>>,
+) -> Vec<'a, Box<'a, SimpleExpressionNode<'a>>> {
+    // Look for a static class="..." attribute
+    let static_class = el.props.iter().find_map(|p| {
+        if let PropNode::Attribute(attr) = p {
+            if attr.name.as_str() == "class" {
+                if let Some(ref value) = attr.value {
+                    return Some(value.content.clone());
+                }
+            }
+        }
+        None
+    });
+
+    if let Some(static_val) = static_class {
+        // Create a merged values list: the static class as the first entry
+        let mut merged = Vec::new_in(ctx.allocator);
+        let static_node = SimpleExpressionNode::new(static_val, true, SourceLocation::STUB);
+        merged.push(Box::new_in(static_node, ctx.allocator));
+        for v in dynamic_values.into_iter() {
+            merged.push(v);
+        }
+        merged
+    } else {
+        dynamic_values
+    }
 }
 
 /// Get a static attribute value from an element
