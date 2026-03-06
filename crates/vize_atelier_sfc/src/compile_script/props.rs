@@ -275,6 +275,13 @@ fn contains_top_level_arrow(s: &str) -> bool {
 fn ts_type_to_js_type(ts_type: &str) -> String {
     let ts_type = ts_type.trim();
 
+    // Strip `readonly` prefix: `readonly T[]` → `T[]`
+    let ts_type = if ts_type.starts_with("readonly ") {
+        ts_type.strip_prefix("readonly ").unwrap().trim()
+    } else {
+        ts_type
+    };
+
     // Handle string literal types: "foo" or 'bar' -> String
     if (ts_type.starts_with('"') && ts_type.ends_with('"'))
         || (ts_type.starts_with('\'') && ts_type.ends_with('\''))
@@ -417,6 +424,67 @@ fn contains_top_level_colon(s: &str) -> bool {
         }
     }
     false
+}
+
+/// Resolve prop type references using type alias/interface maps.
+/// For a prop type like `ButtonVariant`, resolves it using the type_aliases and interfaces
+/// to determine the correct JS type constructor.
+pub fn resolve_prop_js_type(
+    ts_type: &str,
+    interfaces: &FxHashMap<String, String>,
+    type_aliases: &FxHashMap<String, String>,
+) -> Option<String> {
+    let trimmed = ts_type.trim();
+    // Check if it's a simple type reference (identifier, no generics/brackets/arrows/pipes)
+    // that would resolve to `null` by default
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    // First try the normal resolution
+    let js_type = ts_type_to_js_type(trimmed);
+    if js_type != "null" {
+        return None; // Normal resolution works fine
+    }
+
+    // It resolved to null - try to look up the type name and resolve based on the actual definition
+    let base_name = if let Some(idx) = trimmed.find('<') {
+        trimmed[..idx].trim()
+    } else {
+        trimmed
+    };
+
+    // Look up in type aliases first
+    if let Some(body) = type_aliases.get(base_name) {
+        let resolved_type = ts_type_to_js_type(body.trim());
+        if resolved_type != "null" {
+            return Some(resolved_type);
+        }
+        // If the alias body contains braces, it's an object type
+        if body.contains('{') {
+            return Some("Object".to_compact_string());
+        }
+    }
+
+    // Look up in interfaces
+    if let Some(body) = interfaces.get(base_name) {
+        // Interfaces always resolve to Object
+        let _ = body;
+        return Some("Object".to_compact_string());
+    }
+
+    None
+}
+
+/// Strip the `readonly` keyword from a TypeScript type.
+/// Handles patterns like `readonly { value: string }[]` → `{ value: string }[]`
+pub fn strip_readonly_prefix(ts_type: &str) -> &str {
+    let trimmed = ts_type.trim();
+    if let Some(rest) = trimmed.strip_prefix("readonly ") {
+        rest.trim()
+    } else {
+        trimmed
+    }
 }
 
 /// Extract emit names from TypeScript type definition

@@ -1054,13 +1054,28 @@ fn build_props_emits(
                 let mut item_idx = 0;
                 for (name, prop_type) in &prop_types {
                     item_idx += 1;
+                    // Try to resolve type references for props that resolved to `null`
+                    let resolved_js_type = if prop_type.js_type == "null" {
+                        if let Some(ref ts_type) = prop_type.ts_type {
+                            super::super::props::resolve_prop_js_type(
+                                ts_type,
+                                &ctx.interfaces,
+                                &ctx.type_aliases,
+                            )
+                            .unwrap_or_else(|| prop_type.js_type.clone())
+                        } else {
+                            prop_type.js_type.clone()
+                        }
+                    } else {
+                        prop_type.js_type.clone()
+                    };
                     props_emits_buf.extend_from_slice(b"    ");
                     props_emits_buf.extend_from_slice(name.as_bytes());
                     props_emits_buf.extend_from_slice(b": { type: ");
-                    props_emits_buf.extend_from_slice(prop_type.js_type.as_bytes());
+                    props_emits_buf.extend_from_slice(resolved_js_type.as_bytes());
                     if needs_prop_type {
                         if let Some(ref ts_type) = prop_type.ts_type {
-                            if prop_type.js_type == "null" {
+                            if resolved_js_type == "null" {
                                 props_emits_buf.extend_from_slice(b" as unknown as PropType<");
                             } else {
                                 props_emits_buf.extend_from_slice(b" as PropType<");
