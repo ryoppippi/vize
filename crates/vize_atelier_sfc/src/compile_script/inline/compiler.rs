@@ -68,9 +68,17 @@ pub fn compile_script_setup_inline(
     // Check if defineModel was used
     let has_define_model = !ctx.macros.define_models.is_empty();
 
+    // Check if defineSlots was used
+    let has_define_slots = ctx.macros.define_slots.is_some();
+
     // mergeDefaults import comes first if needed
     if needs_merge_defaults {
         output.extend_from_slice(b"import { mergeDefaults as _mergeDefaults } from 'vue'\n");
+    }
+
+    // useSlots import if defineSlots was used
+    if has_define_slots {
+        output.extend_from_slice(b"import { useSlots as _useSlots } from 'vue'\n");
     }
 
     // useModel import if defineModel was used
@@ -86,24 +94,13 @@ pub fn compile_script_setup_inline(
         );
     }
 
-    // Check if we need PropType import (type-based defineProps in TS mode)
-    let needs_prop_type = is_ts
-        && ctx
-            .macros
-            .define_props
-            .as_ref()
-            .is_some_and(|p| p.type_args.is_some());
+    // Vue's compiler-sfc does not use PropType in output - props are defined with
+    // runtime type constructors (String, Number, etc.) and optional/required flags.
+    let needs_prop_type = false;
 
     // defineComponent import for TypeScript
     if is_ts {
-        if needs_prop_type {
-            output.extend_from_slice(
-                b"import { defineComponent as _defineComponent, type PropType } from 'vue'\n",
-            );
-        } else {
-            output
-                .extend_from_slice(b"import { defineComponent as _defineComponent } from 'vue'\n");
-        }
+        output.extend_from_slice(b"import { defineComponent as _defineComponent } from 'vue'\n");
     }
 
     // Template imports (Vue helpers)
@@ -298,6 +295,15 @@ pub fn compile_script_setup_inline(
             output.extend_from_slice(b" = _useModel(__props, \"");
             output.extend_from_slice(model_name.as_bytes());
             output.extend_from_slice(b"\")\n");
+        }
+    }
+
+    // Slots binding: const slots = _useSlots()
+    if let Some(ref slots_macro) = ctx.macros.define_slots {
+        if let Some(ref binding_name) = slots_macro.binding_name {
+            output.extend_from_slice(b"const ");
+            output.extend_from_slice(binding_name.as_bytes());
+            output.extend_from_slice(b" = _useSlots()\n");
         }
     }
 
@@ -1142,12 +1148,6 @@ fn build_model_props_emits(
                 buf.extend_from_slice(b"Modifiers");
             }
             buf.extend_from_slice(b"\": {},\n");
-        }
-        // Remove trailing comma from last prop
-        if buf.ends_with(b",\n") {
-            let len = buf.len();
-            buf[len - 2] = b'\n';
-            buf.truncate(len - 1);
         }
         buf.extend_from_slice(b"  },\n");
     }

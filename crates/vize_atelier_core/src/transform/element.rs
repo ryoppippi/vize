@@ -21,7 +21,6 @@ pub fn transform_element<'a>(
             ctx.helper(RuntimeHelper::CreateElementVNode);
         }
         ElementType::Component => {
-            ctx.helper(RuntimeHelper::CreateVNode);
             // Only add ResolveComponent if component is not in binding metadata
             let is_in_bindings = ctx
                 .options
@@ -32,7 +31,11 @@ pub fn transform_element<'a>(
             if !is_in_bindings {
                 ctx.helper(RuntimeHelper::ResolveComponent);
             }
-            ctx.add_component(el.tag.clone());
+            // Defer add_component to exit phase so inner components resolve before outer ones
+            let tag = el.tag.clone();
+            return Some(vec![std::boxed::Box::new(move |ctx| {
+                ctx.add_component(tag);
+            })]);
         }
         ElementType::Slot => {
             ctx.helper(RuntimeHelper::RenderSlot);

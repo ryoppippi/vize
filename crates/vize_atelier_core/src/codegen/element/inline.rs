@@ -26,6 +26,12 @@ use vize_carton::ToCompactString;
 
 /// Generate element code (non-block)
 pub fn generate_element(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
+    // Check for v-once directive - handle it specially with cache
+    if super::helpers::has_v_once(el) {
+        super::v_once::generate_v_once_element(ctx, el);
+        return;
+    }
+
     // Check for v-memo directive - wrap with memoization
     let memo_cache_index = if has_v_memo(el) {
         if let Some(memo_exp) = get_memo_exp(el) {

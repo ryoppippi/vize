@@ -423,7 +423,52 @@ fn contains_top_level_colon(s: &str) -> bool {
 pub fn extract_emit_names_from_type(type_args: &str) -> Vec<String> {
     let mut emits = Vec::new();
 
-    // Match patterns like: (e: 'eventName') or (event: 'eventName', ...)
+    // First, try Vue 3.3+ shorthand format:
+    //   { change: [value: string]; submit: []; update: [id: number] }
+    // Property names before `:` followed by `[` are event names
+    let trimmed = type_args.trim();
+    let is_shorthand = trimmed.starts_with('{')
+        && trimmed.contains('[')
+        && !trimmed.contains("(e:")
+        && !trimmed.contains("(event:");
+
+    if is_shorthand {
+        // Extract property names from { name: [...], name: [...] } format
+        let inner = if trimmed.starts_with('{') && trimmed.ends_with('}') {
+            &trimmed[1..trimmed.len() - 1]
+        } else {
+            trimmed
+        };
+
+        // Split by lines or semicolons and extract property names
+        for segment in inner.split([';', '\n']) {
+            let seg = segment.trim();
+            if seg.is_empty() {
+                continue;
+            }
+            // Find the property name before the first ':'
+            if let Some(colon_pos) = seg.find(':') {
+                let name = seg[..colon_pos].trim();
+                // Remove quotes if present
+                let name = name.trim_matches(|c| c == '\'' || c == '"');
+                if !name.is_empty()
+                    && name
+                        .chars()
+                        .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
+                {
+                    emits.push(name.to_compact_string());
+                }
+            }
+        }
+
+        if !emits.is_empty() {
+            return emits;
+        }
+    }
+
+    // Fall back to call signature format:
+    //   (e: 'eventName'): void; (e: 'otherEvent', value: string): void
+    // Match quoted string literals in (e: 'name') patterns
     let mut in_string = false;
     let mut quote_char = ' ';
     let mut current_string = String::default();

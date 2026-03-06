@@ -10,6 +10,23 @@ use super::super::{
 use vize_carton::String;
 use vize_carton::ToCompactString;
 
+/// Check if an expression is a static literal (no runtime identifiers).
+/// Returns true for: object literals, array literals, string literals, numbers
+/// that don't reference any runtime variables (no `_ctx.` after processing).
+fn is_static_expression(exp: &ExpressionNode<'_>) -> bool {
+    match exp {
+        ExpressionNode::Simple(simple) => {
+            if simple.is_static {
+                return true;
+            }
+            // After prefix processing, if the content doesn't contain _ctx.,
+            // it's a constant expression (only has literals)
+            !simple.content.contains("_ctx.")
+        }
+        ExpressionNode::Compound(_) => false,
+    }
+}
+
 /// Check if a directive will produce valid output
 pub fn is_supported_directive(dir: &DirectiveNode<'_>) -> bool {
     // v-model with dynamic arg on components needs special props handling
@@ -151,6 +168,9 @@ fn generate_vbind_prop(
         }
     }
     if let Some(exp) = &dir.exp {
+        // Check if expression is a static literal (no runtime references)
+        let is_static_literal = is_static_expression(exp);
+
         if is_class {
             if !ctx.skip_normalize {
                 ctx.use_helper(RuntimeHelper::NormalizeClass);
@@ -170,7 +190,9 @@ fn generate_vbind_prop(
                 ctx.push(")");
             }
         } else if is_style {
-            if !ctx.skip_normalize {
+            // Skip normalizeStyle for static literal expressions (e.g., { color: 'red' })
+            let needs_normalize = !ctx.skip_normalize && !is_static_literal;
+            if needs_normalize {
                 ctx.use_helper(RuntimeHelper::NormalizeStyle);
                 ctx.push("_normalizeStyle(");
             }
@@ -203,7 +225,7 @@ fn generate_vbind_prop(
             } else {
                 generate_expression(ctx, exp);
             }
-            if !ctx.skip_normalize {
+            if needs_normalize {
                 ctx.push(")");
             }
         } else {
