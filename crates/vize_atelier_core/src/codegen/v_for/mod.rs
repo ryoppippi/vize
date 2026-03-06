@@ -23,21 +23,12 @@ pub(crate) use helpers::{
     extract_destructure_params, get_element_key, is_numeric_source, is_valid_ident, split_top_level,
 };
 
-/// Generate for node with an optional branch key (for v-if + v-for coexistence)
-pub fn generate_for_with_key(
-    ctx: &mut CodegenContext,
-    for_node: &ForNode<'_>,
-    branch_key: Option<&str>,
-) {
-    generate_for_inner(ctx, for_node, branch_key)
-}
-
 /// Generate for node
 pub fn generate_for(ctx: &mut CodegenContext, for_node: &ForNode<'_>) {
-    generate_for_inner(ctx, for_node, None)
+    generate_for_inner(ctx, for_node)
 }
 
-fn generate_for_inner(ctx: &mut CodegenContext, for_node: &ForNode<'_>, branch_key: Option<&str>) {
+fn generate_for_inner(ctx: &mut CodegenContext, for_node: &ForNode<'_>) {
     ctx.use_helper(RuntimeHelper::OpenBlock);
     ctx.use_helper(RuntimeHelper::CreateElementBlock);
     ctx.use_helper(RuntimeHelper::Fragment);
