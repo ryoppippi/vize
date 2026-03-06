@@ -45,7 +45,7 @@ pub(crate) fn generate_operation_inline(
                 if first.is_static {
                     cstr!("\"{}\"", first.content)
                 } else {
-                    cstr!("_ctx.{}", first.content)
+                    ctx.resolve_expression(&first.content).into()
                 }
             } else {
                 vize_carton::CompactString::from("undefined")
@@ -84,11 +84,12 @@ pub(crate) fn generate_operation_inline(
                 .values
                 .iter()
                 .map(|v| {
-                    ctx.use_helper("toDisplayString");
                     if v.is_static {
                         cstr!("\"{}\"", v.content)
                     } else {
-                        cstr!("_toDisplayString(_ctx.{})", v.content)
+                        ctx.use_helper("toDisplayString");
+                        let resolved = ctx.resolve_expression(&v.content);
+                        cstr!("_toDisplayString({})", resolved)
                     }
                 })
                 .collect();

@@ -126,7 +126,6 @@ pub(crate) fn transform_element<'a>(
                             // v-on -> onXxx prop
                             if let Some(ref arg) = dir.arg {
                                 if let ExpressionNode::Simple(event_exp) = arg {
-                                    // Convert event name to onXxx format
                                     let event_name = event_exp.content.as_str();
                                     let on_name = if event_name.is_empty() {
                                         String::from("on")
@@ -167,6 +166,115 @@ pub(crate) fn transform_element<'a>(
                                         is_component: true,
                                     });
                                 }
+                            }
+                        } else if dir.name.as_str() == "model" {
+                            // v-model -> modelValue + onUpdate:modelValue props
+                            let binding = if let Some(ref exp) = dir.exp {
+                                match exp {
+                                    ExpressionNode::Simple(s) => s.content.clone(),
+                                    _ => String::from(""),
+                                }
+                            } else {
+                                String::from("")
+                            };
+
+                            // Determine prop name from argument (default: "modelValue")
+                            let prop_name = dir
+                                .arg
+                                .as_ref()
+                                .map(|arg| match arg {
+                                    ExpressionNode::Simple(s) => s.content.clone(),
+                                    _ => String::from("modelValue"),
+                                })
+                                .unwrap_or_else(|| String::from("modelValue"));
+
+                            // Add modelValue prop
+                            let key_node = SimpleExpressionNode::new(
+                                prop_name.clone(),
+                                true,
+                                SourceLocation::STUB,
+                            );
+                            let key = Box::new_in(key_node, ctx.allocator);
+                            let mut values = Vec::new_in(ctx.allocator);
+                            let val_node = SimpleExpressionNode::new(
+                                binding.clone(),
+                                false,
+                                SourceLocation::STUB,
+                            );
+                            values.push(Box::new_in(val_node, ctx.allocator));
+                            props.push(IRProp {
+                                key,
+                                values,
+                                is_component: true,
+                            });
+
+                            // Add onUpdate:propName event prop
+                            let event_key = {
+                                let mut s = String::from("onUpdate:");
+                                s.push_str(prop_name.as_str());
+                                s
+                            };
+                            let event_key_node =
+                                SimpleExpressionNode::new(event_key, true, SourceLocation::STUB);
+                            let event_key_box = Box::new_in(event_key_node, ctx.allocator);
+                            // Handler: _value => (_ctx.binding = _value)
+                            // Mark as static so generate won't add _ctx. prefix
+                            let handler_content = {
+                                let mut s = String::from("__RAW__() => _value => (_ctx.");
+                                s.push_str(binding.as_str());
+                                s.push_str(" = _value)");
+                                s
+                            };
+                            let handler_node = SimpleExpressionNode::new(
+                                handler_content,
+                                true,
+                                SourceLocation::STUB,
+                            );
+                            let mut handler_values = Vec::new_in(ctx.allocator);
+                            handler_values.push(Box::new_in(handler_node, ctx.allocator));
+                            props.push(IRProp {
+                                key: event_key_box,
+                                values: handler_values,
+                                is_component: true,
+                            });
+
+                            // Add modifiers prop if present
+                            if !dir.modifiers.is_empty() {
+                                let mod_key_name = if prop_name == "modelValue" {
+                                    String::from("modelModifiers")
+                                } else {
+                                    let mut s = prop_name.clone();
+                                    s.push_str("Modifiers");
+                                    s
+                                };
+                                let mod_key_node = SimpleExpressionNode::new(
+                                    mod_key_name,
+                                    true,
+                                    SourceLocation::STUB,
+                                );
+                                let mod_key = Box::new_in(mod_key_node, ctx.allocator);
+                                // Build modifiers object content
+                                let mut mod_content = String::from("__RAW__() => ({ ");
+                                for (i, m) in dir.modifiers.iter().enumerate() {
+                                    if i > 0 {
+                                        mod_content.push_str(", ");
+                                    }
+                                    mod_content.push_str(m.content.as_str());
+                                    mod_content.push_str(": true");
+                                }
+                                mod_content.push_str(" })");
+                                let mod_val_node = SimpleExpressionNode::new(
+                                    mod_content,
+                                    true,
+                                    SourceLocation::STUB,
+                                );
+                                let mut mod_values = Vec::new_in(ctx.allocator);
+                                mod_values.push(Box::new_in(mod_val_node, ctx.allocator));
+                                props.push(IRProp {
+                                    key: mod_key,
+                                    values: mod_values,
+                                    is_component: true,
+                                });
                             }
                         }
                     }
@@ -261,8 +369,8 @@ pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
         }
     }
 
-    if el.is_self_closing {
-        template.push_str(" />");
+    if el.is_self_closing || is_void_element(&el.tag) {
+        template.push('>');
     } else {
         template.push('>');
 
@@ -339,4 +447,25 @@ pub(crate) fn is_static_element(el: &ElementNode<'_>) -> bool {
     }
 
     true
+}
+
+/// Check if an element is a void (self-closing) HTML element
+fn is_void_element(tag: &str) -> bool {
+    matches!(
+        tag,
+        "area"
+            | "base"
+            | "br"
+            | "col"
+            | "embed"
+            | "hr"
+            | "img"
+            | "input"
+            | "link"
+            | "meta"
+            | "param"
+            | "source"
+            | "track"
+            | "wbr"
+    )
 }

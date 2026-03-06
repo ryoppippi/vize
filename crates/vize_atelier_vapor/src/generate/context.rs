@@ -2,6 +2,19 @@
 
 use vize_carton::{cstr, FxHashMap, FxHashSet, String, ToCompactString};
 
+/// For-loop scope entry
+#[derive(Debug, Clone)]
+pub(crate) struct ForScope {
+    /// Value alias (e.g., "item") -> "_for_item{depth}"
+    pub(crate) value_alias: Option<String>,
+    /// Key alias (e.g., "index" or "key") -> "_for_key{depth}"
+    pub(crate) key_alias: Option<String>,
+    /// Index alias -> unused in current vapor
+    pub(crate) index_alias: Option<String>,
+    /// Depth of for nesting (0-based)
+    pub(crate) depth: usize,
+}
+
 /// Generate context
 pub(crate) struct GenerateContext<'a> {
     pub(crate) code: String,
@@ -15,6 +28,10 @@ pub(crate) struct GenerateContext<'a> {
     pub(crate) delegate_events: FxHashSet<String>,
     /// Text node references (element_id -> text_node_var)
     pub(crate) text_nodes: FxHashMap<usize, String>,
+    /// Whether currently inside a non-root block (v-if, v-for)
+    pub(crate) is_fragment: bool,
+    /// For-loop scope stack
+    pub(crate) for_scopes: std::vec::Vec<ForScope>,
 }
 
 impl<'a> GenerateContext<'a> {
@@ -27,7 +44,40 @@ impl<'a> GenerateContext<'a> {
             used_helpers: FxHashSet::default(),
             delegate_events: FxHashSet::default(),
             text_nodes: FxHashMap::default(),
+            is_fragment: false,
+            for_scopes: std::vec::Vec::new(),
         }
+    }
+
+    /// Resolve an expression, replacing for-loop aliases with _for_item/key references
+    pub(crate) fn resolve_expression(&self, expr: &str) -> String {
+        // Check for-loop scopes (innermost first)
+        for scope in self.for_scopes.iter().rev() {
+            if let Some(ref value_alias) = scope.value_alias {
+                let for_var = cstr!("_for_item{}", scope.depth);
+                // Check if expression starts with or is the value alias
+                if expr == value_alias.as_str() {
+                    return cstr!("{}.value", for_var);
+                }
+                // Check member expression: "item.xxx"
+                let prefix = [value_alias.as_str(), "."].concat();
+                if expr.starts_with(&prefix) {
+                    return cstr!("{}.value.{}", for_var, &expr[prefix.len()..]);
+                }
+            }
+            if let Some(ref key_alias) = scope.key_alias {
+                let for_key_var = cstr!("_for_key{}", scope.depth);
+                if expr == key_alias.as_str() {
+                    return cstr!("{}.value", for_key_var);
+                }
+                let prefix = [key_alias.as_str(), "."].concat();
+                if expr.starts_with(&prefix) {
+                    return cstr!("{}.value.{}", for_key_var, &expr[prefix.len()..]);
+                }
+            }
+        }
+        // Not a for-loop variable, use _ctx prefix
+        cstr!("_ctx.{}", expr)
     }
 
     pub(crate) fn add_delegate_event(&mut self, event_name: &str) {

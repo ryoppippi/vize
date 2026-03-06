@@ -34,16 +34,46 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
         ctx.use_helper("template");
     }
 
+    // Collect root template indices (templates used in top-level block returns
+    // and in root-level v-if branches that return a single element)
+    let mut root_template_indices: std::collections::HashSet<usize> =
+        std::collections::HashSet::new();
+    for element_id in ir.block.returns.iter() {
+        if let Some(&template_index) = ir.element_template_map.get(element_id) {
+            root_template_indices.insert(template_index);
+        }
+    }
+    // Also mark templates from root-level v-if branches as root
+    for op in ir.block.operation.iter() {
+        if let OperationNode::If(if_node) = op {
+            collect_root_if_templates(
+                if_node,
+                &ir.element_template_map,
+                &mut root_template_indices,
+            );
+        }
+    }
+
     // Generate template declarations (to separate string, we'll prepend imports later)
     let mut template_code = String::default();
     for (i, template) in ir.templates.iter().enumerate() {
-        writeln!(
-            template_code,
-            "const t{} = _template(\"{}\", true)",
-            i,
-            escape_template(template)
-        )
-        .ok();
+        if root_template_indices.contains(&i) {
+            writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", true)",
+                i,
+                escape_template(template)
+            )
+            .ok();
+        } else {
+            writeln!(
+                template_code,
+                "const t{} = _template(\"{}\")",
+                i,
+                escape_template(template)
+            )
+            .ok();
+        }
     }
 
     // First pass: collect delegate events
@@ -152,6 +182,37 @@ fn generate_block(
             ctx.push_line(&["return ", &returns].concat());
         } else {
             ctx.push_line(&["return [", &returns, "]"].concat());
+        }
+    }
+}
+
+/// Collect root template indices from v-if branches (recursive for v-else-if chains)
+fn collect_root_if_templates(
+    if_node: &crate::ir::IfIRNode<'_>,
+    element_template_map: &FxHashMap<usize, usize>,
+    root_indices: &mut std::collections::HashSet<usize>,
+) {
+    // Only mark as root if the branch returns a single element
+    if if_node.positive.returns.len() == 1 {
+        let element_id = if_node.positive.returns[0];
+        if let Some(&template_index) = element_template_map.get(&element_id) {
+            root_indices.insert(template_index);
+        }
+    }
+    // Handle negative branch
+    if let Some(ref negative) = if_node.negative {
+        match negative {
+            crate::ir::NegativeBranch::Block(block) => {
+                if block.returns.len() == 1 {
+                    let element_id = block.returns[0];
+                    if let Some(&template_index) = element_template_map.get(&element_id) {
+                        root_indices.insert(template_index);
+                    }
+                }
+            }
+            crate::ir::NegativeBranch::If(nested_if) => {
+                collect_root_if_templates(nested_if, element_template_map, root_indices);
+            }
         }
     }
 }

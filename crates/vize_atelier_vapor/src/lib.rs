@@ -103,6 +103,7 @@ pub fn compile_vapor<'a>(
         ssr: options.ssr,
         binding_metadata: options.binding_metadata,
         inline: options.inline,
+        vapor: true,
         ..Default::default()
     };
     transform(allocator, &mut root, transform_opts, None);

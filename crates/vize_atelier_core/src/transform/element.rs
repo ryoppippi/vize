@@ -114,12 +114,12 @@ fn process_element_props<'a>(ctx: &mut TransformContext<'a>, el: &mut Box<'a, El
         process_directive_expressions(ctx, el);
     }
 
-    // Collect indices of v-model directives to process
+    // Collect indices of v-model directives to process (skip in vapor mode)
     let mut model_indices: std::vec::Vec<usize> = std::vec::Vec::new();
     for (i, prop) in el.props.iter().enumerate() {
         if let PropNode::Directive(dir) = prop {
             match dir.name.as_str() {
-                "model" => {
+                "model" if !ctx.options.vapor => {
                     model_indices.push(i);
                 }
                 "slot" => {

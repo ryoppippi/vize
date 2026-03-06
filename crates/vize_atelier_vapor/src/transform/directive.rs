@@ -9,7 +9,7 @@ use crate::ir::{
     SetEventIRNode, SetHtmlIRNode, SetPropIRNode, SetTextIRNode,
 };
 use vize_atelier_core::{
-    DirectiveNode, ElementNode, ElementType, ExpressionNode, SimpleExpressionNode,
+    DirectiveNode, ElementNode, ElementType, ExpressionNode, PropNode, SimpleExpressionNode,
 };
 
 use super::{context::TransformContext, transform_children};
@@ -24,6 +24,14 @@ pub(crate) fn transform_directive<'a>(
 ) {
     match dir.name.as_str() {
         "bind" => {
+            // Skip :key - handled by v-for key function
+            if let Some(ref arg) = dir.arg {
+                if let ExpressionNode::Simple(key_exp) = arg {
+                    if key_exp.content.as_str() == "key" {
+                        return;
+                    }
+                }
+            }
             // v-bind - SetProp
             if let Some(ref arg) = dir.arg {
                 if let ExpressionNode::Simple(key_exp) = arg {
@@ -216,6 +224,85 @@ pub(crate) fn transform_directive<'a>(
                 }
             }
         }
+        "show" => {
+            // v-show - builtin directive
+            let mut new_dir = DirectiveNode::new(ctx.allocator, dir.name.clone(), dir.loc.clone());
+            if let Some(ref exp) = dir.exp {
+                match exp {
+                    ExpressionNode::Simple(s) => {
+                        let node = SimpleExpressionNode::new(
+                            s.content.clone(),
+                            s.is_static,
+                            s.loc.clone(),
+                        );
+                        new_dir.exp =
+                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
+                    }
+                    _ => {}
+                }
+            }
+
+            let dir_node = DirectiveIRNode {
+                element: element_id,
+                dir: Box::new_in(new_dir, ctx.allocator),
+                name: vize_carton::String::from("vShow"),
+                builtin: true,
+                tag: el.tag.clone(),
+                input_type: get_static_attr(el, "type"),
+            };
+
+            block.operation.push(OperationNode::Directive(dir_node));
+        }
+        "model" => {
+            // v-model - builtin directive
+            let mut new_dir = DirectiveNode::new(ctx.allocator, dir.name.clone(), dir.loc.clone());
+            if let Some(ref exp) = dir.exp {
+                match exp {
+                    ExpressionNode::Simple(s) => {
+                        let node = SimpleExpressionNode::new(
+                            s.content.clone(),
+                            s.is_static,
+                            s.loc.clone(),
+                        );
+                        new_dir.exp =
+                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
+                    }
+                    _ => {}
+                }
+            }
+            if let Some(ref arg) = dir.arg {
+                match arg {
+                    ExpressionNode::Simple(s) => {
+                        let node = SimpleExpressionNode::new(
+                            s.content.clone(),
+                            s.is_static,
+                            s.loc.clone(),
+                        );
+                        new_dir.arg =
+                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
+                    }
+                    _ => {}
+                }
+            }
+            for m in dir.modifiers.iter() {
+                new_dir.modifiers.push(SimpleExpressionNode::new(
+                    m.content.clone(),
+                    m.is_static,
+                    m.loc.clone(),
+                ));
+            }
+
+            let dir_node = DirectiveIRNode {
+                element: element_id,
+                dir: Box::new_in(new_dir, ctx.allocator),
+                name: vize_carton::String::from("model"),
+                builtin: true,
+                tag: el.tag.clone(),
+                input_type: get_static_attr(el, "type"),
+            };
+
+            block.operation.push(OperationNode::Directive(dir_node));
+        }
         _ => {
             // Custom directive - create a copy of the directive
             let new_dir = DirectiveNode::new(ctx.allocator, dir.name.clone(), dir.loc.clone());
@@ -225,9 +312,25 @@ pub(crate) fn transform_directive<'a>(
                 dir: Box::new_in(new_dir, ctx.allocator),
                 name: dir.name.clone(),
                 builtin: false,
+                tag: el.tag.clone(),
+                input_type: vize_carton::String::from(""),
             };
 
             block.operation.push(OperationNode::Directive(dir_node));
         }
     }
+}
+
+/// Get a static attribute value from an element
+fn get_static_attr(el: &ElementNode<'_>, attr_name: &str) -> vize_carton::String {
+    for prop in el.props.iter() {
+        if let PropNode::Attribute(attr) = prop {
+            if attr.name.as_str() == attr_name {
+                if let Some(ref value) = attr.value {
+                    return value.content.clone();
+                }
+            }
+        }
+    }
+    vize_carton::String::from("")
 }

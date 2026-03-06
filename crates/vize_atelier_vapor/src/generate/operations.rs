@@ -75,7 +75,7 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
         if first.is_static {
             cstr!("\"{}\"", first.content)
         } else {
-            cstr!("_ctx.{}", first.content)
+            ctx.resolve_expression(&first.content).into()
         }
     } else {
         vize_carton::CompactString::from("undefined")
@@ -132,11 +132,12 @@ fn generate_set_text(ctx: &mut GenerateContext, set_text: &SetTextIRNode<'_>) {
         .values
         .iter()
         .map(|v| {
-            ctx.use_helper("toDisplayString");
             if v.is_static {
                 cstr!("\"{}\"", v.content)
             } else {
-                cstr!("_toDisplayString(_ctx.{})", v.content)
+                ctx.use_helper("toDisplayString");
+                let resolved = ctx.resolve_expression(&v.content);
+                cstr!("_toDisplayString({})", resolved)
             }
         })
         .collect();
@@ -165,22 +166,21 @@ fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>)
         String::from("() => {}")
     };
 
+    let resolved_handler = ctx.resolve_expression(&handler);
     // Determine handler format based on content
     let invoker_body = if handler.contains("$event") {
         // Handler uses $event - pass it as parameter
-        cstr!("$event => (_ctx.{handler})")
+        cstr!("$event => ({})", resolved_handler)
     } else if handler.contains("?.") {
-        // Optional call expression like foo?.() or foo?.bar() - cache it
-        cstr!("(...args) => (_ctx.{handler})")
+        cstr!("(...args) => ({})", resolved_handler)
     } else if is_inline_statement(&handler) {
-        // Inline statement like count++ or foo = bar
-        cstr!("() => (_ctx.{handler})")
-    } else if handler.contains("(") {
+        cstr!("() => ({})", resolved_handler)
+    } else if handler.contains('(') {
         // Handler is a call expression like handler()
-        cstr!("e => _ctx.{handler}(e)")
+        cstr!("() => ({})", resolved_handler)
     } else {
         // Handler is a method reference like handler
-        cstr!("e => _ctx.{handler}(e)")
+        cstr!("e => {}(e)", resolved_handler)
     };
 
     ctx.push_line_fmt(format_args!(
@@ -251,6 +251,34 @@ fn generate_prepend_node(ctx: &mut GenerateContext, prepend: &PrependNodeIRNode)
 /// Generate Directive
 fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>) {
     let element = cstr!("n{}", directive.element);
+
+    // Handle v-show
+    if directive.name.as_str() == "vShow" {
+        ctx.use_helper("applyVShow");
+        let value = if let Some(ref exp) = directive.dir.exp {
+            match exp {
+                ExpressionNode::Simple(e) => {
+                    if e.is_static {
+                        cstr!("\"{}\"", e.content)
+                    } else {
+                        prefix_expression(&e.content)
+                    }
+                }
+                _ => vize_carton::CompactString::from("undefined"),
+            }
+        } else {
+            vize_carton::CompactString::from("undefined")
+        };
+        ctx.push_line_fmt(format_args!("_applyVShow({}, () => ({}))", element, value));
+        return;
+    }
+
+    // Handle v-model on elements
+    if directive.name.as_str() == "model" {
+        generate_v_model(ctx, directive);
+        return;
+    }
+
     let name = &directive.name;
 
     let arg = if let Some(ref arg) = directive.dir.arg {
@@ -289,6 +317,64 @@ fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>
     ));
 }
 
+/// Generate v-model for element
+fn generate_v_model(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>) {
+    let element = cstr!("n{}", directive.element);
+
+    let binding = if let Some(ref exp) = directive.dir.exp {
+        match exp {
+            ExpressionNode::Simple(e) => e.content.clone(),
+            _ => vize_carton::String::from(""),
+        }
+    } else {
+        vize_carton::String::from("")
+    };
+
+    let helper = if directive.tag.as_str() == "select" {
+        "applySelectModel"
+    } else if directive.tag.as_str() == "textarea" {
+        "applyTextModel"
+    } else if directive.tag.as_str() == "input" {
+        match directive.input_type.as_str() {
+            "checkbox" => "applyCheckboxModel",
+            "radio" => "applyRadioModel",
+            _ => "applyTextModel",
+        }
+    } else {
+        "applyTextModel"
+    };
+
+    ctx.use_helper(helper);
+
+    // Build modifiers options
+    let modifiers = &directive.dir.modifiers;
+    let mut mod_parts: std::vec::Vec<String> = std::vec::Vec::new();
+    for m in modifiers.iter() {
+        match m.content.as_str() {
+            "lazy" => mod_parts.push("lazy: true".into()),
+            "number" => mod_parts.push("number: true".into()),
+            "trim" => mod_parts.push("trim: true".into()),
+            _ => {}
+        }
+    }
+
+    if mod_parts.is_empty() {
+        ctx.push_line_fmt(format_args!(
+            "_{}({}, () => (_ctx.{}), _value => (_ctx.{} = _value))",
+            helper, element, binding, binding
+        ));
+    } else {
+        ctx.push_line_fmt(format_args!(
+            "_{}({}, () => (_ctx.{}), _value => (_ctx.{} = _value), {{ {} }})",
+            helper,
+            element,
+            binding,
+            binding,
+            mod_parts.join(",")
+        ));
+    }
+}
+
 /// Generate If
 fn generate_if(
     ctx: &mut GenerateContext,
@@ -309,7 +395,8 @@ fn generate_if_inner(
     let condition = if if_node.condition.is_static {
         ["\"", if_node.condition.content.as_str(), "\""].concat()
     } else {
-        ["(_ctx.", if_node.condition.content.as_str(), ")"].concat()
+        let resolved = ctx.resolve_expression(&if_node.condition.content);
+        ["(", &resolved, ")"].concat()
     };
 
     ctx.push_line(
@@ -323,6 +410,8 @@ fn generate_if_inner(
         .concat(),
     );
 
+    let was_fragment = ctx.is_fragment;
+    ctx.is_fragment = true;
     ctx.indent();
     generate_block(ctx, &if_node.positive, element_template_map);
     ctx.deindent();
@@ -347,6 +436,7 @@ fn generate_if_inner(
     } else {
         ctx.push_line("})");
     }
+    ctx.is_fragment = was_fragment;
 }
 
 /// Generate nested if (for v-else-if chains - starts inline without leading indent)
@@ -360,7 +450,8 @@ fn generate_nested_if(
     let condition = if if_node.condition.is_static {
         ["\"", if_node.condition.content.as_str(), "\""].concat()
     } else {
-        ["(_ctx.", if_node.condition.content.as_str(), ")"].concat()
+        let resolved = ctx.resolve_expression(&if_node.condition.content);
+        ["(", &resolved, ")"].concat()
     };
 
     // Start inline - no leading indent or newline
@@ -401,31 +492,93 @@ fn generate_for(
 ) {
     ctx.use_helper("createFor");
 
+    let depth = ctx.for_scopes.len();
     let source = if for_node.source.is_static {
-        ["\"", for_node.source.content.as_str(), "\""].concat()
+        ["(", for_node.source.content.as_str(), ")"].concat()
     } else {
-        ["(_ctx.", for_node.source.content.as_str(), " || [])"].concat()
+        let resolved = ctx.resolve_expression(&for_node.source.content);
+        ["(", &resolved, ")"].concat()
     };
 
-    let value_name = for_node
-        .value
-        .as_ref()
-        .map(|v| v.content.as_str())
-        .unwrap_or("_item");
-    let key_name = for_node.key.as_ref().map(|k| k.content.as_str());
-    let index_name = for_node.index.as_ref().map(|i| i.content.as_str());
+    let value_alias = for_node.value.as_ref().map(|v| v.content.clone());
+    let key_alias = for_node.key.as_ref().map(|k| k.content.clone());
 
-    let params: String = match (key_name, index_name) {
-        (Some(k), Some(i)) => [value_name, ", ", k, ", ", i].concat().into(),
-        (Some(k), None) => [value_name, ", ", k].concat().into(),
-        _ => value_name.to_compact_string(),
+    // Build parameter list using _for_item0, _for_key0 naming
+    let for_item_var = cstr!("_for_item{}", depth);
+    let for_key_var = cstr!("_for_key{}", depth);
+
+    let params: String = if key_alias.is_some() {
+        [for_item_var.as_str(), ", ", for_key_var.as_str()]
+            .concat()
+            .into()
+    } else {
+        for_item_var.clone().into()
     };
 
-    ctx.push_line(&["_createFor(() => ", &source, ", (", &params, ") => {"].concat());
+    // Push for scope before generating body
+    let scope = super::context::ForScope {
+        value_alias: value_alias.clone(),
+        key_alias: key_alias.clone(),
+        index_alias: for_node.index.as_ref().map(|i| i.content.clone()),
+        depth,
+    };
+    ctx.for_scopes.push(scope);
+
+    let was_fragment = ctx.is_fragment;
+    ctx.is_fragment = true;
+
+    let for_id_str = for_node.id.to_compact_string();
+    ctx.push_line(
+        &[
+            "const n",
+            &for_id_str,
+            " = _createFor(() => ",
+            &source,
+            ", (",
+            &params,
+            ") => {",
+        ]
+        .concat(),
+    );
     ctx.indent();
     generate_block(ctx, &for_node.render, element_template_map);
     ctx.deindent();
-    ctx.push_line("})");
+
+    // Generate key function if key_prop is provided
+    // Check for :key attribute in the for node's render block
+    let key_func = generate_for_key_function(for_node);
+    if let Some(key_fn) = key_func {
+        ctx.push_line(&["}, ", &key_fn, ")"].concat());
+    } else {
+        ctx.push_line("})");
+    }
+
+    ctx.is_fragment = was_fragment;
+    ctx.for_scopes.pop();
+}
+
+/// Generate key function for v-for
+fn generate_for_key_function(for_node: &ForIRNode<'_>) -> Option<String> {
+    if let Some(ref key_prop) = for_node.key_prop {
+        let key_expr = &key_prop.content;
+        // Build params: (value_alias) or (value_alias, key_alias)
+        let value_name = for_node
+            .value
+            .as_ref()
+            .map(|v| v.content.as_str())
+            .unwrap_or("_item");
+        let key_name = for_node.key.as_ref().map(|k| k.content.as_str());
+
+        let params = if let Some(k) = key_name {
+            [value_name, ", ", k].concat()
+        } else {
+            value_name.to_compact_string().into()
+        };
+
+        Some(cstr!("({params}) => ({key_expr})").into())
+    } else {
+        None
+    }
 }
 
 /// Generate CreateComponent
@@ -460,13 +613,13 @@ fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCompon
                 let is_event = key.as_str().starts_with("on") && key.len() > 2;
 
                 let value: String = if let Some(first) = p.values.first() {
-                    if first.is_static {
+                    if first.content.starts_with("__RAW__") {
+                        String::from(&first.content.as_str()[7..])
+                    } else if first.is_static {
                         ["() => (\"", first.content.as_str(), "\")"].concat().into()
                     } else if is_event {
-                        // Event handlers: () => _ctx.handler
                         ["() => _ctx.", first.content.as_str()].concat().into()
                     } else {
-                        // Regular props: () => (_ctx.value)
                         ["() => (_ctx.", first.content.as_str(), ")"]
                             .concat()
                             .into()
@@ -474,10 +627,29 @@ fn generate_create_component(ctx: &mut GenerateContext, component: &CreateCompon
                 } else {
                     "undefined".to_compact_string()
                 };
-                [key.as_str(), ": ", &value].concat().into()
+                if key.contains(':') {
+                    ["\"", key.as_str(), "\": ", &value].concat().into()
+                } else {
+                    [key.as_str(), ": ", &value].concat().into()
+                }
             })
             .collect();
-        ["{ ", &prop_strs.join(", "), " }"].concat().into()
+        // Use multi-line format for 2+ props
+        if prop_strs.len() >= 2 {
+            let mut result = String::from("{\n");
+            for (i, prop_str) in prop_strs.iter().enumerate() {
+                result.push_str("    ");
+                result.push_str(prop_str);
+                if i < prop_strs.len() - 1 {
+                    result.push(',');
+                }
+                result.push('\n');
+            }
+            result.push_str("  }");
+            result
+        } else {
+            ["{ ", &prop_strs.join(", "), " }"].concat().into()
+        }
     };
 
     // Generate component creation
@@ -525,5 +697,55 @@ fn is_inline_statement(handler: &str) -> bool {
         || handler.contains("--")
         || handler.contains("+=")
         || handler.contains("-=")
-        || handler.contains("=")
+        || (handler.contains('=') && !handler.contains("==") && !handler.contains("=>"))
+}
+
+/// Prefix an expression with _ctx., handling complex expressions
+fn prefix_expression(expr: &str) -> vize_carton::CompactString {
+    let trimmed = expr.trim();
+    // Handle negation
+    if let Some(rest) = trimmed.strip_prefix('!') {
+        return cstr!("!_ctx.{}", rest.trim());
+    }
+    // Handle comparison expressions (e.g., "count > 0")
+    if trimmed.contains(" > ")
+        || trimmed.contains(" < ")
+        || trimmed.contains(" >= ")
+        || trimmed.contains(" <= ")
+        || trimmed.contains(" === ")
+        || trimmed.contains(" !== ")
+        || trimmed.contains(" == ")
+        || trimmed.contains(" != ")
+    {
+        // Split on comparison operator and prefix each side
+        for op in &[
+            " >= ", " <= ", " === ", " !== ", " > ", " < ", " == ", " != ",
+        ] {
+            if let Some(pos) = trimmed.find(op) {
+                let left = trimmed[..pos].trim();
+                let right = trimmed[pos + op.len()..].trim();
+                let left_prefixed = prefix_simple_value(left);
+                let right_prefixed = prefix_simple_value(right);
+                return cstr!("{}{}{}", left_prefixed, op, right_prefixed);
+            }
+        }
+    }
+    // Simple identifier or member expression
+    cstr!("_ctx.{}", trimmed)
+}
+
+/// Prefix a simple value - number literals and string literals are not prefixed
+fn prefix_simple_value(s: &str) -> String {
+    let trimmed = s.trim();
+    // Number literal
+    if trimmed.parse::<f64>().is_ok() {
+        return trimmed.to_compact_string();
+    }
+    // String literal
+    if (trimmed.starts_with('"') && trimmed.ends_with('"'))
+        || (trimmed.starts_with('\'') && trimmed.ends_with('\''))
+    {
+        return trimmed.to_compact_string();
+    }
+    cstr!("_ctx.{}", trimmed)
 }

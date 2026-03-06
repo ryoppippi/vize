@@ -209,6 +209,10 @@ pub struct DirectiveIRNode<'a> {
     pub dir: Box<'a, vize_atelier_core::DirectiveNode<'a>>,
     pub name: String,
     pub builtin: bool,
+    /// Element tag name (for v-model type detection)
+    pub tag: String,
+    /// Input type attribute (for v-model checkbox/radio detection)
+    pub input_type: String,
 }
 
 /// If operation
