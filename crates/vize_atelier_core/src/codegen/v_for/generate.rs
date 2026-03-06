@@ -383,6 +383,61 @@ pub(crate) fn generate_for_item_props(
         return;
     }
 
+    // Detect static class/style that need to be merged with dynamic :class/:style
+    let static_class = el.props.iter().find_map(|p| {
+        if let PropNode::Attribute(attr) = p {
+            if attr.name == "class" {
+                return attr.value.as_ref().map(|v| v.content.as_str());
+            }
+        }
+        None
+    });
+
+    let static_style = el.props.iter().find_map(|p| {
+        if let PropNode::Attribute(attr) = p {
+            if attr.name == "style" {
+                return attr.value.as_ref().map(|v| v.content.as_str());
+            }
+        }
+        None
+    });
+
+    let has_dynamic_class = el.props.iter().any(|p| {
+        if let PropNode::Directive(dir) = p {
+            if dir.name == "bind" {
+                if let Some(ExpressionNode::Simple(exp)) = &dir.arg {
+                    return exp.content == "class";
+                }
+            }
+        }
+        false
+    });
+
+    let has_dynamic_style = el.props.iter().any(|p| {
+        if let PropNode::Directive(dir) = p {
+            if dir.name == "bind" {
+                if let Some(ExpressionNode::Simple(exp)) = &dir.arg {
+                    return exp.content == "style";
+                }
+            }
+        }
+        false
+    });
+
+    let skip_static_class = static_class.is_some() && has_dynamic_class;
+    let skip_static_style = static_style.is_some() && has_dynamic_style;
+
+    let merge_static_class = if skip_static_class {
+        static_class
+    } else {
+        None
+    };
+    let merge_static_style = if skip_static_style {
+        static_style
+    } else {
+        None
+    };
+
     if let Some(key) = key_exp {
         // Merge key with other props
         ctx.push("{");
@@ -395,9 +450,23 @@ pub(crate) fn generate_for_item_props(
             if should_skip_prop(prop) {
                 continue;
             }
+            if skip_static_class {
+                if let PropNode::Attribute(attr) = prop {
+                    if attr.name == "class" {
+                        continue;
+                    }
+                }
+            }
+            if skip_static_style {
+                if let PropNode::Attribute(attr) = prop {
+                    if attr.name == "style" {
+                        continue;
+                    }
+                }
+            }
             ctx.push(",");
             ctx.newline();
-            generate_single_prop(ctx, prop);
+            generate_single_prop(ctx, prop, merge_static_class, merge_static_style);
         }
 
         if let Some(ref sid) = scope_id {
@@ -419,11 +488,25 @@ pub(crate) fn generate_for_item_props(
             if should_skip_prop(prop) {
                 continue;
             }
+            if skip_static_class {
+                if let PropNode::Attribute(attr) = prop {
+                    if attr.name == "class" {
+                        continue;
+                    }
+                }
+            }
+            if skip_static_style {
+                if let PropNode::Attribute(attr) = prop {
+                    if attr.name == "style" {
+                        continue;
+                    }
+                }
+            }
             if !first {
                 ctx.push(",");
             }
             ctx.push(" ");
-            generate_single_prop(ctx, prop);
+            generate_single_prop(ctx, prop, merge_static_class, merge_static_style);
             first = false;
         }
 
@@ -510,7 +593,7 @@ fn generate_for_item_props_merged(
                 ctx.push(",");
             }
             ctx.newline();
-            generate_single_prop(ctx, prop);
+            generate_single_prop(ctx, prop, None, None);
             first_prop = false;
         }
 
@@ -533,7 +616,12 @@ fn generate_for_item_props_merged(
 }
 
 /// Generate a single prop (attribute or directive)
-fn generate_single_prop(ctx: &mut CodegenContext, prop: &PropNode<'_>) {
+fn generate_single_prop(
+    ctx: &mut CodegenContext,
+    prop: &PropNode<'_>,
+    static_class: Option<&str>,
+    static_style: Option<&str>,
+) {
     match prop {
         PropNode::Attribute(attr) => {
             let needs_quotes = !super::super::helpers::is_valid_js_identifier(&attr.name);
@@ -554,7 +642,12 @@ fn generate_single_prop(ctx: &mut CodegenContext, prop: &PropNode<'_>) {
             }
         }
         PropNode::Directive(dir) => {
-            super::super::props::generate_directive_prop_with_static(ctx, dir, None, None);
+            super::super::props::generate_directive_prop_with_static(
+                ctx,
+                dir,
+                static_class,
+                static_style,
+            );
         }
     }
 }
