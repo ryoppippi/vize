@@ -178,19 +178,16 @@ pub fn compile_sfc(
             match template_result {
                 Ok(template_code) => {
                     // Build output matching Vue's compiler-sfc:
-                    // 1. Full template output (imports + hoisted + function _sfc_render(...))
+                    // 1. Full template output (imports + hoisted + export function render(...))
                     // 2. Rewritten script
-                    // 3. _sfc_main.render = _sfc_render
+                    // 3. _sfc_main.render = render
                     // 4. export default _sfc_main
-                    // Rename render function from `export function render(` to `function _sfc_render(`
-                    let renamed =
-                        template_code.replace("export function render(", "function _sfc_render(");
-                    code.push_str(&renamed);
+                    code.push_str(&template_code);
                     code.push_str(&final_script);
                     code.push('\n');
 
                     // Export the component with render attached
-                    code.push_str("_sfc_main.render = _sfc_render\n");
+                    code.push_str("_sfc_main.render = render\n");
                     code.push_str("export default _sfc_main\n");
                 }
                 Err(e) => {

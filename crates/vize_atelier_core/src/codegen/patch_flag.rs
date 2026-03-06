@@ -53,6 +53,22 @@ fn is_const_handler(expr: &ExpressionNode<'_>, bindings: Option<&BindingMetadata
     }
 }
 
+/// Check if a directive's bound expression is a static literal (no runtime identifiers).
+/// Returns true for object literals, array literals, string literals, numbers
+/// that don't reference any runtime variables.
+fn is_static_bound_expression(dir: &DirectiveNode<'_>) -> bool {
+    match &dir.exp {
+        Some(ExpressionNode::Simple(simple)) => {
+            if simple.is_static {
+                return true;
+            }
+            // If the content doesn't contain _ctx., it's a constant expression (only literals)
+            !simple.content.contains("_ctx.")
+        }
+        _ => false,
+    }
+}
+
 /// Calculate patch flag and dynamic props for an element.
 /// `skip_is_prop`: when true, skip `:is` binding (used for `<component :is="...">`)
 pub fn calculate_element_patch_info(
@@ -118,8 +134,18 @@ fn calculate_element_patch_info_inner(
                             } else {
                                 let key = exp.content.as_str();
                                 match key {
-                                    "class" => flag |= 2, // CLASS
-                                    "style" => flag |= 4, // STYLE
+                                    "class" => {
+                                        // Only set CLASS flag if the bound expression is dynamic
+                                        if !is_static_bound_expression(dir) {
+                                            flag |= 2; // CLASS
+                                        }
+                                    }
+                                    "style" => {
+                                        // Only set STYLE flag if the bound expression is dynamic
+                                        if !is_static_bound_expression(dir) {
+                                            flag |= 4; // STYLE
+                                        }
+                                    }
                                     "key" => {}
                                     "ref" => {
                                         // Dynamic ref binding needs NEED_PATCH
