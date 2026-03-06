@@ -5,7 +5,10 @@ use crate::ast::{DirectiveNode, ExpressionNode, RuntimeHelper};
 use super::super::{
     context::CodegenContext,
     expression::{generate_event_handler, generate_expression, generate_simple_expression},
-    helpers::{camelize, capitalize_first, escape_js_string, is_valid_js_identifier},
+    helpers::{
+        camelize, capitalize_first, escape_js_string, is_constant_simple_expression,
+        is_valid_js_identifier,
+    },
 };
 use vize_carton::String;
 use vize_carton::ToCompactString;
@@ -13,15 +16,10 @@ use vize_carton::ToCompactString;
 /// Check if an expression is a static literal (no runtime identifiers).
 /// Returns true for: object literals, array literals, string literals, numbers
 /// that don't reference any runtime variables (no `_ctx.` after processing).
-fn is_static_expression(exp: &ExpressionNode<'_>) -> bool {
+fn is_static_expression(exp: &ExpressionNode<'_>, ctx: &CodegenContext) -> bool {
     match exp {
         ExpressionNode::Simple(simple) => {
-            if simple.is_static {
-                return true;
-            }
-            // After prefix processing, if the content doesn't contain _ctx.,
-            // it's a constant expression (only has literals)
-            !simple.content.contains("_ctx.")
+            is_constant_simple_expression(simple, ctx.options.binding_metadata.as_ref())
         }
         ExpressionNode::Compound(_) => false,
     }
@@ -169,7 +167,7 @@ fn generate_vbind_prop(
     }
     if let Some(exp) = &dir.exp {
         // Check if expression is a static literal (no runtime references)
-        let is_static_literal = is_static_expression(exp);
+        let is_static_literal = is_static_expression(exp, ctx);
 
         if is_class {
             if !ctx.skip_normalize {

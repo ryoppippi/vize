@@ -712,6 +712,13 @@
   margin-bottom: 8px;
 }
 
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
 .sfc-block pre {
   font-family: var(--font-mono);
   font-size: 13px;

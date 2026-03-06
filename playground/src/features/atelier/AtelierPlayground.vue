@@ -5,6 +5,7 @@ import CodeHighlight from "../../shared/CodeHighlight.vue";
 import { useTheme } from "../../utils/useTheme";
 import { useClipboard } from "../../utils/useClipboard";
 import { useAtelierCompiler } from "./useAtelierCompiler";
+import { CODE_OUTPUT_LABELS, CODE_OUTPUT_TARGETS } from "./codeOutputs";
 import {
   useTokenAnalysis,
   getTokenTypeIcon,
@@ -33,21 +34,19 @@ const {
   compileTime,
   cssResult,
   cssOptions,
-  formattedCode,
   formattedCss,
-  formattedJsCode,
   codeViewMode,
+  codeOutputTarget,
+  activeCodeOutput,
   astHideLoc,
   astHideSource,
   astCollapsed,
   editorLanguage,
   astJson,
-  isTypeScript,
   bindingsSummary,
   groupedBindings,
   compile,
   handlePresetChange,
-  copyFullOutput,
 } = useAtelierCompiler(() => props.compiler ?? getWasm());
 
 const { lexicalTokens, tokensByType, tokenStats } = useTokenAnalysis(source);
@@ -166,9 +165,19 @@ onUnmounted(() => {
         <!-- Code Tab -->
         <div v-if="activeTab === 'code'" class="code-output">
           <div class="code-header">
-            <h4>Compiled Code</h4>
+            <h4>{{ CODE_OUTPUT_LABELS[codeOutputTarget] }} Output</h4>
             <div class="code-header-actions">
-              <div v-if="isTypeScript" class="code-mode-toggle">
+              <div class="code-mode-toggle">
+                <button
+                  v-for="target in CODE_OUTPUT_TARGETS"
+                  :key="target"
+                  :class="['toggle-btn', { active: codeOutputTarget === target }]"
+                  @click="codeOutputTarget = target"
+                >
+                  {{ CODE_OUTPUT_LABELS[target] }}
+                </button>
+              </div>
+              <div v-if="activeCodeOutput.isTypeScript" class="code-mode-toggle">
                 <button
                   :class="['toggle-btn', { active: codeViewMode === 'ts' }]"
                   @click="codeViewMode = 'ts'"
@@ -186,9 +195,10 @@ onUnmounted(() => {
                 class="btn-ghost"
                 @click="
                   copyToClipboard(
-                    isTypeScript && codeViewMode === 'js'
-                      ? formattedJsCode
-                      : formattedCode || output.code,
+                    activeCodeOutput.error ||
+                      (activeCodeOutput.isTypeScript && codeViewMode === 'js'
+                        ? activeCodeOutput.formattedJsCode
+                        : activeCodeOutput.formattedCode || activeCodeOutput.code),
                   )
                 "
               >
@@ -196,20 +206,41 @@ onUnmounted(() => {
               </button>
             </div>
           </div>
-          <CodeHighlight
-            v-if="isTypeScript && codeViewMode === 'js'"
-            :code="formattedJsCode"
-            language="javascript"
-            :theme
-            show-line-numbers
-          />
-          <CodeHighlight
-            v-else
-            :code="formattedCode || output.code"
-            :language="isTypeScript ? 'typescript' : 'javascript'"
-            :theme
-            show-line-numbers
-          />
+          <div v-if="activeCodeOutput.error" class="wasm-error">
+            <h3>{{ CODE_OUTPUT_LABELS[codeOutputTarget] }} Compilation Error</h3>
+            <pre>{{ activeCodeOutput.error }}</pre>
+          </div>
+          <template v-else>
+            <CodeHighlight
+              v-if="activeCodeOutput.isTypeScript && codeViewMode === 'js'"
+              :code="activeCodeOutput.formattedJsCode"
+              language="javascript"
+              :theme
+              show-line-numbers
+            />
+            <CodeHighlight
+              v-else
+              :code="activeCodeOutput.formattedCode || activeCodeOutput.code"
+              :language="activeCodeOutput.isTypeScript ? 'typescript' : 'javascript'"
+              :theme
+              show-line-numbers
+            />
+            <div v-if="activeCodeOutput.templates.length > 0" class="sfc-block">
+              <p class="section-label">
+                Template Fragments ({{ activeCodeOutput.templates.length }})
+              </p>
+              <div
+                v-for="(template, index) in activeCodeOutput.templates"
+                :key="`${codeOutputTarget}-${index}`"
+                class="style-block"
+              >
+                <span class="style-meta">
+                  <span class="badge">template {{ index + 1 }}</span>
+                </span>
+                <CodeHighlight :code="template" language="javascript" :theme show-line-numbers />
+              </div>
+            </div>
+          </template>
         </div>
 
         <!-- AST Tab -->

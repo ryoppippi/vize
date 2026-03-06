@@ -306,6 +306,37 @@ function processData(data: Record<string, unknown>): void {
 }
 
 #[test]
+fn test_inline_template_keeps_patch_flags_for_ref_class_bindings() {
+    let source = r#"<script setup lang="ts">
+import { ref } from 'vue';
+
+const activeTab = ref<'a' | 'b'>('a');
+</script>
+
+<template>
+  <div class="tabs">
+    <button :class="['tab', { active: activeTab === 'a' }]" @click="activeTab = 'a'">A</button>
+    <button :class="['tab', { active: activeTab === 'b' }]" @click="activeTab = 'b'">B</button>
+  </div>
+</template>"#;
+
+    let descriptor = parse_sfc(source, SfcParseOptions::default()).expect("Failed to parse SFC");
+    let result =
+        compile_sfc(&descriptor, SfcCompileOptions::default()).expect("Failed to compile SFC");
+
+    assert!(
+        result.code.contains("2 /* CLASS */"),
+        "Expected inline SFC output to preserve CLASS patch flags. Got:\n{}",
+        result.code
+    );
+    assert!(
+        result.code.contains("activeTab.value === 'a'"),
+        "Expected ref access to stay reactive in class binding. Got:\n{}",
+        result.code
+    );
+}
+
+#[test]
 fn test_full_sfc_props_destructure() {
     let input = r#"<script setup lang="ts">
 import { computed } from 'vue'

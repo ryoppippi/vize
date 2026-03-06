@@ -1,6 +1,6 @@
 //! Patch flag calculation and naming functions.
 
-use super::helpers::camelize;
+use super::helpers::{camelize, is_constant_simple_expression};
 use crate::ast::*;
 use crate::options::{BindingMetadata, BindingType};
 use vize_carton::is_builtin_directive;
@@ -56,15 +56,9 @@ fn is_const_handler(expr: &ExpressionNode<'_>, bindings: Option<&BindingMetadata
 /// Check if a directive's bound expression is a static literal (no runtime identifiers).
 /// Returns true for object literals, array literals, string literals, numbers
 /// that don't reference any runtime variables.
-fn is_static_bound_expression(dir: &DirectiveNode<'_>) -> bool {
+fn is_static_bound_expression(dir: &DirectiveNode<'_>, bindings: Option<&BindingMetadata>) -> bool {
     match &dir.exp {
-        Some(ExpressionNode::Simple(simple)) => {
-            if simple.is_static {
-                return true;
-            }
-            // If the content doesn't contain _ctx., it's a constant expression (only literals)
-            !simple.content.contains("_ctx.")
-        }
+        Some(ExpressionNode::Simple(simple)) => is_constant_simple_expression(simple, bindings),
         _ => false,
     }
 }
@@ -136,13 +130,13 @@ fn calculate_element_patch_info_inner(
                                 match key {
                                     "class" => {
                                         // Only set CLASS flag if the bound expression is dynamic
-                                        if !is_static_bound_expression(dir) {
+                                        if !is_static_bound_expression(dir, bindings) {
                                             flag |= 2; // CLASS
                                         }
                                     }
                                     "style" => {
                                         // Only set STYLE flag if the bound expression is dynamic
-                                        if !is_static_bound_expression(dir) {
+                                        if !is_static_bound_expression(dir, bindings) {
                                             flag |= 4; // STYLE
                                         }
                                     }
