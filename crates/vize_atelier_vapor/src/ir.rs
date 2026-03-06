@@ -136,6 +136,7 @@ pub struct IRProp<'a> {
 pub struct SetDynamicPropsIRNode<'a> {
     pub element: usize,
     pub props: Vec<'a, Box<'a, SimpleExpressionNode<'a>>>,
+    pub is_event: bool,
 }
 
 /// Set text operation

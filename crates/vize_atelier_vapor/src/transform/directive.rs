@@ -79,7 +79,6 @@ pub(crate) fn transform_directive<'a>(
             }
         }
         "on" => {
-            // v-on - SetEvent
             if let Some(ref arg) = dir.arg {
                 if let ExpressionNode::Simple(key_exp) = arg {
                     let key_node = SimpleExpressionNode::new(
@@ -104,16 +103,70 @@ pub(crate) fn transform_directive<'a>(
                         None
                     };
 
+                    // Parse modifiers
+                    let mut modifiers = crate::ir::EventModifiers::default();
+                    let event_name = key_exp.content.as_str();
+                    let is_dynamic = !key_exp.is_static;
+
+                    for m in dir.modifiers.iter() {
+                        match m.content.as_str() {
+                            "once" => modifiers.options.once = true,
+                            "capture" => modifiers.options.capture = true,
+                            "passive" => modifiers.options.passive = true,
+                            "stop" | "prevent" | "self" => {
+                                modifiers.non_keys.push(m.content.clone());
+                            }
+                            "enter" | "tab" | "delete" | "esc" | "space" | "up" | "down"
+                            | "left" | "right" => {
+                                modifiers.keys.push(m.content.clone());
+                            }
+                            _ => {
+                                modifiers.non_keys.push(m.content.clone());
+                            }
+                        }
+                    }
+
+                    // Determine delegation
+                    let delegate = !is_dynamic
+                        && !modifiers.options.once
+                        && !modifiers.options.capture
+                        && !modifiers.options.passive
+                        && is_delegatable_event(event_name);
+
                     let set_event = SetEventIRNode {
                         element: element_id,
                         key,
                         value,
-                        modifiers: Default::default(),
-                        delegate: true,
-                        effect: false,
+                        modifiers,
+                        delegate,
+                        effect: is_dynamic,
                     };
 
                     block.operation.push(OperationNode::SetEvent(set_event));
+                }
+            } else {
+                // v-on without arg = v-on object (v-on="handlers")
+                if let Some(ref exp) = dir.exp {
+                    if let ExpressionNode::Simple(val_exp) = exp {
+                        let mut values = Vec::new_in(ctx.allocator);
+                        let val_node = SimpleExpressionNode::new(
+                            val_exp.content.clone(),
+                            val_exp.is_static,
+                            val_exp.loc.clone(),
+                        );
+                        values.push(Box::new_in(val_node, ctx.allocator));
+
+                        let set_dynamic = crate::ir::SetDynamicPropsIRNode {
+                            element: element_id,
+                            props: values,
+                            is_event: true,
+                        };
+                        let mut effect_ops = Vec::new_in(ctx.allocator);
+                        effect_ops.push(OperationNode::SetDynamicProps(set_dynamic));
+                        block.effect.push(IREffect {
+                            operations: effect_ops,
+                        });
+                    }
                 }
             }
         }
@@ -228,17 +281,10 @@ pub(crate) fn transform_directive<'a>(
             // v-show - builtin directive
             let mut new_dir = DirectiveNode::new(ctx.allocator, dir.name.clone(), dir.loc.clone());
             if let Some(ref exp) = dir.exp {
-                match exp {
-                    ExpressionNode::Simple(s) => {
-                        let node = SimpleExpressionNode::new(
-                            s.content.clone(),
-                            s.is_static,
-                            s.loc.clone(),
-                        );
-                        new_dir.exp =
-                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
-                    }
-                    _ => {}
+                if let ExpressionNode::Simple(s) = exp {
+                    let node =
+                        SimpleExpressionNode::new(s.content.clone(), s.is_static, s.loc.clone());
+                    new_dir.exp = Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
                 }
             }
 
@@ -257,31 +303,17 @@ pub(crate) fn transform_directive<'a>(
             // v-model - builtin directive
             let mut new_dir = DirectiveNode::new(ctx.allocator, dir.name.clone(), dir.loc.clone());
             if let Some(ref exp) = dir.exp {
-                match exp {
-                    ExpressionNode::Simple(s) => {
-                        let node = SimpleExpressionNode::new(
-                            s.content.clone(),
-                            s.is_static,
-                            s.loc.clone(),
-                        );
-                        new_dir.exp =
-                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
-                    }
-                    _ => {}
+                if let ExpressionNode::Simple(s) = exp {
+                    let node =
+                        SimpleExpressionNode::new(s.content.clone(), s.is_static, s.loc.clone());
+                    new_dir.exp = Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
                 }
             }
             if let Some(ref arg) = dir.arg {
-                match arg {
-                    ExpressionNode::Simple(s) => {
-                        let node = SimpleExpressionNode::new(
-                            s.content.clone(),
-                            s.is_static,
-                            s.loc.clone(),
-                        );
-                        new_dir.arg =
-                            Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
-                    }
-                    _ => {}
+                if let ExpressionNode::Simple(s) = arg {
+                    let node =
+                        SimpleExpressionNode::new(s.content.clone(), s.is_static, s.loc.clone());
+                    new_dir.arg = Some(ExpressionNode::Simple(Box::new_in(node, ctx.allocator)));
                 }
             }
             for m in dir.modifiers.iter() {
@@ -319,6 +351,49 @@ pub(crate) fn transform_directive<'a>(
             block.operation.push(OperationNode::Directive(dir_node));
         }
     }
+}
+
+/// Check if an event can use delegation
+fn is_delegatable_event(name: &str) -> bool {
+    matches!(
+        name,
+        "click"
+            | "dblclick"
+            | "mousedown"
+            | "mouseup"
+            | "mousemove"
+            | "mouseenter"
+            | "mouseleave"
+            | "mouseover"
+            | "mouseout"
+            | "keydown"
+            | "keyup"
+            | "keypress"
+            | "pointerdown"
+            | "pointerup"
+            | "pointermove"
+            | "pointerenter"
+            | "pointerleave"
+            | "pointerover"
+            | "pointerout"
+            | "touchstart"
+            | "touchend"
+            | "touchmove"
+            | "focusin"
+            | "focusout"
+            | "input"
+            | "change"
+            | "contextmenu"
+            | "wheel"
+            | "scroll"
+            | "drag"
+            | "dragstart"
+            | "dragend"
+            | "dragenter"
+            | "dragleave"
+            | "dragover"
+            | "drop"
+    )
 }
 
 /// Get a static attribute value from an element

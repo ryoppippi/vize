@@ -24,6 +24,31 @@ pub(crate) fn transform_element<'a>(
     el: &ElementNode<'a>,
     block: &mut BlockIRNode<'a>,
 ) {
+    // Template elements don't consume an ID - they just wrap children
+    if el.tag_type == ElementType::Template {
+        for child in el.children.iter() {
+            match child {
+                TemplateChildNode::Element(child_el) => {
+                    transform_element(ctx, child_el, block);
+                }
+                TemplateChildNode::Text(text) => {
+                    transform_text(ctx, text, block);
+                }
+                TemplateChildNode::Interpolation(interp) => {
+                    transform_interpolation(ctx, interp, block);
+                }
+                TemplateChildNode::If(if_node) => {
+                    transform_if_node(ctx, if_node, block);
+                }
+                TemplateChildNode::For(for_node) => {
+                    transform_for_node(ctx, for_node, block);
+                }
+                _ => {}
+            }
+        }
+        return;
+    }
+
     let element_id = ctx.next_id();
 
     match el.tag_type {
@@ -333,21 +358,8 @@ pub(crate) fn transform_element<'a>(
             block.operation.push(OperationNode::SlotOutlet(slot_outlet));
         }
         ElementType::Template => {
-            // Template element - process children directly
-            for child in el.children.iter() {
-                match child {
-                    TemplateChildNode::Element(child_el) => {
-                        transform_element(ctx, child_el, block);
-                    }
-                    TemplateChildNode::Text(text) => {
-                        transform_text(ctx, text, block);
-                    }
-                    TemplateChildNode::Interpolation(interp) => {
-                        transform_interpolation(ctx, interp, block);
-                    }
-                    _ => {}
-                }
-            }
+            // Handled at top of function, unreachable
+            unreachable!("Template elements handled at top of transform_element");
         }
     }
 
@@ -358,9 +370,30 @@ pub(crate) fn transform_element<'a>(
 pub(crate) fn generate_element_template(el: &ElementNode<'_>) -> String {
     let mut template = cstr!("<{}", el.tag);
 
-    // Add static attributes
+    // Collect dynamic binding names to skip their static counterparts
+    let dynamic_attrs: vize_carton::FxHashSet<&str> = el
+        .props
+        .iter()
+        .filter_map(|p| {
+            if let PropNode::Directive(dir) = p {
+                if dir.name.as_str() == "bind" {
+                    if let Some(ref arg) = dir.arg {
+                        if let ExpressionNode::Simple(key) = arg {
+                            return Some(key.content.as_str());
+                        }
+                    }
+                }
+            }
+            None
+        })
+        .collect();
+
+    // Add static attributes (skip those overridden by dynamic bindings)
     for prop in el.props.iter() {
         if let PropNode::Attribute(attr) = prop {
+            if dynamic_attrs.contains(attr.name.as_str()) {
+                continue;
+            }
             if let Some(ref value) = attr.value {
                 append!(template, " {}=\"{}\"", attr.name, value.content);
             } else {

@@ -10,7 +10,7 @@ mod setup;
 use std::fmt::Write;
 
 use crate::ir::{BlockIRNode, OperationNode, RootIRNode};
-use vize_carton::{FxHashMap, String, ToCompactString};
+use vize_carton::{FxHashMap, FxHashSet, String, ToCompactString};
 
 use context::GenerateContext;
 use helpers::generate_effect;
@@ -36,10 +36,11 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
 
     // Collect root template indices (templates used in top-level block returns
     // and in root-level v-if branches that return a single element)
-    let mut root_template_indices: std::collections::HashSet<usize> =
-        std::collections::HashSet::new();
-    for element_id in ir.block.returns.iter() {
-        if let Some(&template_index) = ir.element_template_map.get(element_id) {
+    let mut root_template_indices: FxHashSet<usize> = FxHashSet::default();
+    // Only mark as root if there's a single root return (not a fragment)
+    if ir.block.returns.len() == 1 {
+        let element_id = ir.block.returns[0];
+        if let Some(&template_index) = ir.element_template_map.get(&element_id) {
             root_template_indices.insert(template_index);
         }
     }
@@ -159,6 +160,30 @@ fn generate_block(
         }
     }
 
+    // Check if we need setInsertionState for nested v-if/v-for
+    let has_control_flow = block
+        .operation
+        .iter()
+        .any(|op| matches!(op, OperationNode::If(_) | OperationNode::For(_)));
+    let parent_element = if has_control_flow && ctx.is_fragment {
+        // Find the parent template element (first element in returns that has a template)
+        block
+            .returns
+            .iter()
+            .find(|id| element_template_map.contains_key(id))
+            .copied()
+    } else {
+        None
+    };
+
+    if let Some(parent_id) = parent_element {
+        ctx.use_helper("setInsertionState");
+        ctx.push_line_fmt(format_args!(
+            "_setInsertionState(n{}, null, true)",
+            parent_id
+        ));
+    }
+
     // Generate operations
     for op in block.operation.iter() {
         generate_operation(ctx, op, element_template_map);
@@ -190,7 +215,7 @@ fn generate_block(
 fn collect_root_if_templates(
     if_node: &crate::ir::IfIRNode<'_>,
     element_template_map: &FxHashMap<usize, usize>,
-    root_indices: &mut std::collections::HashSet<usize>,
+    root_indices: &mut FxHashSet<usize>,
 ) {
     // Only mark as root if the branch returns a single element
     if if_node.positive.returns.len() == 1 {

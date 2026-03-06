@@ -244,16 +244,13 @@ fn extract_key_prop<'a>(
                             if let ExpressionNode::Simple(key_arg) = arg {
                                 if key_arg.content.as_str() == "key" {
                                     if let Some(ref exp) = dir.exp {
-                                        match exp {
-                                            ExpressionNode::Simple(s) => {
-                                                let node = SimpleExpressionNode::new(
-                                                    s.content.clone(),
-                                                    s.is_static,
-                                                    s.loc.clone(),
-                                                );
-                                                return Some(Box::new_in(node, ctx.allocator));
-                                            }
-                                            _ => {}
+                                        if let ExpressionNode::Simple(s) = exp {
+                                            let node = SimpleExpressionNode::new(
+                                                s.content.clone(),
+                                                s.is_static,
+                                                s.loc.clone(),
+                                            );
+                                            return Some(Box::new_in(node, ctx.allocator));
                                         }
                                     }
                                 }

@@ -56,6 +56,7 @@ pub fn transform_v_bind_dynamic<'a>(
         crate::ir::SetDynamicPropsIRNode {
             element: element_id,
             props,
+            is_event: false,
         },
     ))
 }

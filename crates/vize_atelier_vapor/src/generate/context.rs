@@ -10,6 +10,7 @@ pub(crate) struct ForScope {
     /// Key alias (e.g., "index" or "key") -> "_for_key{depth}"
     pub(crate) key_alias: Option<String>,
     /// Index alias -> unused in current vapor
+    #[allow(dead_code)]
     pub(crate) index_alias: Option<String>,
     /// Depth of for nesting (0-based)
     pub(crate) depth: usize,
@@ -51,33 +52,164 @@ impl<'a> GenerateContext<'a> {
 
     /// Resolve an expression, replacing for-loop aliases with _for_item/key references
     pub(crate) fn resolve_expression(&self, expr: &str) -> String {
+        let trimmed = expr.trim();
+
+        // Don't prefix numeric literals
+        if trimmed.parse::<f64>().is_ok() {
+            return trimmed.to_compact_string();
+        }
+
+        // Don't prefix string literals
+        if (trimmed.starts_with('"') && trimmed.ends_with('"'))
+            || (trimmed.starts_with('\'') && trimmed.ends_with('\''))
+        {
+            return trimmed.to_compact_string();
+        }
+
+        // Handle negation
+        if let Some(rest) = trimmed.strip_prefix('!') {
+            let inner = self.resolve_expression(rest.trim());
+            return cstr!("!{}", inner);
+        }
+
+        // Don't prefix object/array literals - prefix inner expressions instead
+        if trimmed.starts_with('{') || trimmed.starts_with('[') {
+            return self.resolve_complex_expression(trimmed);
+        }
+
         // Check for-loop scopes (innermost first)
         for scope in self.for_scopes.iter().rev() {
             if let Some(ref value_alias) = scope.value_alias {
                 let for_var = cstr!("_for_item{}", scope.depth);
-                // Check if expression starts with or is the value alias
-                if expr == value_alias.as_str() {
-                    return cstr!("{}.value", for_var);
-                }
-                // Check member expression: "item.xxx"
-                let prefix = [value_alias.as_str(), "."].concat();
-                if expr.starts_with(&prefix) {
-                    return cstr!("{}.value.{}", for_var, &expr[prefix.len()..]);
+
+                // Check if this is a destructured alias like "{ id, name }"
+                if value_alias.starts_with('{') || value_alias.starts_with('(') {
+                    // Parse destructured names
+                    let names = parse_destructure_names(value_alias.as_str());
+                    for name in &names {
+                        if trimmed == *name {
+                            return cstr!("{}.value.{}", for_var, name);
+                        }
+                        let member_prefix = [*name, "."].concat();
+                        if trimmed.starts_with(&member_prefix) {
+                            return cstr!("{}.value.{}", for_var, trimmed);
+                        }
+                    }
+                } else {
+                    // Simple alias
+                    if trimmed == value_alias.as_str() {
+                        return cstr!("{}.value", for_var);
+                    }
+                    let prefix = [value_alias.as_str(), "."].concat();
+                    if trimmed.starts_with(&prefix) {
+                        return cstr!("{}.value.{}", for_var, &trimmed[prefix.len()..]);
+                    }
                 }
             }
             if let Some(ref key_alias) = scope.key_alias {
                 let for_key_var = cstr!("_for_key{}", scope.depth);
-                if expr == key_alias.as_str() {
+                if trimmed == key_alias.as_str() {
                     return cstr!("{}.value", for_key_var);
                 }
                 let prefix = [key_alias.as_str(), "."].concat();
-                if expr.starts_with(&prefix) {
-                    return cstr!("{}.value.{}", for_key_var, &expr[prefix.len()..]);
+                if trimmed.starts_with(&prefix) {
+                    return cstr!("{}.value.{}", for_key_var, &trimmed[prefix.len()..]);
                 }
             }
         }
         // Not a for-loop variable, use _ctx prefix
-        cstr!("_ctx.{}", expr)
+        cstr!("_ctx.{}", trimmed)
+    }
+
+    /// Resolve complex expressions (object/array literals) by prefixing identifiers inside
+    fn resolve_complex_expression(&self, expr: &str) -> String {
+        let mut result = String::default();
+        let mut chars = expr.chars().peekable();
+        let mut in_string = false;
+        let mut string_char = ' ';
+        // Track whether we're in key position (after { or ,) vs value position (after :)
+        let mut in_object = false;
+        let mut is_key_position = false;
+
+        while let Some(&ch) = chars.peek() {
+            if in_string {
+                result.push(ch);
+                chars.next();
+                if ch == string_char {
+                    in_string = false;
+                }
+                continue;
+            }
+
+            match ch {
+                '"' | '\'' | '`' => {
+                    in_string = true;
+                    string_char = ch;
+                    result.push(ch);
+                    chars.next();
+                }
+                '{' => {
+                    in_object = true;
+                    is_key_position = true;
+                    result.push(ch);
+                    chars.next();
+                }
+                '}' => {
+                    in_object = false;
+                    result.push(ch);
+                    chars.next();
+                }
+                ':' => {
+                    is_key_position = false;
+                    result.push(ch);
+                    chars.next();
+                }
+                ',' => {
+                    if in_object {
+                        is_key_position = true;
+                    }
+                    result.push(ch);
+                    chars.next();
+                }
+                '[' | ']' | ' ' | '\n' | '\t' => {
+                    result.push(ch);
+                    chars.next();
+                }
+                _ => {
+                    // Collect identifier/value
+                    let mut ident = String::default();
+                    while let Some(&c) = chars.peek() {
+                        if c == ','
+                            || c == '}'
+                            || c == ']'
+                            || c == ':'
+                            || c == ' '
+                            || c == '\n'
+                            || c == '\t'
+                        {
+                            break;
+                        }
+                        ident.push(c);
+                        chars.next();
+                    }
+                    let trimmed_ident = ident.trim();
+                    if trimmed_ident.is_empty()
+                        || trimmed_ident == "true"
+                        || trimmed_ident == "false"
+                        || trimmed_ident == "null"
+                        || trimmed_ident == "undefined"
+                        || trimmed_ident.parse::<f64>().is_ok()
+                        || (in_object && is_key_position)
+                    {
+                        // Don't prefix: literals, empty, or object keys
+                        result.push_str(&ident);
+                    } else {
+                        result.push_str(&self.resolve_expression(trimmed_ident));
+                    }
+                }
+            }
+        }
+        result
     }
 
     pub(crate) fn add_delegate_event(&mut self, event_name: &str) {
@@ -142,6 +274,27 @@ impl<'a> GenerateContext<'a> {
         self.temp_count += 1;
         name
     }
+}
+
+/// Parse destructured variable names from patterns like "{ id, name }" or "{ a: b }"
+fn parse_destructure_names(pattern: &str) -> std::vec::Vec<&str> {
+    let inner = pattern
+        .trim_start_matches(['{', '(', ' '])
+        .trim_end_matches(['}', ')', ' ']);
+    inner
+        .split(',')
+        .filter_map(|part| {
+            let part = part.trim();
+            // Handle "a: b" -> use "b" (the bound name)
+            if let Some(pos) = part.find(':') {
+                Some(part[pos + 1..].trim())
+            } else if part.is_empty() {
+                None
+            } else {
+                Some(part)
+            }
+        })
+        .collect()
 }
 
 impl std::fmt::Write for GenerateContext<'_> {

@@ -75,7 +75,7 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
         if first.is_static {
             cstr!("\"{}\"", first.content)
         } else {
-            ctx.resolve_expression(&first.content).into()
+            ctx.resolve_expression(&first.content)
         }
     } else {
         vize_carton::CompactString::from("undefined")
@@ -107,13 +107,22 @@ fn generate_set_prop(ctx: &mut GenerateContext, set_prop: &SetPropIRNode<'_>) {
 fn generate_set_dynamic_props(ctx: &mut GenerateContext, set_props: &SetDynamicPropsIRNode<'_>) {
     let element = cstr!("n{}", set_props.element);
 
-    for prop in set_props.props.iter() {
-        let expr = if prop.is_static {
-            cstr!("\"{}\"", prop.content)
-        } else {
-            vize_carton::CompactString::from(prop.content.as_str())
-        };
-        ctx.push_line_fmt(format_args!("Object.assign({}, {})", element, expr));
+    if set_props.is_event {
+        // v-on="handlers" → _setDynamicEvents
+        ctx.use_helper("setDynamicEvents");
+        for prop in set_props.props.iter() {
+            let resolved = ctx.resolve_expression(&prop.content);
+            ctx.push_line_fmt(format_args!("_setDynamicEvents({}, {})", element, resolved));
+        }
+    } else {
+        for prop in set_props.props.iter() {
+            let expr = if prop.is_static {
+                cstr!("\"{}\"", prop.content)
+            } else {
+                vize_carton::CompactString::from(prop.content.as_str())
+            };
+            ctx.push_line_fmt(format_args!("Object.assign({}, {})", element, expr));
+        }
     }
 }
 
@@ -168,25 +177,101 @@ fn generate_set_event(ctx: &mut GenerateContext, set_event: &SetEventIRNode<'_>)
 
     let resolved_handler = ctx.resolve_expression(&handler);
     // Determine handler format based on content
-    let invoker_body = if handler.contains("$event") {
-        // Handler uses $event - pass it as parameter
+    let invoker_body: String = if handler.contains("$event") {
         cstr!("$event => ({})", resolved_handler)
     } else if handler.contains("?.") {
         cstr!("(...args) => ({})", resolved_handler)
-    } else if is_inline_statement(&handler) {
-        cstr!("() => ({})", resolved_handler)
-    } else if handler.contains('(') {
-        // Handler is a call expression like handler()
+    } else if is_inline_statement(&handler) || handler.contains('(') {
         cstr!("() => ({})", resolved_handler)
     } else {
-        // Handler is a method reference like handler
         cstr!("e => {}(e)", resolved_handler)
     };
 
-    ctx.push_line_fmt(format_args!(
-        "{}.$evt{} = _createInvoker({})",
-        element, event_name, invoker_body
-    ));
+    // Wrap with withModifiers if there are DOM modifiers (stop, prevent, etc.)
+    let wrapped_handler = if !set_event.modifiers.non_keys.is_empty() {
+        ctx.use_helper("withModifiers");
+        let mods = set_event
+            .modifiers
+            .non_keys
+            .iter()
+            .map(|m| ["\"", m.as_str(), "\""].concat())
+            .collect::<std::vec::Vec<_>>()
+            .join(",");
+        cstr!("_withModifiers({}, [{}])", invoker_body, mods)
+    } else if !set_event.modifiers.keys.is_empty() {
+        ctx.use_helper("withKeys");
+        let keys = set_event
+            .modifiers
+            .keys
+            .iter()
+            .map(|k| ["\"", k.as_str(), "\""].concat())
+            .collect::<std::vec::Vec<_>>()
+            .join(",");
+        cstr!("_withKeys({}, [{}])", invoker_body, keys)
+    } else {
+        invoker_body
+    };
+
+    if set_event.delegate {
+        // Use delegation
+        ctx.push_line_fmt(format_args!(
+            "{}.$evt{} = _createInvoker({})",
+            element, event_name, wrapped_handler
+        ));
+    } else if set_event.effect {
+        // Dynamic event - use renderEffect + _on
+        ctx.use_helper("on");
+        ctx.use_helper("renderEffect");
+        let event_expr = ctx.resolve_expression(event_name.as_str());
+        ctx.push_line("_renderEffect(() => {");
+        ctx.indent();
+        ctx.push_line("");
+        ctx.push_line_fmt(format_args!(
+            "_on({}, {}, _createInvoker({}), {{",
+            element, event_expr, wrapped_handler
+        ));
+        ctx.indent();
+        ctx.push_line("effect: true");
+        ctx.deindent();
+        ctx.push_line("})");
+        ctx.deindent();
+        ctx.push_line("})");
+    } else {
+        // Use _on() for non-delegatable events or events with once/capture/passive
+        ctx.use_helper("on");
+
+        let has_options = set_event.modifiers.options.once
+            || set_event.modifiers.options.capture
+            || set_event.modifiers.options.passive;
+
+        if has_options {
+            let mut opts = std::vec::Vec::new();
+            if set_event.modifiers.options.once {
+                opts.push("once: true");
+            }
+            if set_event.modifiers.options.capture {
+                opts.push("capture: true");
+            }
+            if set_event.modifiers.options.passive {
+                opts.push("passive: true");
+            }
+            ctx.push_line_fmt(format_args!(
+                "_on({}, \"{}\", _createInvoker({}), {{",
+                element, event_name, wrapped_handler
+            ));
+            ctx.indent();
+            for opt in &opts {
+                ctx.push_line(opt);
+            }
+            ctx.deindent();
+            ctx.push_line("})");
+        } else {
+            ctx.push_line_fmt(format_args!(
+                "_on({}, \"{}\", _createInvoker({}))",
+                element, event_name, wrapped_handler
+            ));
+        }
+    }
 }
 
 /// Generate SetHtml
@@ -261,7 +346,7 @@ fn generate_directive(ctx: &mut GenerateContext, directive: &DirectiveIRNode<'_>
                     if e.is_static {
                         cstr!("\"{}\"", e.content)
                     } else {
-                        prefix_expression(&e.content)
+                        ctx.resolve_expression(&e.content)
                     }
                 }
                 _ => vize_carton::CompactString::from("undefined"),
@@ -512,7 +597,7 @@ fn generate_for(
             .concat()
             .into()
     } else {
-        for_item_var.clone().into()
+        for_item_var.clone()
     };
 
     // Push for scope before generating body
@@ -545,10 +630,27 @@ fn generate_for(
     ctx.deindent();
 
     // Generate key function if key_prop is provided
-    // Check for :key attribute in the for node's render block
     let key_func = generate_for_key_function(for_node);
+
+    // Check if this is a range-based for (source is a number literal)
+    let is_range = for_node.source.content.as_str().parse::<f64>().is_ok();
+
+    // Determine memo flag: 4 = range, 1 = only child of parent (nested v-for)
+    let memo_flag = if is_range {
+        Some("4")
+    } else if for_node.only_child && was_fragment {
+        // only_child flag is for nested v-for inside another element
+        Some("1")
+    } else {
+        None
+    };
+
     if let Some(key_fn) = key_func {
-        ctx.push_line(&["}, ", &key_fn, ")"].concat());
+        if let Some(flag) = memo_flag {
+            ctx.push_line(&["}, ", &key_fn, ", ", flag, ")"].concat());
+        } else {
+            ctx.push_line(&["}, ", &key_fn, ")"].concat());
+        }
     } else {
         ctx.push_line("})");
     }
@@ -575,7 +677,7 @@ fn generate_for_key_function(for_node: &ForIRNode<'_>) -> Option<String> {
             value_name.to_compact_string().into()
         };
 
-        Some(cstr!("({params}) => ({key_expr})").into())
+        Some(cstr!("({params}) => ({key_expr})"))
     } else {
         None
     }
@@ -698,54 +800,4 @@ fn is_inline_statement(handler: &str) -> bool {
         || handler.contains("+=")
         || handler.contains("-=")
         || (handler.contains('=') && !handler.contains("==") && !handler.contains("=>"))
-}
-
-/// Prefix an expression with _ctx., handling complex expressions
-fn prefix_expression(expr: &str) -> vize_carton::CompactString {
-    let trimmed = expr.trim();
-    // Handle negation
-    if let Some(rest) = trimmed.strip_prefix('!') {
-        return cstr!("!_ctx.{}", rest.trim());
-    }
-    // Handle comparison expressions (e.g., "count > 0")
-    if trimmed.contains(" > ")
-        || trimmed.contains(" < ")
-        || trimmed.contains(" >= ")
-        || trimmed.contains(" <= ")
-        || trimmed.contains(" === ")
-        || trimmed.contains(" !== ")
-        || trimmed.contains(" == ")
-        || trimmed.contains(" != ")
-    {
-        // Split on comparison operator and prefix each side
-        for op in &[
-            " >= ", " <= ", " === ", " !== ", " > ", " < ", " == ", " != ",
-        ] {
-            if let Some(pos) = trimmed.find(op) {
-                let left = trimmed[..pos].trim();
-                let right = trimmed[pos + op.len()..].trim();
-                let left_prefixed = prefix_simple_value(left);
-                let right_prefixed = prefix_simple_value(right);
-                return cstr!("{}{}{}", left_prefixed, op, right_prefixed);
-            }
-        }
-    }
-    // Simple identifier or member expression
-    cstr!("_ctx.{}", trimmed)
-}
-
-/// Prefix a simple value - number literals and string literals are not prefixed
-fn prefix_simple_value(s: &str) -> String {
-    let trimmed = s.trim();
-    // Number literal
-    if trimmed.parse::<f64>().is_ok() {
-        return trimmed.to_compact_string();
-    }
-    // String literal
-    if (trimmed.starts_with('"') && trimmed.ends_with('"'))
-        || (trimmed.starts_with('\'') && trimmed.ends_with('\''))
-    {
-        return trimmed.to_compact_string();
-    }
-    cstr!("_ctx.{}", trimmed)
 }

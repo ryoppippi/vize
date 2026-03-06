@@ -45,7 +45,7 @@ pub(crate) fn generate_operation_inline(
                 if first.is_static {
                     cstr!("\"{}\"", first.content)
                 } else {
-                    ctx.resolve_expression(&first.content).into()
+                    ctx.resolve_expression(&first.content)
                 }
             } else {
                 vize_carton::CompactString::from("undefined")
