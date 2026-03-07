@@ -45,6 +45,19 @@ assert.deepEqual(
 );
 
 assert.deepEqual(
+  npmxResolver.resolve("ScrollToTop"),
+  {
+    exportName: "default",
+    filePath: path.join(
+      npmxFixtureRoot,
+      "app/components/ScrollToTop.client.vue",
+    ),
+    mode: "client",
+  },
+  "Nuxt-generated d.ts should preserve client-only component mode",
+);
+
+assert.deepEqual(
   elkResolver.resolve("NuxtPage"),
   {
     exportName: "default",
@@ -104,6 +117,31 @@ assert.equal(
   transformed.includes('resolveComponent("NuxtPwaAssets")'),
   false,
   "resolved components should no longer go through resolveComponent()",
+);
+
+const clientOnlyTransformed = injectNuxtComponentImports(
+  `
+export default {
+  setup(__props) {
+    return (_ctx, _cache) => {
+      const _component_ScrollToTop = resolveComponent("ScrollToTop");
+      return _component_ScrollToTop;
+    };
+  }
+}
+`,
+  (name) => npmxResolver.resolve(name),
+);
+
+assert.match(
+  clientOnlyTransformed,
+  /import \{ createClientOnly as __nuxt_create_client_only \} from "#app\/components\/client-only";/,
+  "client-only components should import createClientOnly",
+);
+assert.match(
+  clientOnlyTransformed,
+  /import __nuxt_component_0_raw from ".*ScrollToTop\.client\.vue";\s*const __nuxt_component_0 = __nuxt_create_client_only\(__nuxt_component_0_raw\);/s,
+  "client-only components should be wrapped before use",
 );
 
 const deduped = injectNuxtComponentImports(
@@ -169,6 +207,26 @@ assert.match(
   lazyTransformed,
   /import __nuxt_component_1 from ".*page\.js";/,
   "non-lazy components should remain direct imports",
+);
+
+const lazyClientOnlyTransformed = injectNuxtComponentImports(
+  `
+export default {
+  setup(__props) {
+    return (_ctx, _cache) => {
+      const lazy = resolveComponent("LazyScrollToTop");
+      return lazy;
+    };
+  }
+}
+`,
+  (name) => npmxResolver.resolve(name),
+);
+
+assert.match(
+  lazyClientOnlyTransformed,
+  /const __nuxt_component_0 = __nuxt_define_async_component\(\(\) => import\(".*ScrollToTop\.client\.vue"\)\.then\(\(module\) => __nuxt_create_client_only\(module\.default\)\)\);/,
+  "lazy client-only components should wrap their async payload with createClientOnly",
 );
 
 console.log("✅ nuxt component bridge tests passed!");

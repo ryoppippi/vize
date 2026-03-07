@@ -22,9 +22,13 @@ function isCssModule(block: StyleBlockInfo): boolean {
  * Check if any style blocks in the compiled module require delegation to
  * Vite's CSS pipeline (preprocessor or CSS Modules).
  */
-function hasDelegatedStyles(compiled: CompiledModule): boolean {
+export function hasDelegatedStyles(compiled: CompiledModule): boolean {
   if (!compiled.styles) return false;
   return compiled.styles.some((s) => needsPreprocessor(s) || isCssModule(s));
+}
+
+function supportsTemplateOnlyHmr(output: string): boolean {
+  return /(?:^|\n)(?:_sfc_main|__sfc__)\.render\s*=\s*render\b/m.test(output);
 }
 
 export function generateScopeId(filename: string): string {
@@ -194,7 +198,11 @@ ${output}`;
 
   // Add HMR support in development (skip in production)
   if (!isProduction && isDev && hasExportDefault) {
-    output += generateHmrCode(compiled.scopeId, hmrUpdateType ?? "full-reload");
+    const effectiveHmrUpdateType =
+      hmrUpdateType === "template-only" && !supportsTemplateOnlyHmr(output)
+        ? "full-reload"
+        : (hmrUpdateType ?? "full-reload");
+    output += generateHmrCode(compiled.scopeId, effectiveHmrUpdateType);
   }
 
   return output;

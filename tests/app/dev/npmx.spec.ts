@@ -90,11 +90,7 @@ test.describe("npmx.dev dev", () => {
     });
     await page.waitForTimeout(3_000);
 
-    // Filter out known harmless SSR/client hydration differences
-    const unexpectedErrors = hydrationErrors.filter(
-      (e) => !(/Hydration/i.test(e)),
-    );
-    expect(unexpectedErrors).toHaveLength(0);
+    expect(hydrationErrors).toHaveLength(0);
   });
 
   test("scoped CSS: data-v-* attributes exist", async ({ page }) => {
