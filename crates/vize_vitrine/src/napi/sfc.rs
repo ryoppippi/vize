@@ -395,11 +395,7 @@ pub fn compile_sfc_batch(
 
         input_bytes.fetch_add(source.len(), Ordering::Relaxed);
 
-        let filename: vize_carton::CompactString = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("anonymous.vue")
-            .into();
+        let filename: vize_carton::CompactString = path.to_string_lossy().as_ref().into();
 
         // Parse
         let parse_opts = SfcParseOptions {

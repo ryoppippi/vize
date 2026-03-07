@@ -24,6 +24,7 @@ mod tests {
             None,
             &[], // no css_vars
             "",  // no scope_id
+            None,
         )
         .expect("compilation should succeed");
         result.code
@@ -46,6 +47,7 @@ mod tests {
             None,
             &[], // no css_vars
             "",  // no scope_id
+            None,
         )
         .expect("compilation should succeed");
         result.code
@@ -362,6 +364,7 @@ const x = ref(1)
             None,
             &[], // no css_vars
             "",  // no scope_id
+            None,
         )
         .expect("compilation should succeed");
         result.code

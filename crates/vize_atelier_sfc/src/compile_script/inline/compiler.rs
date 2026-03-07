@@ -37,9 +37,9 @@ pub fn compile_script_setup_inline(
     normal_script_content: Option<&str>,
     css_vars: &[Cow<'_, str>],
     scope_id: &str,
+    filename: Option<&str>,
 ) -> Result<ScriptCompileResult, SfcError> {
     let mut ctx = ScriptCompileContext::new(content);
-    ctx.analyze();
 
     // Merge type definitions from normal <script> block so that
     // defineProps<TypeRef>() can resolve types defined there.
@@ -48,6 +48,15 @@ pub fn compile_script_setup_inline(
             ctx.collect_types_from(normal_src);
         }
     }
+    if let Some(path) = filename {
+        ctx.collect_imported_types_from_path(content, path);
+        if let Some(normal_src) = normal_script_content {
+            if !normal_src.is_empty() {
+                ctx.collect_imported_types_from_path(normal_src, path);
+            }
+        }
+    }
+    ctx.analyze();
 
     // Use arena-allocated Vec for better performance
     let bump = vize_carton::Bump::new();

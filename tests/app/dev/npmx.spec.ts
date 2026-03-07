@@ -9,6 +9,7 @@ import {
   ensurePortFree,
   waitForHttpReady,
   killProcess,
+  getProcessLogs,
 } from "../../_helpers/server";
 import {
   collectConsoleErrors,
@@ -185,6 +186,26 @@ test.describe("npmx.dev dev", () => {
     expect(route.params).toMatchObject({
       path: ["nuxt", "v", "4.0.0"],
     });
+  });
+
+  test("server logs stay clean during docs prefetch", async ({ page }) => {
+    const logOffset = getProcessLogs(devServer).length;
+
+    await page.goto(app.url + "/docs/nuxt/v/4.0.0", {
+      waitUntil: app.waitUntil ?? "networkidle",
+      timeout: 30_000,
+    });
+    await page.waitForTimeout(3_000);
+
+    const newLogs = getProcessLogs(devServer).slice(logOffset);
+    const runtimeWarnings = newLogs.filter((line) => {
+      return (
+        line.includes('useFetch') && line.includes('must return a value')
+      ) || line.includes('Property "disabled" was accessed during render')
+        || line.includes('Property "size" was accessed during render');
+    });
+
+    expect(runtimeWarnings).toEqual([]);
   });
 
   test("no hydration mismatch errors", async ({ page }) => {

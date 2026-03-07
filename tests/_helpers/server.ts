@@ -3,6 +3,7 @@ import { createConnection } from "node:net";
 import type { AppConfig } from "./apps.ts";
 
 const VITE_PLUS_BIN = `${process.env.HOME ?? ""}/.vite-plus/bin`;
+const PROCESS_LOGS = new WeakMap<ChildProcess, string[]>();
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -49,6 +50,38 @@ function killPid(pid: number, signal: NodeJS.Signals): void {
   } catch {
     // already gone
   }
+}
+
+function recordProcessLines(
+  proc: ChildProcess,
+  appName: string,
+  stream: "stdout" | "stderr",
+  data: Buffer,
+): void {
+  const lines = data
+    .toString()
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return;
+  }
+
+  let logs = PROCESS_LOGS.get(proc);
+  if (!logs) {
+    logs = [];
+    PROCESS_LOGS.set(proc, logs);
+  }
+
+  for (const line of lines) {
+    logs.push(line);
+    console.log(`[${appName}:${stream}] ${line}`);
+  }
+}
+
+export function getProcessLogs(proc: ChildProcess): readonly string[] {
+  return PROCESS_LOGS.get(proc) ?? [];
 }
 
 export function waitForServerReady(
@@ -127,13 +160,11 @@ export function startDevServer(app: AppConfig): ChildProcess {
   });
 
   proc.stdout?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[${app.name}:stdout] ${line}`);
+    recordProcessLines(proc, app.name, "stdout", data);
   });
 
   proc.stderr?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[${app.name}:stderr] ${line}`);
+    recordProcessLines(proc, app.name, "stderr", data);
   });
 
   return proc;
@@ -157,13 +188,11 @@ export function startPreviewServer(app: AppConfig): ChildProcess {
   });
 
   proc.stdout?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[${app.name}:preview:stdout] ${line}`);
+    recordProcessLines(proc, `${app.name}:preview`, "stdout", data);
   });
 
   proc.stderr?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[${app.name}:preview:stderr] ${line}`);
+    recordProcessLines(proc, `${app.name}:preview`, "stderr", data);
   });
 
   return proc;
