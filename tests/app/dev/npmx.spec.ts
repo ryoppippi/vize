@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import type { ChildProcess } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -20,6 +20,72 @@ import {
 } from "../../_helpers/assertions";
 
 const app = npmxApp;
+
+type RouteSnapshot = {
+  fullPath: string;
+  meta: Record<string, unknown>;
+  name: string | null;
+  params: Record<string, unknown>;
+  path: string;
+};
+
+async function readCurrentRoute(page: Page): Promise<RouteSnapshot> {
+  await page.waitForFunction(() => {
+    const root = document.querySelector("#__nuxt") as
+      | {
+          __vue_app__?: {
+            config?: {
+              globalProperties?: {
+                $router?: {
+                  currentRoute?: {
+                    value?: unknown;
+                  };
+                };
+              };
+            };
+          };
+        }
+      | null;
+
+    return root?.__vue_app__?.config?.globalProperties?.$router?.currentRoute?.value !== undefined;
+  });
+
+  return page.evaluate(() => {
+    const root = document.querySelector("#__nuxt") as
+      | {
+          __vue_app__?: {
+            config?: {
+              globalProperties?: {
+                $router?: {
+                  currentRoute?: {
+                    value?: {
+                      fullPath?: string;
+                      meta?: Record<string, unknown>;
+                      name?: string | symbol | null;
+                      params?: Record<string, unknown>;
+                      path?: string;
+                    };
+                  };
+                };
+              };
+            };
+          };
+        }
+      | null;
+    const route = root?.__vue_app__?.config?.globalProperties?.$router?.currentRoute?.value;
+    if (!route?.path || !route.fullPath) {
+      throw new Error("Nuxt router currentRoute is not available");
+    }
+
+    return {
+      fullPath: route.fullPath,
+      meta: JSON.parse(JSON.stringify(route.meta ?? {})) as Record<string, unknown>,
+      name: route.name == null ? null : String(route.name),
+      params: JSON.parse(JSON.stringify(route.params ?? {})) as Record<string, unknown>,
+      path: route.path,
+    };
+  });
+}
 
 test.describe("npmx.dev dev", () => {
   let devServer: ChildProcess;
@@ -79,6 +145,46 @@ test.describe("npmx.dev dev", () => {
     // npmx.dev should have "npmx" text or search form in SSR output
     const hasExpectedContent = html.toLowerCase().includes("npmx") || html.includes("search") || html.includes("form");
     expect(hasExpectedContent).toBe(true);
+  });
+
+  test("SSR: accessibility route keeps definePageMeta route name", async ({ page }) => {
+    const url = app.url + "/accessibility";
+    const html = await verifySSRContent(page, url);
+
+    expect(html).toContain("<title>accessibility - npmx</title>");
+    expect(html).toContain("Our approach");
+
+    await page.goto(url, {
+      waitUntil: app.waitUntil ?? "networkidle",
+      timeout: 30_000,
+    });
+
+    const route = await readCurrentRoute(page);
+    expect(route.path).toBe("/accessibility");
+    expect(route.fullPath).toBe("/accessibility");
+    expect(route.name).toBe("accessibility");
+  });
+
+  test("SSR: docs alias resolves definePageMeta alias and meta", async ({ page }) => {
+    const url = app.url + "/docs/nuxt/v/4.0.0";
+    const html = await verifySSRContent(page, url);
+
+    expect(html).toContain("<title>nuxt@4.0.0 docs - npmx</title>");
+    expect(html).toContain('aria-label="Package documentation header"');
+
+    await page.goto(url, {
+      waitUntil: app.waitUntil ?? "networkidle",
+      timeout: 30_000,
+    });
+
+    const route = await readCurrentRoute(page);
+    expect(route.path).toBe("/docs/nuxt/v/4.0.0");
+    expect(route.fullPath).toBe("/docs/nuxt/v/4.0.0");
+    expect(route.name).toBe("docs");
+    expect(route.meta).toMatchObject({ scrollMargin: 180 });
+    expect(route.params).toMatchObject({
+      path: ["nuxt", "v", "4.0.0"],
+    });
   });
 
   test("no hydration mismatch errors", async ({ page }) => {
