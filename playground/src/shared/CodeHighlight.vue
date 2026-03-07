@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed, inject, type ComputedRef } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { createHighlighter, type Highlighter, type ThemeRegistration } from "shiki";
 
 const props = defineProps<{
@@ -74,12 +74,11 @@ const vizeLightTheme: ThemeRegistration = {
   ],
 };
 
-const highlightedLines = ref<string[]>([]);
-const highlightedCode = ref("");
-const highlightedLanguage = ref(props.language);
+const codeContentEl = ref<HTMLDivElement | null>(null);
+const lineNumbersEl = ref<HTMLDivElement | null>(null);
 let highlighter: Highlighter | null = null;
 let highlighterPromise: Promise<Highlighter> | null = null;
-let latestHighlightId = 0;
+let latestRenderId = 0;
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -94,6 +93,33 @@ function normalizePlainLines(code: string): string[] {
     lines.pop();
   }
   return lines.map((line) => (line ? escapeHtml(line) : "&nbsp;"));
+}
+
+function renderLineNumbers(count: number) {
+  if (!lineNumbersEl.value) {
+    return;
+  }
+  if (!props.showLineNumbers) {
+    lineNumbersEl.value.innerHTML = "";
+    return;
+  }
+  let html = "";
+  for (let index = 0; index < count; index += 1) {
+    html += `<span class="line-number">${index + 1}</span>`;
+  }
+  lineNumbersEl.value.innerHTML = html;
+}
+
+function renderCodeLines(lines: string[]) {
+  if (!codeContentEl.value) {
+    return;
+  }
+  let html = "";
+  for (const line of lines) {
+    html += `<div class="code-line">${line}</div>`;
+  }
+  codeContentEl.value.innerHTML = html;
+  renderLineNumbers(lines.length);
 }
 
 async function initHighlighter() {
@@ -112,8 +138,7 @@ async function initHighlighter() {
   return highlighterPromise;
 }
 
-async function highlight() {
-  const highlightId = ++latestHighlightId;
+async function highlight(renderId: number) {
   const hl = await initHighlighter();
 
   // Tokenize with both themes so CSS can switch colors without JS re-render
@@ -146,42 +171,27 @@ async function highlight() {
       .join("");
   });
 
-  if (highlightId !== latestHighlightId) {
+  if (renderId !== latestRenderId) {
     return;
   }
 
-  highlightedCode.value = props.code;
-  highlightedLanguage.value = props.language;
-  highlightedLines.value = nextLines;
+  renderCodeLines(nextLines);
 }
 
-const renderedLines = computed(() => {
-  if (highlightedCode.value === props.code && highlightedLanguage.value === props.language) {
-    return highlightedLines.value;
-  }
-  return normalizePlainLines(props.code);
-});
+function render() {
+  const renderId = ++latestRenderId;
+  renderCodeLines(normalizePlainLines(props.code));
+  void highlight(renderId);
+}
 
-const lineCount = computed(() => renderedLines.value.length);
-
-onMounted(highlight);
-watch(() => [props.code, props.language], highlight);
+onMounted(render);
+watch(() => [props.code, props.language, props.showLineNumbers], render);
 </script>
 
 <template>
   <div class="code-highlight" :class="{ 'with-line-numbers': showLineNumbers }">
-    <div v-if="showLineNumbers" class="line-numbers">
-      <span v-for="i in lineCount" :key="i" class="line-number">{{ i }}</span>
-    </div>
-    <div class="code-content">
-      <!-- @vize:forget shiki output is pre-escaped -->
-      <div
-        v-for="(line, index) in renderedLines"
-        :key="index"
-        class="code-line"
-        v-html="line"
-      ></div>
-    </div>
+    <div v-if="showLineNumbers" ref="lineNumbersEl" class="line-numbers"></div>
+    <div ref="codeContentEl" class="code-content"></div>
   </div>
 </template>
 
@@ -209,7 +219,18 @@ watch(() => [props.code, props.language], highlight);
   left: 0;
 }
 
-.line-number {
+.code-content {
+  flex: 1;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  padding-left: 16px;
+  padding-right: 16px;
+  overflow-x: auto;
+}
+</style>
+
+<style>
+.code-highlight .line-number {
   display: block;
   padding: 0 12px;
   text-align: right;
@@ -219,30 +240,18 @@ watch(() => [props.code, props.language], highlight);
   box-sizing: border-box;
 }
 
-.code-content {
-  flex: 1;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  padding-left: 16px;
-  padding-right: 16px;
-  overflow-x: auto;
-}
-
-.code-line {
+.code-highlight .code-line {
   white-space: pre;
   line-height: 20px;
   height: 20px;
   box-sizing: border-box;
 }
 
-.code-line :deep(span) {
+.code-highlight .code-line span {
   color: var(--l);
   line-height: inherit;
 }
-</style>
 
-<!-- Unscoped: theme switching via body[data-theme] -->
-<style>
 body[data-theme="dark"] .code-highlight .code-line span {
   color: var(--d);
 }

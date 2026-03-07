@@ -4,10 +4,12 @@ import * as parserEstree from "prettier/plugins/estree";
 import * as parserTypescript from "prettier/plugins/typescript";
 import * as parserCss from "prettier/plugins/postcss";
 import ts from "typescript";
+import { formatSsrTemplates } from "./ssrFormatter";
 
 export async function formatCode(code: string, parser: "babel" | "typescript"): Promise<string> {
   try {
-    return await prettier.format(code, {
+    const source = await formatSsrTemplates(code);
+    return await prettier.format(source, {
       parser,
       plugins: [parserBabel, parserEstree, parserTypescript],
       semi: false,

@@ -14,8 +14,44 @@ async function getCodeText(page: Page) {
   return (await page.locator('.code-output .code-content').first().textContent()) ?? ''
 }
 
+async function getCodeLines(page: Page) {
+  return await page
+    .locator('.code-output .code-line')
+    .evaluateAll((nodes) => nodes.map((node) => node.textContent ?? ''))
+}
+
+async function waitForHighlightedOutput(page: Page) {
+  await page.waitForFunction(
+    () => !!document.querySelector('.code-output .code-line span[style*="--d:"]'),
+    { timeout: 10_000 },
+  )
+}
+
+async function getFirstHighlightedTokenStyle(page: Page) {
+  return await page.evaluate(() => {
+    const token = document.querySelector('.code-output .code-line span[style*="--d:"]')
+    const content = document.querySelector('.code-output .code-content')
+    if (!(token instanceof HTMLElement) || !(content instanceof HTMLElement)) {
+      return null
+    }
+    return {
+      text: token.textContent ?? '',
+      color: getComputedStyle(token).color,
+      containerColor: getComputedStyle(content).color,
+    }
+  })
+}
+
 test('atelier code targets expose VDOM, SSR, and Vapor outputs with stable toggles', async ({ page }) => {
   await waitForAtelier(page)
+  await waitForHighlightedOutput(page)
+
+  const initialTokenStyle = await getFirstHighlightedTokenStyle(page)
+  expect(initialTokenStyle).toEqual({
+    text: 'import',
+    color: 'rgb(115, 96, 62)',
+    containerColor: 'rgb(18, 18, 18)',
+  })
 
   const vdomButton = page.getByRole('button', { name: 'VDOM' })
   const ssrButton = page.getByRole('button', { name: 'SSR' })
@@ -36,11 +72,23 @@ test('atelier code targets expose VDOM, SSR, and Vapor outputs with stable toggl
   await expect(tsButton).toBeDisabled()
   await expect(jsButton).toBeDisabled()
   await expect(page.getByText('SFC Output')).toHaveCount(0)
+  await waitForHighlightedOutput(page)
+  await expect.poll(() => getFirstHighlightedTokenStyle(page)).toEqual({
+    text: 'import',
+    color: 'rgb(115, 96, 62)',
+    containerColor: 'rgb(18, 18, 18)',
+  })
 
   const ssrCode = await getCodeText(page)
+  const ssrLines = await getCodeLines(page)
   expect(ssrCode).toContain('ssrRender')
   expect(ssrCode).not.toContain('_ctx.name')
   expect(ssrCode).not.toContain('_ctx.doubled')
+  expect(ssrLines.some((line) => line.includes('<div class="card">'))).toBe(true)
+  expect(ssrLines).toContain('  <h2>${_ssrInterpolate(name)}</h2>')
+  expect(ssrLines).toContain(
+    "  <button${_ssrRenderAttr('disabled', disabled)}>Increment</button>",
+  )
 
   await vaporButton.click()
   await expect(page.locator('.code-header h4')).toHaveText('Vapor Output')
@@ -48,6 +96,12 @@ test('atelier code targets expose VDOM, SSR, and Vapor outputs with stable toggl
   await expect(jsButton).toBeDisabled()
   await expect(page.getByText('Template Fragments')).toHaveCount(0)
   await expect(page.getByText('SFC Output')).toHaveCount(0)
+  await waitForHighlightedOutput(page)
+  await expect.poll(() => getFirstHighlightedTokenStyle(page)).toEqual({
+    text: 'import',
+    color: 'rgb(115, 96, 62)',
+    containerColor: 'rgb(18, 18, 18)',
+  })
 
   const vaporCode = await getCodeText(page)
   expect(vaporCode).toContain('const t0 = _template')
