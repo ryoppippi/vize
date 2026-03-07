@@ -75,19 +75,45 @@ const vizeLightTheme: ThemeRegistration = {
 };
 
 const highlightedLines = ref<string[]>([]);
+const highlightedCode = ref("");
+const highlightedLanguage = ref(props.language);
 let highlighter: Highlighter | null = null;
+let highlighterPromise: Promise<Highlighter> | null = null;
+let latestHighlightId = 0;
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function normalizePlainLines(code: string): string[] {
+  if (!code) {
+    return [];
+  }
+  const lines = code.split("\n");
+  if (lines.length > 0 && lines[lines.length - 1] === "") {
+    lines.pop();
+  }
+  return lines.map((line) => (line ? escapeHtml(line) : "&nbsp;"));
+}
 
 async function initHighlighter() {
-  if (!highlighter) {
-    highlighter = await createHighlighter({
+  if (highlighter) {
+    return highlighter;
+  }
+  if (!highlighterPromise) {
+    highlighterPromise = createHighlighter({
       themes: [vizeDarkTheme, vizeLightTheme],
       langs: ["javascript", "json", "css", "html", "typescript"],
+    }).then((instance) => {
+      highlighter = instance;
+      return instance;
     });
   }
-  return highlighter;
+  return highlighterPromise;
 }
 
 async function highlight() {
+  const highlightId = ++latestHighlightId;
   const hl = await initHighlighter();
 
   // Tokenize with both themes so CSS can switch colors without JS re-render
@@ -106,25 +132,37 @@ async function highlight() {
   }
 
   // Build HTML with both theme colors as CSS custom properties
-  highlightedLines.value = darkLines.map((lineTokens, lineIdx) => {
+  const nextLines = darkLines.map((lineTokens, lineIdx) => {
     if (lineTokens.length === 0) {
       return "&nbsp;";
     }
     return lineTokens
       .map((token, tokenIdx) => {
-        const escaped = token.content
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+        const escaped = escapeHtml(token.content);
         const darkColor = token.color;
         const lightColor = lightLines[lineIdx]?.[tokenIdx]?.color ?? token.color;
         return `<span style="--d:${darkColor};--l:${lightColor}">${escaped}</span>`;
       })
       .join("");
   });
+
+  if (highlightId !== latestHighlightId) {
+    return;
+  }
+
+  highlightedCode.value = props.code;
+  highlightedLanguage.value = props.language;
+  highlightedLines.value = nextLines;
 }
 
-const lineCount = computed(() => highlightedLines.value.length);
+const renderedLines = computed(() => {
+  if (highlightedCode.value === props.code && highlightedLanguage.value === props.language) {
+    return highlightedLines.value;
+  }
+  return normalizePlainLines(props.code);
+});
+
+const lineCount = computed(() => renderedLines.value.length);
 
 onMounted(highlight);
 watch(() => [props.code, props.language], highlight);
@@ -138,7 +176,7 @@ watch(() => [props.code, props.language], highlight);
     <div class="code-content">
       <!-- @vize:forget shiki output is pre-escaped -->
       <div
-        v-for="(line, index) in highlightedLines"
+        v-for="(line, index) in renderedLines"
         :key="index"
         class="code-line"
         v-html="line"

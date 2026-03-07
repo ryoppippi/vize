@@ -7,7 +7,7 @@ import type {
 } from "../../wasm/index";
 import { formatCode, transpileToJs } from "./formatters";
 
-export const CODE_OUTPUT_TARGETS = ["dom", "ssr", "vapor", "vapor-ssr"] as const;
+export const CODE_OUTPUT_TARGETS = ["dom", "ssr", "vapor"] as const;
 
 export type CodeOutputTarget = (typeof CODE_OUTPUT_TARGETS)[number];
 
@@ -23,10 +23,9 @@ export interface CodeOutputVariant {
 export type CodeOutputs = Record<CodeOutputTarget, CodeOutputVariant>;
 
 export const CODE_OUTPUT_LABELS: Record<CodeOutputTarget, string> = {
-  dom: "DOM",
+  dom: "VDOM",
   ssr: "SSR",
   vapor: "Vapor",
-  "vapor-ssr": "Vapor SSR",
 };
 
 function createEmptyCodeOutputVariant(): CodeOutputVariant {
@@ -45,7 +44,6 @@ export function createEmptyCodeOutputs(): CodeOutputs {
     dom: createEmptyCodeOutputVariant(),
     ssr: createEmptyCodeOutputVariant(),
     vapor: createEmptyCodeOutputVariant(),
-    "vapor-ssr": createEmptyCodeOutputVariant(),
   };
 }
 
@@ -84,8 +82,63 @@ function isSfcTypeScript(result: SfcCompileResult): boolean {
   );
 }
 
-function getSfcOutputCode(result: SfcCompileResult): string {
-  return result.script?.code || result.template?.code || "";
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getSfcBindingExpression(name: string, bindingType: string): string | null {
+  switch (bindingType) {
+    case "props":
+    case "props-aliased":
+    case "setup-let":
+    case "setup-reactive-const":
+    case "setup-const":
+    case "literal-const":
+    case "external-module":
+    case "js-global-universal":
+    case "js-global-browser":
+    case "js-global-node":
+    case "js-global-deno":
+    case "js-global-bun":
+      return name;
+    case "setup-ref":
+      return `${name}.value`;
+    case "setup-maybe-ref":
+      return `_unref(${name})`;
+    default:
+      return null;
+  }
+}
+
+function normalizeSfcTemplateCode(result: SfcCompileResult): string {
+  const code = result.template?.code || result.script?.code || "";
+  const bindingMetadata = result.script?.bindings;
+  if (!code || !bindingMetadata?.isScriptSetup) {
+    return code;
+  }
+
+  const bindings = Object.entries(bindingMetadata.bindings || {}).sort(
+    ([left], [right]) => right.length - left.length,
+  );
+  let normalized = code;
+  let needsUnrefImport = false;
+
+  for (const [name, bindingType] of bindings) {
+    const expression = getSfcBindingExpression(name, String(bindingType));
+    if (!expression) {
+      continue;
+    }
+    if (expression.includes("_unref(")) {
+      needsUnrefImport = true;
+    }
+    normalized = normalized.replace(new RegExp(`_ctx\\.${escapeRegExp(name)}\\b`, "g"), expression);
+  }
+
+  if (needsUnrefImport && !normalized.includes("unref as _unref")) {
+    normalized = `import { unref as _unref } from 'vue'\n${normalized}`;
+  }
+
+  return normalized;
 }
 
 async function buildTemplateVariant(result: CompileResult): Promise<CodeOutputVariant> {
@@ -101,8 +154,8 @@ async function buildTemplateVariant(result: CompileResult): Promise<CodeOutputVa
   };
 }
 
-async function buildSfcVariant(result: SfcCompileResult): Promise<CodeOutputVariant> {
-  const code = getSfcOutputCode(result);
+async function buildSfcScriptVariant(result: SfcCompileResult): Promise<CodeOutputVariant> {
+  const code = result.script?.code || result.template?.code || "";
   const isTypeScript = isSfcTypeScript(result);
   const { formattedCode, formattedJsCode } = await formatVariantCode(code, isTypeScript);
   return {
@@ -122,11 +175,10 @@ async function compileTemplateVariant(
   target: Exclude<CodeOutputTarget, "dom">,
 ): Promise<CodeOutputVariant> {
   try {
-    const ssr = target === "ssr" || target === "vapor-ssr";
-    const vapor = target === "vapor" || target === "vapor-ssr";
-    const result = vapor
-      ? compiler.compileVapor(source, { ...options, ssr })
-      : compiler.compile(source, { ...options, ssr });
+    const result =
+      target === "vapor"
+        ? compiler.compileVapor(source, { ...options, ssr: false })
+        : compiler.compile(source, { ...options, ssr: true });
     return await buildTemplateVariant(result);
   } catch (error) {
     return {
@@ -136,6 +188,19 @@ async function compileTemplateVariant(
   }
 }
 
+async function buildSfcTemplateVariant(result: SfcCompileResult): Promise<CodeOutputVariant> {
+  const code = normalizeSfcTemplateCode(result);
+  const { formattedCode, formattedJsCode } = await formatVariantCode(code, false);
+  return {
+    code,
+    formattedCode,
+    formattedJsCode,
+    isTypeScript: false,
+    templates: result.template?.templates || [],
+    error: null,
+  };
+}
+
 async function compileSfcVariant(
   compiler: WasmModule,
   source: string,
@@ -143,14 +208,13 @@ async function compileSfcVariant(
   target: Exclude<CodeOutputTarget, "dom">,
 ): Promise<CodeOutputVariant> {
   try {
-    const ssr = target === "ssr" || target === "vapor-ssr";
     const outputMode = target === "ssr" ? "vdom" : "vapor";
     const result = compiler.compileSfc(source, {
       ...options,
-      ssr,
+      ssr: target === "ssr",
       outputMode,
     });
-    return await buildSfcVariant(result);
+    return await buildSfcTemplateVariant(result);
   } catch (error) {
     return {
       ...createEmptyCodeOutputVariant(),
@@ -180,18 +244,16 @@ export async function compileCodeOutputs({
 
   if (inputMode === "sfc") {
     if (baseSfcResult) {
-      outputs.dom = await buildSfcVariant(baseSfcResult);
+      outputs.dom = await buildSfcScriptVariant(baseSfcResult);
     }
 
-    const [ssr, vapor, vaporSsr] = await Promise.all([
+    const [ssr, vapor] = await Promise.all([
       compileSfcVariant(compiler, source, options, "ssr"),
       compileSfcVariant(compiler, source, options, "vapor"),
-      compileSfcVariant(compiler, source, options, "vapor-ssr"),
     ]);
 
     outputs.ssr = ssr;
     outputs.vapor = vapor;
-    outputs["vapor-ssr"] = vaporSsr;
     return outputs;
   }
 
@@ -199,14 +261,12 @@ export async function compileCodeOutputs({
     outputs.dom = await buildTemplateVariant(baseOutput);
   }
 
-  const [ssr, vapor, vaporSsr] = await Promise.all([
+  const [ssr, vapor] = await Promise.all([
     compileTemplateVariant(compiler, source, options, "ssr"),
     compileTemplateVariant(compiler, source, options, "vapor"),
-    compileTemplateVariant(compiler, source, options, "vapor-ssr"),
   ]);
 
   outputs.ssr = ssr;
   outputs.vapor = vapor;
-  outputs["vapor-ssr"] = vaporSsr;
   return outputs;
 }

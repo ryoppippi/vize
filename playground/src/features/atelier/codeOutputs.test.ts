@@ -23,13 +23,30 @@ function createCompileResult(code: string, templates?: string[]): CompileResult 
 }
 
 function createSfcResult(
-  code: string,
+  scriptCode: string,
   {
     lang,
+    templateCode,
     templates,
+    templateContent = "<div />",
+    bindings = {
+      bindings: {
+        count: "props",
+        doubled: "setup-ref",
+      },
+      propsAliases: {},
+      isScriptSetup: true,
+    },
   }: {
     lang?: string;
+    templateCode?: string;
     templates?: string[];
+    templateContent?: string;
+    bindings?: {
+      bindings: Record<string, string>;
+      propsAliases?: Record<string, string>;
+      isScriptSetup?: boolean;
+    };
   } = {},
 ): SfcCompileResult {
   return {
@@ -38,6 +55,11 @@ function createSfcResult(
       source: "",
       styles: [],
       customBlocks: [],
+      template: {
+        content: templateContent,
+        loc: { start: 0, end: 0 },
+        attrs: {},
+      },
       scriptSetup: lang
         ? {
             content: "",
@@ -49,9 +71,10 @@ function createSfcResult(
         : undefined,
     },
     script: {
-      code,
+      code: scriptCode,
+      bindings,
     },
-    template: createCompileResult(`${code}:template`, templates),
+    template: createCompileResult(templateCode || `${scriptCode}:template`, templates),
   };
 }
 
@@ -80,31 +103,32 @@ describe("compileCodeOutputs", () => {
     expect(outputs.dom.code).toBe("dom-code");
     expect(outputs.ssr.code).toBe("ssr-code");
     expect(outputs.vapor.code).toBe("vapor-code");
-    expect(outputs["vapor-ssr"].code).toBe("vapor-ssr-code");
     expect(outputs.vapor.templates).toEqual(["tpl-a"]);
     expect(compile).toHaveBeenNthCalledWith(1, "<div />", { mode: "module", ssr: true });
-    expect(compileVapor).toHaveBeenNthCalledWith(1, "<div />", {
-      mode: "module",
-      ssr: false,
-    });
-    expect(compileVapor).toHaveBeenNthCalledWith(2, "<div />", {
-      mode: "module",
-      ssr: true,
-    });
+    expect(compileVapor).toHaveBeenNthCalledWith(1, "<div />", { mode: "module", ssr: false });
   });
 
-  it("compiles SFC outputs with the expected mode combinations", async () => {
+  it("normalizes SFC SSR and Vapor template outputs using script setup bindings", async () => {
     const compileSfc = vi.fn((_: string, options: CompilerOptions) => {
-      if (options.outputMode === "vapor" && options.ssr) {
-        return createSfcResult("vapor-ssr", { lang: "ts", templates: ["tpl-vapor-ssr"] });
-      }
       if (options.outputMode === "vapor") {
-        return createSfcResult("vapor", { lang: "ts", templates: ["tpl-vapor"] });
+        return createSfcResult("dom-script", {
+          lang: "ts",
+          templateCode:
+            "export function render(_ctx) { return _toDisplayString(_ctx.count) + _toDisplayString(_ctx.doubled) }",
+          templates: ["tpl-vapor"],
+        });
       }
       if (options.ssr) {
-        return createSfcResult("ssr", { lang: "ts" });
+        return createSfcResult("dom-script", {
+          lang: "ts",
+          templateCode:
+            "function ssrRender(_ctx, _push, _parent, _attrs) { _push(_ssrInterpolate(_ctx.count) + _ssrInterpolate(_ctx.doubled)) }",
+        });
       }
-      return createSfcResult("dom", { lang: "ts" });
+      return createSfcResult("dom-script", {
+        lang: "ts",
+        templateCode: "dom-template",
+      });
     });
     const compiler = {
       compileSfc,
@@ -116,15 +140,22 @@ describe("compileCodeOutputs", () => {
       source: "<template><div /></template>",
       options: { mode: "module", scriptExt: "preserve" },
       baseOutput: null,
-      baseSfcResult: createSfcResult("dom", { lang: "ts" }),
+      baseSfcResult: createSfcResult("dom-script", {
+        lang: "ts",
+        templateCode: "dom-template",
+      }),
     });
 
-    expect(outputs.dom.code).toBe("dom");
+    expect(outputs.dom.code).toBe("dom-script");
     expect(outputs.dom.isTypeScript).toBe(true);
-    expect(outputs.dom.formattedJsCode).toBe("[babel] js:dom");
-    expect(outputs.ssr.code).toBe("ssr");
+    expect(outputs.dom.formattedJsCode).toBe("[babel] js:dom-script");
+    expect(outputs.ssr.code).toContain("_ssrInterpolate(count)");
+    expect(outputs.ssr.code).toContain("_ssrInterpolate(doubled.value)");
+    expect(outputs.ssr.code).not.toContain("_ctx.count");
+    expect(outputs.ssr.code).not.toContain("_ctx.doubled");
+    expect(outputs.vapor.code).toContain("_toDisplayString(count)");
+    expect(outputs.vapor.code).toContain("_toDisplayString(doubled.value)");
     expect(outputs.vapor.templates).toEqual(["tpl-vapor"]);
-    expect(outputs["vapor-ssr"].templates).toEqual(["tpl-vapor-ssr"]);
     expect(compileSfc).toHaveBeenNthCalledWith(1, "<template><div /></template>", {
       mode: "module",
       scriptExt: "preserve",
@@ -135,12 +166,6 @@ describe("compileCodeOutputs", () => {
       mode: "module",
       scriptExt: "preserve",
       ssr: false,
-      outputMode: "vapor",
-    });
-    expect(compileSfc).toHaveBeenNthCalledWith(3, "<template><div /></template>", {
-      mode: "module",
-      scriptExt: "preserve",
-      ssr: true,
       outputMode: "vapor",
     });
   });

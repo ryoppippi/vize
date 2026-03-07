@@ -42,6 +42,7 @@ export function useAtelierCompiler(getCompiler: () => WasmModule | null) {
   const codeViewMode = ref<"ts" | "js">("ts");
   const codeOutputTarget = ref<CodeOutputTarget>("dom");
   const codeOutputs = ref(createEmptyCodeOutputs());
+  const codeOutputVersion = ref(0);
   const activeCodeOutput = computed(() => codeOutputs.value[codeOutputTarget.value]);
   const astHideLoc = ref(true);
   const astHideSource = ref(true);
@@ -133,6 +134,7 @@ export function useAtelierCompiler(getCompiler: () => WasmModule | null) {
             baseOutput: output.value,
             baseSfcResult: sfcResult.value,
           });
+          codeOutputVersion.value += 1;
           compileTime.value = performance.now() - startTime;
         } catch (sfcError) {
           console.error("SFC compile error:", sfcError);
@@ -152,6 +154,7 @@ export function useAtelierCompiler(getCompiler: () => WasmModule | null) {
           baseOutput: result,
           baseSfcResult: null,
         });
+        codeOutputVersion.value += 1;
         compileTime.value = performance.now() - startTime;
       }
     } catch (e) {
@@ -230,6 +233,7 @@ ${output.value?.helpers?.join("\n") || "None"}`.trim();
     codeViewMode,
     codeOutputTarget,
     codeOutputs,
+    codeOutputVersion,
     activeCodeOutput,
     astHideLoc,
     astHideSource,

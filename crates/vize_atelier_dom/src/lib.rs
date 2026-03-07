@@ -275,4 +275,117 @@ mod tests {
             full
         );
     }
+
+    #[test]
+    fn test_inline_component_dynamic_prop_keeps_props_patch_flag() {
+        use vize_atelier_core::options::{BindingMetadata, BindingType};
+        use vize_carton::FxHashMap;
+
+        let allocator = Bump::new();
+        let mut bindings = FxHashMap::default();
+        bindings.insert("message".into(), BindingType::SetupRef);
+
+        let options = DomCompilerOptions {
+            mode: CodegenMode::Module,
+            prefix_identifiers: true,
+            inline: true,
+            cache_handlers: true,
+            binding_metadata: Some(BindingMetadata {
+                bindings,
+                props_aliases: FxHashMap::default(),
+                is_script_setup: true,
+            }),
+            ..Default::default()
+        };
+
+        let (_, errors, result) = compile_template_with_options(
+            &allocator,
+            r#"<div><MyComponent :msg="message" /></div>"#,
+            options,
+        );
+
+        assert!(errors.is_empty(), "Errors: {:?}", errors);
+        let mut full =
+            vize_carton::String::with_capacity(result.preamble.len() + result.code.len() + 1);
+        full.push_str(&result.preamble);
+        full.push('\n');
+        full.push_str(&result.code);
+        assert!(
+            full.contains("_createVNode(_component_MyComponent"),
+            "Expected inline component vnode output. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("msg: message.value"),
+            "Expected inline component prop to stay reactive. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("8 /* PROPS */"),
+            "Expected inline component to keep PROPS patch flag for dynamic prop. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("[\"msg\"]"),
+            "Expected inline component dynamic props list to include msg. Got:\n{}",
+            full
+        );
+    }
+
+    #[test]
+    fn test_v_if_branch_component_dynamic_prop_keeps_props_patch_flag() {
+        use vize_atelier_core::options::{BindingMetadata, BindingType};
+        use vize_carton::FxHashMap;
+
+        let allocator = Bump::new();
+        let mut bindings = FxHashMap::default();
+        bindings.insert("show".into(), BindingType::SetupRef);
+        bindings.insert("message".into(), BindingType::SetupRef);
+
+        let options = DomCompilerOptions {
+            mode: CodegenMode::Module,
+            prefix_identifiers: true,
+            inline: true,
+            cache_handlers: true,
+            binding_metadata: Some(BindingMetadata {
+                bindings,
+                props_aliases: FxHashMap::default(),
+                is_script_setup: true,
+            }),
+            ..Default::default()
+        };
+
+        let (_, errors, result) = compile_template_with_options(
+            &allocator,
+            r#"<div><MyComponent v-if="show" :msg="message" /></div>"#,
+            options,
+        );
+
+        assert!(errors.is_empty(), "Errors: {:?}", errors);
+        let mut full =
+            vize_carton::String::with_capacity(result.preamble.len() + result.code.len() + 1);
+        full.push_str(&result.preamble);
+        full.push('\n');
+        full.push_str(&result.code);
+        assert!(
+            full.contains("_createBlock(_component_MyComponent"),
+            "Expected v-if branch component block output. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("msg: message.value"),
+            "Expected v-if branch component prop to stay reactive. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("8 /* PROPS */"),
+            "Expected v-if branch component to keep PROPS patch flag. Got:\n{}",
+            full
+        );
+        assert!(
+            full.contains("[\"msg\"]"),
+            "Expected v-if branch component dynamic props list to include msg. Got:\n{}",
+            full
+        );
+    }
 }
