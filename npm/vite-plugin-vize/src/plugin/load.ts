@@ -17,6 +17,25 @@ import {
 } from "../virtual.js";
 import { rewriteStaticAssetUrls, applyDefineReplacements } from "../transform.js";
 
+const SERVER_PLACEHOLDER_CODE = `import { createElementBlock, defineComponent } from "vue";
+export default defineComponent({
+  name: "ServerPlaceholder",
+  render() {
+    return createElementBlock("div");
+  }
+});
+`;
+
+export function getBoundaryPlaceholderCode(realPath: string, ssr: boolean): string | null {
+  if (ssr && realPath.endsWith(".client.vue")) {
+    return SERVER_PLACEHOLDER_CODE;
+  }
+  if (!ssr && realPath.endsWith(".server.vue")) {
+    return SERVER_PLACEHOLDER_CODE;
+  }
+  return null;
+}
+
 export function loadHook(
   state: VizePluginState,
   id: string,
@@ -120,6 +139,15 @@ export function loadHook(
     if (!realPath.endsWith(".vue")) {
       state.logger.log(`load: skipping non-vue virtual module ${realPath}`);
       return null;
+    }
+
+    const placeholderCode = getBoundaryPlaceholderCode(realPath, !!loadOptions?.ssr);
+    if (placeholderCode) {
+      state.logger.log(`load: using boundary placeholder for ${realPath}`);
+      return {
+        code: placeholderCode,
+        map: null,
+      };
     }
 
     let compiled = state.cache.get(realPath);

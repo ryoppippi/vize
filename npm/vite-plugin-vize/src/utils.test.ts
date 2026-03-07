@@ -70,6 +70,21 @@ assert.strictEqual(
   "Should detect _sfc_main with various whitespace",
 );
 
+// Test 3b: Template-only SFCs need a default export shim
+const templateOnlyCode = `
+export function render() {
+  return null
+}
+const _sfc_main = {}
+_sfc_main.render = render
+export default _sfc_main
+`;
+assert.strictEqual(
+  hasExportDefault(templateOnlyCode),
+  true,
+  "Template-only components should still expose a default export",
+);
+
 // =============================================================================
 // Test: Query parameter preservation in relative imports
 // =============================================================================

@@ -176,6 +176,62 @@ watch(
     }
 
     #[test]
+    fn test_multiline_standalone_await_preserves_object_literal() {
+        let content = r#"
+const client = useClient()
+
+await client.reports.create({
+  accountId: 'acc',
+  message: 'hello',
+})
+"#;
+        let output = compile_setup_ts(content);
+        assert!(
+            output.contains("_withAsyncContext(() => client.reports.create({"),
+            "multiline await should keep the full call expression. Got:\n{}",
+            output
+        );
+        assert!(
+            output.contains("accountId: 'acc'") && output.contains("message: 'hello'"),
+            "object literal fields should remain intact. Got:\n{}",
+            output
+        );
+        assert!(
+            !output.contains("create({))"),
+            "await transform must not truncate the object literal. Got:\n{}",
+            output
+        );
+    }
+
+    #[test]
+    fn test_multiline_await_assignment_preserves_initializer() {
+        let content = r#"
+const response = await fetch('/api/report', {
+  method: 'POST',
+  body: JSON.stringify({ ok: true }),
+})
+"#;
+        let output = compile_setup_ts(content);
+        assert!(
+            output.contains("const response =")
+                && output.contains("_withAsyncContext(() => fetch('/api/report', {"),
+            "await assignment should wrap the whole initializer. Got:\n{}",
+            output
+        );
+        assert!(
+            output.contains("method: 'POST'")
+                && output.contains("body: JSON.stringify({ ok: true })"),
+            "initializer object literal should remain intact. Got:\n{}",
+            output
+        );
+        assert!(
+            !output.contains("fetch('/api/report', {))"),
+            "await assignment must not truncate multiline initializers. Got:\n{}",
+            output
+        );
+    }
+
+    #[test]
     fn test_export_type_with_arrow_function_member() {
         let content = r#"
 import { computed } from 'vue'
