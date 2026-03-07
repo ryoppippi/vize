@@ -86,9 +86,9 @@ test('atelier code targets expose VDOM, SSR, and Vapor outputs with stable toggl
   expect(ssrCode).not.toContain('_ctx.doubled')
   expect(ssrLines.some((line) => line.includes('<div class="card">'))).toBe(true)
   expect(ssrLines).toContain('  <h2>${_ssrInterpolate(name)}</h2>')
-  expect(ssrLines).toContain(
-    "  <button${_ssrRenderAttr('disabled', disabled)}>Increment</button>",
-  )
+  expect(ssrLines).toContain("  <button${_ssrRenderAttr('disabled', disabled)}>")
+  expect(ssrLines).toContain('      Increment')
+  expect(ssrLines).toContain('    </button>')
 
   await vaporButton.click()
   await expect(page.locator('.code-header h4')).toHaveText('Vapor Output')
@@ -104,6 +104,10 @@ test('atelier code targets expose VDOM, SSR, and Vapor outputs with stable toggl
   })
 
   const vaporCode = await getCodeText(page)
+  const vaporLines = await getCodeLines(page)
   expect(vaporCode).toContain('const t0 = _template')
   expect(vaporCode).toContain('_renderEffect')
+  expect(vaporLines.some((line) => line.includes('<div class="card">'))).toBe(true)
+  expect(vaporLines.some((line) => line.includes('<h2> </h2>'))).toBe(true)
+  expect(vaporLines.some((line) => line.includes('Increment'))).toBe(true)
 })

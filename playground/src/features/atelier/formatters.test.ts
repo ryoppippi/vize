@@ -22,4 +22,22 @@ describe("formatCode", () => {
       "
     `);
   });
+
+  it("formats Vapor template factory output", async () => {
+    const code =
+      "import { template as _template } from 'vue'\nconst t0 = _template('<div class=\"card\"><h2> </h2><p> </p><p> </p><button>\\n      Increment\\n    </button></div>')";
+
+    await expect(formatCode(code, "babel")).resolves.toMatchInlineSnapshot(`
+      "import { template as _template } from 'vue'
+      const t0 = _template(\`<div class="card">
+        <h2> </h2>
+        <p> </p>
+        <p> </p>
+        <button>
+            Increment
+          </button>
+      </div>\`)
+      "
+    `);
+  });
 });

@@ -1,11 +1,8 @@
-import * as prettier from "prettier/standalone";
-import * as parserHtml from "prettier/plugins/html";
+import { formatHtmlFragment } from "./htmlFragmentFormatter";
 
 const PUSH_CALL = "_push(";
 const ATTR_PLACEHOLDER_PREFIX = " data-vize-expr-";
 const ATTR_PLACEHOLDER_SUFFIX = '=""';
-const TEXT_PLACEHOLDER_PREFIX = "{{__VIZE_EXPR_";
-const TEXT_PLACEHOLDER_SUFFIX = "__}}";
 
 interface PlaceholderResult {
   html: string;
@@ -59,17 +56,8 @@ export async function formatSsrTemplates(code: string): Promise<string> {
 
 async function formatSsrTemplateLiteral(template: string): Promise<string> {
   const placeholderResult = replaceExpressionsWithPlaceholders(template);
-
-  try {
-    const formattedHtml = await prettier.format(placeholderResult.html, {
-      parser: "html",
-      plugins: [parserHtml],
-      printWidth: 80,
-    });
-    return restoreExpressions(formattedHtml.trimEnd(), placeholderResult.expressions);
-  } catch {
-    return template;
-  }
+  const formattedHtml = await formatHtmlFragment(placeholderResult.html);
+  return restoreExpressions(formattedHtml, placeholderResult.expressions);
 }
 
 function replaceExpressionsWithPlaceholders(template: string): PlaceholderResult {
@@ -90,7 +78,7 @@ function replaceExpressionsWithPlaceholders(template: string): PlaceholderResult
       if (insideTag) {
         html += ATTR_PLACEHOLDER_PREFIX + index + ATTR_PLACEHOLDER_SUFFIX;
       } else {
-        html += TEXT_PLACEHOLDER_PREFIX + index + TEXT_PLACEHOLDER_SUFFIX;
+        html += template.slice(cursor, expressionEnd + 1);
       }
       cursor = expressionEnd + 1;
       continue;
@@ -131,10 +119,8 @@ function restoreExpressions(html: string, expressions: string[]): string {
   let restored = html;
 
   for (let index = 0; index < expressions.length; index += 1) {
-    const textPlaceholder = TEXT_PLACEHOLDER_PREFIX + index + TEXT_PLACEHOLDER_SUFFIX;
     const attrPlaceholder = ATTR_PLACEHOLDER_PREFIX + index + ATTR_PLACEHOLDER_SUFFIX;
 
-    restored = restored.replaceAll(textPlaceholder, expressions[index]);
     restored = restored.replaceAll(attrPlaceholder, expressions[index]);
   }
 

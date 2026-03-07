@@ -14,7 +14,7 @@ interface Item {
 export default /*@__PURE__*/_defineComponent({
   __name: 'test',
   props: {
-    item: { type: null, required: true }
+    item: { type: Object, required: true }
   },
   setup(__props: any) {
 
