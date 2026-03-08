@@ -231,18 +231,37 @@ jobs:
       - name: Publish platform packages
         working-directory: npm/vize-native
         run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
           for dir in npm/*/; do
             if [ -d "$dir" ]; then
               echo "Publishing $dir..."
               cd "$dir"
-              npm publish --provenance --access public --tag $NPM_TAG || echo "Failed to publish $dir (may need initial manual publish)"
+              publish_with_retry npm publish --provenance --access public --tag $NPM_TAG || echo "Failed to publish $dir (may need initial manual publish)"
               cd ../..
             fi
           done
 
       - name: Publish
         working-directory: npm/vize-native
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Publish fresco native packages to npm (using Trusted Publishing / OIDC)
   release-npm-fresco-native:
@@ -296,18 +315,37 @@ jobs:
       - name: Publish platform packages
         working-directory: npm/fresco-native
         run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
           for dir in npm/*/; do
             if [ -d "$dir" ]; then
               echo "Publishing $dir..."
               cd "$dir"
-              npm publish --provenance --access public --tag $NPM_TAG || echo "Failed to publish $dir (may need initial manual publish)"
+              publish_with_retry npm publish --provenance --access public --tag $NPM_TAG || echo "Failed to publish $dir (may need initial manual publish)"
               cd ../..
             fi
           done
 
       - name: Publish
         working-directory: npm/fresco-native
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish WASM package (using Trusted Publishing / OIDC)
   release-npm-wasm:
@@ -354,7 +392,17 @@ jobs:
 
       - name: Publish @vizejs/wasm
         working-directory: npm/vize-wasm
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Vite plugin (using Trusted Publishing / OIDC)
   release-npm-vite-plugin:
@@ -389,7 +437,17 @@ jobs:
 
       - name: Publish @vizejs/vite-plugin
         working-directory: npm/vite-plugin-vize
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish unplugin package (using Trusted Publishing / OIDC)
   release-npm-unplugin:
@@ -424,7 +482,17 @@ jobs:
 
       - name: Publish @vizejs/unplugin
         working-directory: npm/unplugin-vize
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Fresco package (using Trusted Publishing / OIDC)
   release-npm-fresco:
@@ -459,7 +527,17 @@ jobs:
 
       - name: Publish @vizejs/fresco
         working-directory: npm/fresco
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Musea MCP server (using Trusted Publishing / OIDC)
   release-npm-musea-mcp-server:
@@ -494,7 +572,17 @@ jobs:
 
       - name: Publish @vizejs/musea-mcp-server
         working-directory: npm/musea-mcp-server
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Vite plugin for Musea (using Trusted Publishing / OIDC)
   release-npm-vite-plugin-musea:
@@ -532,7 +620,17 @@ jobs:
 
       - name: Publish @vizejs/vite-plugin-musea
         working-directory: npm/vite-plugin-musea
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Rspack plugin (using Trusted Publishing / OIDC)
   release-npm-rspack-plugin:
@@ -567,7 +665,17 @@ jobs:
 
       - name: Publish @vizejs/rspack-plugin
         working-directory: npm/rspack-vize-plugin
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish Musea Nuxt (using Trusted Publishing / OIDC)
   release-npm-musea-nuxt:
@@ -602,7 +710,17 @@ jobs:
 
       - name: Publish @vizejs/musea-nuxt
         working-directory: npm/musea-nuxt
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Build and publish @vizejs/nuxt (using Trusted Publishing / OIDC)
   release-npm-nuxt:
@@ -637,7 +755,17 @@ jobs:
 
       - name: Publish @vizejs/nuxt
         working-directory: npm/nuxt
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
 
   # Publish crates to crates.io (using Trusted Publishing)
   release-crates:
@@ -792,4 +920,14 @@ jobs:
 
       - name: Publish vize CLI package
         working-directory: npm/vize
-        run: pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
+        run: |
+          publish_with_retry() {
+            local max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              echo "Attempt $attempt/$max_attempts: $@"
+              if "$@"; then return 0; fi
+              if [ $attempt -lt $max_attempts ]; then echo "Retrying in 15s..."; sleep 15; fi
+            done
+            return 1
+          }
+          publish_with_retry pnpm publish --provenance --access public --no-git-checks --tag $NPM_TAG
