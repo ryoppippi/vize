@@ -1,6 +1,6 @@
 {
   "name": "@vizejs/musea-nuxt",
-  "version": "0.21.0",
+  "version": "0.25.0",
   "description": "Nuxt mock layer for Musea - enables Nuxt component isolation in galleries",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,7 +16,9 @@
   ],
   "scripts": {
     "build": "tsdown",
-    "dev": "tsdown --watch"
+    "dev": "tsdown --watch",
+    "fmt": "oxfmt --write src tsdown.config.ts",
+    "fmt:check": "oxfmt src tsdown.config.ts"
   },
   "keywords": [
     "nuxt",

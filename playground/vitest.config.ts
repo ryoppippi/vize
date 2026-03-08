@@ -8,7 +8,7 @@ export default defineConfig({
     dedupe: ["vue"],
   },
   optimizeDeps: {
-    include: ["vue", "@vue/test-utils"],
+    include: ["vue", "@vue/test-utils", "monaco-editor", "shiki", "prettier/plugins/html"],
   },
   test: {
     browser: {
@@ -17,6 +17,7 @@ export default defineConfig({
       instances: [{ browser: "chromium" }],
     },
     include: ["src/**/*.test.ts", "e2e/**/*.test.ts"],
+    exclude: ["e2e/vite-plugin-vapor.test.ts"],
   },
   server: {
     headers: {

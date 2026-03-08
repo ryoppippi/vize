@@ -1,6 +1,6 @@
 //! Structural directive transforms (v-if, v-for).
 
-use vize_carton::{Box, Bump, String, Vec};
+use vize_carton::{Box, String, Vec};
 
 use crate::ast::*;
 use crate::errors::ErrorCode;
@@ -16,7 +16,9 @@ pub struct SimpleExpressionContent {
     pub loc: SourceLocation,
 }
 
-/// Check if element has a structural directive
+/// Check if element has a structural directive.
+/// In Vue 3, v-if has higher priority than v-for when both are on the same element.
+/// So we check for v-if/v-else-if/v-else first, then v-for.
 pub fn check_structural_directive<'a>(
     el: &ElementNode<'a>,
 ) -> Option<(
@@ -24,10 +26,11 @@ pub fn check_structural_directive<'a>(
     Option<SimpleExpressionContent>,
     Option<SourceLocation>,
 )> {
+    // First pass: check for v-if/v-else-if/v-else (higher priority)
     for prop in el.props.iter() {
         if let PropNode::Directive(dir) = prop {
             match dir.name.as_str() {
-                "if" | "else-if" | "else" | "for" => {
+                "if" | "else-if" | "else" => {
                     let exp_content = dir.exp.as_ref().map(|e| match e {
                         ExpressionNode::Simple(s) => SimpleExpressionContent {
                             content: s.content.clone(),
@@ -44,6 +47,27 @@ pub fn check_structural_directive<'a>(
                     return Some((dir.name.clone(), exp_content, exp_loc));
                 }
                 _ => {}
+            }
+        }
+    }
+    // Second pass: check for v-for (lower priority)
+    for prop in el.props.iter() {
+        if let PropNode::Directive(dir) = prop {
+            if dir.name.as_str() == "for" {
+                let exp_content = dir.exp.as_ref().map(|e| match e {
+                    ExpressionNode::Simple(s) => SimpleExpressionContent {
+                        content: s.content.clone(),
+                        is_static: s.is_static,
+                        loc: s.loc.clone(),
+                    },
+                    ExpressionNode::Compound(c) => SimpleExpressionContent {
+                        content: c.loc.source.clone(),
+                        is_static: false,
+                        loc: c.loc.clone(),
+                    },
+                });
+                let exp_loc = dir.exp.as_ref().map(|e| e.loc().clone());
+                return Some((dir.name.clone(), exp_content, exp_loc));
             }
         }
     }
@@ -137,11 +161,18 @@ pub fn transform_v_if<'a>(
             }
         });
 
-        // Extract user key from the element if present
+        // Extract user key from the element if present,
+        // but NOT if the element also has v-for (the key belongs to v-for in that case)
         let mut user_key = None;
         let taken_node = match taken_node {
             TemplateChildNode::Element(mut el) => {
-                user_key = extract_key_prop(&mut el);
+                let has_v_for = el
+                    .props
+                    .iter()
+                    .any(|p| matches!(p, PropNode::Directive(d) if d.name.as_str() == "for"));
+                if !has_v_for {
+                    user_key = extract_key_prop(&mut el);
+                }
                 TemplateChildNode::Element(el)
             }
             other => other,
@@ -374,9 +405,11 @@ pub fn transform_v_for<'a>(
         _ => return None,
     };
 
-    // Parse v-for expression: "item in items" or "(item, index) in items"
-    let (mut source, value_alias, key_alias, index_alias) =
-        parse_v_for_expression(allocator, &exp.content, &exp.loc);
+    let parse_result = crate::transforms::parse_for_expression(allocator, &exp.content, &exp.loc);
+    let mut source = parse_result.source;
+    let value_alias = parse_result.value;
+    let key_alias = parse_result.key;
+    let index_alias = parse_result.index;
 
     // Process source expression with binding-aware identifier prefixing
     // This ensures imports and refs are correctly handled (e.g., _unref(PRESETS) instead of _ctx.PRESETS)
@@ -422,145 +455,6 @@ pub fn transform_v_for<'a>(
     ctx.helper(RuntimeHelper::Fragment);
 
     None
-}
-
-/// Parse v-for expression
-fn parse_v_for_expression<'a>(
-    allocator: &'a Bump,
-    content: &str,
-    loc: &SourceLocation,
-) -> (
-    ExpressionNode<'a>,
-    Option<ExpressionNode<'a>>,
-    Option<ExpressionNode<'a>>,
-    Option<ExpressionNode<'a>>,
-) {
-    // Match patterns like "item in items" or "(item, index) in items"
-    let (alias_part, source_part) = if let Some(idx) = content.find(" in ") {
-        (&content[..idx], &content[idx + 4..])
-    } else if let Some(idx) = content.find(" of ") {
-        (&content[..idx], &content[idx + 4..])
-    } else {
-        // Return source as-is
-        let source = ExpressionNode::Simple(Box::new_in(
-            SimpleExpressionNode {
-                content: String::new(content),
-                is_static: false,
-                const_type: ConstantType::NotConstant,
-                loc: loc.clone(),
-                js_ast: None,
-                hoisted: None,
-                identifiers: None,
-                is_handler_key: false,
-                is_ref_transformed: false,
-            },
-            allocator,
-        ));
-        return (source, None, None, None);
-    };
-
-    let source_str = source_part.trim();
-    let alias_str = alias_part.trim();
-
-    // Parse source expression
-    let source = ExpressionNode::Simple(Box::new_in(
-        SimpleExpressionNode {
-            content: String::new(source_str),
-            is_static: false,
-            const_type: ConstantType::NotConstant,
-            loc: SourceLocation::default(),
-            js_ast: None,
-            hoisted: None,
-            identifiers: None,
-            is_handler_key: false,
-            is_ref_transformed: false,
-        },
-        allocator,
-    ));
-
-    // Parse aliases
-    let (value, key, index) = if alias_str.starts_with('(') && alias_str.ends_with(')') {
-        let inner = &alias_str[1..alias_str.len() - 1];
-        let aliases: std::vec::Vec<&str> = inner.split(',').map(|s| s.trim()).collect();
-
-        let value = if !aliases.is_empty() && !aliases[0].is_empty() {
-            Some(ExpressionNode::Simple(Box::new_in(
-                SimpleExpressionNode {
-                    content: String::new(aliases[0]),
-                    is_static: false,
-                    const_type: ConstantType::NotConstant,
-                    loc: SourceLocation::default(),
-                    js_ast: None,
-                    hoisted: None,
-                    identifiers: None,
-                    is_handler_key: false,
-                    is_ref_transformed: false,
-                },
-                allocator,
-            )))
-        } else {
-            None
-        };
-
-        let key = if aliases.len() > 1 && !aliases[1].is_empty() {
-            Some(ExpressionNode::Simple(Box::new_in(
-                SimpleExpressionNode {
-                    content: String::new(aliases[1]),
-                    is_static: false,
-                    const_type: ConstantType::NotConstant,
-                    loc: SourceLocation::default(),
-                    js_ast: None,
-                    hoisted: None,
-                    identifiers: None,
-                    is_handler_key: false,
-                    is_ref_transformed: false,
-                },
-                allocator,
-            )))
-        } else {
-            None
-        };
-
-        let index = if aliases.len() > 2 && !aliases[2].is_empty() {
-            Some(ExpressionNode::Simple(Box::new_in(
-                SimpleExpressionNode {
-                    content: String::new(aliases[2]),
-                    is_static: false,
-                    const_type: ConstantType::NotConstant,
-                    loc: SourceLocation::default(),
-                    js_ast: None,
-                    hoisted: None,
-                    identifiers: None,
-                    is_handler_key: false,
-                    is_ref_transformed: false,
-                },
-                allocator,
-            )))
-        } else {
-            None
-        };
-
-        (value, key, index)
-    } else {
-        // Simple alias
-        let value = Some(ExpressionNode::Simple(Box::new_in(
-            SimpleExpressionNode {
-                content: String::new(alias_str),
-                is_static: false,
-                const_type: ConstantType::NotConstant,
-                loc: SourceLocation::default(),
-                js_ast: None,
-                hoisted: None,
-                identifiers: None,
-                is_handler_key: false,
-                is_ref_transformed: false,
-            },
-            allocator,
-        )));
-        (value, None, None)
-    };
-
-    (source, value, key, index)
 }
 
 /// Extract key value string from a PropNode for comparison

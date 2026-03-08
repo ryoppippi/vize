@@ -17,6 +17,13 @@ use vize_carton::append;
 impl MaestroServer {
     /// Publish diagnostics for a document.
     pub(crate) async fn publish_diagnostics(&self, uri: &Url) {
+        if !self.state.are_diagnostics_enabled() {
+            self.client
+                .publish_diagnostics(uri.clone(), vec![], None)
+                .await;
+            return;
+        }
+
         // Use async version when native feature is enabled (includes tsgo diagnostics)
         #[cfg(feature = "native")]
         let diagnostics = DiagnosticService::collect_async(&self.state, uri).await;

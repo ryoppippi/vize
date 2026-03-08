@@ -4,9 +4,12 @@
 /// ```
 /// amends "node_modules/vize/pkl/VizeConfig.pkl"
 ///
-/// compiler {
-///   mode = "module"
-///   vapor = true
+/// formatter {
+///   singleQuote = true
+/// }
+///
+/// lsp {
+///   completion = false
 /// }
 /// ```
 module vize.VizeConfig
@@ -21,25 +24,25 @@ import "MuseaConfig.pkl"
 import "GlobalTypesConfig.pkl"
 
 /// Vue compiler options.
-compiler: CompilerConfig?
+compiler: CompilerConfig.CompilerConfig = new CompilerConfig.CompilerConfig {}
 
 /// Vite plugin options.
-vite: VitePluginConfig?
+vite: VitePluginConfig.VitePluginConfig = new VitePluginConfig.VitePluginConfig {}
 
 /// Linter options.
-linter: LinterConfig?
+linter: LinterConfig.LinterConfig = new LinterConfig.LinterConfig {}
 
 /// Type checker options.
-typeChecker: TypeCheckerConfig?
+typeChecker: TypeCheckerConfig.TypeCheckerConfig = new TypeCheckerConfig.TypeCheckerConfig {}
 
 /// Formatter options.
-formatter: FormatterConfig?
+formatter: FormatterConfig.FormatterConfig = new FormatterConfig.FormatterConfig {}
 
 /// LSP options.
-lsp: LspConfig?
+lsp: LspConfig.LspConfig = new LspConfig.LspConfig {}
 
 /// Musea component gallery options.
-musea: MuseaConfig?
+musea: MuseaConfig.MuseaConfig = new MuseaConfig.MuseaConfig {}
 
 /// Global type declarations.
-globalTypes: GlobalTypesConfig?
+globalTypes: GlobalTypesConfig.GlobalTypesConfig = new GlobalTypesConfig.GlobalTypesConfig {}

@@ -8,6 +8,10 @@ use dashmap::DashMap;
 use parking_lot::RwLock;
 use tokio::sync::OnceCell;
 use tower_lsp::lsp_types::Url;
+use vize_carton::config::{LspConfig, TypeCheckerConfig, VizeConfig};
+
+#[cfg(feature = "glyph")]
+use vize_carton::config::FormatterConfig;
 
 #[cfg(feature = "native")]
 use std::sync::OnceLock;
@@ -82,9 +86,11 @@ pub struct ServerState {
     virtual_gen: RwLock<VirtualCodeGenerator>,
     /// Cached virtual documents per file
     virtual_docs_cache: DashMap<Url, VirtualDocuments>,
-    /// Formatting options (loaded from vize.config.json)
+    /// Formatting options derived from workspace config.
     #[cfg(feature = "glyph")]
     format_options: RwLock<vize_glyph::FormatOptions>,
+    /// Shared workspace configuration loaded from vize.config.pkl/json.
+    workspace_config: RwLock<VizeConfig>,
     /// tsgo bridge for TypeScript language features (lazy initialized)
     #[cfg(feature = "native")]
     tsgo_bridge: OnceCell<Arc<TsgoBridge>>,
@@ -117,6 +123,7 @@ impl ServerState {
             virtual_docs_cache: DashMap::new(),
             #[cfg(feature = "glyph")]
             format_options: RwLock::new(vize_glyph::FormatOptions::default()),
+            workspace_config: RwLock::new(VizeConfig::default()),
             #[cfg(feature = "native")]
             tsgo_bridge: OnceCell::new(),
             #[cfg(feature = "native")]
@@ -218,6 +225,10 @@ impl ServerState {
     pub async fn get_tsgo_bridge(&self) -> Option<Arc<TsgoBridge>> {
         use std::sync::atomic::Ordering;
 
+        if !self.is_tsgo_enabled() {
+            return None;
+        }
+
         // If already initialized successfully, return it
         if let Some(bridge) = self.tsgo_bridge.get() {
             return Some(bridge.clone());
@@ -230,11 +241,16 @@ impl ServerState {
 
         // Get workspace root for tsgo configuration
         let workspace_root = self.get_workspace_root();
+        let tsgo_path = self
+            .get_type_checker_config()
+            .tsgo_path
+            .map(std::path::PathBuf::from);
 
         let result = self
             .tsgo_bridge
             .get_or_try_init(|| async {
                 let config = TsgoBridgeConfig {
+                    tsgo_path,
                     working_dir: workspace_root,
                     timeout_ms: 30000, // 30 second timeout for requests (tsgo needs time to analyze)
                     ..Default::default()
@@ -381,26 +397,96 @@ impl ServerState {
         self.format_options.read().clone()
     }
 
-    /// Load format options from `vize.config.json` in the given directory.
-    #[cfg(feature = "glyph")]
-    pub fn load_format_config(&self, dir: &std::path::Path) {
-        let config_path = dir.join("vize.config.json");
-        if !config_path.exists() {
-            return;
+    /// Get the loaded workspace config.
+    pub fn get_workspace_config(&self) -> VizeConfig {
+        self.workspace_config.read().clone()
+    }
+
+    /// Get the loaded LSP feature flags.
+    pub fn get_lsp_config(&self) -> LspConfig {
+        self.workspace_config.read().lsp.clone()
+    }
+
+    /// Get the loaded type checker config.
+    pub fn get_type_checker_config(&self) -> TypeCheckerConfig {
+        self.workspace_config.read().type_checker.clone()
+    }
+
+    /// Returns true when LSP features are globally enabled.
+    pub fn is_lsp_enabled(&self) -> bool {
+        self.workspace_config.read().lsp.enabled
+    }
+
+    /// Returns true when diagnostics are enabled for the current workspace.
+    pub fn are_diagnostics_enabled(&self) -> bool {
+        let config = self.workspace_config.read();
+        config.lsp.enabled && config.lsp.diagnostics
+    }
+
+    /// Returns true when tsgo-backed IDE features are enabled.
+    pub fn is_tsgo_enabled(&self) -> bool {
+        let config = self.workspace_config.read();
+        config.lsp.enabled && config.lsp.tsgo
+    }
+
+    /// Load workspace config from `vize.config.pkl/json` in the given directory.
+    pub fn load_workspace_config(&self, dir: &std::path::Path) {
+        let config = vize_carton::config::load_config(Some(dir));
+        #[cfg(feature = "glyph")]
+        {
+            *self.format_options.write() = format_options_from_config(&config.formatter);
         }
-        if let Ok(content) = std::fs::read_to_string(&config_path) {
-            // Parse only the "fmt" field to avoid pulling in the full VizeConfig type
-            if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) {
-                if let Some(fmt_value) = value.get("fmt") {
-                    if let Ok(opts) =
-                        serde_json::from_value::<vize_glyph::FormatOptions>(fmt_value.clone())
-                    {
-                        *self.format_options.write() = opts;
-                        tracing::info!("Loaded format config from {}", config_path.display());
-                    }
-                }
+        *self.workspace_config.write() = config;
+    }
+}
+
+#[cfg(feature = "glyph")]
+fn format_options_from_config(config: &FormatterConfig) -> vize_glyph::FormatOptions {
+    vize_glyph::FormatOptions {
+        print_width: config.print_width,
+        tab_width: config.tab_width,
+        use_tabs: config.use_tabs,
+        semi: config.semi,
+        single_quote: config.single_quote,
+        jsx_single_quote: config.jsx_single_quote,
+        trailing_comma: match config.trailing_comma {
+            vize_carton::config::TrailingComma::None => vize_glyph::TrailingComma::None,
+            vize_carton::config::TrailingComma::Es5 => vize_glyph::TrailingComma::Es5,
+            vize_carton::config::TrailingComma::All => vize_glyph::TrailingComma::All,
+        },
+        bracket_spacing: config.bracket_spacing,
+        bracket_same_line: config.bracket_same_line,
+        arrow_parens: match config.arrow_parens {
+            vize_carton::config::ArrowParens::Always => vize_glyph::ArrowParens::Always,
+            vize_carton::config::ArrowParens::Avoid => vize_glyph::ArrowParens::Avoid,
+        },
+        end_of_line: match config.end_of_line {
+            vize_carton::config::EndOfLine::Lf => vize_glyph::EndOfLine::Lf,
+            vize_carton::config::EndOfLine::Crlf => vize_glyph::EndOfLine::Crlf,
+            vize_carton::config::EndOfLine::Cr => vize_glyph::EndOfLine::Cr,
+            vize_carton::config::EndOfLine::Auto => vize_glyph::EndOfLine::Auto,
+        },
+        quote_props: match config.quote_props {
+            vize_carton::config::QuoteProps::AsNeeded => vize_glyph::QuoteProps::AsNeeded,
+            vize_carton::config::QuoteProps::Consistent => vize_glyph::QuoteProps::Consistent,
+            vize_carton::config::QuoteProps::Preserve => vize_glyph::QuoteProps::Preserve,
+        },
+        single_attribute_per_line: config.single_attribute_per_line,
+        vue_indent_script_and_style: config.vue_indent_script_and_style,
+        sort_attributes: config.sort_attributes,
+        attribute_sort_order: match config.attribute_sort_order {
+            vize_carton::config::AttributeSortOrder::Alphabetical => {
+                vize_glyph::AttributeSortOrder::Alphabetical
             }
-        }
+            vize_carton::config::AttributeSortOrder::AsWritten => {
+                vize_glyph::AttributeSortOrder::AsWritten
+            }
+        },
+        merge_bind_and_non_bind_attrs: config.merge_bind_and_non_bind_attrs,
+        max_attributes_per_line: config.max_attributes_per_line,
+        attribute_groups: config.attribute_groups.clone(),
+        normalize_directive_shorthands: config.normalize_directive_shorthands,
+        sort_blocks: config.sort_blocks,
     }
 }
 
@@ -422,17 +508,44 @@ mod tests {
     }
 
     #[test]
-    fn load_format_config_no_file() {
+    fn load_workspace_config_no_file() {
         let dir = tempfile::tempdir().unwrap();
         let state = ServerState::new();
-        state.load_format_config(dir.path());
+        state.load_workspace_config(dir.path());
         // options remain default
         let opts = state.get_format_options();
         assert_eq!(opts.print_width, 100);
     }
 
     #[test]
-    fn load_format_config_from_file() {
+    fn load_workspace_config_from_file() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("vize.config.pkl"),
+            r#"
+formatter {
+  printWidth = 80
+  tabWidth = 4
+  useTabs = true
+  semi = false
+  singleQuote = true
+}
+"#,
+        )
+        .unwrap();
+
+        let state = ServerState::new();
+        state.load_workspace_config(dir.path());
+        let opts = state.get_format_options();
+        assert_eq!(opts.print_width, 80);
+        assert_eq!(opts.tab_width, 4);
+        assert!(opts.use_tabs);
+        assert!(!opts.semi);
+        assert!(opts.single_quote);
+    }
+
+    #[test]
+    fn load_workspace_config_from_legacy_json_alias() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("vize.config.json"),
@@ -449,7 +562,7 @@ mod tests {
         .unwrap();
 
         let state = ServerState::new();
-        state.load_format_config(dir.path());
+        state.load_workspace_config(dir.path());
         let opts = state.get_format_options();
         assert_eq!(opts.print_width, 80);
         assert_eq!(opts.tab_width, 4);
@@ -459,16 +572,16 @@ mod tests {
     }
 
     #[test]
-    fn load_format_config_partial() {
+    fn load_workspace_config_partial() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("vize.config.json"),
-            r#"{ "fmt": { "printWidth": 120 } }"#,
+            r#"{ "formatter": { "printWidth": 120 } }"#,
         )
         .unwrap();
 
         let state = ServerState::new();
-        state.load_format_config(dir.path());
+        state.load_workspace_config(dir.path());
         let opts = state.get_format_options();
         assert_eq!(opts.print_width, 120);
         // defaults preserved
@@ -477,28 +590,28 @@ mod tests {
     }
 
     #[test]
-    fn load_format_config_no_fmt_section() {
+    fn load_workspace_config_lsp_flags() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("vize.config.json"),
-            r#"{ "check": { "globals": ["$t"] } }"#,
+            r#"{ "lsp": { "completion": false, "tsgo": false } }"#,
         )
         .unwrap();
 
         let state = ServerState::new();
-        state.load_format_config(dir.path());
-        // no fmt section → options remain default
-        let opts = state.get_format_options();
-        assert_eq!(opts.print_width, 100);
+        state.load_workspace_config(dir.path());
+        let lsp = state.get_lsp_config();
+        assert!(!lsp.completion);
+        assert!(!lsp.tsgo);
     }
 
     #[test]
-    fn load_format_config_invalid_json() {
+    fn load_workspace_config_invalid_json() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("vize.config.json"), "not valid json").unwrap();
 
         let state = ServerState::new();
-        state.load_format_config(dir.path());
+        state.load_workspace_config(dir.path());
         // options remain default
         let opts = state.get_format_options();
         assert_eq!(opts.print_width, 100);

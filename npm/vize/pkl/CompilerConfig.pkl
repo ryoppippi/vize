@@ -1,46 +1,37 @@
 /// Compiler configuration for Vize.
 module vize.CompilerConfig
 
-/// Compilation mode.
-/// Default: "module"
-mode: ("module"|"function")?
+class CompilerConfig {
+  /// Compilation mode.
+  mode: ("module"|"function") = "module"
 
-/// Enable Vapor mode compilation.
-/// Default: false
-vapor: Boolean?
+  /// Enable Vapor mode compilation.
+  vapor: Boolean = false
 
-/// Enable SSR mode.
-/// Default: false
-ssr: Boolean?
+  /// Enable SSR mode.
+  ssr: Boolean = false
 
-/// Enable source map generation.
-/// Default: true in development, false in production
-sourceMap: Boolean?
+  /// Enable source map generation.
+  sourceMap: Boolean = false
 
-/// Prefix template identifiers with _ctx.
-/// Default: false
-prefixIdentifiers: Boolean?
+  /// Prefix template identifiers with _ctx.
+  prefixIdentifiers: Boolean = false
 
-/// Hoist static nodes.
-/// Default: true
-hoistStatic: Boolean?
+  /// Hoist static nodes.
+  hoistStatic: Boolean = true
 
-/// Cache v-on handlers.
-/// Default: true
-cacheHandlers: Boolean?
+  /// Cache v-on handlers.
+  cacheHandlers: Boolean = true
 
-/// Enable TypeScript parsing in <script> blocks.
-/// Default: true
-isTs: Boolean?
+  /// Enable TypeScript parsing in <script> blocks.
+  isTs: Boolean = true
 
-/// Script file extension for generated output.
-/// Default: "ts"
-scriptExt: ("ts"|"js")?
+  /// Script file extension for generated output.
+  scriptExt: ("ts"|"js") = "ts"
 
-/// Module name for runtime imports.
-/// Default: "vue"
-runtimeModuleName: String?
+  /// Module name for runtime imports.
+  runtimeModuleName: String = "vue"
 
-/// Global variable name for runtime (IIFE builds).
-/// Default: "Vue"
-runtimeGlobalName: String?
+  /// Global variable name for runtime (IIFE builds).
+  runtimeGlobalName: String = "Vue"
+}

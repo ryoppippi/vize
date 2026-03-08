@@ -50,11 +50,12 @@ pub fn compile_sfc(
     let has_scoped = descriptor.styles.iter().any(|s| s.scoped);
 
     // Detect vapor mode from script attrs
-    let is_vapor = descriptor
-        .script_setup
-        .as_ref()
-        .map(|s| s.attrs.contains_key("vapor"))
-        .unwrap_or(false)
+    let is_vapor = options.vapor
+        || descriptor
+            .script_setup
+            .as_ref()
+            .map(|s| s.attrs.contains_key("vapor"))
+            .unwrap_or(false)
         || descriptor
             .script
             .as_ref()
@@ -91,32 +92,36 @@ pub fn compile_sfc(
     // Case 1: Template only - just output render function
     if !has_script && !has_script_setup && has_template {
         let template = descriptor.template.as_ref().unwrap();
-        // Enable hoisting for template-only SFCs (hoisted consts go at module level)
-        let mut template_opts = options.template.clone();
-        let mut dom_opts = template_opts.compiler_options.take().unwrap_or_default();
-        dom_opts.hoist_static = true;
-        template_opts.compiler_options = Some(dom_opts);
-        let template_result = compile_template_block(
-            template,
-            &template_opts,
-            &scope_id,
-            has_scoped,
-            is_ts,
-            None,
-            None,
-        );
+        let template_result = if is_vapor {
+            compile_template_block_vapor(template, &scope_id, has_scoped, None)
+        } else {
+            // Enable hoisting for template-only SFCs (hoisted consts go at module level)
+            let mut template_opts = options.template.clone();
+            let mut dom_opts = template_opts.compiler_options.take().unwrap_or_default();
+            dom_opts.hoist_static = true;
+            template_opts.compiler_options = Some(dom_opts);
+            // Don't pass scope IDs to template compiler - scoped CSS is handled by
+            // runtime __scopeId and CSS transformation, not by adding attributes
+            // to template elements during compilation.
+            compile_template_block(
+                template,
+                &template_opts,
+                &scope_id,
+                false,
+                is_ts,
+                None,
+                None,
+            )
+        };
 
         match template_result {
             Ok(template_code) => {
-                // Wrap template-only SFC in a proper component with export default.
-                // Convert "export function render(" to "function render(" and add component wrapper.
-                let wrapped = template_code.replace("export function render(", "function render(");
-                let mut output = String::with_capacity(wrapped.len() + 128);
-                output.push_str(&wrapped);
-                output.push_str("\nconst _sfc_main = {};\n");
-                output.push_str("_sfc_main.render = render;\n");
-                output.push_str("export default _sfc_main;\n");
-                code = output;
+                code = template_code;
+                if is_vapor {
+                    code.push_str("const _sfc_main = { __vapor: true }\n");
+                    code.push_str("_sfc_main.render = render\n");
+                    code.push_str("export default _sfc_main\n");
+                }
             }
             Err(e) => errors.push(e),
         }
@@ -162,46 +167,42 @@ pub fn compile_sfc(
         // Compile template if present
         if has_template {
             let template = descriptor.template.as_ref().unwrap();
-            let mut template_opts = options.template.clone();
-            let mut dom_opts = template_opts.compiler_options.take().unwrap_or_default();
-            dom_opts.hoist_static = true;
-            template_opts.compiler_options = Some(dom_opts);
+            let template_result = if is_vapor {
+                compile_template_block_vapor(template, &scope_id, has_scoped, None)
+            } else {
+                let mut template_opts = options.template.clone();
+                let mut dom_opts = template_opts.compiler_options.take().unwrap_or_default();
+                dom_opts.hoist_static = true;
+                template_opts.compiler_options = Some(dom_opts);
 
-            let template_result = compile_template_block(
-                template,
-                &template_opts,
-                &scope_id,
-                has_scoped,
-                is_ts,
-                None, // No bindings for normal scripts
-                None, // No Croquis for normal scripts
-            );
+                // Don't pass scope IDs to template compiler - scoped CSS is handled by
+                // runtime __scopeId and CSS transformation.
+                compile_template_block(
+                    template,
+                    &template_opts,
+                    &scope_id,
+                    false,
+                    is_ts,
+                    None, // No bindings for normal scripts
+                    None, // No Croquis for normal scripts
+                )
+            };
 
             match template_result {
                 Ok(template_code) => {
-                    // Extract template parts (imports, hoisted, render function)
-                    let (template_imports, template_hoisted, render_fn) =
-                        extract_template_parts_full(&template_code);
-
-                    // Build output: imports + script + hoisted + render + export
-                    code.push_str(&template_imports);
-                    if !template_imports.is_empty() {
-                        code.push('\n');
-                    }
+                    // Build output matching Vue's compiler-sfc:
+                    // 1. Full template output (imports + hoisted + export function render(...))
+                    // 2. Rewritten script
+                    // 3. _sfc_main.render = render
+                    // 4. export default _sfc_main
+                    code.push_str(&template_code);
                     code.push_str(&final_script);
                     code.push('\n');
 
-                    // Add hoisted declarations
-                    if !template_hoisted.is_empty() {
-                        code.push_str(&template_hoisted);
-                        code.push('\n');
-                    }
-
-                    // Add render function (without imports - they're already at top)
-                    code.push_str(&render_fn);
-                    code.push('\n');
-
                     // Export the component with render attached
+                    if is_vapor {
+                        code.push_str("_sfc_main.__vapor = true\n");
+                    }
                     code.push_str("_sfc_main.render = render\n");
                     code.push_str("export default _sfc_main\n");
                 }
@@ -215,6 +216,9 @@ pub fn compile_sfc(
         } else {
             // No template - just output rewritten script and export
             code.push_str(&final_script);
+            if is_vapor {
+                code.push_str("\n_sfc_main.__vapor = true");
+            }
             code.push_str("\nexport default _sfc_main\n");
         }
 
@@ -275,7 +279,6 @@ pub fn compile_sfc(
     // 2. ScriptCompileContext: needed for macro span info and TypeScript type resolution
     //    (Croquis doesn't resolve type references like `defineProps<Props>()`)
     let mut ctx = ScriptCompileContext::new(&script_setup.content);
-    ctx.analyze();
 
     // Merge type definitions from normal <script> block so that
     // defineProps<TypeRef>() can resolve types defined there.
@@ -283,12 +286,36 @@ pub fn compile_sfc(
         let script = descriptor.script.as_ref().unwrap();
         ctx.collect_types_from(&script.content);
     }
+    ctx.collect_imported_types_from_path(&script_setup.content, filename);
+    if has_script {
+        let script = descriptor.script.as_ref().unwrap();
+        ctx.collect_imported_types_from_path(&script.content, filename);
+    }
+    ctx.analyze();
 
     // 3. Merge Props bindings from ScriptCompileContext (type resolution fallback)
     //    Croquis can't resolve interface references, so we take Props from the legacy analyzer
     for (name, bt) in &ctx.bindings.bindings {
         if matches!(bt, BindingType::Props | BindingType::PropsAliased) {
             script_bindings.bindings.entry(name.clone()).or_insert(*bt);
+        }
+    }
+
+    // Register $emit or __emit binding when defineEmits is used, so the template
+    // compiler knows not to prefix it with _ctx.
+    if let Some(ref emits_macro) = ctx.macros.define_emits {
+        if let Some(ref binding_name) = emits_macro.binding_name {
+            // e.g., const emit = defineEmits([...]) -> emit is setup const
+            script_bindings
+                .bindings
+                .entry(binding_name.clone())
+                .or_insert(BindingType::SetupConst);
+        } else {
+            // defineEmits([...]) without assignment -> $emit is exposed in setup args
+            script_bindings
+                .bindings
+                .entry("$emit".to_compact_string())
+                .or_insert(BindingType::SetupConst);
         }
     }
 
@@ -306,14 +333,19 @@ pub fn compile_sfc(
     let template_result = if let Some(template) = &descriptor.template {
         if is_vapor {
             Some(compile_template_block_vapor(
-                template, &scope_id, has_scoped,
+                template,
+                &scope_id,
+                has_scoped,
+                Some(&script_bindings),
             ))
         } else {
+            // Don't pass scope IDs to template compiler - scoped CSS is handled by
+            // runtime __scopeId and CSS transformation.
             Some(compile_template_block(
                 template,
                 &options.template,
                 &scope_id,
-                has_scoped,
+                false,
                 is_ts,
                 Some(&script_bindings), // Pass bindings for proper ref handling
                 Some(croquis),          // Pass Croquis for enhanced transforms
@@ -324,9 +356,23 @@ pub fn compile_sfc(
     };
 
     // Extract template parts for inline mode (imports, hoisted, preamble, render_body)
-    let (template_imports, template_hoisted, template_preamble, render_body) =
+    let (template_imports, template_hoisted, template_render_fn, template_preamble, render_body) =
         match &template_result {
-            Some(Ok(template_code)) => extract_template_parts(template_code),
+            Some(Ok(template_code)) => {
+                if is_vapor {
+                    let (imports, hoisted, render_fn) = extract_template_parts_full(template_code);
+                    (
+                        imports,
+                        hoisted,
+                        render_fn,
+                        String::default(),
+                        String::default(),
+                    )
+                } else {
+                    let (imports, hoisted, preamble, body) = extract_template_parts(template_code);
+                    (imports, hoisted, String::default(), preamble, body)
+                }
+            }
             Some(Err(e)) => {
                 errors.push(e.clone());
                 (
@@ -334,9 +380,11 @@ pub fn compile_sfc(
                     String::default(),
                     String::default(),
                     String::default(),
+                    String::default(),
                 )
             }
             None => (
+                String::default(),
                 String::default(),
                 String::default(),
                 String::default(),
@@ -360,15 +408,19 @@ pub fn compile_sfc(
         &component_name,
         is_ts,
         source_is_ts,
+        is_vapor,
         TemplateParts {
             imports: &template_imports,
             hoisted: &template_hoisted,
+            render_fn: &template_render_fn,
             preamble: &template_preamble,
             render_body: &render_body,
+            render_is_block: is_vapor,
         },
         normal_script_content.as_deref(),
         &descriptor.css_vars,
         &scope_id,
+        Some(filename),
     )?;
 
     // The inline mode compile_script_setup_inline generates a complete output

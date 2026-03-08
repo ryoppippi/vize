@@ -1,6 +1,6 @@
 {
   "name": "@vizejs/fresco",
-  "version": "0.21.0",
+  "version": "0.25.0",
   "description": "Vue TUI framework - Build terminal UIs with Vue.js",
   "publishConfig": {
     "access": "public"
@@ -27,8 +27,8 @@
     "dev": "tsdown --watch",
     "lint": "oxlint --deny-warnings --type-aware --tsconfig tsconfig.json",
     "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
-    "fmt": "oxfmt --write src",
-    "fmt:check": "oxfmt src"
+    "fmt": "oxfmt --write src tsdown.config.ts",
+    "fmt:check": "oxfmt src tsdown.config.ts"
   },
   "files": [
     "dist"

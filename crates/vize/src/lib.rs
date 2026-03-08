@@ -22,6 +22,9 @@
 /// Box/container utilities for memory management.
 pub use vize_carton as carton;
 
+/// Shared configuration loading.
+pub use vize_carton::config;
+
 /// Source text and span handling.
 pub use vize_relief as relief;
 

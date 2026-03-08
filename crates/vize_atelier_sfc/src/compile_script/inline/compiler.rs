@@ -5,6 +5,10 @@
 
 use std::borrow::Cow;
 
+use oxc_allocator::Allocator;
+use oxc_ast::ast::{Expression, Statement};
+use oxc_parser::Parser;
+use oxc_span::{GetSpan, SourceType};
 use vize_carton::{String, ToCompactString};
 
 use crate::script::{transform_destructured_props, ScriptCompileContext};
@@ -22,6 +26,9 @@ use super::super::{ScriptCompileResult, TemplateParts};
 use super::helpers::{extract_const_name, strip_comments_for_counting};
 use super::type_handling::resolve_type_args;
 
+const VAPOR_RENDER_ALIAS_BASE: &str = "__vaporRender";
+const VAPOR_TEMPLATE_REF_SETTER: &str = "vaporTemplateRefSetter";
+
 /// Compile script setup with inline template (Vue's inline template mode)
 #[allow(clippy::too_many_arguments)]
 pub fn compile_script_setup_inline(
@@ -29,13 +36,14 @@ pub fn compile_script_setup_inline(
     component_name: &str,
     is_ts: bool,
     source_is_ts: bool,
+    is_vapor: bool,
     template: TemplateParts<'_>,
     normal_script_content: Option<&str>,
     css_vars: &[Cow<'_, str>],
     scope_id: &str,
+    filename: Option<&str>,
 ) -> Result<ScriptCompileResult, SfcError> {
     let mut ctx = ScriptCompileContext::new(content);
-    ctx.analyze();
 
     // Merge type definitions from normal <script> block so that
     // defineProps<TypeRef>() can resolve types defined there.
@@ -44,6 +52,15 @@ pub fn compile_script_setup_inline(
             ctx.collect_types_from(normal_src);
         }
     }
+    if let Some(path) = filename {
+        ctx.collect_imported_types_from_path(content, path);
+        if let Some(normal_src) = normal_script_content {
+            if !normal_src.is_empty() {
+                ctx.collect_imported_types_from_path(normal_src, path);
+            }
+        }
+    }
+    ctx.analyze();
 
     // Use arena-allocated Vec for better performance
     let bump = vize_carton::Bump::new();
@@ -56,8 +73,16 @@ pub fn compile_script_setup_inline(
         .map(|s| s.to_compact_string());
 
     // Check if we need mergeDefaults import (props destructure with defaults)
+    // For type-based props (defineProps<{...}>()), defaults are inlined into the prop definitions
+    // so mergeDefaults is NOT needed. Only runtime-based props (defineProps([...])) need it.
     let has_props_destructure = ctx.macros.props_destructure.is_some();
+    let has_type_based_props = ctx
+        .macros
+        .define_props
+        .as_ref()
+        .is_some_and(|p| p.type_args.is_some());
     let needs_merge_defaults = has_props_destructure
+        && !has_type_based_props
         && ctx
             .macros
             .props_destructure
@@ -68,9 +93,48 @@ pub fn compile_script_setup_inline(
     // Check if defineModel was used
     let has_define_model = !ctx.macros.define_models.is_empty();
 
+    // Check if defineSlots was used
+    let has_define_slots = ctx.macros.define_slots.is_some();
+    let needs_vapor_setup_context = is_vapor && !template.render_fn.is_empty();
+    let vapor_render_alias = needs_vapor_setup_context
+        .then(|| build_vapor_render_alias(content, normal_script_content, template.render_fn));
+
+    // withAsyncContext import comes first if needed
+    let setup_code_for_await = {
+        let (_, slines, _) = parse_script_content(content, is_ts);
+        slines.join("\n")
+    };
+    let is_async = contains_top_level_await(&setup_code_for_await, source_is_ts);
+    if is_async {
+        if is_vapor {
+            if needs_vapor_setup_context {
+                output.extend_from_slice(
+                    b"import { withAsyncContext as _withAsyncContext, defineVaporComponent as _defineVaporComponent, getCurrentInstance as _getCurrentInstance, proxyRefs as _proxyRefs } from 'vue'\n",
+                );
+            } else {
+                output.extend_from_slice(
+                    b"import { withAsyncContext as _withAsyncContext, defineVaporComponent as _defineVaporComponent } from 'vue'\n",
+                );
+            }
+        } else if is_ts {
+            output.extend_from_slice(
+                b"import { withAsyncContext as _withAsyncContext, defineComponent as _defineComponent } from 'vue'\n",
+            );
+        } else {
+            output.extend_from_slice(
+                b"import { withAsyncContext as _withAsyncContext } from 'vue'\n",
+            );
+        }
+    }
+
     // mergeDefaults import comes first if needed
     if needs_merge_defaults {
         output.extend_from_slice(b"import { mergeDefaults as _mergeDefaults } from 'vue'\n");
+    }
+
+    // useSlots import if defineSlots was used
+    if has_define_slots {
+        output.extend_from_slice(b"import { useSlots as _useSlots } from 'vue'\n");
     }
 
     // useModel import if defineModel was used
@@ -86,24 +150,23 @@ pub fn compile_script_setup_inline(
         );
     }
 
-    // Check if we need PropType import (type-based defineProps in TS mode)
-    let needs_prop_type = is_ts
-        && ctx
-            .macros
-            .define_props
-            .as_ref()
-            .is_some_and(|p| p.type_args.is_some());
+    // Vue's compiler-sfc does not use PropType in output - props are defined with
+    // runtime type constructors (String, Number, etc.) and optional/required flags.
+    let needs_prop_type = false;
 
-    // defineComponent import for TypeScript
-    if is_ts {
-        if needs_prop_type {
+    // Component helper import (skip if already emitted with withAsyncContext)
+    if is_vapor && !is_async {
+        if needs_vapor_setup_context {
             output.extend_from_slice(
-                b"import { defineComponent as _defineComponent, type PropType } from 'vue'\n",
+                b"import { defineVaporComponent as _defineVaporComponent, getCurrentInstance as _getCurrentInstance, proxyRefs as _proxyRefs } from 'vue'\n",
             );
         } else {
-            output
-                .extend_from_slice(b"import { defineComponent as _defineComponent } from 'vue'\n");
+            output.extend_from_slice(
+                b"import { defineVaporComponent as _defineVaporComponent } from 'vue'\n",
+            );
         }
+    } else if is_ts && !is_async {
+        output.extend_from_slice(b"import { defineComponent as _defineComponent } from 'vue'\n");
     }
 
     // Template imports (Vue helpers)
@@ -121,6 +184,16 @@ pub fn compile_script_setup_inline(
     if !template.hoisted.is_empty() {
         output.push(b'\n');
         output.extend_from_slice(template.hoisted.as_bytes());
+    }
+
+    if !template.render_fn.is_empty() {
+        output.push(b'\n');
+        output.extend_from_slice(template.render_fn.as_bytes());
+        if let Some(alias) = vapor_render_alias.as_ref() {
+            output.extend_from_slice(b"const ");
+            output.extend_from_slice(alias.as_bytes());
+            output.extend_from_slice(b" = render\n");
+        }
     }
 
     // User imports (after hoisted consts) - deduplicate to avoid "already declared" errors
@@ -193,20 +266,33 @@ pub fn compile_script_setup_inline(
         .macros
         .define_emits
         .as_ref()
-        .map(|e| e.binding_name.is_some())
-        .unwrap_or(false);
+        .is_some_and(|emits| emits.binding_name.is_some());
     let has_expose = ctx.macros.define_expose.is_some();
 
     if has_options {
         // Use Object.assign for defineOptions
-        output.extend_from_slice(b"export default /*@__PURE__*/Object.assign(");
+        if is_vapor {
+            output.extend_from_slice(
+                b"export default /*@__PURE__*/_defineVaporComponent(Object.assign(",
+            );
+        } else {
+            output.extend_from_slice(b"export default /*@__PURE__*/Object.assign(");
+        }
         let options_args = ctx.macros.define_options.as_ref().unwrap().args.trim();
         output.extend_from_slice(options_args.as_bytes());
         output.extend_from_slice(b", {\n");
     } else if has_default_export {
         // Normal script has export default that was rewritten to __default__
         // Use Object.assign to merge with setup component
-        output.extend_from_slice(b"export default /*@__PURE__*/Object.assign(__default__, {\n");
+        if is_vapor {
+            output.extend_from_slice(
+                b"export default /*@__PURE__*/_defineVaporComponent(Object.assign(__default__, {\n",
+            );
+        } else {
+            output.extend_from_slice(b"export default /*@__PURE__*/Object.assign(__default__, {\n");
+        }
+    } else if is_vapor {
+        output.extend_from_slice(b"export default /*@__PURE__*/_defineVaporComponent({\n");
     } else if is_ts {
         // TypeScript: use _defineComponent with __PURE__ annotation
         output.extend_from_slice(b"export default /*@__PURE__*/_defineComponent({\n");
@@ -220,18 +306,31 @@ pub fn compile_script_setup_inline(
     // Output props and emits definitions
     output.extend_from_slice(&props_emits_buf);
     output.extend_from_slice(&model_props_emits_buf);
+    if !template.render_fn.is_empty() {
+        if let Some(alias) = vapor_render_alias.as_ref() {
+            output.extend_from_slice(b"  render: ");
+            output.extend_from_slice(alias.as_bytes());
+            output.extend_from_slice(b",\n");
+        } else {
+            output.extend_from_slice(b"  render,\n");
+        }
+    }
 
     // Build setup function signature based on what macros are used
     let mut setup_args = Vec::new();
     if has_expose {
         setup_args.push("expose: __expose");
     }
-    if has_emit {
-        if has_emit_binding {
+    if has_emit || needs_vapor_setup_context {
+        if has_emit_binding || needs_vapor_setup_context {
             setup_args.push("emit: __emit");
         } else {
             setup_args.push("emit: $emit");
         }
+    }
+    if needs_vapor_setup_context {
+        setup_args.push("attrs: __attrs");
+        setup_args.push("slots: __slots");
     }
 
     // Add `: any` type annotation to __props when there are typed props in TypeScript mode
@@ -247,10 +346,6 @@ pub fn compile_script_setup_inline(
     } else {
         "__props"
     };
-
-    // Detect top-level await to generate async setup()
-    let setup_code_for_await_check = setup_lines.join("\n");
-    let is_async = contains_top_level_await(&setup_code_for_await_check, source_is_ts);
 
     let async_prefix = if is_async {
         "  async setup("
@@ -271,6 +366,15 @@ pub fn compile_script_setup_inline(
 
     // Always add a blank line after setup signature
     output.push(b'\n');
+
+    // Add __temp/__restore declarations for async setup
+    if is_async {
+        if is_ts {
+            output.extend_from_slice(b"let __temp: any, __restore: any\n\n");
+        } else {
+            output.extend_from_slice(b"let __temp, __restore\n\n");
+        }
+    }
 
     // Emit binding: const emit = __emit
     if let Some(ref emits_macro) = ctx.macros.define_emits {
@@ -301,10 +405,27 @@ pub fn compile_script_setup_inline(
         }
     }
 
-    // Output setup code lines (non-hoisted)
-    for line in &setup_body_lines {
-        output.extend_from_slice(line.as_bytes());
-        output.push(b'\n');
+    // Slots binding: const slots = _useSlots()
+    if let Some(ref slots_macro) = ctx.macros.define_slots {
+        if let Some(ref binding_name) = slots_macro.binding_name {
+            output.extend_from_slice(b"const ");
+            output.extend_from_slice(binding_name.as_bytes());
+            output.extend_from_slice(b" = _useSlots()\n");
+        }
+    }
+
+    // Output setup code lines (non-hoisted), transforming await expressions for async setup
+    if is_async {
+        let transformed_async = transform_await_expressions(&setup_body_lines, source_is_ts);
+        for line in &transformed_async {
+            output.extend_from_slice(line.as_bytes());
+            output.push(b'\n');
+        }
+    } else {
+        for line in &setup_body_lines {
+            output.extend_from_slice(line.as_bytes());
+            output.push(b'\n');
+        }
     }
 
     // defineExpose: transform to __expose(...)
@@ -336,11 +457,20 @@ pub fn compile_script_setup_inline(
 
     // Inline render function as return (blank line before)
     output.push(b'\n');
-    emit_render_return(&mut output, &template, is_ts, &ctx);
+    emit_render_return(
+        &mut output,
+        &template,
+        is_ts,
+        is_vapor,
+        vapor_render_alias.as_deref(),
+        &ctx,
+    );
 
     output.extend_from_slice(b"}\n");
     output.push(b'\n');
-    if has_options || has_default_export || is_ts {
+    if is_vapor && (has_options || has_default_export) {
+        output.extend_from_slice(b"}))\n");
+    } else if has_options || has_default_export || is_ts || is_vapor {
         // Close defineComponent() or Object.assign()
         output.extend_from_slice(b"})\n");
     } else {
@@ -381,6 +511,8 @@ fn emit_render_return(
     output: &mut vize_carton::Vec<u8>,
     template: &TemplateParts<'_>,
     is_ts: bool,
+    is_vapor: bool,
+    vapor_render_alias: Option<&str>,
     ctx: &ScriptCompileContext,
 ) {
     if !template.render_body.is_empty() {
@@ -402,46 +534,73 @@ fn emit_render_return(
             output.push(b'\n');
         }
 
-        // Indent the render body properly
-        let mut first_line = true;
-        for line in template.render_body.lines() {
-            if first_line {
-                output.extend_from_slice(b"  return ");
-                output.extend_from_slice(line.as_bytes());
-                first_line = false;
-            } else {
-                output.push(b'\n');
-                // Preserve existing indentation by adding 2 spaces (setup indent)
-                if !line.trim().is_empty() {
-                    output.extend_from_slice(b"  ");
+        if template.render_is_block {
+            for line in template.render_body.lines() {
+                if line.trim().is_empty() {
+                    output.push(b'\n');
+                    continue;
                 }
+
+                output.extend_from_slice(b"  ");
                 output.extend_from_slice(line.as_bytes());
+                output.push(b'\n');
             }
+        } else {
+            // Indent the render body properly
+            let mut first_line = true;
+            for line in template.render_body.lines() {
+                if first_line {
+                    output.extend_from_slice(b"  return ");
+                    output.extend_from_slice(line.as_bytes());
+                    first_line = false;
+                } else {
+                    output.push(b'\n');
+                    // Preserve existing indentation by adding 2 spaces (setup indent)
+                    if !line.trim().is_empty() {
+                        output.extend_from_slice(b"  ");
+                    }
+                    output.extend_from_slice(line.as_bytes());
+                }
+            }
+            if first_line {
+                output.extend_from_slice(b"  return null");
+            }
+            output.push(b'\n');
         }
-        output.push(b'\n');
         output.extend_from_slice(b"}\n");
     } else {
-        // No template (e.g., Musea art files) -- return setup bindings as an object
-        // so they're accessible for runtime template compilation (compileToFunction).
-        use crate::types::BindingType;
-        let setup_bindings: Vec<&str> = ctx
-            .bindings
-            .bindings
-            .iter()
-            .filter(|(_, bt)| {
-                matches!(
-                    bt,
-                    BindingType::SetupLet
-                        | BindingType::SetupMaybeRef
-                        | BindingType::SetupRef
-                        | BindingType::SetupReactiveConst
-                        | BindingType::SetupConst
-                        | BindingType::LiteralConst
-                )
-            })
-            .map(|(name, _)| name.as_str())
-            .collect();
-        if !setup_bindings.is_empty() {
+        let setup_bindings = collect_setup_bindings(ctx);
+        if is_vapor && !template.render_fn.is_empty() {
+            let needs_template_ref_setter = template.render_fn.contains("_createTemplateRefSetter");
+            if needs_template_ref_setter {
+                output.extend_from_slice(b"const ");
+                output.extend_from_slice(VAPOR_TEMPLATE_REF_SETTER.as_bytes());
+                output.extend_from_slice(b" = _createTemplateRefSetter()\n");
+            }
+            output.extend_from_slice(b"const __returned__ = { ");
+            let mut binding_index = 0usize;
+            if needs_template_ref_setter {
+                output.extend_from_slice(VAPOR_TEMPLATE_REF_SETTER.as_bytes());
+                binding_index += 1;
+            }
+            for name in setup_bindings.iter() {
+                if binding_index > 0 {
+                    output.extend_from_slice(b", ");
+                }
+                binding_index += 1;
+                output.extend_from_slice(name.as_bytes());
+            }
+            output.extend_from_slice(b" }\n");
+            output.extend_from_slice(b"Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true })\n");
+            output.extend_from_slice(b"const __instance = _getCurrentInstance()\n");
+            output.extend_from_slice(b"const __ctx = _proxyRefs(__returned__)\n");
+            output.extend_from_slice(b"if (__instance) __instance.setupState = __ctx\n");
+            output.extend_from_slice(b"return ");
+            output.extend_from_slice(vapor_render_alias.unwrap_or("render").as_bytes());
+            output.extend_from_slice(b"(__ctx, __props, __emit, __attrs, __slots)\n");
+        } else if !setup_bindings.is_empty() {
+            // No template (e.g., Musea art files) -- return setup bindings as an object
+            // so they're accessible for runtime template compilation (compileToFunction).
             output.extend_from_slice(b"return { ");
             for (i, name) in setup_bindings.iter().enumerate() {
                 if i > 0 {
@@ -450,8 +609,79 @@ fn emit_render_return(
                 output.extend_from_slice(name.as_bytes());
             }
             output.extend_from_slice(b" }\n");
+        } else if !template.render_fn.is_empty() {
+            output.extend_from_slice(b"return {}\n");
         }
     }
+}
+
+fn build_vapor_render_alias(
+    content: &str,
+    normal_script_content: Option<&str>,
+    template_render_fn: &str,
+) -> String {
+    let mut suffix = 0usize;
+    loop {
+        let candidate = build_vapor_render_alias_candidate(suffix);
+        let candidate_str = candidate.as_str();
+        if !content.contains(candidate_str)
+            && normal_script_content.is_none_or(|script| !script.contains(candidate_str))
+            && !template_render_fn.contains(candidate_str)
+        {
+            return candidate;
+        }
+        suffix += 1;
+    }
+}
+
+fn build_vapor_render_alias_candidate(suffix: usize) -> String {
+    let mut candidate = String::from(VAPOR_RENDER_ALIAS_BASE);
+    if suffix == 0 {
+        return candidate;
+    }
+
+    candidate.push('_');
+    append_usize(&mut candidate, suffix);
+    candidate
+}
+
+fn append_usize(target: &mut String, value: usize) {
+    let mut buffer = [0u8; 20];
+    let mut index = buffer.len();
+    let mut remaining = value;
+
+    loop {
+        index -= 1;
+        buffer[index] = b'0' + (remaining % 10) as u8;
+        remaining /= 10;
+        if remaining == 0 {
+            break;
+        }
+    }
+
+    let digits = std::str::from_utf8(&buffer[index..]).expect("usize digits should be ASCII");
+    target.push_str(digits);
+}
+
+fn collect_setup_bindings(ctx: &ScriptCompileContext) -> Vec<&str> {
+    use crate::types::BindingType;
+
+    ctx.bindings
+        .bindings
+        .iter()
+        .filter(|(_, bt)| {
+            matches!(
+                bt,
+                BindingType::SetupLet
+                    | BindingType::SetupMaybeRef
+                    | BindingType::SetupRef
+                    | BindingType::SetupReactiveConst
+                    | BindingType::SetupConst
+                    | BindingType::LiteralConst
+            )
+        })
+        .map(|(name, _)| name.as_str())
+        .collect()
 }
 
 /// Parse script content to extract imports, setup lines, and TypeScript declarations.
@@ -1009,13 +1239,28 @@ fn build_props_emits(
                 let mut item_idx = 0;
                 for (name, prop_type) in &prop_types {
                     item_idx += 1;
+                    // Try to resolve type references for props that resolved to `null`
+                    let resolved_js_type = if prop_type.js_type == "null" {
+                        if let Some(ref ts_type) = prop_type.ts_type {
+                            super::super::props::resolve_prop_js_type(
+                                ts_type,
+                                &ctx.interfaces,
+                                &ctx.type_aliases,
+                            )
+                            .unwrap_or_else(|| prop_type.js_type.clone())
+                        } else {
+                            prop_type.js_type.clone()
+                        }
+                    } else {
+                        prop_type.js_type.clone()
+                    };
                     props_emits_buf.extend_from_slice(b"    ");
                     props_emits_buf.extend_from_slice(name.as_bytes());
                     props_emits_buf.extend_from_slice(b": { type: ");
-                    props_emits_buf.extend_from_slice(prop_type.js_type.as_bytes());
+                    props_emits_buf.extend_from_slice(resolved_js_type.as_bytes());
                     if needs_prop_type {
                         if let Some(ref ts_type) = prop_type.ts_type {
-                            if prop_type.js_type == "null" {
+                            if resolved_js_type == "null" {
                                 props_emits_buf.extend_from_slice(b" as unknown as PropType<");
                             } else {
                                 props_emits_buf.extend_from_slice(b" as PropType<");
@@ -1142,12 +1387,6 @@ fn build_model_props_emits(
                 buf.extend_from_slice(b"Modifiers");
             }
             buf.extend_from_slice(b"\": {},\n");
-        }
-        // Remove trailing comma from last prop
-        if buf.ends_with(b",\n") {
-            let len = buf.len();
-            buf[len - 2] = b'\n';
-            buf.truncate(len - 1);
         }
         buf.extend_from_slice(b"  },\n");
     }
@@ -1322,4 +1561,184 @@ fn separate_hoisted_consts(
     }
 
     (hoisted_lines, setup_body_lines)
+}
+
+/// Transform top-level await expressions to use `_withAsyncContext`.
+///
+/// Handles two patterns:
+/// 1. `const x = await expr` → `const x = (\n  ([__temp,__restore] = _withAsyncContext(() => expr)),\n  __temp = await __temp,\n  __restore(),\n  __temp\n)`
+/// 2. `await expr` (statement) → `;(\n  ([__temp,__restore] = _withAsyncContext(() => expr)),\n  await __temp,\n  __restore()\n)`
+fn transform_await_expressions(lines: &[String], is_ts: bool) -> Vec<String> {
+    let mut source = String::default();
+    for (idx, line) in lines.iter().enumerate() {
+        if idx > 0 {
+            source.push('\n');
+        }
+        source.push_str(line);
+    }
+
+    transform_await_source(&source, is_ts)
+        .lines()
+        .map(|line| line.to_compact_string())
+        .collect()
+}
+
+const AWAIT_WRAP_PREFIX: &str = "async function __vize_async_setup__() {\n";
+const AWAIT_WRAP_SUFFIX: &str = "\n}";
+
+fn transform_await_source(source: &str, is_ts: bool) -> String {
+    if source.trim().is_empty() {
+        return source.to_compact_string();
+    }
+
+    let mut wrapped =
+        String::with_capacity(AWAIT_WRAP_PREFIX.len() + source.len() + AWAIT_WRAP_SUFFIX.len());
+    wrapped.push_str(AWAIT_WRAP_PREFIX);
+    wrapped.push_str(source);
+    wrapped.push_str(AWAIT_WRAP_SUFFIX);
+
+    let allocator = Allocator::default();
+    let source_type = SourceType::default().with_typescript(is_ts);
+    let parse_result = Parser::new(&allocator, &wrapped, source_type).parse();
+    if !parse_result.errors.is_empty() {
+        return source.to_compact_string();
+    }
+
+    let Some(Statement::FunctionDeclaration(func)) = parse_result.program.body.first() else {
+        return source.to_compact_string();
+    };
+    let Some(body) = &func.body else {
+        return source.to_compact_string();
+    };
+
+    let offset = AWAIT_WRAP_PREFIX.len();
+    let mut cursor = 0usize;
+    let mut transformed = String::with_capacity(source.len() + 128);
+
+    for stmt in body.statements.iter() {
+        let stmt_span = stmt.span();
+        let Some(stmt_start) = stmt_span.start.try_into().ok().and_then(|start: usize| {
+            start
+                .checked_sub(offset)
+                .filter(|start| *start <= source.len())
+        }) else {
+            return source.to_compact_string();
+        };
+        let Some(stmt_end) = stmt_span
+            .end
+            .try_into()
+            .ok()
+            .and_then(|end: usize| end.checked_sub(offset).filter(|end| *end <= source.len()))
+        else {
+            return source.to_compact_string();
+        };
+
+        if stmt_start < cursor || stmt_start > stmt_end {
+            return source.to_compact_string();
+        }
+
+        transformed.push_str(&source[cursor..stmt_start]);
+
+        if let Some(replacement) = transform_await_statement(source, stmt, offset) {
+            transformed.push_str(&replacement);
+        } else {
+            transformed.push_str(&source[stmt_start..stmt_end]);
+        }
+
+        cursor = stmt_end;
+    }
+
+    transformed.push_str(&source[cursor..]);
+    transformed
+}
+
+fn transform_await_statement(source: &str, stmt: &Statement<'_>, offset: usize) -> Option<String> {
+    match stmt {
+        Statement::ExpressionStatement(expr_stmt) => {
+            let Expression::AwaitExpression(await_expr) = &expr_stmt.expression else {
+                return None;
+            };
+            build_standalone_await_replacement(source, stmt.span(), await_expr.span(), offset)
+        }
+        Statement::VariableDeclaration(var_decl) => {
+            if var_decl.declarations.len() != 1 {
+                return None;
+            }
+            let declarator = var_decl.declarations.first()?;
+            let init = declarator.init.as_ref()?;
+            let Expression::AwaitExpression(await_expr) = init else {
+                return None;
+            };
+            build_await_assignment_replacement(source, stmt.span(), await_expr.span(), offset)
+        }
+        _ => None,
+    }
+}
+
+fn build_await_assignment_replacement(
+    source: &str,
+    stmt_span: oxc_span::Span,
+    await_span: oxc_span::Span,
+    offset: usize,
+) -> Option<String> {
+    let stmt_start = stmt_span.start as usize - offset;
+    let stmt_end = stmt_span.end as usize - offset;
+    let await_start = await_span.start as usize - offset;
+    let await_end = await_span.end as usize - offset;
+
+    let prefix = source.get(stmt_start..await_start)?;
+    let expr = await_expression_source(source, await_start, await_end)?;
+    let suffix = source.get(await_end..stmt_end)?;
+
+    let mut out = String::with_capacity(prefix.len() + expr.len() + suffix.len() + 96);
+    out.push_str(prefix);
+    out.push_str(" (\n");
+    out.push_str("  ([__temp,__restore] = _withAsyncContext(() => ");
+    out.push_str(expr);
+    out.push_str(")),\n");
+    out.push_str("  __temp = await __temp,\n");
+    out.push_str("  __restore(),\n");
+    out.push_str("  __temp\n");
+    out.push(')');
+    out.push_str(suffix);
+    Some(out)
+}
+
+fn build_standalone_await_replacement(
+    source: &str,
+    stmt_span: oxc_span::Span,
+    await_span: oxc_span::Span,
+    offset: usize,
+) -> Option<String> {
+    let stmt_start = stmt_span.start as usize - offset;
+    let stmt_end = stmt_span.end as usize - offset;
+    let await_start = await_span.start as usize - offset;
+    let await_end = await_span.end as usize - offset;
+
+    if stmt_start != await_start {
+        return None;
+    }
+
+    let expr = await_expression_source(source, await_start, await_end)?;
+    let suffix = source.get(await_end..stmt_end)?;
+
+    let mut out = String::with_capacity(expr.len() + suffix.len() + 72);
+    out.push_str(";(\n");
+    out.push_str("  ([__temp,__restore] = _withAsyncContext(() => ");
+    out.push_str(expr);
+    out.push_str(")),\n");
+    out.push_str("  await __temp,\n");
+    out.push_str("  __restore()\n");
+    out.push(')');
+    out.push_str(suffix);
+    Some(out)
+}
+
+fn await_expression_source(source: &str, start: usize, end: usize) -> Option<&str> {
+    let await_source = source.get(start..end)?;
+    let expr = await_source.strip_prefix("await")?.trim_start();
+    if expr.is_empty() {
+        return None;
+    }
+    Some(expr)
 }

@@ -16,61 +16,32 @@ pub(crate) fn generate_effect(
     // If only one operation, use single-line format
     if effect.operations.len() == 1 {
         let op = &effect.operations[0];
-        let op_code = generate_operation_inline(ctx, op);
-        ctx.push_line_fmt(format_args!("_renderEffect(() => {op_code})"));
-    } else {
-        ctx.push_line("_renderEffect(() => {");
-        ctx.indent();
-
-        for op in effect.operations.iter() {
-            generate_operation(ctx, op, element_template_map);
+        if let Some(op_code) = generate_operation_inline(ctx, op) {
+            ctx.push_line_fmt(format_args!("_renderEffect(() => {op_code})"));
+            return;
         }
-
-        ctx.deindent();
-        ctx.push_line("})");
     }
+
+    ctx.push_line("_renderEffect(() => {");
+    ctx.indent();
+
+    for op in effect.operations.iter() {
+        generate_operation(ctx, op, element_template_map);
+    }
+
+    ctx.deindent();
+    ctx.push_line("})");
 }
 
 /// Generate operation inline (returns code string)
 pub(crate) fn generate_operation_inline(
     ctx: &mut GenerateContext,
     op: &OperationNode<'_>,
-) -> String {
+) -> Option<String> {
     match op {
-        OperationNode::SetProp(set_prop) => {
-            let element = cstr!("n{}", set_prop.element);
-            let key = &set_prop.prop.key.content;
-            let is_svg = is_svg_tag(set_prop.tag.as_str());
-            let value = if let Some(first) = set_prop.prop.values.first() {
-                if first.is_static {
-                    cstr!("\"{}\"", first.content)
-                } else {
-                    cstr!("_ctx.{}", first.content)
-                }
-            } else {
-                vize_carton::CompactString::from("undefined")
-            };
-
-            if key.as_str() == "class" {
-                if is_svg {
-                    ctx.use_helper("setAttr");
-                    cstr!("_setAttr({element}, \"class\", {value})")
-                } else {
-                    ctx.use_helper("setClass");
-                    cstr!("_setClass({element}, {value})")
-                }
-            } else if key.as_str() == "style" {
-                if is_svg {
-                    ctx.use_helper("setAttr");
-                    cstr!("_setAttr({element}, \"style\", {value})")
-                } else {
-                    ctx.use_helper("setStyle");
-                    cstr!("_setStyle({element}, {value})")
-                }
-            } else {
-                ctx.use_helper("setProp");
-                cstr!("_setProp({element}, \"{key}\", {value})")
-            }
+        OperationNode::SetProp(set_prop) => Some(generate_set_prop_inline(ctx, set_prop)),
+        OperationNode::SetDynamicProps(set_props) => {
+            Some(generate_set_dynamic_props_inline(ctx, set_props))
         }
         OperationNode::SetText(set_text) => {
             ctx.use_helper("setText");
@@ -84,21 +55,136 @@ pub(crate) fn generate_operation_inline(
                 .values
                 .iter()
                 .map(|v| {
-                    ctx.use_helper("toDisplayString");
                     if v.is_static {
-                        cstr!("\"{}\"", v.content)
+                        cstr!("\"{}\"", escape_text_literal(v.content.as_str()))
                     } else {
-                        cstr!("_toDisplayString(_ctx.{})", v.content)
+                        ctx.use_helper("toDisplayString");
+                        let resolved = ctx.resolve_expression(&v.content);
+                        cstr!("_toDisplayString({})", resolved)
                     }
                 })
                 .collect();
 
             if values.len() == 1 {
-                cstr!("_setText({text_ref}, {})", values[0])
+                Some(cstr!("_setText({text_ref}, {})", values[0]))
             } else {
-                cstr!("_setText({text_ref}, {})", values.join(" + "))
+                Some(cstr!("_setText({text_ref}, {})", values.join(" + ")))
             }
         }
-        _ => String::from("/* unsupported */"),
+        _ => None,
     }
+}
+
+/// Generate SetProp inline (returns code string)
+fn generate_set_prop_inline(
+    ctx: &mut GenerateContext,
+    set_prop: &crate::ir::SetPropIRNode<'_>,
+) -> String {
+    let element = cstr!("n{}", set_prop.element);
+    let key = &set_prop.prop.key.content;
+    let is_svg = is_svg_tag(set_prop.tag.as_str());
+
+    // Build value from values list
+    let value = build_prop_value(ctx, set_prop);
+
+    if key.as_str() == "class" {
+        if is_svg {
+            ctx.use_helper("setAttr");
+            cstr!("_setAttr({element}, \"class\", {value})")
+        } else {
+            ctx.use_helper("setClass");
+            cstr!("_setClass({element}, {value})")
+        }
+    } else if key.as_str() == "style" {
+        if is_svg {
+            ctx.use_helper("setAttr");
+            cstr!("_setAttr({element}, \"style\", {value})")
+        } else {
+            ctx.use_helper("setStyle");
+            cstr!("_setStyle({element}, {value})")
+        }
+    } else if set_prop.prop_modifier {
+        // .prop modifier -> setDOMProp
+        ctx.use_helper("setDOMProp");
+        cstr!("_setDOMProp({element}, \"{key}\", {value})")
+    } else if set_prop.camel && is_svg {
+        // .camel on SVG -> setAttr with true flag for SVG
+        ctx.use_helper("setAttr");
+        cstr!("_setAttr({element}, \"{key}\", {value}, true)")
+    } else {
+        ctx.use_helper("setProp");
+        cstr!("_setProp({element}, \"{key}\", {value})")
+    }
+}
+
+/// Build prop value expression, handling multiple values (static+dynamic merge)
+fn build_prop_value(
+    ctx: &mut GenerateContext,
+    set_prop: &crate::ir::SetPropIRNode<'_>,
+) -> vize_carton::CompactString {
+    if set_prop.prop.values.len() > 1 {
+        // Multiple values -> array notation (e.g. ["static", dynamic])
+        let parts: Vec<String> = set_prop
+            .prop
+            .values
+            .iter()
+            .map(|v| {
+                if v.is_static {
+                    cstr!("\"{}\"", v.content)
+                } else {
+                    ctx.resolve_expression(&v.content)
+                }
+            })
+            .collect();
+        cstr!("[{}]", parts.join(", "))
+    } else if let Some(first) = set_prop.prop.values.first() {
+        if first.is_static {
+            cstr!("\"{}\"", first.content)
+        } else {
+            ctx.resolve_expression(&first.content)
+        }
+    } else {
+        vize_carton::CompactString::from("undefined")
+    }
+}
+
+/// Generate SetDynamicProps inline (returns code string)
+fn generate_set_dynamic_props_inline(
+    ctx: &mut GenerateContext,
+    set_props: &crate::ir::SetDynamicPropsIRNode<'_>,
+) -> String {
+    let element = cstr!("n{}", set_props.element);
+
+    if set_props.is_event {
+        ctx.use_helper("setDynamicEvents");
+        if let Some(first) = set_props.props.first() {
+            let resolved = ctx.resolve_expression(&first.content);
+            cstr!("_setDynamicEvents({element}, {resolved})")
+        } else {
+            cstr!("_setDynamicEvents({element})")
+        }
+    } else {
+        ctx.use_helper("setDynamicProps");
+        let props_parts: Vec<String> = set_props
+            .props
+            .iter()
+            .map(|p| {
+                if p.is_static {
+                    cstr!("\"{}\"", p.content)
+                } else {
+                    ctx.resolve_expression(&p.content)
+                }
+            })
+            .collect();
+        cstr!("_setDynamicProps({element}, [{}])", props_parts.join(", "))
+    }
+}
+
+fn escape_text_literal(text: &str) -> String {
+    text.replace('\\', "\\\\")
+        .replace('"', "\\\"")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+        .into()
 }

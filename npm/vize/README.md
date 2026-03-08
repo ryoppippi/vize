@@ -43,6 +43,30 @@ vize lint --fix                   # Auto-fix lint issues
 vize check --strict               # Strict type checking
 ```
 
+## Configuration
+
+Vize CLI and IDE settings can be shared from `vize.config.pkl`.
+
+```pkl
+amends "node_modules/vize/pkl/VizeConfig.pkl"
+
+formatter {
+  singleQuote = true
+  printWidth = 88
+}
+
+typeChecker {
+  globalsFile = "./types/global.d.ts"
+}
+
+lsp {
+  completion = false
+}
+```
+
+The npm package ships the default Pkl modules in `node_modules/vize/pkl`, so users can extend them directly with `amends`.
+These Pkl modules are the primary distributed schema/defaults; the generated JSON Schema is secondary compatibility output.
+
 ## Alternative Installation
 
 If npm installation fails, you can install via Cargo:

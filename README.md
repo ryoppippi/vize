@@ -28,6 +28,11 @@
 > This project is under active development and is not yet ready for production use.
 > APIs and features may change without notice.
 
+> [!NOTE]
+> `@vizejs/vite-plugin` is the recommended bundler integration today.
+> `@vizejs/unplugin` (rollup / webpack / esbuild) and `@vizejs/rspack-plugin` are available, but non-Vite integrations are still unstable and should be tested carefully before adoption.
+> Rspack intentionally keeps a dedicated package because its loader chain, `experiments.css`, and HMR behavior need Rspack-specific handling instead of the shared unplugin path.
+
 ---
 
 ## Features
@@ -53,7 +58,23 @@ vize lint --fix            # Lint & auto-fix
 vize check --strict        # Type check
 ```
 
-See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setup, WASM bindings, and more.
+Shared CLI and IDE settings can live in `vize.config.pkl`:
+
+```pkl
+amends "node_modules/vize/pkl/VizeConfig.pkl"
+
+formatter {
+  singleQuote = true
+}
+
+lsp {
+  completion = false
+}
+```
+
+The packaged Pkl modules under `node_modules/vize/pkl` are the primary config schema/defaults. Generated JSON Schema is kept only as a secondary compatibility artifact.
+
+See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setup, experimental bundler integrations, WASM bindings, and more.
 
 ## Performance
 

@@ -1,8 +1,8 @@
 ---
 source: crates/vize_atelier_sfc/src/snapshot_tests.rs
-expression: ts_output
+expression: ts_output.as_str()
 ---
-import { defineComponent as _defineComponent } from 'vue'
+import { withAsyncContext as _withAsyncContext, defineComponent as _defineComponent } from 'vue'
 import { openBlock as _openBlock, createElementBlock as _createElementBlock, createCommentVNode as _createCommentVNode, toDisplayString as _toDisplayString, unref as _unref } from "vue"
 
 
@@ -10,7 +10,14 @@ export default /*@__PURE__*/_defineComponent({
   __name: 'test',
   async setup(__props) {
 
-const { data, error } = await useFetch('/api/data')
+let __temp: any, __restore: any
+
+const { data, error } =  (
+  ([__temp,__restore] = _withAsyncContext(() => useFetch('/api/data'))),
+  __temp = await __temp,
+  __restore(),
+  __temp
+)
 
 return (_ctx: any,_cache: any) => {
   return (_unref(error))

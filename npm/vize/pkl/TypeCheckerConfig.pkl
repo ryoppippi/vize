@@ -1,29 +1,40 @@
 /// Type checker configuration for Vize.
 module vize.TypeCheckerConfig
 
-/// Enable type checking.
-/// Default: false
-enabled: Boolean?
+class TypeCheckerConfig {
+  /// Enable type checking.
+  enabled: Boolean = true
 
-/// Enable strict mode.
-/// Default: false
-strict: Boolean?
+  /// Enable strict mode.
+  strict: Boolean = false
 
-/// Check component props.
-/// Default: true
-checkProps: Boolean?
+  /// Check component props.
+  checkProps: Boolean = true
 
-/// Check component emits.
-/// Default: true
-checkEmits: Boolean?
+  /// Check component emits.
+  checkEmits: Boolean = true
 
-/// Check template bindings.
-/// Default: true
-checkTemplateBindings: Boolean?
+  /// Check template bindings.
+  checkTemplateBindings: Boolean = true
 
-/// Path to tsconfig.json.
-/// Default: auto-detected
-tsconfig: String?
+  /// Check reactivity loss patterns.
+  checkReactivity: Boolean = true
 
-/// Path to tsgo binary.
-tsgoPath: String?
+  /// Check setup context violations.
+  checkSetupContext: Boolean = true
+
+  /// Check invalid exports in <script setup>.
+  checkInvalidExports: Boolean = true
+
+  /// Check fallthrough attrs on multi-root templates.
+  checkFallthroughAttrs: Boolean = true
+
+  /// Path to tsconfig.json.
+  tsconfig: String? = null
+
+  /// Path to tsgo binary.
+  tsgoPath: String? = null
+
+  /// Path to a .d.ts file that declares template globals.
+  globalsFile: String? = null
+}

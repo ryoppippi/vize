@@ -34,6 +34,7 @@ pub struct SfcCompileOptionsNapi {
     pub filename: Option<String>,
     pub source_map: Option<bool>,
     pub ssr: Option<bool>,
+    pub vapor: Option<bool>,
     /// Preserve TypeScript in output when true
     pub is_ts: Option<bool>,
     /// Scope ID for scoped CSS (e.g., "data-v-abc123")
@@ -51,6 +52,12 @@ pub struct SfcCompileResultNapi {
     pub errors: Vec<String>,
     /// Compilation warnings
     pub warnings: Vec<String>,
+    /// Hash of template content (for HMR)
+    pub template_hash: Option<String>,
+    /// Hash of style content (for HMR)
+    pub style_hash: Option<String>,
+    /// Hash of script content (for HMR)
+    pub script_hash: Option<String>,
 }
 
 /// Batch compile options for NAPI
@@ -58,6 +65,7 @@ pub struct SfcCompileResultNapi {
 #[derive(Default)]
 pub struct BatchCompileOptionsNapi {
     pub ssr: Option<bool>,
+    pub vapor: Option<bool>,
     /// Preserve TypeScript in output when true
     pub is_ts: Option<bool>,
     pub threads: Option<u32>,
@@ -238,12 +246,20 @@ pub fn compile_sfc(
                 css: None,
                 errors: vec![e.message.into()],
                 warnings: vec![],
+                template_hash: None,
+                style_hash: None,
+                script_hash: None,
             });
         }
     };
 
+    let template_hash: Option<String> = descriptor.template_hash().map(Into::into);
+    let style_hash: Option<String> = descriptor.style_hash().map(Into::into);
+    let script_hash: Option<String> = descriptor.script_hash().map(Into::into);
+
     // Compile
     let has_scoped = descriptor.styles.iter().any(|s| s.scoped);
+    let vapor = opts.vapor.unwrap_or(false);
     let is_ts = opts.is_ts.unwrap_or(false);
 
     // Extract scope_id from options (strip "data-v-" prefix if present)
@@ -287,6 +303,7 @@ pub fn compile_sfc(
             scoped: has_scoped,
             ..Default::default()
         },
+        vapor,
         scope_id: external_scope_id,
     };
 
@@ -304,12 +321,18 @@ pub fn compile_sfc(
                 .into_iter()
                 .map(|e| e.message.into())
                 .collect(),
+            template_hash: template_hash.clone(),
+            style_hash: style_hash.clone(),
+            script_hash: script_hash.clone(),
         }),
         Err(e) => Ok(SfcCompileResultNapi {
             code: String::new(),
             css: None,
             errors: vec![e.message.into()],
             warnings: vec![],
+            template_hash,
+            style_hash,
+            script_hash,
         }),
     }
 }
@@ -328,6 +351,7 @@ pub fn compile_sfc_batch(
 
     let opts = options.unwrap_or_default();
     let ssr = opts.ssr.unwrap_or(false);
+    let vapor = opts.vapor.unwrap_or(false);
     let is_ts = opts.is_ts.unwrap_or(false);
 
     // Configure thread pool if specified
@@ -376,11 +400,7 @@ pub fn compile_sfc_batch(
 
         input_bytes.fetch_add(source.len(), Ordering::Relaxed);
 
-        let filename: vize_carton::CompactString = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("anonymous.vue")
-            .into();
+        let filename: vize_carton::CompactString = path.to_string_lossy().as_ref().into();
 
         // Parse
         let parse_opts = SfcParseOptions {
@@ -420,6 +440,7 @@ pub fn compile_sfc_batch(
                 scoped: has_scoped,
                 ..Default::default()
             },
+            vapor,
             scope_id: None,
         };
 
@@ -460,6 +481,7 @@ pub fn compile_sfc_batch_with_results(
 
     let opts = options.unwrap_or_default();
     let ssr = opts.ssr.unwrap_or(false);
+    let vapor = opts.vapor.unwrap_or(false);
     let is_ts = opts.is_ts.unwrap_or(false);
 
     // Configure thread pool if specified
@@ -567,6 +589,7 @@ pub fn compile_sfc_batch_with_results(
                 scoped: actual_has_scoped,
                 ..Default::default()
             },
+            vapor,
             scope_id: Some(scope_id.clone()),
         };
 

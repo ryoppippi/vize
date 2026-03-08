@@ -5,7 +5,10 @@
 use vize_carton::Box;
 
 use crate::ir::{BlockIRNode, ForIRNode, IfIRNode, NegativeBranch, OperationNode};
-use vize_atelier_core::{ExpressionNode, ForNode, IfNode, SimpleExpressionNode, SourceLocation};
+use vize_atelier_core::{
+    ExpressionNode, ForNode, IfNode, PropNode, SimpleExpressionNode, SourceLocation,
+    TemplateChildNode,
+};
 
 use super::{context::TransformContext, transform_children};
 
@@ -14,6 +17,26 @@ pub(crate) fn transform_if_node<'a>(
     ctx: &mut TransformContext<'a>,
     if_node: &IfNode<'a>,
     block: &mut BlockIRNode<'a>,
+) {
+    transform_if_node_with_options(ctx, if_node, block, None, None, true);
+}
+
+pub(crate) fn transform_if_node_into_parent<'a>(
+    ctx: &mut TransformContext<'a>,
+    if_node: &IfNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: usize,
+) {
+    transform_if_node_with_options(ctx, if_node, block, Some(parent), None, false);
+}
+
+fn transform_if_node_with_options<'a>(
+    ctx: &mut TransformContext<'a>,
+    if_node: &IfNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: Option<usize>,
+    anchor: Option<usize>,
+    add_return: bool,
 ) {
     if if_node.branches.is_empty() {
         return;
@@ -59,7 +82,12 @@ pub(crate) fn transform_if_node<'a>(
 
     // Handle remaining branches (v-else-if, v-else)
     let negative = if if_node.branches.len() > 1 {
-        Some(transform_remaining_branches(ctx, &if_node.branches[1..]))
+        Some(transform_remaining_branches(
+            ctx,
+            &if_node.branches[1..],
+            parent,
+            anchor,
+        ))
     } else {
         None
     };
@@ -70,20 +98,24 @@ pub(crate) fn transform_if_node<'a>(
         positive,
         negative,
         once: false,
-        parent: None,
-        anchor: None,
+        parent,
+        anchor,
     };
 
     block
         .operation
         .push(OperationNode::If(Box::new_in(ir_if, ctx.allocator)));
-    block.returns.push(if_id);
+    if add_return {
+        block.returns.push(if_id);
+    }
 }
 
 /// Transform remaining if branches (v-else-if, v-else)
 pub(crate) fn transform_remaining_branches<'a>(
     ctx: &mut TransformContext<'a>,
     branches: &[vize_atelier_core::IfBranchNode<'a>],
+    parent: Option<usize>,
+    anchor: Option<usize>,
 ) -> NegativeBranch<'a> {
     if branches.is_empty() {
         // This shouldn't happen, but return an empty block just in case
@@ -123,7 +155,12 @@ pub(crate) fn transform_remaining_branches<'a>(
         let negative = if branches.len() > 1 {
             // Consume ID for negative branch callback block
             let _negative_block_id = ctx.next_id();
-            Some(transform_remaining_branches(ctx, &branches[1..]))
+            Some(transform_remaining_branches(
+                ctx,
+                &branches[1..],
+                parent,
+                anchor,
+            ))
         } else {
             None
         };
@@ -134,8 +171,8 @@ pub(crate) fn transform_remaining_branches<'a>(
             positive,
             negative,
             once: false,
-            parent: None,
-            anchor: None,
+            parent,
+            anchor,
         };
 
         NegativeBranch::If(Box::new_in(nested_if, ctx.allocator))
@@ -152,91 +189,135 @@ pub(crate) fn transform_for_node<'a>(
     for_node: &ForNode<'a>,
     block: &mut BlockIRNode<'a>,
 ) {
+    transform_for_node_with_options(ctx, for_node, block, None, None, true);
+}
+
+pub(crate) fn transform_for_node_into_parent<'a>(
+    ctx: &mut TransformContext<'a>,
+    for_node: &ForNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: usize,
+) {
+    transform_for_node_with_options(ctx, for_node, block, Some(parent), None, false);
+}
+
+fn transform_for_node_with_options<'a>(
+    ctx: &mut TransformContext<'a>,
+    for_node: &ForNode<'a>,
+    block: &mut BlockIRNode<'a>,
+    parent: Option<usize>,
+    anchor: Option<usize>,
+    add_return: bool,
+) {
+    // Allocate for-node ID first (before children consume IDs)
+    let for_id = ctx.next_id();
+
     // Get source expression
-    let source = match &for_node.source {
-        ExpressionNode::Simple(simple) => {
-            let source_node = SimpleExpressionNode::new(
-                simple.content.clone(),
-                simple.is_static,
-                simple.loc.clone(),
-            );
-            Box::new_in(source_node, ctx.allocator)
-        }
-        ExpressionNode::Compound(compound) => {
-            let source_node =
-                SimpleExpressionNode::new(compound.loc.source.clone(), false, compound.loc.clone());
-            Box::new_in(source_node, ctx.allocator)
-        }
-    };
+    let source = clone_simple_expr(ctx, &for_node.source);
 
     // Get value alias
-    let value = for_node.value_alias.as_ref().map(|v| match v {
-        ExpressionNode::Simple(simple) => {
-            let val_node = SimpleExpressionNode::new(
-                simple.content.clone(),
-                simple.is_static,
-                simple.loc.clone(),
-            );
-            Box::new_in(val_node, ctx.allocator)
-        }
-        ExpressionNode::Compound(compound) => {
-            let val_node =
-                SimpleExpressionNode::new(compound.loc.source.clone(), false, compound.loc.clone());
-            Box::new_in(val_node, ctx.allocator)
-        }
-    });
+    let value = for_node
+        .value_alias
+        .as_ref()
+        .map(|v| clone_simple_expr(ctx, v));
 
     // Get key alias
-    let key = for_node.key_alias.as_ref().map(|k| match k {
-        ExpressionNode::Simple(simple) => {
-            let key_node = SimpleExpressionNode::new(
-                simple.content.clone(),
-                simple.is_static,
-                simple.loc.clone(),
-            );
-            Box::new_in(key_node, ctx.allocator)
-        }
-        ExpressionNode::Compound(compound) => {
-            let key_node =
-                SimpleExpressionNode::new(compound.loc.source.clone(), false, compound.loc.clone());
-            Box::new_in(key_node, ctx.allocator)
-        }
-    });
+    let key = for_node
+        .key_alias
+        .as_ref()
+        .map(|k| clone_simple_expr(ctx, k));
 
     // Get index alias
-    let index = for_node.object_index_alias.as_ref().map(|i| match i {
-        ExpressionNode::Simple(simple) => {
-            let idx_node = SimpleExpressionNode::new(
-                simple.content.clone(),
-                simple.is_static,
-                simple.loc.clone(),
-            );
-            Box::new_in(idx_node, ctx.allocator)
-        }
-        ExpressionNode::Compound(compound) => {
-            let idx_node =
-                SimpleExpressionNode::new(compound.loc.source.clone(), false, compound.loc.clone());
-            Box::new_in(idx_node, ctx.allocator)
-        }
-    });
+    let index = for_node
+        .object_index_alias
+        .as_ref()
+        .map(|i| clone_simple_expr(ctx, i));
+
+    // Extract :key from the first child element's props
+    let key_prop = extract_key_prop(ctx, for_node);
+
+    // Consume ID for the render block
+    let _render_block_id = ctx.next_id();
 
     // Transform children as render block
     let render = transform_children(ctx, &for_node.children);
 
     let ir_for = ForIRNode {
-        id: ctx.next_id(),
+        id: for_id,
         source,
         value,
         key,
         index,
-        key_prop: None, // TODO: Handle key prop from element
+        key_prop,
         render,
         once: false,
         component: false,
         only_child: for_node.children.len() == 1,
+        parent,
+        anchor,
     };
 
     block
         .operation
         .push(OperationNode::For(Box::new_in(ir_for, ctx.allocator)));
+    if add_return {
+        block.returns.push(for_id);
+    }
+}
+
+/// Clone an ExpressionNode into a SimpleExpressionNode
+fn clone_simple_expr<'a>(
+    ctx: &mut TransformContext<'a>,
+    expr: &ExpressionNode<'a>,
+) -> Box<'a, SimpleExpressionNode<'a>> {
+    match expr {
+        ExpressionNode::Simple(simple) => {
+            let node = SimpleExpressionNode::new(
+                simple.content.clone(),
+                simple.is_static,
+                simple.loc.clone(),
+            );
+            Box::new_in(node, ctx.allocator)
+        }
+        ExpressionNode::Compound(compound) => {
+            let node =
+                SimpleExpressionNode::new(compound.loc.source.clone(), false, compound.loc.clone());
+            Box::new_in(node, ctx.allocator)
+        }
+    }
+}
+
+/// Extract :key prop from the first child element of a v-for node
+fn extract_key_prop<'a>(
+    ctx: &mut TransformContext<'a>,
+    for_node: &ForNode<'a>,
+) -> Option<Box<'a, SimpleExpressionNode<'a>>> {
+    // Look at the first child element for a :key directive
+    for child in for_node.children.iter() {
+        if let TemplateChildNode::Element(el) = child {
+            for prop in el.props.iter() {
+                if let PropNode::Directive(dir) = prop {
+                    if dir.name.as_str() == "bind" {
+                        if let Some(ref arg) = dir.arg {
+                            if let ExpressionNode::Simple(key_arg) = arg {
+                                if key_arg.content.as_str() == "key" {
+                                    if let Some(ref exp) = dir.exp {
+                                        if let ExpressionNode::Simple(s) = exp {
+                                            let node = SimpleExpressionNode::new(
+                                                s.content.clone(),
+                                                s.is_static,
+                                                s.loc.clone(),
+                                            );
+                                            return Some(Box::new_in(node, ctx.allocator));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
 }

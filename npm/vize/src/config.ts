@@ -236,8 +236,16 @@ async function loadESMConfig(filePath: string, env?: ConfigEnv): Promise<VizeCon
 export function normalizeGlobalTypes(
   config: GlobalTypesConfig,
 ): Record<string, GlobalTypeDeclaration> {
+  const resolvedConfig =
+    "types" in config &&
+    typeof config.types === "object" &&
+    config.types !== null &&
+    !Array.isArray(config.types)
+      ? config.types
+      : config;
+
   const result: Record<string, GlobalTypeDeclaration> = {};
-  for (const [key, value] of Object.entries(config)) {
+  for (const [key, value] of Object.entries(resolvedConfig)) {
     if (typeof value === "string") {
       result[key] = { type: value };
     } else {

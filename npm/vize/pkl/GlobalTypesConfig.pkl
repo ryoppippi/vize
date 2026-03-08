@@ -1,16 +1,15 @@
 /// Global type declarations configuration for Vize.
 module vize.GlobalTypesConfig
 
-/// A global type declaration.
 class TypeDeclaration {
   /// TypeScript type string.
   type: String
 
-  /// Default value.
-  defaultValue: String?
+  /// Default value expression for virtual TS stubs.
+  defaultValue: String? = null
 }
 
-/// Global type declarations.
-/// Keys are the global property names (e.g. "$t", "$route").
-/// Values can be a TypeDeclaration object or a plain type string (shorthand).
-types: Mapping<String, TypeDeclaration>?
+class GlobalTypesConfig {
+  /// Global type declarations.
+  types: Mapping<String, TypeDeclaration> = new Mapping {}
+}

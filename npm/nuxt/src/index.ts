@@ -14,6 +14,8 @@ import vize from "@vizejs/vite-plugin";
 import { musea } from "@vizejs/vite-plugin-musea";
 import type { MuseaOptions } from "@vizejs/vite-plugin-musea";
 import type { NuxtMuseaOptions } from "@vizejs/musea-nuxt";
+import { createNuxtComponentResolver, injectNuxtComponentImports } from "./components";
+import { injectNuxtI18nHelpers } from "./i18n";
 
 export interface VizeNuxtOptions {
   /**
@@ -89,22 +91,34 @@ export default defineNuxtModule<VizeNuxtOptions>({
 
     // Capture unimport context for composable auto-imports (useRoute, ref, computed, etc.)
     let unimportCtx: {
-      injectImports: (code: string, id?: string) => Promise<{ code: string; s: unknown; imports: unknown[] }>;
+      injectImports: (
+        code: string,
+        id?: string,
+      ) => Promise<{ code: string; s: unknown; imports: unknown[] }>;
     } | null = null;
     nuxt.hook("imports:context", (ctx: unknown) => {
       unimportCtx = ctx as typeof unimportCtx;
     });
 
+    const nuxtComponentResolver = createNuxtComponentResolver({
+      buildDir: nuxt.options.buildDir,
+      moduleNames: nuxt.options.modules.filter(
+        (moduleName): moduleName is string => typeof moduleName === "string",
+      ),
+      rootDir: nuxt.options.rootDir,
+    });
+
     // Capture component registry for component auto-imports (NuxtPage, NuxtLayout, etc.)
-    let nuxtComponents: Array<{
-      pascalName: string;
-      kebabName: string;
-      name: string;
-      filePath: string;
-      export: string;
-    }> = [];
     nuxt.hook("components:extend", (comps: unknown) => {
-      nuxtComponents = comps as typeof nuxtComponents;
+      nuxtComponentResolver.register(
+        comps as Array<{
+          pascalName: string;
+          kebabName: string;
+          name: string;
+          filePath: string;
+          export: string;
+        }>,
+      );
     });
 
     addVitePlugin({
@@ -119,34 +133,12 @@ export default defineNuxtModule<VizeNuxtOptions>({
 
         // 1. Component auto-imports: replace _resolveComponent("Name") with direct imports
         // Nuxt's LoaderPlugin normally does this, but skips \0-prefixed IDs.
-        if (nuxtComponents.length > 0) {
-          const compImports: string[] = [];
-          let counter = 0;
-          result = result.replace(
-            /_?resolveComponent\s*\(\s*["'`]([^"'`]+)["'`]\s*(?:,\s*[^)]+)?\)/g,
-            (match: string, name: string) => {
-              const comp = nuxtComponents.find(
-                (c) => c.pascalName === name || c.kebabName === name || c.name === name,
-              );
-              if (comp) {
-                const varName = `__nuxt_component_${counter++}`;
-                const exportName = comp.export || "default";
-                if (exportName === "default") {
-                  compImports.push(`import ${varName} from ${JSON.stringify(comp.filePath)};`);
-                } else {
-                  compImports.push(
-                    `import { ${exportName} as ${varName} } from ${JSON.stringify(comp.filePath)};`,
-                  );
-                }
-                return varName;
-              }
-              return match;
-            },
-          );
-          if (compImports.length > 0) {
-            result = compImports.join("\n") + "\n" + result;
-            changed = true;
-          }
+        const nextComponentResult = injectNuxtComponentImports(result, (name) => {
+          return nuxtComponentResolver.resolve(name);
+        });
+        if (nextComponentResult !== result) {
+          result = nextComponentResult;
+          changed = true;
         }
 
         // 2. i18n function injection: inject useI18n() for $t, $rt, $d, $n, $tm, $te
@@ -154,29 +146,10 @@ export default defineNuxtModule<VizeNuxtOptions>({
         // Must inject inside the setup() function body, not at module top level.
         // Use negative lookbehind to exclude `_ctx.$t(` and `this.$t(` (property access),
         // which are Vue template globals and don't need useI18n injection.
-        const i18nFnRe = /(?<![.\w])\$([tdn]|rt|tm|te)\s*\(/;
-        if (i18nFnRe.test(result) && !result.includes("useI18n")) {
-          const i18nMap: Record<string, string> = {
-            $t: "t: $t", $rt: "rt: $rt", $d: "d: $d",
-            $n: "n: $n", $tm: "tm: $tm", $te: "te: $te",
-          };
-          const usedFns: string[] = [];
-          for (const [fn, destructure] of Object.entries(i18nMap)) {
-            // Escape $ for regex, use negative lookbehind to skip _ctx.$t etc.
-            if (new RegExp(`(?<![.\\w])\\${fn}\\s*\\(`).test(result)) {
-              usedFns.push(destructure);
-            }
-          }
-          if (usedFns.length > 0) {
-            // Find the setup function opening brace to inject inside it
-            const setupMatch = result.match(/setup\s*\(__props[\s\S]*?\)\s*\{/);
-            if (setupMatch && setupMatch.index !== undefined) {
-              const insertPos = setupMatch.index + setupMatch[0].length;
-              const injection = `\nconst { ${usedFns.join(", ")} } = useI18n();\n`;
-              result = result.slice(0, insertPos) + injection + result.slice(insertPos);
-              changed = true;
-            }
-          }
+        const nextResult = injectNuxtI18nHelpers(result);
+        if (nextResult !== result) {
+          result = nextResult;
+          changed = true;
         }
 
         // 3. Composable auto-imports: inject useRoute, ref, computed, useI18n, etc.
@@ -257,15 +230,18 @@ export default defineNuxtModule<VizeNuxtOptions>({
     // via Nuxt's own Vite plugins. Adding nuxtMusea globally would shadow
     // Nuxt's #imports resolution and break the app.
     if (options.musea !== false) {
-      const museaBasePath = options.musea && typeof options.musea === "object" && "basePath" in options.musea
-        ? (options.musea as Record<string, unknown>).basePath as string
-        : "/__musea__";
+      const museaBasePath =
+        options.musea && typeof options.musea === "object" && "basePath" in options.musea
+          ? ((options.musea as Record<string, unknown>).basePath as string)
+          : "/__musea__";
       nuxt.options.vite.plugins.push(...musea(options.musea || {}));
 
       // Print Musea Gallery URL after dev server starts
       nuxt.hook("listen", (_server: unknown, listener: { url: string }) => {
         const url = listener.url?.replace(/\/$/, "") || "http://localhost:3000";
-        console.log(`  \x1b[36m➜\x1b[0m  \x1b[1mMusea Gallery:\x1b[0m \x1b[36m${url}${museaBasePath}\x1b[0m`);
+        console.log(
+          `  \x1b[36m➜\x1b[0m  \x1b[1mMusea Gallery:\x1b[0m \x1b[36m${url}${museaBasePath}\x1b[0m`,
+        );
       });
     }
   },

@@ -1,34 +1,28 @@
 /// LSP configuration for Vize.
 module vize.LspConfig
 
-/// Enable LSP.
-/// Default: true
-enabled: Boolean?
+class LspConfig {
+  /// Enable the language server.
+  enabled: Boolean = true
 
-/// Enable diagnostics.
-/// Default: true
-diagnostics: Boolean?
+  /// Enable diagnostics.
+  diagnostics: Boolean = true
 
-/// Enable completions.
-/// Default: true
-completion: Boolean?
+  /// Enable completions.
+  completion: Boolean = true
 
-/// Enable hover information.
-/// Default: true
-hover: Boolean?
+  /// Enable hover information.
+  hover: Boolean = true
 
-/// Enable go-to-definition.
-/// Default: true
-definition: Boolean?
+  /// Enable go-to-definition.
+  definition: Boolean = true
 
-/// Enable formatting via LSP.
-/// Default: true
-formatting: Boolean?
+  /// Enable formatting via LSP.
+  formatting: Boolean = true
 
-/// Enable code actions.
-/// Default: true
-codeActions: Boolean?
+  /// Enable code actions.
+  codeActions: Boolean = true
 
-/// Use tsgo for type checking in LSP.
-/// Default: false
-tsgo: Boolean?
+  /// Enable tsgo-backed IDE features.
+  tsgo: Boolean = true
+}

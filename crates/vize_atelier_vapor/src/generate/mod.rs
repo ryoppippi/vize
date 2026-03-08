@@ -3,6 +3,7 @@
 //! Generates JavaScript code from Vapor IR.
 
 mod context;
+mod expression;
 mod helpers;
 mod operations;
 mod setup;
@@ -10,7 +11,7 @@ mod setup;
 use std::fmt::Write;
 
 use crate::ir::{BlockIRNode, OperationNode, RootIRNode};
-use vize_carton::{FxHashMap, String, ToCompactString};
+use vize_carton::{FxHashMap, FxHashSet, String, ToCompactString};
 
 use context::GenerateContext;
 use helpers::generate_effect;
@@ -27,22 +28,65 @@ pub struct VaporGenerateResult {
 
 /// Generate Vapor code from IR
 pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
-    let mut ctx = GenerateContext::new(&ir.element_template_map);
+    let mut ctx = GenerateContext::new(&ir.element_template_map, &ir.standalone_text_elements);
 
     // Template helper is always used if we have templates
     if !ir.templates.is_empty() {
         ctx.use_helper("template");
     }
 
+    // Collect root template indices (templates used in top-level block returns
+    // and in root-level v-if branches that return a single element)
+    let mut root_template_indices: FxHashSet<usize> = FxHashSet::default();
+    // Only mark as root if there's a single root return (not a fragment)
+    if ir.block.returns.len() == 1 {
+        let element_id = ir.block.returns[0];
+        if let Some(&template_index) = ir.element_template_map.get(&element_id) {
+            root_template_indices.insert(template_index);
+        }
+    }
+    // Also mark templates from root-level v-if branches as root
+    for op in ir.block.operation.iter() {
+        if let OperationNode::If(if_node) = op {
+            collect_root_if_templates(
+                if_node,
+                &ir.element_template_map,
+                &mut root_template_indices,
+            );
+        }
+    }
+
     // Generate template declarations (to separate string, we'll prepend imports later)
     let mut template_code = String::default();
     for (i, template) in ir.templates.iter().enumerate() {
-        writeln!(
-            template_code,
-            "const t{} = _template(\"{}\", true)",
-            i,
-            escape_template(template)
-        )
+        let is_root = root_template_indices.contains(&i);
+        let is_svg = template.starts_with("<svg");
+        match (is_root, is_svg) {
+            (true, true) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", true, 1)",
+                i,
+                escape_template(template)
+            ),
+            (true, false) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", true)",
+                i,
+                escape_template(template)
+            ),
+            (false, true) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\", false, 1)",
+                i,
+                escape_template(template)
+            ),
+            (false, false) => writeln!(
+                template_code,
+                "const t{} = _template(\"{}\")",
+                i,
+                escape_template(template)
+            ),
+        }
         .ok();
     }
 
@@ -52,6 +96,11 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
     // Generate component function body first to collect used helpers
     ctx.push_line("export function render(_ctx) {");
     ctx.indent();
+
+    if block_has_template_refs(&ir.block) {
+        ctx.use_helper("createTemplateRefSetter");
+        ctx.push_line("const _setRef = _ctx.vaporTemplateRefSetter || _createTemplateRefSetter()");
+    }
 
     // Generate block content (includes template instantiation, text nodes, operations, effects, return)
     generate_block(&mut ctx, &ir.block, &ir.element_template_map);
@@ -93,6 +142,46 @@ pub fn generate_vapor(ir: &RootIRNode<'_>) -> VaporGenerateResult {
     }
 }
 
+fn block_has_template_refs(block: &BlockIRNode<'_>) -> bool {
+    block.operation.iter().any(operation_has_template_refs)
+        || block
+            .effect
+            .iter()
+            .any(|effect| effect.operations.iter().any(operation_has_template_refs))
+}
+
+fn operation_has_template_refs(op: &OperationNode<'_>) -> bool {
+    match op {
+        OperationNode::SetTemplateRef(_) => true,
+        OperationNode::If(if_node) => {
+            block_has_template_refs(&if_node.positive)
+                || if_node
+                    .negative
+                    .as_ref()
+                    .is_some_and(negative_branch_has_template_refs)
+        }
+        OperationNode::For(for_node) => block_has_template_refs(&for_node.render),
+        OperationNode::CreateComponent(component) => component
+            .slots
+            .iter()
+            .any(|slot| block_has_template_refs(&slot.block)),
+        _ => false,
+    }
+}
+
+fn negative_branch_has_template_refs(branch: &crate::ir::NegativeBranch<'_>) -> bool {
+    match branch {
+        crate::ir::NegativeBranch::Block(block) => block_has_template_refs(block),
+        crate::ir::NegativeBranch::If(if_node) => {
+            block_has_template_refs(&if_node.positive)
+                || if_node
+                    .negative
+                    .as_ref()
+                    .is_some_and(negative_branch_has_template_refs)
+        }
+    }
+}
+
 /// Generate block
 fn generate_block(
     ctx: &mut GenerateContext,
@@ -112,26 +201,40 @@ fn generate_block(
         }
     }
 
-    // Generate text node references for effects in this block
+    // Generate ChildRef/NextRef operations first (before text refs, since text refs
+    // may reference child nodes created by these operations)
+    for op in block.operation.iter() {
+        if matches!(op, OperationNode::ChildRef(_) | OperationNode::NextRef(_)) {
+            generate_operation(ctx, op, element_template_map);
+        }
+    }
+
+    // Generate text node references for effects in this block.
+    // Skip _txt() for standalone text elements (interpolations with their own template)
+    // since the element itself IS the text node.
     for effect in block.effect.iter() {
         for op in effect.operations.iter() {
             if let OperationNode::SetText(set_text) = op {
-                ctx.use_helper("txt");
-                let var_name = ctx.next_text_node(set_text.element);
-                let mut line = String::with_capacity(32);
-                line.push_str("const ");
-                line.push_str(&var_name);
-                line.push_str(" = _txt(n");
-                line.push_str(&set_text.element.to_compact_string());
-                line.push(')');
-                ctx.push_line(&line);
+                if !ctx.standalone_text_elements.contains(&set_text.element) {
+                    ctx.use_helper("txt");
+                    let var_name = ctx.next_text_node(set_text.element);
+                    let mut line = String::with_capacity(32);
+                    line.push_str("const ");
+                    line.push_str(&var_name);
+                    line.push_str(" = _txt(n");
+                    line.push_str(&set_text.element.to_compact_string());
+                    line.push(')');
+                    ctx.push_line(&line);
+                }
             }
         }
     }
 
-    // Generate operations
+    // Generate remaining operations (skip ChildRef/NextRef already generated above)
     for op in block.operation.iter() {
-        generate_operation(ctx, op, element_template_map);
+        if !matches!(op, OperationNode::ChildRef(_) | OperationNode::NextRef(_)) {
+            generate_operation(ctx, op, element_template_map);
+        }
     }
 
     // Generate effects
@@ -152,6 +255,37 @@ fn generate_block(
             ctx.push_line(&["return ", &returns].concat());
         } else {
             ctx.push_line(&["return [", &returns, "]"].concat());
+        }
+    }
+}
+
+/// Collect root template indices from v-if branches (recursive for v-else-if chains)
+fn collect_root_if_templates(
+    if_node: &crate::ir::IfIRNode<'_>,
+    element_template_map: &FxHashMap<usize, usize>,
+    root_indices: &mut FxHashSet<usize>,
+) {
+    // Only mark as root if the branch returns a single element
+    if if_node.positive.returns.len() == 1 {
+        let element_id = if_node.positive.returns[0];
+        if let Some(&template_index) = element_template_map.get(&element_id) {
+            root_indices.insert(template_index);
+        }
+    }
+    // Handle negative branch
+    if let Some(ref negative) = if_node.negative {
+        match negative {
+            crate::ir::NegativeBranch::Block(block) => {
+                if block.returns.len() == 1 {
+                    let element_id = block.returns[0];
+                    if let Some(&template_index) = element_template_map.get(&element_id) {
+                        root_indices.insert(template_index);
+                    }
+                }
+            }
+            crate::ir::NegativeBranch::If(nested_if) => {
+                collect_root_if_templates(nested_if, element_template_map, root_indices);
+            }
         }
     }
 }

@@ -45,9 +45,9 @@ impl LanguageServer for MaestroServer {
                     .and_then(|f| f.uri.to_file_path().ok())
             });
 
-        // Load format config from workspace root (always, regardless of feature)
+        // Load workspace config from workspace root before advertising capabilities.
         if let Some(ref path) = workspace_path {
-            self.state.load_format_config(path);
+            self.state.load_workspace_config(path);
         }
 
         // Set workspace root for native features (tsgo, batch checker)
@@ -58,7 +58,7 @@ impl LanguageServer for MaestroServer {
         }
 
         Ok(InitializeResult {
-            capabilities: server_capabilities(),
+            capabilities: server_capabilities(&self.state.get_lsp_config()),
             server_info: Some(ServerInfo {
                 name: "vize-maestro".to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
@@ -126,6 +126,11 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.hover {
+            return Ok(None);
+        }
+
         let uri = &params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
@@ -162,6 +167,11 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.completion {
+            return Ok(None);
+        }
+
         let uri = &params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
 
@@ -195,6 +205,11 @@ impl LanguageServer for MaestroServer {
         &self,
         params: GotoDefinitionParams,
     ) -> Result<Option<GotoDefinitionResponse>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.definition {
+            return Ok(None);
+        }
+
         let uri = &params.text_document_position_params.text_document.uri;
         let position = params.text_document_position_params.position;
 
@@ -227,6 +242,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn references(&self, params: ReferenceParams) -> Result<Option<Vec<Location>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
         let include_declaration = params.context.include_declaration;
@@ -253,6 +272,10 @@ impl LanguageServer for MaestroServer {
         &self,
         params: DocumentSymbolParams,
     ) -> Result<Option<DocumentSymbolResponse>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -408,6 +431,11 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.code_actions {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
         let range = params.range;
 
@@ -433,6 +461,10 @@ impl LanguageServer for MaestroServer {
         &self,
         params: TextDocumentPositionParams,
     ) -> Result<Option<PrepareRenameResponse>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
         let position = params.position;
 
@@ -452,6 +484,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn rename(&self, params: RenameParams) -> Result<Option<WorkspaceEdit>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document_position.text_document.uri;
         let position = params.text_document_position.position;
         let new_name = &params.new_name;
@@ -475,6 +511,10 @@ impl LanguageServer for MaestroServer {
         &self,
         params: SemanticTokensParams,
     ) -> Result<Option<SemanticTokensResult>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -486,6 +526,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn code_lens(&self, params: CodeLensParams) -> Result<Option<Vec<CodeLens>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -506,6 +550,10 @@ impl LanguageServer for MaestroServer {
         &self,
         params: WorkspaceSymbolParams,
     ) -> Result<Option<Vec<SymbolInformation>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let query = &params.query;
         let symbols = WorkspaceSymbolsService::search(&self.state, query);
 
@@ -517,6 +565,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn document_link(&self, params: DocumentLinkParams) -> Result<Option<Vec<DocumentLink>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -534,6 +586,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn inlay_hint(&self, params: InlayHintParams) -> Result<Option<Vec<InlayHint>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
         let range = params.range;
 
@@ -552,6 +608,10 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn folding_range(&self, params: FoldingRangeParams) -> Result<Option<Vec<FoldingRange>>> {
+        if !self.state.is_lsp_enabled() {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -628,6 +688,11 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.formatting {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {
@@ -648,6 +713,11 @@ impl LanguageServer for MaestroServer {
         &self,
         params: DocumentRangeFormattingParams,
     ) -> Result<Option<Vec<TextEdit>>> {
+        let lsp = self.state.get_lsp_config();
+        if !lsp.enabled || !lsp.formatting {
+            return Ok(None);
+        }
+
         let uri = &params.text_document.uri;
 
         let Some(doc) = self.state.documents.get(uri) else {

@@ -5,7 +5,11 @@
 
 #![allow(clippy::disallowed_macros)]
 
-use std::{fs, path::PathBuf, time::Instant};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
 use ignore::WalkBuilder;
 use vize_carton::cstr;
@@ -182,43 +186,30 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};
-    use vize_canon::{
-        lsp_client::TsgoLspClient,
-        virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions},
-    };
+    use vize_canon::{lsp_client::TsgoLspClient, virtual_ts::generate_virtual_ts_with_offsets};
     use vize_carton::Bump;
     use vize_croquis::{Analyzer, AnalyzerOptions, ImportStatementInfo, ReExportInfo, TypeExport};
 
-    use super::reporting::{has_source_mapping, map_diagnostic_position};
+    use super::{
+        nuxt,
+        reporting::{has_source_mapping, map_diagnostic_position},
+    };
 
     let start = Instant::now();
 
-    // Load vize.config.json and write JSON Schema
-    let config = crate::config::load_config(None);
-    crate::config::write_schema(None);
-
-    // Build VirtualTsOptions from config (.d.ts file) or default (empty).
-    let mut vts_options = if let Some(ref dts_path) = config.check.globals {
-        let resolved = std::path::Path::new(dts_path);
-        match parse_dts_globals(resolved) {
-            Ok(globals) => VirtualTsOptions {
-                template_globals: globals,
-                ..Default::default()
-            },
-            Err(e) => {
-                eprintln!(
-                    "\x1b[33mWarning:\x1b[0m Failed to parse globals from {}: {}",
-                    dts_path, e
-                );
-                VirtualTsOptions::default()
-            }
-        }
-    } else {
-        VirtualTsOptions::default()
-    };
+    // Load shared config from the packaged Pkl or legacy JSON file.
+    let loaded_config = crate::config::load_config_with_source(None);
+    let config = loaded_config.config;
 
     // Detect Nuxt project and add auto-import stubs
-    detect_nuxt_auto_imports(&mut vts_options);
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let config_dir = loaded_config
+        .source_path
+        .as_deref()
+        .and_then(Path::parent)
+        .unwrap_or(cwd.as_path());
+    let mut vts_options = build_virtual_ts_options(&config, config_dir);
+    nuxt::detect_nuxt_auto_imports(&mut vts_options, &cwd);
 
     // Collect .vue files
     let collect_start = Instant::now();
@@ -435,44 +426,12 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
     // Find project root from first generated file (for tsconfig resolution)
     // Skip .nuxt, .out, node_modules directories when looking for the main tsconfig
-    let project_root = generated
-        .first()
-        .map(|g| std::path::Path::new(&g.original))
-        .and_then(|p| {
-            // Walk up to find directory containing tsconfig.json
-            // that is NOT in a generated/hidden directory
-            let mut dir = p.parent();
-            let mut best_tsconfig: Option<std::path::PathBuf> = None;
-
-            while let Some(d) = dir {
-                let dir_name = d.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                let is_generated_dir = dir_name.starts_with('.')
-                    || dir_name == "node_modules"
-                    || dir_name == "dist"
-                    || dir_name == "build";
-
-                if d.join("tsconfig.json").exists() {
-                    if is_generated_dir {
-                        // Keep looking for a better one
-                        if best_tsconfig.is_none() {
-                            best_tsconfig = Some(d.to_path_buf());
-                        }
-                    } else {
-                        // Found a tsconfig in a non-generated directory - use it
-                        return Some(d.to_string_lossy().to_compact_string());
-                    }
-                }
-                dir = d.parent();
-            }
-
-            // Use the best found tsconfig (even if in generated dir) or fallback
-            if let Some(d) = best_tsconfig {
-                return Some(d.to_string_lossy().to_compact_string());
-            }
-
-            // Fallback: use directory of the first file
-            p.parent().map(|d| d.to_string_lossy().to_compact_string())
-        });
+    let project_root = resolve_project_root(
+        &generated,
+        args.tsconfig.as_deref(),
+        config.type_checker.tsconfig.as_deref(),
+        config_dir,
+    );
 
     // Build shared URI map for all files (so imports can be resolved across servers)
     #[allow(clippy::disallowed_types)]
@@ -520,7 +479,13 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             .into_iter()
             .map(|indices| {
                 let project_root = project_root.clone();
-                let tsgo_path = args.tsgo_path.clone();
+                let tsgo_path = args.tsgo_path.clone().or_else(|| {
+                    config
+                        .type_checker
+                        .tsgo_path
+                        .as_ref()
+                        .map(|path| path.clone().into())
+                });
                 let total_errors = &total_errors;
                 let all_diagnostics = &all_diagnostics;
                 let uri_map = &uri_map;
@@ -848,257 +813,132 @@ pub(crate) fn collect_vue_files(patterns: &[std::string::String]) -> Vec<PathBuf
 fn parse_dts_globals(
     path: &std::path::Path,
 ) -> Result<Vec<vize_canon::virtual_ts::TemplateGlobal>, std::io::Error> {
+    use super::dts::parse_interface_members;
     use vize_canon::virtual_ts::TemplateGlobal;
 
-    let content = fs::read_to_string(path)?;
-    let mut globals = Vec::new();
+    Ok(
+        parse_interface_members(path, "interface ComponentCustomProperties")?
+            .into_iter()
+            .map(|(name, type_annotation)| TemplateGlobal {
+                name,
+                type_annotation,
+                default_value: "{} as any".into(),
+            })
+            .collect(),
+    )
+}
 
-    // Find the ComponentCustomProperties interface block
-    let lines = content.lines();
-    let mut in_interface = false;
-    let mut brace_depth: i32 = 0;
-    let mut current_name: Option<vize_carton::String> = None;
-    let mut current_type = vize_carton::String::default();
+fn build_virtual_ts_options(
+    config: &crate::config::VizeConfig,
+    config_dir: &Path,
+) -> vize_canon::virtual_ts::VirtualTsOptions {
+    let mut template_globals = build_global_type_declarations(config);
 
-    for line in lines {
-        let trimmed = line.trim();
-
-        if !in_interface {
-            if trimmed.contains("interface ComponentCustomProperties") {
-                in_interface = true;
-                // Account for opening brace on same line or next
-                for ch in trimmed.chars() {
-                    if ch == '{' {
-                        brace_depth += 1;
-                    }
+    if template_globals.is_empty() {
+        if let Some(globals_path) = config.type_checker.globals_file.as_ref() {
+            let resolved = resolve_from_config_dir(config_dir, globals_path.as_str());
+            match parse_dts_globals(resolved.as_path()) {
+                Ok(globals) => {
+                    template_globals = globals;
+                }
+                Err(error) => {
+                    eprintln!(
+                        "\x1b[33mWarning:\x1b[0m Failed to parse globals from {}: {}",
+                        resolved.display(),
+                        error
+                    );
                 }
             }
-            continue;
         }
+    }
 
-        // Inside the interface — track brace depth
-        for ch in trimmed.chars() {
-            if ch == '{' {
-                brace_depth += 1;
-            } else if ch == '}' {
-                brace_depth -= 1;
-            }
+    vize_canon::virtual_ts::VirtualTsOptions {
+        template_globals,
+        ..Default::default()
+    }
+}
+
+fn build_global_type_declarations(
+    config: &crate::config::VizeConfig,
+) -> Vec<vize_canon::virtual_ts::TemplateGlobal> {
+    config
+        .global_types
+        .iter()
+        .map(
+            |(name, declaration)| vize_canon::virtual_ts::TemplateGlobal {
+                name: name.clone(),
+                type_annotation: declaration.type_annotation.clone(),
+                default_value: declaration.template_default_value(),
+            },
+        )
+        .collect()
+}
+
+fn resolve_project_root(
+    generated: &[GeneratedFile],
+    cli_tsconfig: Option<&Path>,
+    config_tsconfig: Option<&str>,
+    cwd: &Path,
+) -> Option<vize_carton::String> {
+    if let Some(tsconfig) = cli_tsconfig {
+        if let Some(dir) = tsconfig.parent() {
+            return Some(dir.to_string_lossy().to_compact_string());
         }
+    }
 
-        // Interface closed
-        if brace_depth <= 0 {
-            // Flush any pending member
-            if let Some(name) = current_name.take() {
-                let type_ann = current_type
-                    .split_whitespace()
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                globals.push(TemplateGlobal {
-                    name,
-                    type_annotation: type_ann.into(),
-                    default_value: "{} as any".into(),
-                });
-            }
-            break;
+    if let Some(tsconfig) = config_tsconfig {
+        let resolved = resolve_from_config_dir(cwd, tsconfig);
+        if let Some(dir) = resolved.parent() {
+            return Some(dir.to_string_lossy().to_compact_string());
         }
+    }
 
-        // Skip empty lines or brace-only lines
-        if trimmed.is_empty() || trimmed == "{" || trimmed == "}" {
-            continue;
-        }
+    generated
+        .first()
+        .map(|generated_file| Path::new(&generated_file.original))
+        .and_then(find_project_root_from_generated_file)
+}
 
-        // Inside the interface body (brace_depth >= 1)
-        // Either continuing a multi-line type or starting a new member
-        if current_name.is_some() {
-            // Continuing multi-line type — append
-            current_type.push(' ');
-            current_type.push_str(trimmed.trim_end_matches(';'));
+fn find_project_root_from_generated_file(path: &Path) -> Option<vize_carton::String> {
+    let mut dir = path.parent();
+    let mut best_tsconfig: Option<PathBuf> = None;
 
-            if is_type_complete(&current_type) {
-                let name = current_name.take().unwrap();
-                let type_ann = current_type
-                    .split_whitespace()
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                globals.push(TemplateGlobal {
-                    name,
-                    type_annotation: type_ann.into(),
-                    default_value: "{} as any".into(),
-                });
-                current_type = vize_carton::String::default();
-            }
-            continue;
-        }
+    while let Some(current_dir) = dir {
+        let dir_name = current_dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        let is_generated_dir = dir_name.starts_with('.')
+            || dir_name == "node_modules"
+            || dir_name == "dist"
+            || dir_name == "build";
 
-        // New member: "name: type" or "name?: type"
-        if let Some((name_part, type_part)) = trimmed.split_once(':') {
-            let name = name_part.trim().trim_end_matches('?').trim();
-            if name.is_empty() {
-                continue;
-            }
-            let type_str = type_part.trim().trim_end_matches(';');
-
-            if is_type_complete(type_str) {
-                let type_ann = type_str.split_whitespace().collect::<Vec<_>>().join(" ");
-                globals.push(TemplateGlobal {
-                    name: name.into(),
-                    type_annotation: type_ann.into(),
-                    default_value: "{} as any".into(),
-                });
+        if current_dir.join("tsconfig.json").exists() {
+            if is_generated_dir {
+                if best_tsconfig.is_none() {
+                    best_tsconfig = Some(current_dir.to_path_buf());
+                }
             } else {
-                current_name = Some(name.into());
-                current_type = vize_carton::String::from(type_str);
+                return Some(current_dir.to_string_lossy().to_compact_string());
             }
         }
+
+        dir = current_dir.parent();
     }
 
-    Ok(globals)
+    if let Some(best_dir) = best_tsconfig {
+        return Some(best_dir.to_string_lossy().to_compact_string());
+    }
+
+    path.parent()
+        .map(|parent| parent.to_string_lossy().to_compact_string())
 }
 
-/// Check if a type annotation string has balanced delimiters.
-fn is_type_complete(s: &str) -> bool {
-    let mut paren = 0i32;
-    let mut angle = 0i32;
-    let mut brace = 0i32;
-    for ch in s.chars() {
-        match ch {
-            '(' => paren += 1,
-            ')' => paren -= 1,
-            '<' => angle += 1,
-            '>' => angle -= 1,
-            '{' => brace += 1,
-            '}' => brace -= 1,
-            _ => {}
-        }
-    }
-    paren <= 0 && angle <= 0 && brace <= 0
-}
-
-/// Detect Nuxt project and add auto-import stubs to VirtualTsOptions.
-/// Checks for `nuxt.config.ts` or `nuxt.config.js` in the current directory.
-fn detect_nuxt_auto_imports(options: &mut vize_canon::virtual_ts::VirtualTsOptions) {
-    let is_nuxt = std::path::Path::new("nuxt.config.ts").exists()
-        || std::path::Path::new("nuxt.config.js").exists()
-        || std::path::Path::new("nuxt.config.mts").exists();
-
-    if !is_nuxt {
-        return;
+fn resolve_from_config_dir(config_dir: &Path, candidate: &str) -> PathBuf {
+    let candidate_path = Path::new(candidate);
+    if candidate_path.is_absolute() {
+        return candidate_path.to_path_buf();
     }
 
-    let stubs = &mut options.auto_import_stubs;
-
-    // Vue core composables (with type-preserving signatures)
-    stubs.push("declare function ref<T>(value: T): $Vue['Ref']<$Vue['UnwrapRef']<T>>;".into());
-    stubs.push("declare function ref<T = any>(): $Vue['Ref']<T | undefined>;".into());
-    stubs.push("declare function computed<T>(getter: () => T): $Vue['ComputedRef']<T>;".into());
-    stubs.push("declare function computed<T>(options: { get: () => T; set: (value: T) => void }): $Vue['WritableComputedRef']<T>;".into());
-    stubs.push(
-        "declare function reactive<T extends object>(target: T): $Vue['UnwrapNestedRefs']<T>;"
-            .into(),
-    );
-    stubs.push("declare function readonly<T extends object>(target: T): Readonly<T>;".into());
-    stubs.push(
-        "declare function watch(source: any, cb: (...args: any[]) => any, options?: any): any;"
-            .into(),
-    );
-    stubs.push("declare function watchEffect(effect: () => void, options?: any): any;".into());
-    stubs.push("declare function watchPostEffect(effect: () => void): any;".into());
-    stubs.push("declare function watchSyncEffect(effect: () => void): any;".into());
-    stubs.push("declare function onMounted(hook: () => any): void;".into());
-    stubs.push("declare function onUnmounted(hook: () => any): void;".into());
-    stubs.push("declare function onBeforeMount(hook: () => any): void;".into());
-    stubs.push("declare function onBeforeUnmount(hook: () => any): void;".into());
-    stubs.push("declare function onBeforeUpdate(hook: () => any): void;".into());
-    stubs.push("declare function onUpdated(hook: () => any): void;".into());
-    stubs.push("declare function onActivated(hook: () => any): void;".into());
-    stubs.push("declare function onDeactivated(hook: () => any): void;".into());
-    stubs.push("declare function onErrorCaptured(hook: (...args: any[]) => any): void;".into());
-    stubs.push("declare function nextTick(fn?: () => void): Promise<void>;".into());
-    stubs.push("declare function toRef<T extends object, K extends keyof T>(object: T, key: K): $Vue['Ref']<T[K]>;".into());
-    stubs.push("declare function toRefs<T extends object>(object: T): { [K in keyof T]: $Vue['Ref']<T[K]> };".into());
-    stubs.push("declare function unref<T>(ref: T | $Vue['Ref']<T>): T;".into());
-    stubs.push("declare function isRef(value: any): value is $Vue['Ref'];".into());
-    stubs.push("declare function shallowRef<T>(value: T): $Vue['ShallowRef']<T>;".into());
-    stubs.push("declare function triggerRef(ref: $Vue['ShallowRef']): void;".into());
-    stubs.push("declare function provide<T>(key: string | symbol, value: T): void;".into());
-    stubs.push("declare function inject<T>(key: string | symbol, defaultValue?: T): T;".into());
-    stubs.push("declare function defineAsyncComponent(source: any): any;".into());
-    stubs.push("declare function h(type: any, ...args: any[]): any;".into());
-    stubs.push("declare function useAttrs(): Record<string, unknown>;".into());
-    stubs.push("declare function useSlots(): Record<string, (...args: any[]) => any>;".into());
-    stubs.push("declare function toRaw<T>(observed: T): T;".into());
-    stubs.push("declare function markRaw<T extends object>(value: T): T;".into());
-    stubs.push("declare function effectScope(detached?: boolean): any;".into());
-    stubs.push("declare function getCurrentScope(): any;".into());
-    stubs.push("declare function onScopeDispose(fn: () => void): void;".into());
-    stubs.push("declare function shallowReactive<T extends object>(target: T): T;".into());
-    stubs
-        .push("declare function shallowReadonly<T extends object>(target: T): Readonly<T>;".into());
-    stubs.push("declare function customRef<T>(factory: any): $Vue['Ref']<T>;".into());
-
-    // Vue Router
-    stubs.push("declare function useRouter(): any;".into());
-    stubs.push("declare function useRoute(): any;".into());
-
-    // Nuxt core composables
-    stubs.push("declare function definePageMeta(meta: any): void;".into());
-    stubs.push("declare function useSeoMeta(meta: any): void;".into());
-    stubs.push(
-        "declare function useFetch<T = any>(url: string | (() => string), options?: any): any;"
-            .into(),
-    );
-    stubs.push("declare function useAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
-    stubs.push(
-        "declare function useLazyFetch<T = any>(url: string | (() => string), options?: any): any;"
-            .into(),
-    );
-    stubs.push("declare function useLazyAsyncData<T = any>(key: string, handler: () => Promise<T>, options?: any): any;".into());
-    stubs.push("declare function navigateTo(to: string | any, options?: any): any;".into());
-    stubs.push("declare function createError(input: string | { statusCode?: number; statusMessage?: string; message?: string; data?: any; fatal?: boolean }): any;".into());
-    stubs.push("declare function showError(error: any): any;".into());
-    stubs.push(
-        "declare function clearError(options?: { redirect?: string }): Promise<void>;".into(),
-    );
-    stubs.push("declare function useNuxtApp(): any;".into());
-    stubs.push("declare function useRuntimeConfig(): any;".into());
-    stubs.push("declare function useAppConfig(): any;".into());
-    stubs.push(
-        "declare function useState<T = any>(key: string, init?: () => T): $Vue['Ref']<T>;".into(),
-    );
-    stubs.push(
-        "declare function useCookie<T = any>(name: string, options?: any): $Vue['Ref']<T>;".into(),
-    );
-    stubs.push("declare function useHead(input: any): void;".into());
-    stubs.push(
-        "declare function useRequestHeaders(headers?: string[]): Record<string, string>;".into(),
-    );
-    stubs.push("declare function useRequestURL(): URL;".into());
-    stubs.push("declare function defineNuxtComponent(options: any): any;".into());
-    stubs.push("declare function defineNuxtRouteMiddleware(middleware: any): any;".into());
-    stubs.push("declare function useError(): any;".into());
-    stubs.push("declare function abortNavigation(err?: any): any;".into());
-    stubs.push(
-        "declare function addRouteMiddleware(name: string, middleware: any, options?: any): void;"
-            .into(),
-    );
-    stubs.push("declare function defineNuxtPlugin(plugin: any): any;".into());
-    stubs.push("declare function setPageLayout(layout: string): void;".into());
-    stubs.push("declare function setResponseStatus(code: number, message?: string): void;".into());
-    stubs.push("declare function prerenderRoutes(routes: string | string[]): void;".into());
-    stubs.push("declare function refreshNuxtData(keys?: string | string[]): Promise<void>;".into());
-    stubs.push("declare function clearNuxtData(keys?: string | string[]): void;".into());
-    stubs.push("declare function reloadNuxtApp(options?: any): void;".into());
-    stubs.push("declare function callOnce(key: string, fn: () => any): Promise<void>;".into());
-    stubs.push("declare function callOnce(fn: () => any): Promise<void>;".into());
-    stubs.push("declare function onNuxtReady(callback: () => any): void;".into());
-    stubs.push(
-        "declare function preloadComponents(components: string | string[]): Promise<void>;".into(),
-    );
-    stubs.push(
-        "declare function prefetchComponents(components: string | string[]): Promise<void>;".into(),
-    );
-    stubs.push("declare function useRequestEvent(): any;".into());
-    stubs.push("declare function useRequestFetch(): typeof globalThis.fetch;".into());
-    stubs
-        .push("declare function useResponseHeaders(headers?: Record<string, string>): any;".into());
+    config_dir.join(candidate_path)
 }

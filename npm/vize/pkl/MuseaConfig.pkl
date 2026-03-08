@@ -1,73 +1,38 @@
 /// Musea component gallery configuration for Vize.
 module vize.MuseaConfig
 
-/// VRT (Visual Regression Testing) configuration.
-class VrtConfig {
-  /// Threshold for pixel comparison (0-1).
-  /// Default: 0.1
-  threshold: Float?
-
-  /// Output directory for screenshots.
-  /// Default: "__musea_snapshots__"
-  outDir: String?
-
-  /// Viewport sizes.
-  viewports: Listing<Viewport>?
-}
-
-/// Viewport size definition.
 class Viewport {
   width: Int
   height: Int
-  name: String?
+  name: String? = null
 }
 
-/// A11y configuration.
+class VrtConfig {
+  threshold: Float = 0.1
+  outDir: String = "__musea_snapshots__"
+  viewports: Listing<Viewport> = new Listing {}
+}
+
 class A11yConfig {
-  /// Enable a11y checking.
-  /// Default: false
-  enabled: Boolean?
-
-  /// Axe-core rules to enable/disable.
-  rules: Mapping<String, Boolean>?
+  enabled: Boolean = false
+  rules: Mapping<String, Boolean> = new Mapping {}
 }
 
-/// Autogen configuration.
 class AutogenConfig {
-  /// Enable auto-generation of variants.
-  /// Default: false
-  enabled: Boolean?
-
-  /// Max variants to generate per component.
-  /// Default: 10
-  maxVariants: Int?
+  enabled: Boolean = false
+  maxVariants: Int = 10
 }
 
-/// Glob patterns for art files.
-/// Default: ["**/*.art.vue"]
-include: Listing<String>?
-
-/// Glob patterns to exclude.
-/// Default: ["node_modules/**", "dist/**"]
-exclude: Listing<String>?
-
-/// Base path for gallery.
-/// Default: "/__musea__"
-basePath: String?
-
-/// Enable Storybook compatibility.
-/// Default: false
-storybookCompat: Boolean?
-
-/// Enable inline art detection in .vue files.
-/// Default: false
-inlineArt: Boolean?
-
-/// VRT configuration.
-vrt: VrtConfig?
-
-/// A11y configuration.
-a11y: A11yConfig?
-
-/// Autogen configuration.
-autogen: AutogenConfig?
+class MuseaConfig {
+  include: Listing<String> = new Listing { "**/*.art.vue" }
+  exclude: Listing<String> = new Listing {
+    "node_modules/**"
+    "dist/**"
+  }
+  basePath: String = "/__musea__"
+  storybookCompat: Boolean = false
+  inlineArt: Boolean = false
+  vrt: VrtConfig = new VrtConfig {}
+  a11y: A11yConfig = new A11yConfig {}
+  autogen: AutogenConfig = new AutogenConfig {}
+}

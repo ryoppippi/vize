@@ -143,6 +143,22 @@ export interface TypeCheckerConfig {
    */
   checkTemplateBindings?: boolean;
   /**
+   * Check reactivity loss patterns
+   */
+  checkReactivity?: boolean;
+  /**
+   * Check setup context violations
+   */
+  checkSetupContext?: boolean;
+  /**
+   * Check invalid exports in <script setup>
+   */
+  checkInvalidExports?: boolean;
+  /**
+   * Check fallthrough attrs on multi-root templates
+   */
+  checkFallthroughAttrs?: boolean;
+  /**
    * Path to tsconfig.json
    */
   tsconfig?: string;
@@ -150,6 +166,10 @@ export interface TypeCheckerConfig {
    * Path to tsgo binary
    */
   tsgoPath?: string;
+  /**
+   * Path to a .d.ts file that declares template globals
+   */
+  globalsFile?: string;
 }
 /**
  * Formatter options
@@ -176,9 +196,69 @@ export interface FormatterConfig {
    */
   singleQuote?: boolean;
   /**
+   * Use single quotes in JSX
+   */
+  jsxSingleQuote?: boolean;
+  /**
    * Trailing commas
    */
   trailingComma?: "all" | "none" | "es5";
+  /**
+   * Print spaces between brackets in object literals
+   */
+  bracketSpacing?: boolean;
+  /**
+   * Keep > on the last line of multiline tags
+   */
+  bracketSameLine?: boolean;
+  /**
+   * Arrow parens mode
+   */
+  arrowParens?: "always" | "avoid";
+  /**
+   * End-of-line mode
+   */
+  endOfLine?: "lf" | "crlf" | "cr" | "auto";
+  /**
+   * Object property quoting mode
+   */
+  quoteProps?: "as-needed" | "consistent" | "preserve";
+  /**
+   * Force one attribute per line
+   */
+  singleAttributePerLine?: boolean;
+  /**
+   * Indent script and style blocks
+   */
+  vueIndentScriptAndStyle?: boolean;
+  /**
+   * Sort attributes
+   */
+  sortAttributes?: boolean;
+  /**
+   * Attribute ordering strategy
+   */
+  attributeSortOrder?: "alphabetical" | "as-written";
+  /**
+   * Merge bind and non-bind attrs for sorting
+   */
+  mergeBindAndNonBindAttrs?: boolean;
+  /**
+   * Maximum attributes per line before wrapping
+   */
+  maxAttributesPerLine?: number;
+  /**
+   * Custom attribute groups
+   */
+  attributeGroups?: string[][];
+  /**
+   * Normalize directive shorthands
+   */
+  normalizeDirectiveShorthands?: boolean;
+  /**
+   * Sort SFC blocks in canonical order
+   */
+  sortBlocks?: boolean;
 }
 /**
  * LSP options
