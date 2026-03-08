@@ -1,9 +1,8 @@
 //! Config loading helpers.
 
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
-use crate::{String, ToCompactString};
+use pklrust::{Error as PklError, EvaluatorManager, EvaluatorOptions, ModuleSource};
 
 use super::model::{RawVizeConfig, VizeConfig};
 
@@ -111,37 +110,80 @@ fn parse_config_file(path: &Path) -> Result<VizeConfig, Box<dyn std::error::Erro
 }
 
 fn parse_pkl_config(path: &Path) -> Result<VizeConfig, Box<dyn std::error::Error>> {
-    if let Some(json) = evaluate_pkl_with_cli(path)? {
-        return Ok(serde_json::from_str::<RawVizeConfig>(&json)?.into());
-    }
+    let mut last_process_error = None;
 
-    Ok(rpkl::from_config::<RawVizeConfig>(path)?.into())
-}
-
-fn evaluate_pkl_with_cli(path: &Path) -> Result<Option<String>, Box<dyn std::error::Error>> {
     for command in pkl_command_candidates(path) {
-        if let Some(output) = run_pkl_command(path, &command)? {
-            return Ok(Some(output));
+        match parse_pkl_config_with_command(path, &command) {
+            Ok(config) => return Ok(config),
+            Err(error) if is_process_error(&error) => {
+                last_process_error = Some(error);
+            }
+            Err(error) => return Err(Box::new(error)),
         }
     }
 
-    Ok(None)
+    Err(last_process_error
+        .map(|error| Box::new(error) as Box<dyn std::error::Error>)
+        .unwrap_or_else(|| {
+            Box::new(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "failed to locate a usable pkl command",
+            ))
+        }))
 }
 
-fn pkl_command_candidates(path: &Path) -> Vec<PklCommand> {
-    let mut commands = Vec::new();
+fn parse_pkl_config_with_command(path: &Path, command: &Path) -> Result<VizeConfig, PklError> {
+    let command = command.to_string_lossy();
+    let mut manager = EvaluatorManager::with_command(command.as_ref())?;
+    let options = pkl_evaluator_options(path);
+    let evaluator = manager.new_evaluator(options)?;
+    let result =
+        manager.evaluate_module_typed::<RawVizeConfig>(&evaluator, ModuleSource::file(path));
+    let _ = manager.close_evaluator(&evaluator);
 
-    for ancestor in path.ancestors() {
+    result.map(Into::into)
+}
+
+fn pkl_evaluator_options(path: &Path) -> EvaluatorOptions {
+    let Some(root_dir) = path.parent() else {
+        return EvaluatorOptions::preconfigured();
+    };
+
+    let root_dir = root_dir.to_string_lossy();
+    EvaluatorOptions::preconfigured().root_dir(root_dir.as_ref())
+}
+
+fn is_process_error(error: &PklError) -> bool {
+    matches!(error, PklError::Io(_) | PklError::Process(_))
+}
+
+fn pkl_command_candidates(path: &Path) -> Vec<PathBuf> {
+    let mut commands = Vec::with_capacity(9);
+
+    push_pkl_command_candidates(&mut commands, path);
+
+    if let Ok(current_dir) = std::env::current_dir() {
+        push_pkl_command_candidates(&mut commands, &current_dir);
+    }
+
+    commands.push(PathBuf::from("pkl"));
+    commands
+}
+
+fn push_pkl_command_candidates(commands: &mut Vec<PathBuf>, path: &Path) {
+    let search_root = if path.is_dir() {
+        path
+    } else {
+        path.parent().unwrap_or(path)
+    };
+
+    for ancestor in search_root.ancestors() {
         for binary in local_pkl_candidates(ancestor) {
-            if binary.exists() {
-                commands.push(PklCommand::Binary(binary));
+            if binary.exists() && !commands.iter().any(|command| command == &binary) {
+                commands.push(binary);
             }
         }
     }
-
-    commands.push(PklCommand::Binary(PathBuf::from("pkl")));
-    commands.push(PklCommand::Npx);
-    commands
 }
 
 fn local_pkl_candidates(base: &Path) -> [PathBuf; 4] {
@@ -152,40 +194,6 @@ fn local_pkl_candidates(base: &Path) -> [PathBuf; 4] {
         base.join("node_modules/@pkl-community/pkl/pkl.exe"),
     ]
 }
-
-fn run_pkl_command(
-    path: &Path,
-    command: &PklCommand,
-) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    let output = match command {
-        PklCommand::Binary(binary) => Command::new(binary)
-            .args(["eval", "-f", "json"])
-            .arg(path)
-            .output(),
-        PklCommand::Npx => Command::new("npx")
-            .args(["--yes", "@pkl-community/pkl", "eval", "-f", "json"])
-            .arg(path)
-            .output(),
-    };
-
-    let Ok(output) = output else {
-        return Ok(None);
-    };
-
-    if !output.status.success() {
-        return Ok(None);
-    }
-
-    Ok(Some(
-        std::str::from_utf8(&output.stdout)?.to_compact_string(),
-    ))
-}
-
-enum PklCommand {
-    Binary(PathBuf),
-    Npx,
-}
-
 #[cfg(test)]
 mod tests {
     use super::load_config_with_source;
