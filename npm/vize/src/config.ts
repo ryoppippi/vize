@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { transform } from "oxc-transform";
 import type {
+  LanguageServerConfig,
   VizeConfig,
   LoadConfigOptions,
   UserConfigExport,
@@ -23,6 +24,10 @@ const CONFIG_FILE_NAMES = [
 const DEFAULT_CONFIG_ENV: ConfigEnv = {
   mode: "development",
   command: "serve",
+};
+
+type CompatVizeConfig = VizeConfig & {
+  lsp?: LanguageServerConfig;
 };
 
 /**
@@ -118,7 +123,7 @@ async function loadConfigFile(filePath: string, env?: ConfigEnv): Promise<VizeCo
 
   if (ext === ".json") {
     const content = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(content);
+    return normalizeConfigAliases(JSON.parse(content));
   }
 
   if (ext === ".ts") {
@@ -176,7 +181,7 @@ function loadPklConfig(filePath: string): VizeConfig | null {
       encoding: "utf-8",
       timeout: 30_000,
     });
-    return JSON.parse(output);
+    return normalizeConfigAliases(JSON.parse(output));
   } catch (e) {
     console.warn(`[vize] Failed to evaluate ${filePath}:`, e);
     return null;
@@ -191,9 +196,9 @@ async function resolveConfigExport(
   env?: ConfigEnv,
 ): Promise<VizeConfig> {
   if (typeof exported === "function") {
-    return exported(env ?? DEFAULT_CONFIG_ENV);
+    return normalizeConfigAliases(await exported(env ?? DEFAULT_CONFIG_ENV));
   }
-  return exported;
+  return normalizeConfigAliases(exported);
 }
 
 /**
@@ -256,4 +261,20 @@ export function normalizeGlobalTypes(
     }
   }
   return result;
+}
+
+function normalizeConfigAliases(config: CompatVizeConfig): VizeConfig {
+  if (config.lsp === undefined) {
+    return config;
+  }
+
+  const { lsp, ...rest } = config;
+  if (config.languageServer !== undefined) {
+    return rest;
+  }
+
+  return {
+    ...rest,
+    languageServer: lsp,
+  };
 }

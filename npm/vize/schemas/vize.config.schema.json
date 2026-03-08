@@ -401,12 +401,12 @@
       },
       "additionalProperties": false
     },
-    "LspConfig": {
-      "description": "LSP options",
+    "LanguageServerConfig": {
+      "description": "Language server options",
       "type": "object",
       "properties": {
         "enabled": {
-          "description": "Enable LSP",
+          "description": "Enable the language server",
           "default": true,
           "type": "boolean"
         },
@@ -431,7 +431,7 @@
           "type": "boolean"
         },
         "formatting": {
-          "description": "Enable formatting via LSP",
+          "description": "Enable formatting via the language server",
           "default": true,
           "type": "boolean"
         },
@@ -441,7 +441,7 @@
           "type": "boolean"
         },
         "tsgo": {
-          "description": "Use tsgo for type checking in LSP",
+          "description": "Use tsgo for language-server-backed IDE features",
           "default": true,
           "type": "boolean"
         }
@@ -631,8 +631,8 @@
     "formatter": {
       "$ref": "#/definitions/FormatterConfig"
     },
-    "lsp": {
-      "$ref": "#/definitions/LspConfig"
+    "languageServer": {
+      "$ref": "#/definitions/LanguageServerConfig"
     },
     "musea": {
       "$ref": "#/definitions/MuseaConfig"

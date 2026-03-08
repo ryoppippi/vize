@@ -59,7 +59,7 @@ typeChecker {
   globalsFile = "./types/global.d.ts"
 }
 
-lsp {
+languageServer {
   completion = false
 }
 ```

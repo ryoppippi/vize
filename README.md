@@ -67,7 +67,7 @@ formatter {
   singleQuote = true
 }
 
-lsp {
+languageServer {
   completion = false
 }
 ```

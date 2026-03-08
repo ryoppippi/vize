@@ -1,28 +1,6 @@
-/// LSP configuration for Vize.
+/// Deprecated alias for `LanguageServerConfig.pkl`.
 module vize.LspConfig
 
-class LspConfig {
-  /// Enable the language server.
-  enabled: Boolean = true
+import "LanguageServerConfig.pkl"
 
-  /// Enable diagnostics.
-  diagnostics: Boolean = true
-
-  /// Enable completions.
-  completion: Boolean = true
-
-  /// Enable hover information.
-  hover: Boolean = true
-
-  /// Enable go-to-definition.
-  definition: Boolean = true
-
-  /// Enable formatting via LSP.
-  formatting: Boolean = true
-
-  /// Enable code actions.
-  codeActions: Boolean = true
-
-  /// Enable tsgo-backed IDE features.
-  tsgo: Boolean = true
-}
+typealias LspConfig = LanguageServerConfig.LanguageServerConfig

@@ -1,0 +1,28 @@
+/// Language server configuration for Vize.
+module vize.LanguageServerConfig
+
+class LanguageServerConfig {
+  /// Enable the language server.
+  enabled: Boolean = true
+
+  /// Enable diagnostics.
+  diagnostics: Boolean = true
+
+  /// Enable completions.
+  completion: Boolean = true
+
+  /// Enable hover information.
+  hover: Boolean = true
+
+  /// Enable go-to-definition.
+  definition: Boolean = true
+
+  /// Enable formatting via the language server.
+  formatting: Boolean = true
+
+  /// Enable code actions.
+  codeActions: Boolean = true
+
+  /// Enable tsgo-backed IDE features.
+  tsgo: Boolean = true
+}

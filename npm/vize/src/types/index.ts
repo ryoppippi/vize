@@ -7,7 +7,7 @@ export type {
   LinterConfig,
   TypeCheckerConfig,
   FormatterConfig,
-  LspConfig,
+  LanguageServerConfig,
   MuseaVrtConfig,
   MuseaA11yConfig,
   MuseaAutogenConfig,
@@ -16,5 +16,10 @@ export type {
   GlobalTypeDeclaration,
   GlobalTypesConfig,
 } from "./generated.js";
+
+/**
+ * @deprecated Use `LanguageServerConfig`.
+ */
+export type LspConfig = import("./generated.js").LanguageServerConfig;
 
 export type { MaybePromise, ConfigEnv, UserConfigExport, LoadConfigOptions } from "./runtime.js";

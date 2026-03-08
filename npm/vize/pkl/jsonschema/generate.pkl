@@ -327,13 +327,13 @@ local formatterConfigDef: JsonSchema = new JsonSchema {
   additionalProperties = false
 }
 
-local lspConfigDef: JsonSchema = new JsonSchema {
+local languageServerConfigDef: JsonSchema = new JsonSchema {
   type = "object"
-  description = "LSP options"
+  description = "Language server options"
   properties {
     ["enabled"] = new JsonSchema {
       type = "boolean"
-      description = "Enable LSP"
+      description = "Enable the language server"
       default = true
     }
     ["diagnostics"] = new JsonSchema {
@@ -358,7 +358,7 @@ local lspConfigDef: JsonSchema = new JsonSchema {
     }
     ["formatting"] = new JsonSchema {
       type = "boolean"
-      description = "Enable formatting via LSP"
+      description = "Enable formatting via the language server"
       default = true
     }
     ["codeActions"] = new JsonSchema {
@@ -368,7 +368,7 @@ local lspConfigDef: JsonSchema = new JsonSchema {
     }
     ["tsgo"] = new JsonSchema {
       type = "boolean"
-      description = "Use tsgo for type checking in LSP"
+      description = "Use tsgo for language-server-backed IDE features"
       default = true
     }
   }
@@ -530,7 +530,7 @@ output {
       ["LinterConfig"] = linterConfigDef
       ["TypeCheckerConfig"] = typeCheckerConfigDef
       ["FormatterConfig"] = formatterConfigDef
-      ["LspConfig"] = lspConfigDef
+      ["LanguageServerConfig"] = languageServerConfigDef
       ["MuseaViewport"] = viewportDef
       ["MuseaVrtConfig"] = museaVrtConfigDef
       ["MuseaA11yConfig"] = museaA11yConfigDef
@@ -549,7 +549,7 @@ output {
       ["linter"] = new JsonSchema { `$ref` = "#/definitions/LinterConfig" }
       ["typeChecker"] = new JsonSchema { `$ref` = "#/definitions/TypeCheckerConfig" }
       ["formatter"] = new JsonSchema { `$ref` = "#/definitions/FormatterConfig" }
-      ["lsp"] = new JsonSchema { `$ref` = "#/definitions/LspConfig" }
+      ["languageServer"] = new JsonSchema { `$ref` = "#/definitions/LanguageServerConfig" }
       ["musea"] = new JsonSchema { `$ref` = "#/definitions/MuseaConfig" }
       ["globalTypes"] = new JsonSchema { `$ref` = "#/definitions/GlobalTypesConfig" }
     }

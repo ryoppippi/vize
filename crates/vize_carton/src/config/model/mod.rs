@@ -2,7 +2,7 @@
 
 mod formatter;
 mod global_types;
-mod lsp;
+mod language_server;
 mod type_checker;
 
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ pub use formatter::{
     ArrowParens, AttributeSortOrder, EndOfLine, FormatterConfig, QuoteProps, TrailingComma,
 };
 pub use global_types::{GlobalTypeDeclaration, GlobalTypesConfig, RawGlobalTypesConfig};
-pub use lsp::LspConfig;
+pub use language_server::{LanguageServerConfig, LspConfig};
 pub use type_checker::TypeCheckerConfig;
 
 /// Effective shared configuration.
@@ -32,9 +32,12 @@ pub struct VizeConfig {
         skip_serializing_if = "TypeCheckerConfig::is_default"
     )]
     pub type_checker: TypeCheckerConfig,
-    /// IDE/LSP feature flags.
-    #[serde(skip_serializing_if = "LspConfig::is_default")]
-    pub lsp: LspConfig,
+    /// IDE language server feature flags.
+    #[serde(
+        rename = "languageServer",
+        skip_serializing_if = "LanguageServerConfig::is_default"
+    )]
+    pub language_server: LanguageServerConfig,
     /// Template global declarations.
     #[serde(
         rename = "globalTypes",
@@ -52,13 +55,16 @@ pub(crate) struct RawVizeConfig {
     pub formatter: FormatterConfig,
     #[serde(rename = "typeChecker")]
     pub type_checker: TypeCheckerConfig,
-    pub lsp: LspConfig,
+    #[serde(rename = "languageServer")]
+    pub language_server: LanguageServerConfig,
     #[serde(rename = "globalTypes")]
     pub global_types: RawGlobalTypesConfig,
     #[serde(rename = "check")]
     legacy_check: Option<LegacyCheckConfig>,
     #[serde(rename = "fmt")]
     legacy_formatter: Option<FormatterConfig>,
+    #[serde(rename = "lsp")]
+    legacy_lsp: Option<LanguageServerConfig>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -82,11 +88,17 @@ impl From<RawVizeConfig> for VizeConfig {
             raw.formatter
         };
 
+        let language_server = if raw.language_server == LanguageServerConfig::default() {
+            raw.legacy_lsp.unwrap_or(raw.language_server)
+        } else {
+            raw.language_server
+        };
+
         Self {
             schema: raw.schema,
             formatter,
             type_checker,
-            lsp: raw.lsp,
+            language_server,
             global_types: raw.global_types.into(),
         }
     }

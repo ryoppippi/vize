@@ -1,11 +1,11 @@
-//! LSP feature flags.
+//! Language server feature flags.
 
 use serde::{Deserialize, Serialize};
 
-/// IDE/LSP settings.
+/// IDE language server settings.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
-pub struct LspConfig {
+pub struct LanguageServerConfig {
     pub enabled: bool,
     pub diagnostics: bool,
     pub completion: bool,
@@ -17,14 +17,14 @@ pub struct LspConfig {
     pub tsgo: bool,
 }
 
-impl LspConfig {
+impl LanguageServerConfig {
     /// Returns true when the config matches the built-in defaults.
     pub fn is_default(&self) -> bool {
         self == &Self::default()
     }
 }
 
-impl Default for LspConfig {
+impl Default for LanguageServerConfig {
     fn default() -> Self {
         Self {
             enabled: true,
@@ -38,3 +38,5 @@ impl Default for LspConfig {
         }
     }
 }
+
+pub type LspConfig = LanguageServerConfig;

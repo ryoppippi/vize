@@ -58,7 +58,7 @@ impl LanguageServer for MaestroServer {
         }
 
         Ok(InitializeResult {
-            capabilities: server_capabilities(&self.state.get_lsp_config()),
+            capabilities: server_capabilities(&self.state.get_language_server_config()),
             server_info: Some(ServerInfo {
                 name: "vize-maestro".to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
@@ -126,8 +126,8 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.hover {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.hover {
             return Ok(None);
         }
 
@@ -167,8 +167,8 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn completion(&self, params: CompletionParams) -> Result<Option<CompletionResponse>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.completion {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.completion {
             return Ok(None);
         }
 
@@ -205,8 +205,8 @@ impl LanguageServer for MaestroServer {
         &self,
         params: GotoDefinitionParams,
     ) -> Result<Option<GotoDefinitionResponse>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.definition {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.definition {
             return Ok(None);
         }
 
@@ -431,8 +431,8 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn code_action(&self, params: CodeActionParams) -> Result<Option<CodeActionResponse>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.code_actions {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.code_actions {
             return Ok(None);
         }
 
@@ -688,8 +688,8 @@ impl LanguageServer for MaestroServer {
     }
 
     async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.formatting {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.formatting {
             return Ok(None);
         }
 
@@ -713,8 +713,8 @@ impl LanguageServer for MaestroServer {
         &self,
         params: DocumentRangeFormattingParams,
     ) -> Result<Option<Vec<TextEdit>>> {
-        let lsp = self.state.get_lsp_config();
-        if !lsp.enabled || !lsp.formatting {
+        let language_server = self.state.get_language_server_config();
+        if !language_server.enabled || !language_server.formatting {
             return Ok(None);
         }
 

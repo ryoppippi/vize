@@ -8,7 +8,7 @@
 ///   singleQuote = true
 /// }
 ///
-/// lsp {
+/// languageServer {
 ///   completion = false
 /// }
 /// ```
@@ -19,7 +19,7 @@ import "VitePluginConfig.pkl"
 import "LinterConfig.pkl"
 import "TypeCheckerConfig.pkl"
 import "FormatterConfig.pkl"
-import "LspConfig.pkl"
+import "LanguageServerConfig.pkl"
 import "MuseaConfig.pkl"
 import "GlobalTypesConfig.pkl"
 
@@ -38,8 +38,15 @@ typeChecker: TypeCheckerConfig.TypeCheckerConfig = new TypeCheckerConfig.TypeChe
 /// Formatter options.
 formatter: FormatterConfig.FormatterConfig = new FormatterConfig.FormatterConfig {}
 
-/// LSP options.
-lsp: LspConfig.LspConfig = new LspConfig.LspConfig {}
+/// Language server options.
+languageServer: LanguageServerConfig.LanguageServerConfig = new LanguageServerConfig.LanguageServerConfig {}
+
+/// Legacy alias for `languageServer`.
+@Deprecated {
+  message = "Use languageServer instead."
+  replaceWith = "languageServer"
+}
+lsp: LanguageServerConfig.LanguageServerConfig = languageServer
 
 /// Musea component gallery options.
 musea: MuseaConfig.MuseaConfig = new MuseaConfig.MuseaConfig {}

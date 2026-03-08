@@ -18,7 +18,7 @@ export interface VizeConfig {
   linter?: LinterConfig;
   typeChecker?: TypeCheckerConfig;
   formatter?: FormatterConfig;
-  lsp?: LspConfig;
+  languageServer?: LanguageServerConfig;
   musea?: MuseaConfig;
   globalTypes?: GlobalTypesConfig;
 }
@@ -261,11 +261,11 @@ export interface FormatterConfig {
   sortBlocks?: boolean;
 }
 /**
- * LSP options
+ * Language server options
  */
-export interface LspConfig {
+export interface LanguageServerConfig {
   /**
-   * Enable LSP
+   * Enable the language server
    */
   enabled?: boolean;
   /**
@@ -285,7 +285,7 @@ export interface LspConfig {
    */
   definition?: boolean;
   /**
-   * Enable formatting via LSP
+   * Enable formatting via the language server
    */
   formatting?: boolean;
   /**
@@ -293,7 +293,7 @@ export interface LspConfig {
    */
   codeActions?: boolean;
   /**
-   * Use tsgo for type checking in LSP
+   * Use tsgo for language-server-backed IDE features
    */
   tsgo?: boolean;
 }

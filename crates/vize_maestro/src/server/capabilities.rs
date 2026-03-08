@@ -2,10 +2,10 @@
 #![allow(clippy::disallowed_methods)]
 
 use tower_lsp::lsp_types::*;
-use vize_carton::config::LspConfig;
+use vize_carton::config::LanguageServerConfig;
 
 /// Build the server capabilities to advertise to the client.
-pub fn server_capabilities(config: &LspConfig) -> ServerCapabilities {
+pub fn server_capabilities(config: &LanguageServerConfig) -> ServerCapabilities {
     let enabled = config.enabled;
     let hover_enabled = enabled && config.hover;
     let completion_enabled = enabled && config.completion;

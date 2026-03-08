@@ -8,7 +8,7 @@ use dashmap::DashMap;
 use parking_lot::RwLock;
 use tokio::sync::OnceCell;
 use tower_lsp::lsp_types::Url;
-use vize_carton::config::{LspConfig, TypeCheckerConfig, VizeConfig};
+use vize_carton::config::{LanguageServerConfig, TypeCheckerConfig, VizeConfig};
 
 #[cfg(feature = "glyph")]
 use vize_carton::config::FormatterConfig;
@@ -402,9 +402,9 @@ impl ServerState {
         self.workspace_config.read().clone()
     }
 
-    /// Get the loaded LSP feature flags.
-    pub fn get_lsp_config(&self) -> LspConfig {
-        self.workspace_config.read().lsp.clone()
+    /// Get the loaded language server feature flags.
+    pub fn get_language_server_config(&self) -> LanguageServerConfig {
+        self.workspace_config.read().language_server.clone()
     }
 
     /// Get the loaded type checker config.
@@ -414,19 +414,19 @@ impl ServerState {
 
     /// Returns true when LSP features are globally enabled.
     pub fn is_lsp_enabled(&self) -> bool {
-        self.workspace_config.read().lsp.enabled
+        self.workspace_config.read().language_server.enabled
     }
 
     /// Returns true when diagnostics are enabled for the current workspace.
     pub fn are_diagnostics_enabled(&self) -> bool {
         let config = self.workspace_config.read();
-        config.lsp.enabled && config.lsp.diagnostics
+        config.language_server.enabled && config.language_server.diagnostics
     }
 
     /// Returns true when tsgo-backed IDE features are enabled.
     pub fn is_tsgo_enabled(&self) -> bool {
         let config = self.workspace_config.read();
-        config.lsp.enabled && config.lsp.tsgo
+        config.language_server.enabled && config.language_server.tsgo
     }
 
     /// Load workspace config from `vize.config.pkl/json` in the given directory.
@@ -590,19 +590,19 @@ formatter {
     }
 
     #[test]
-    fn load_workspace_config_lsp_flags() {
+    fn load_workspace_config_language_server_flags() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("vize.config.json"),
-            r#"{ "lsp": { "completion": false, "tsgo": false } }"#,
+            r#"{ "languageServer": { "completion": false, "tsgo": false } }"#,
         )
         .unwrap();
 
         let state = ServerState::new();
         state.load_workspace_config(dir.path());
-        let lsp = state.get_lsp_config();
-        assert!(!lsp.completion);
-        assert!(!lsp.tsgo);
+        let language_server = state.get_language_server_config();
+        assert!(!language_server.completion);
+        assert!(!language_server.tsgo);
     }
 
     #[test]

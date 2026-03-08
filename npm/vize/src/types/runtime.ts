@@ -1,4 +1,4 @@
-import type { VizeConfig } from "./generated.js";
+import type { LanguageServerConfig, VizeConfig } from "./generated.js";
 
 // ============================================================================
 // TS-specific runtime types (cannot be expressed in Pkl)
@@ -12,7 +12,15 @@ export interface ConfigEnv {
   isSsrBuild?: boolean;
 }
 
-export type UserConfigExport = VizeConfig | ((env: ConfigEnv) => MaybePromise<VizeConfig>);
+export type UserConfig = VizeConfig & {
+  /**
+   * Legacy alias for `languageServer`.
+   * Prefer `languageServer`.
+   */
+  lsp?: LanguageServerConfig;
+};
+
+export type UserConfigExport = UserConfig | ((env: ConfigEnv) => MaybePromise<UserConfig>);
 
 // ============================================================================
 // LoadConfigOptions

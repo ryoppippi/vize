@@ -16,7 +16,7 @@ formatter {
   singleQuote = true
 }
 
-lsp {
+languageServer {
   completion = false
 }
 
@@ -45,6 +45,25 @@ fn loads_json_type_checker_settings() {
           "formatter": {
             "singleQuote": true,
             "printWidth": 88
+          }
+        }"#,
+    )
+    .unwrap();
+
+    let config = load_config(Some(dir.path()));
+
+    insta::assert_snapshot!(serde_json::to_string_pretty(&config).unwrap());
+}
+
+#[test]
+fn loads_legacy_json_lsp_alias() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+        dir.path().join("vize.config.json"),
+        r#"{
+          "lsp": {
+            "completion": false,
+            "tsgo": false
           }
         }"#,
     )
@@ -90,6 +109,29 @@ fn loads_legacy_json_aliases() {
             "globals": "./globals.d.ts"
           }
         }"#,
+    )
+    .unwrap();
+
+    let config = load_config(Some(dir.path()));
+
+    insta::assert_snapshot!(serde_json::to_string_pretty(&config).unwrap());
+}
+
+#[test]
+fn loads_legacy_pkl_lsp_alias() {
+    let dir = tempfile::tempdir().unwrap();
+    let config_path = dir.path().join("vize.config.pkl");
+    install_pkl_modules(dir.path());
+    std::fs::write(
+        &config_path,
+        r#"
+amends "node_modules/vize/pkl/VizeConfig.pkl"
+
+lsp {
+  completion = false
+  tsgo = false
+}
+"#,
     )
     .unwrap();
 
