@@ -84,7 +84,10 @@ async function loadConfigFromDir(dir: string, env?: ConfigEnv): Promise<VizeConf
 /**
  * Search from cwd upward until finding a loadable config file.
  */
-async function loadConfigFromDirAuto(startDir: string, env?: ConfigEnv): Promise<VizeConfig | null> {
+async function loadConfigFromDirAuto(
+  startDir: string,
+  env?: ConfigEnv,
+): Promise<VizeConfig | null> {
   let currentDir = path.resolve(startDir);
   const root = path.parse(currentDir).root;
 
