@@ -11,7 +11,10 @@ use crate::{
 use super::super::{
     children::{generate_children, generate_children_force_array},
     context::CodegenContext,
-    element::{generate_vshow_closing, has_vshow_directive},
+    element::{
+        generate_custom_directives_closing, generate_vmodel_closing, generate_vshow_closing,
+        has_custom_directives, has_vmodel_directive, has_vshow_directive,
+    },
     expression::generate_expression,
     helpers::{escape_js_string, is_builtin_component},
     node::generate_node,
@@ -45,8 +48,22 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 ctx.push(", () => ");
             }
 
-            // Check for v-show directive
-            let has_vshow = has_vshow_directive(el);
+            let has_custom_dirs = has_custom_directives(el);
+            if has_custom_dirs {
+                ctx.use_helper(RuntimeHelper::WithDirectives);
+                ctx.use_helper(RuntimeHelper::ResolveDirective);
+                ctx.push(ctx.helper(RuntimeHelper::WithDirectives));
+                ctx.push("(");
+            }
+
+            let has_vmodel = has_vmodel_directive(el) && !has_custom_dirs;
+            if has_vmodel {
+                ctx.use_helper(RuntimeHelper::WithDirectives);
+                ctx.push(ctx.helper(RuntimeHelper::WithDirectives));
+                ctx.push("(");
+            }
+
+            let has_vshow = has_vshow_directive(el) && !has_vmodel && !has_custom_dirs;
             if has_vshow {
                 ctx.use_helper(RuntimeHelper::WithDirectives);
                 ctx.use_helper(RuntimeHelper::VShow);
@@ -86,11 +103,6 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 }
 
                 ctx.push(")");
-
-                // Close withDirectives for v-show
-                if has_vshow {
-                    generate_vshow_closing(ctx, el);
-                }
             } else {
                 // Dynamic list: wrap in block
                 ctx.use_helper(RuntimeHelper::OpenBlock);
@@ -302,11 +314,16 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 }
 
                 ctx.push("))");
+            }
 
-                // Close withDirectives for v-show
-                if has_vshow {
-                    generate_vshow_closing(ctx, el);
-                }
+            if has_custom_dirs {
+                generate_custom_directives_closing(ctx, el);
+            }
+            if has_vmodel {
+                generate_vmodel_closing(ctx, el);
+            }
+            if has_vshow {
+                generate_vshow_closing(ctx, el);
             }
 
             // Close withMemo wrapper for v-for + v-memo
