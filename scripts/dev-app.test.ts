@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
+import { createServer } from "node:net";
 import { test } from "node:test";
-import { buildMisskeyDevConfig, runMisskeyBeforeStart } from "./dev-app.ts";
+import { buildMisskeyDevConfig, resolveAvailablePort, runMisskeyBeforeStart } from "./dev-app.ts";
 
 test("buildMisskeyDevConfig uses a valid id generation method", () => {
   const config = buildMisskeyDevConfig(
@@ -44,4 +46,52 @@ test("runMisskeyBeforeStart builds backend before readiness check", () => {
     "ready:/misskey:vize-dev.yml",
     "migrate:/misskey:vize-dev.yml",
   ]);
+});
+
+test("resolveAvailablePort skips ports occupied by IPv6 wildcard listeners", async () => {
+  const blocker = createServer();
+  blocker.listen(0, "::");
+  await once(blocker, "listening");
+
+  const address = blocker.address();
+  assert.ok(address != null && typeof address === "object");
+
+  try {
+    const nextPort = await resolveAvailablePort(address.port);
+    assert.notEqual(nextPort, address.port);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      blocker.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("resolveAvailablePort skips ports occupied by IPv4 listeners", async () => {
+  const blocker = createServer();
+  blocker.listen(0, "127.0.0.1");
+  await once(blocker, "listening");
+
+  const address = blocker.address();
+  assert.ok(address != null && typeof address === "object");
+
+  try {
+    const nextPort = await resolveAvailablePort(address.port);
+    assert.notEqual(nextPort, address.port);
+  } finally {
+    await new Promise<void>((resolve, reject) => {
+      blocker.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
 });

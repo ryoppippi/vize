@@ -11,6 +11,7 @@ use crate::{
 use super::super::{
     children::{generate_children, generate_children_force_array},
     context::CodegenContext,
+    element::helpers::{is_dynamic_component_tag, is_is_prop},
     element::{
         generate_custom_directives_closing, generate_vmodel_closing, generate_vshow_closing,
         has_custom_directives, has_vmodel_directive, has_vshow_directive,
@@ -18,7 +19,9 @@ use super::super::{
     expression::generate_expression,
     helpers::{escape_js_string, is_builtin_component},
     node::generate_node,
-    patch_flag::{calculate_element_patch_info, patch_flag_name},
+    patch_flag::{
+        calculate_element_patch_info, calculate_element_patch_info_skip_is, patch_flag_name,
+    },
     slots::{generate_slots, has_slot_children},
 };
 use super::helpers::{get_element_key, has_other_props, should_skip_prop};
@@ -31,6 +34,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
             let key_exp = get_element_key(el);
             let is_template = el.tag_type == ElementType::Template;
             let is_component = el.tag_type == ElementType::Component;
+            let is_dynamic_component = is_component && is_dynamic_component_tag(&el.tag);
             let prev_skip_scope_id = ctx.skip_scope_id;
 
             // Check for v-memo directive on for item (skip if already handled by v-for)
@@ -85,7 +89,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 ctx.push("\"");
 
                 // Props with key and all other props
-                generate_for_item_props(ctx, el, key_exp);
+                generate_for_item_props(ctx, el, key_exp, is_dynamic_component);
 
                 // Children
                 if !el.children.is_empty() {
@@ -134,7 +138,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                     ctx.push(ctx.helper(RuntimeHelper::CreateBlock));
                     ctx.push("(");
                     // Handle dynamic component
-                    if el.tag == "component" || el.tag == "Component" {
+                    if is_dynamic_component {
                         let dynamic_is = el.props.iter().find_map(|p| {
                             if let PropNode::Directive(dir) = p {
                                 if dir.name == "bind" {
@@ -208,7 +212,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                 // Props with key and all other props
                 // For unwrapped template child, use child's props with template's key
                 let props_el = unwrapped_child.unwrap_or(el);
-                generate_for_item_props(ctx, props_el, key_exp);
+                generate_for_item_props(ctx, props_el, key_exp, is_dynamic_component);
 
                 // Children
                 let children_el = unwrapped_child.unwrap_or(el);
@@ -243,11 +247,19 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
 
                 // Add patch flag
                 if is_component {
-                    let (mut patch_flag, dynamic_props) = calculate_element_patch_info(
-                        el,
-                        ctx.options.binding_metadata.as_ref(),
-                        ctx.options.cache_handlers,
-                    );
+                    let (mut patch_flag, dynamic_props) = if is_dynamic_component {
+                        calculate_element_patch_info_skip_is(
+                            el,
+                            ctx.options.binding_metadata.as_ref(),
+                            ctx.options.cache_handlers,
+                        )
+                    } else {
+                        calculate_element_patch_info(
+                            el,
+                            ctx.options.binding_metadata.as_ref(),
+                            ctx.options.cache_handlers,
+                        )
+                    };
                     // Remove TEXT flag for components with slot children (text is inside slot)
                     if has_slot_children(el) {
                         if let Some(flag) = patch_flag {
@@ -348,8 +360,15 @@ pub(crate) fn generate_for_item_props(
     ctx: &mut CodegenContext,
     el: &ElementNode<'_>,
     key_exp: Option<&ExpressionNode<'_>>,
+    skip_is_prop: bool,
 ) {
-    let has_other = has_other_props(el);
+    let has_other = if skip_is_prop {
+        el.props
+            .iter()
+            .any(|prop| !is_is_prop(prop) && !should_skip_prop(prop))
+    } else {
+        has_other_props(el)
+    };
     // For component elements, skip_scope_id suppresses the attribute.
     let scope_id = if ctx.skip_scope_id {
         None
@@ -396,6 +415,7 @@ pub(crate) fn generate_for_item_props(
             &scope_id,
             has_vbind_spread,
             has_von_spread,
+            skip_is_prop,
         );
         return;
     }
@@ -464,7 +484,7 @@ pub(crate) fn generate_for_item_props(
         generate_expression(ctx, key);
 
         for prop in el.props.iter() {
-            if should_skip_prop(prop) {
+            if should_skip_prop(prop) || (skip_is_prop && is_is_prop(prop)) {
                 continue;
             }
             if skip_static_class {
@@ -502,7 +522,7 @@ pub(crate) fn generate_for_item_props(
         ctx.push("{");
         let mut first = true;
         for prop in el.props.iter() {
-            if should_skip_prop(prop) {
+            if should_skip_prop(prop) || (skip_is_prop && is_is_prop(prop)) {
                 continue;
             }
             if skip_static_class {
@@ -548,6 +568,7 @@ fn generate_for_item_props_merged(
     scope_id: &Option<vize_carton::String>,
     has_vbind_spread: bool,
     has_von_spread: bool,
+    skip_is_prop: bool,
 ) {
     ctx.use_helper(RuntimeHelper::MergeProps);
     ctx.push(ctx.helper(RuntimeHelper::MergeProps));
@@ -571,7 +592,7 @@ fn generate_for_item_props_merged(
     let has_remaining = key_exp.is_some()
         || scope_id.is_some()
         || el.props.iter().any(|p| {
-            if should_skip_prop(p) {
+            if should_skip_prop(p) || (skip_is_prop && is_is_prop(p)) {
                 return false;
             }
             if let PropNode::Directive(dir) = p {
@@ -598,7 +619,7 @@ fn generate_for_item_props_merged(
         }
 
         for prop in el.props.iter() {
-            if should_skip_prop(prop) {
+            if should_skip_prop(prop) || (skip_is_prop && is_is_prop(prop)) {
                 continue;
             }
             if let PropNode::Directive(dir) = prop {

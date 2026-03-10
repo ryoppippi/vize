@@ -160,6 +160,56 @@ mod tests {
     }
 
     #[test]
+    fn test_codegen_pascal_case_dynamic_component() {
+        let result = compile!(r#"<Component :is="current" :active-class="klass" />"#);
+
+        assert!(
+            result.code.contains("_resolveDynamicComponent(current)"),
+            "PascalCase dynamic component should use resolveDynamicComponent: {}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("_component_Component"),
+            "PascalCase dynamic component should not resolve Component as a normal component: {}",
+            result.code
+        );
+        assert!(
+            !result.preamble.contains("_resolveComponent"),
+            "PascalCase dynamic component should not import resolveComponent: {}",
+            result.preamble
+        );
+        assert!(
+            !result.code.contains("is: current"),
+            "Dynamic component should not keep the is prop in generated props: {}",
+            result.code
+        );
+    }
+
+    #[test]
+    fn test_codegen_pascal_case_dynamic_component_inside_v_for() {
+        let result =
+            compile!(r#"<Component :is="item.component" v-for="item in items" :key="item.id" />"#);
+
+        assert!(
+            result
+                .code
+                .contains("_resolveDynamicComponent(item.component)"),
+            "v-for dynamic component should use resolveDynamicComponent: {}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("is: item.component"),
+            "v-for dynamic component should not keep the is prop: {}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("\"is\""),
+            "v-for dynamic component patch flags should not track is: {}",
+            result.code
+        );
+    }
+
+    #[test]
     fn test_codegen_preamble_module() {
         use crate::options::CodegenMode;
         let options = super::CodegenOptions {
@@ -285,6 +335,35 @@ mod tests {
                 && !result.code.contains(": undefined ]")
                 && !result.code.contains(": undefined ],"),
             "final else branch should not emit an extra undefined arm. Got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
+    fn test_codegen_v_if_branch_mixed_children_wrap_interpolations_in_text_vnodes() {
+        let result = compile!(
+            r#"<p v-if="speaker.affiliation || speaker.title">{{ speaker.affiliation }}<br v-if="speaker.affiliation && speaker.title" />{{ speaker.title }}</p>"#
+        );
+
+        assert!(
+            result
+                .code
+                .contains("_createTextVNode(_toDisplayString(speaker.affiliation), 1 /* TEXT */)"),
+            "expected first interpolation to be wrapped in createTextVNode. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result
+                .code
+                .contains("_createTextVNode(_toDisplayString(speaker.title), 1 /* TEXT */)"),
+            "expected second interpolation to be wrapped in createTextVNode. Got:\n{}",
+            result.code
+        );
+        assert!(
+            !result
+                .code
+                .contains("[_toDisplayString(speaker.affiliation),"),
+            "expected v-if branch children array to avoid raw string entries. Got:\n{}",
             result.code
         );
     }

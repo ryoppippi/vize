@@ -11,7 +11,7 @@ use vize_carton::ToCompactString;
 
 use super::{
     super::{
-        children::{generate_children, is_directive_comment},
+        children::{generate_children, generate_children_force_array, is_directive_comment},
         context::CodegenContext,
         element::is_whitespace_or_comment,
         element::{
@@ -624,22 +624,8 @@ fn generate_if_branch_children(ctx: &mut CodegenContext, children: &[TemplateChi
             ctx.push(", 1 /* TEXT */");
         }
     } else {
-        // Complex children - use array (filter directive comments)
-        let filtered: Vec<_> = children
-            .iter()
-            .filter(|c| !is_directive_comment(c))
-            .collect();
-        ctx.push("[");
-        ctx.indent();
-        for (i, child) in filtered.iter().enumerate() {
-            if i > 0 {
-                ctx.push(",");
-            }
-            ctx.newline();
-            generate_node(ctx, child);
-        }
-        ctx.deindent();
-        ctx.newline();
-        ctx.push("]");
+        // Complex branch children need the same text/interpolation grouping as
+        // regular element children to avoid raw string array entries.
+        generate_children_force_array(ctx, children);
     }
 }

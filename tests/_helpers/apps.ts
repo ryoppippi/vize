@@ -224,6 +224,25 @@ function removeManualChunksObject(viteConfigPath: string): void {
   }
 }
 
+function mirrorLoaderAssetsForViteBase(publicDir: string, baseDirName: string): void {
+  const sourceDir = path.join(publicDir, "loader");
+  if (!fs.existsSync(sourceDir)) {
+    return;
+  }
+
+  const targetDir = path.join(publicDir, baseDirName, "loader");
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  for (const fileName of ["boot.js", "style.css"]) {
+    const sourcePath = path.join(sourceDir, fileName);
+    if (!fs.existsSync(sourcePath)) {
+      continue;
+    }
+
+    fs.copyFileSync(sourcePath, path.join(targetDir, fileName));
+  }
+}
+
 // --- App configurations ---
 
 export const elkApp: AppConfig = {
@@ -231,6 +250,7 @@ export const elkApp: AppConfig = {
   cwd: path.join(GIT_DIR, "elk"),
   command: "npx",
   args: [
+    "-y",
     "pnpm@10",
     "exec",
     "nuxt",
@@ -256,7 +276,7 @@ export const elkApp: AppConfig = {
     });
 
     console.log("[elk:setup] pnpm install...");
-    execSync("npx pnpm@10 install --no-frozen-lockfile", {
+    execSync("npx -y pnpm@10 install --no-frozen-lockfile", {
       cwd: elkDir,
       stdio: "inherit",
       timeout: 300_000,
@@ -267,12 +287,12 @@ export const elkApp: AppConfig = {
   },
   build: {
     command: "npx",
-    args: ["pnpm@10", "build"],
+    args: ["-y", "pnpm@10", "build"],
     timeout: 300_000,
   },
   preview: {
     command: "npx",
-    args: ["pnpm@10", "start"],
+    args: ["-y", "pnpm@10", "start"],
     port: 5315,
     url: "http://localhost:5315",
     readyPattern: /Listening on/,
@@ -291,7 +311,7 @@ export const misskeyApp: AppConfig = {
   name: "misskey",
   cwd: path.join(GIT_DIR, "misskey", "packages", "frontend"),
   command: "npx",
-  args: ["pnpm@10", "exec", "vite"],
+  args: ["-y", "pnpm@10", "exec", "vite"],
   port: 5173,
   url: "http://localhost:5173/vite/",
   mountSelector: "#misskey_app",
@@ -335,7 +355,7 @@ export const misskeyApp: AppConfig = {
     });
 
     console.log("[misskey:setup] pnpm install...");
-    execSync("npx pnpm@10 install --no-frozen-lockfile", {
+    execSync("npx -y pnpm@10 install --no-frozen-lockfile", {
       cwd: misskeyDir,
       stdio: "inherit",
       timeout: 300_000,
@@ -353,7 +373,7 @@ export const misskeyApp: AppConfig = {
       "frontend-shared",
     ]) {
       console.log(`[misskey:setup] building ${pkg} package...`);
-      execSync(`npx pnpm@10 --filter ${pkg} build`, {
+      execSync(`npx -y pnpm@10 --filter ${pkg} build`, {
         cwd: misskeyDir,
         stdio: "inherit",
         timeout: 120_000,
@@ -375,6 +395,60 @@ export const misskeyApp: AppConfig = {
 
     removeManualChunksObject(viteConfigPath);
     removeManualChunksObject(path.join(misskeyDir, "packages", "frontend-embed", "vite.config.ts"));
+    mirrorLoaderAssetsForViteBase(path.join(frontendDir, "public"), "vite");
+    mirrorLoaderAssetsForViteBase(path.join(misskeyDir, "packages", "frontend-embed", "public"), "embed_vite");
+
+    const clientServerServicePath = path.join(
+      misskeyDir,
+      "packages",
+      "backend",
+      "src",
+      "server",
+      "web",
+      "ClientServerService.ts",
+    );
+    let clientServerService = fs.readFileSync(clientServerServicePath, "utf-8");
+    let clientServerServiceChanged = false;
+    if (clientServerService.includes("rewritePrefix: '/vite',")) {
+      clientServerService = clientServerService.replace("rewritePrefix: '/vite',", "rewritePrefix: '',");
+      clientServerServiceChanged = true;
+    }
+    if (clientServerService.includes("rewritePrefix: '/embed_vite',")) {
+      clientServerService = clientServerService.replace(
+        "rewritePrefix: '/embed_vite',",
+        "rewritePrefix: '',",
+      );
+      clientServerServiceChanged = true;
+    }
+    if (clientServerServiceChanged) {
+      fs.writeFileSync(clientServerServicePath, clientServerService);
+    }
+
+    const misskeyDevScriptPath = path.join(misskeyDir, "scripts", "dev.mjs");
+    let misskeyDevScript = fs.readFileSync(misskeyDevScriptPath, "utf-8");
+    if (!misskeyDevScript.includes("['--filter', 'frontend', 'build']")) {
+      misskeyDevScript = misskeyDevScript.replace(
+        `\texeca('pnpm', ['--filter', 'backend...', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),`,
+        `\texeca('pnpm', ['--filter', 'backend...', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),\n\texeca('pnpm', ['--filter', 'frontend', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),\n\texeca('pnpm', ['--filter', 'frontend-embed', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),`,
+      );
+    }
+    if (!misskeyDevScript.includes("await execa('pnpm', ['--filter', 'icons-subsetter', 'build']")) {
+      misskeyDevScript = misskeyDevScript.replace(
+        "await Promise.all([",
+        `await execa('pnpm', ['--filter', 'icons-subsetter', 'build'], {\n\tcwd: _dirname + '/../',\n\tstdout: process.stdout,\n\tstderr: process.stderr,\n});\n\nawait Promise.all([`,
+      );
+      misskeyDevScript = misskeyDevScript.replace(
+        `\t// icons-subsetterは開発段階では使用されないが、型エラーを抑制するためにはじめの一度だけビルドする\n\texeca('pnpm', ['--filter', 'icons-subsetter', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),\n`,
+        "",
+      );
+    }
+    if (!misskeyDevScript.includes("['--filter', 'misskey-bubble-game', 'build']")) {
+      misskeyDevScript = misskeyDevScript.replace(
+        `\texeca('pnpm', ['--filter', 'misskey-js', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),`,
+        `\texeca('pnpm', ['--filter', 'misskey-js', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),\n\texeca('pnpm', ['--filter', 'misskey-bubble-game', 'build'], {\n\t\tcwd: _dirname + '/../',\n\t\tstdout: process.stdout,\n\t\tstderr: process.stderr,\n\t}),`,
+      );
+    }
+    fs.writeFileSync(misskeyDevScriptPath, misskeyDevScript);
   },
   async setupPage(page) {
     await page.addInitScript(() => {
@@ -499,12 +573,12 @@ export const misskeyApp: AppConfig = {
   },
   build: {
     command: "npx",
-    args: ["pnpm@10", "exec", "vite", "build"],
+    args: ["-y", "pnpm@10", "exec", "vite", "build"],
     timeout: 180_000,
   },
   preview: {
     command: "npx",
-    args: ["pnpm@10", "exec", "vite", "preview", "--port", "5174"],
+    args: ["-y", "pnpm@10", "exec", "vite", "preview", "--port", "5174"],
     port: 5174,
     url: "http://localhost:5174/vite/",
     readyPattern: /Local:\s+http:\/\//,
@@ -524,6 +598,7 @@ export const npmxApp: AppConfig = {
   cwd: path.join(GIT_DIR, "npmx.dev"),
   command: "npx",
   args: [
+    "-y",
     "pnpm@10",
     "exec",
     "nuxt",
@@ -549,7 +624,7 @@ export const npmxApp: AppConfig = {
     const nmDir = path.join(npmxDir, "node_modules");
 
     console.log("[npmx.dev:setup] pnpm install...");
-    execSync("npx pnpm@10 install --no-frozen-lockfile", {
+    execSync("npx -y pnpm@10 install --no-frozen-lockfile", {
       cwd: npmxDir,
       stdio: "inherit",
       timeout: 300_000,
@@ -573,10 +648,10 @@ export const npmxApp: AppConfig = {
 
     // Ensure .nuxt/tsconfig.server.json exists (vite 8 needs it at startup)
     console.log("[npmx.dev:setup] nuxt prepare...");
-    execSync("npx pnpm@10 exec nuxt prepare", {
+    execSync("npx -y pnpm@10 exec nuxt prepare", {
       cwd: npmxDir,
       stdio: "inherit",
-      timeout: 60_000,
+      timeout: 180_000,
       env: {
         ...process.env,
         NUXT_SESSION_PASSWORD: "e2e-test-dummy-session-password-32chars!",
@@ -585,12 +660,12 @@ export const npmxApp: AppConfig = {
   },
   build: {
     command: "npx",
-    args: ["pnpm@10", "build"],
+    args: ["-y", "pnpm@10", "build"],
     timeout: 300_000,
   },
   preview: {
     command: "npx",
-    args: ["pnpm@10", "exec", "nuxt", "preview", "--port", "3002"],
+    args: ["-y", "pnpm@10", "exec", "nuxt", "preview", "--port", "3002"],
     port: 3002,
     url: "http://127.0.0.1:3002",
     readyPattern: /Listening on/,
@@ -610,6 +685,7 @@ export const vuefesApp: AppConfig = {
   cwd: path.join(GIT_DIR, "vuefes-2025"),
   command: "npx",
   args: [
+    "-y",
     "pnpm@10",
     "exec",
     "nuxt",
@@ -660,7 +736,7 @@ export const vuefesApp: AppConfig = {
     });
 
     console.log("[vuefes-2025:setup] pnpm install...");
-    execSync("npx pnpm@10 install --no-frozen-lockfile", {
+    execSync("npx -y pnpm@10 install --no-frozen-lockfile", {
       cwd: vuefesDir,
       stdio: "inherit",
       timeout: 300_000,
@@ -671,12 +747,12 @@ export const vuefesApp: AppConfig = {
   },
   build: {
     command: "npx",
-    args: ["pnpm@10", "build"],
+    args: ["-y", "pnpm@10", "build"],
     timeout: 300_000,
   },
   preview: {
     command: "npx",
-    args: ["pnpm@10", "exec", "nuxt", "preview", "--port", "3004"],
+    args: ["-y", "pnpm@10", "exec", "nuxt", "preview", "--port", "3004"],
     port: 3004,
     url: "http://127.0.0.1:3004",
     readyPattern: /Listening on/,

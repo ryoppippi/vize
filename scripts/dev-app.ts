@@ -29,6 +29,19 @@ type LaunchConfig = {
   env?: Record<string, string>;
 };
 
+function replacePortInArgs(args: string[], nextPort: number): string[] {
+  const nextArgs = [...args];
+  const portFlagIndex = nextArgs.findIndex((arg) => arg === "--port" || arg === "-p");
+  if (portFlagIndex >= 0 && portFlagIndex + 1 < nextArgs.length) {
+    nextArgs[portFlagIndex + 1] = String(nextPort);
+  }
+  return nextArgs;
+}
+
+function replacePortInUrl(url: string, currentPort: number, nextPort: number): string {
+  return url.replace(`:${currentPort}`, `:${nextPort}`);
+}
+
 type MisskeyBeforeStartSteps = {
   startLocalServices: (misskeyRoot: string) => void;
   ensureBackendBuilt: (misskeyRoot: string, configName: string) => void;
@@ -70,6 +83,19 @@ function run(command: string, args: string[], cwd = REPO_ROOT, env?: Record<stri
 
 function commandAvailable(command: string, args: string[] = ["--version"]): boolean {
   const result = spawnSync(command, args, {
+    cwd: REPO_ROOT,
+    env: BASE_ENV,
+    stdio: "ignore",
+  });
+  return result.status === 0;
+}
+
+function hasListeningProcessOnPort(port: number): boolean {
+  if (!commandAvailable("lsof", ["-v"])) {
+    return false;
+  }
+
+  const result = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], {
     cwd: REPO_ROOT,
     env: BASE_ENV,
     stdio: "ignore",
@@ -215,7 +241,11 @@ function ensureMisskeyDevConfig(misskeyRoot: string, port: number): string {
   return "vize-dev.yml";
 }
 
-async function isPortAvailable(port: number, host = "127.0.0.1"): Promise<boolean> {
+async function isPortAvailable(port: number): Promise<boolean> {
+  if (hasListeningProcessOnPort(port)) {
+    return false;
+  }
+
   return await new Promise((resolve) => {
     const server = createServer();
 
@@ -223,7 +253,8 @@ async function isPortAvailable(port: number, host = "127.0.0.1"): Promise<boolea
     server.once("error", () => {
       resolve(false);
     });
-    server.listen(port, host, () => {
+    // Probe the default bind target so wildcard IPv6 listeners are treated as busy too.
+    server.listen(port, () => {
       server.close(() => {
         resolve(true);
       });
@@ -231,18 +262,15 @@ async function isPortAvailable(port: number, host = "127.0.0.1"): Promise<boolea
   });
 }
 
-async function resolveAvailablePort(preferredPort: number): Promise<number> {
+export async function resolveAvailablePort(preferredPort: number): Promise<number> {
   for (let offset = 0; offset < 20; offset += 1) {
     const port = preferredPort + offset;
     if (await isPortAvailable(port)) {
-      if (port !== preferredPort) {
-        console.log(`[misskey] Port ${preferredPort} is busy. Using ${port}.`);
-      }
       return port;
     }
   }
 
-  throw new Error(`Unable to find an available port for misskey starting at ${preferredPort}.`);
+  throw new Error(`Unable to find an available port starting at ${preferredPort}.`);
 }
 
 function sleep(milliseconds: number): void {
@@ -409,17 +437,22 @@ export function runMisskeyBeforeStart(
   steps.ensureMigrated(misskeyRoot, configName);
 }
 
-function toLaunchConfig(
+async function toLaunchConfig(
   app: AppConfig,
   targetName: Exclude<Target, "playground" | "misskey">,
-): LaunchConfig {
+): Promise<LaunchConfig> {
+  const port = await resolveAvailablePort(app.port);
+  if (port !== app.port) {
+    console.log(`[${targetName}] Port ${app.port} is busy. Using ${port}.`);
+  }
+
   return {
     target: targetName,
-    url: app.url,
+    url: replacePortInUrl(app.url, app.port, port),
     setup: app.setup,
     cwd: app.cwd,
     command: app.command,
-    args: app.args,
+    args: replacePortInArgs(app.args, port),
     env: app.env,
   };
 }
@@ -460,14 +493,14 @@ async function createLaunchConfig(currentTarget: Target): Promise<LaunchConfig> 
   }
 
   if (currentTarget === "npmx") {
-    return toLaunchConfig(npmxApp, "npmx");
+    return await toLaunchConfig(npmxApp, "npmx");
   }
 
   if (currentTarget === "elk") {
-    return toLaunchConfig(elkApp, "elk");
+    return await toLaunchConfig(elkApp, "elk");
   }
 
-  return toLaunchConfig(vuefesApp, "vuefes");
+  return await toLaunchConfig(vuefesApp, "vuefes");
 }
 
 function ensureTargetBuilds(currentTarget: Target): void {
