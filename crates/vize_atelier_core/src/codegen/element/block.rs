@@ -163,7 +163,7 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
             let (patch_flag, dynamic_props) = calculate_element_patch_info(
                 el,
                 ctx.options.binding_metadata.as_ref(),
-                ctx.options.cache_handlers,
+                ctx.cache_handlers_in_current_scope(),
             );
             let has_patch_info = patch_flag.is_some() || dynamic_props.is_some();
 
@@ -322,13 +322,13 @@ pub fn generate_element_block(ctx: &mut CodegenContext, el: &ElementNode<'_>) {
                 calculate_element_patch_info_skip_is(
                     el,
                     ctx.options.binding_metadata.as_ref(),
-                    ctx.options.cache_handlers,
+                    ctx.cache_handlers_in_current_scope(),
                 )
             } else {
                 calculate_element_patch_info(
                     el,
                     ctx.options.binding_metadata.as_ref(),
-                    ctx.options.cache_handlers,
+                    ctx.cache_handlers_in_current_scope(),
                 )
             };
 

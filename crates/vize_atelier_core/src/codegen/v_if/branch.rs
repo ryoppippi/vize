@@ -222,13 +222,13 @@ fn generate_if_branch_component(
         calculate_element_patch_info_skip_is(
             el,
             ctx.options.binding_metadata.as_ref(),
-            ctx.options.cache_handlers,
+            ctx.cache_handlers_in_current_scope(),
         )
     } else {
         calculate_element_patch_info(
             el,
             ctx.options.binding_metadata.as_ref(),
-            ctx.options.cache_handlers,
+            ctx.cache_handlers_in_current_scope(),
         )
     };
 

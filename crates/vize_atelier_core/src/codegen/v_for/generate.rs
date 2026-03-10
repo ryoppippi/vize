@@ -251,13 +251,13 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                         calculate_element_patch_info_skip_is(
                             el,
                             ctx.options.binding_metadata.as_ref(),
-                            ctx.options.cache_handlers,
+                            ctx.cache_handlers_in_current_scope(),
                         )
                     } else {
                         calculate_element_patch_info(
                             el,
                             ctx.options.binding_metadata.as_ref(),
-                            ctx.options.cache_handlers,
+                            ctx.cache_handlers_in_current_scope(),
                         )
                     };
                     // Remove TEXT flag for components with slot children (text is inside slot)
@@ -302,7 +302,7 @@ pub fn generate_for_item(ctx: &mut CodegenContext, node: &TemplateChildNode<'_>,
                     let (patch_flag, dynamic_props) = calculate_element_patch_info(
                         flag_el,
                         ctx.options.binding_metadata.as_ref(),
-                        ctx.options.cache_handlers,
+                        ctx.cache_handlers_in_current_scope(),
                     );
                     if let Some(flag) = patch_flag {
                         ctx.push(", ");

@@ -340,6 +340,56 @@ mod tests {
     }
 
     #[test]
+    fn test_codegen_default_slot_with_v_if_is_marked_dynamic() {
+        let result = compile!(
+            r#"<PageWithHeader>
+  <div v-if="tab === 'overview'">Overview</div>
+  <div v-else-if="tab === 'emojis'">Emojis</div>
+  <div v-else>Charts</div>
+</PageWithHeader>"#
+        );
+
+        assert!(
+            result.code.contains("_: 2 /* DYNAMIC */"),
+            "default slot with v-if should be marked dynamic. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("1024 /* DYNAMIC_SLOTS */"),
+            "component using that slot should carry DYNAMIC_SLOTS. Got:\n{}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("_createSlots"),
+            "implicit default slot should stay in the normal slots object path. Got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
+    fn test_codegen_forwarded_default_slot_is_marked_forwarded() {
+        let result = compile!(r#"<MkSwiper><slot /></MkSwiper>"#);
+
+        assert!(
+            result
+                .code
+                .contains("_renderSlot(_ctx.$slots, \"default\")"),
+            "forwarded slot should render the incoming default slot. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("_: 3 /* FORWARDED */"),
+            "forwarded slot should use the FORWARDED slot flag. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("1024 /* DYNAMIC_SLOTS */"),
+            "forwarded slot should force component slot updates. Got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
     fn test_codegen_v_if_branch_mixed_children_wrap_interpolations_in_text_vnodes() {
         let result = compile!(
             r#"<p v-if="speaker.affiliation || speaker.title">{{ speaker.affiliation }}<br v-if="speaker.affiliation && speaker.title" />{{ speaker.title }}</p>"#
@@ -430,6 +480,55 @@ mod tests {
     }
 
     #[test]
+    fn test_codegen_v_for_scope_handlers_are_not_cached() {
+        use crate::options::{CodegenOptions, TransformOptions};
+        use crate::parser::parse;
+        use crate::transform::transform;
+        use bumpalo::Bump;
+
+        let allocator = Bump::new();
+        let (mut root, _) = parse(
+            &allocator,
+            r#"<button v-for="tab in tabs" :key="tab.id" @click="select(tab)">{{ tab.label }}</button>"#,
+        );
+
+        transform(
+            &allocator,
+            &mut root,
+            TransformOptions {
+                prefix_identifiers: true,
+                ..Default::default()
+            },
+            None,
+        );
+
+        let result = super::generate(
+            &root,
+            CodegenOptions {
+                prefix_identifiers: true,
+                cache_handlers: true,
+                ..Default::default()
+            },
+        );
+
+        assert!(
+            !result.code.contains("_cache["),
+            "v-for scoped handlers must not be cached, got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("_ctx.select(tab)"),
+            "handler should keep the v-for alias local, got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("\"onClick\""),
+            "non-cached scoped handler should still be tracked as a dynamic prop, got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
     fn test_codegen_scoped_slot_params_stay_local_in_handlers() {
         use crate::options::{CodegenOptions, TransformOptions};
         use crate::parser::parse;
@@ -461,6 +560,7 @@ mod tests {
             &root,
             CodegenOptions {
                 prefix_identifiers: true,
+                cache_handlers: true,
                 ..Default::default()
             },
         );
@@ -491,6 +591,11 @@ mod tests {
         assert!(
             !result.code.contains("_ctx.index"),
             "scoped slot index should not be prefixed with _ctx, got:\n{}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("_cache["),
+            "scoped slot handlers must not be cached, got:\n{}",
             result.code
         );
     }
