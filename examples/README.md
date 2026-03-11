@@ -1,17 +1,17 @@
 # Vize Examples
 
-Vizeのツールをローカル環境で試すためのサンプル集です。
+This directory contains runnable examples for trying Vize tools locally.
 
-## 前提条件
+## Prerequisites
 
-プロジェクトルートで以下を実行してビルドしておく必要があります：
+Build the repository from the project root before using the examples:
 
 ```bash
 mise install && mise setup
-mise cli  # vize CLIコマンドを有効化
+mise cli  # enable the `vize` CLI command
 ```
 
-または Cargo から直接実行：
+Or build directly with Cargo:
 
 ```bash
 cargo build --release
@@ -21,85 +21,86 @@ cargo build --release
 
 ## CLI Examples
 
-`examples/cli/` ディレクトリにはCLIツールを試すためのサンプルVueファイルが含まれています。
+`examples/cli/` contains sample Vue files for trying the CLI tools.
 
-### ファイル構成
+### Files
 
 | File | Description |
-|----------|------|
-| `src/App.vue` | 正常にフォーマット済みのVueファイル |
-| `src/Unformatted.vue` | フォーマットが必要なVueファイル |
-| `src/HasErrors.vue` | リントエラーを含むVueファイル |
+|------|-------------|
+| `src/App.vue` | Already-formatted Vue file |
+| `src/Unformatted.vue` | Vue file that needs formatting |
+| `src/HasErrors.vue` | Vue file that contains lint errors |
 
-### フォーマッター (vize fmt)
+### Formatter (`vize fmt`)
 
 ```bash
-# フォーマットが必要かどうかをチェック
+# Check whether formatting is required
 vize fmt examples/cli/src/*.vue --check
 
-# フォーマット結果を表示（ファイルは変更しない）
+# Print formatted output without modifying files
 vize fmt examples/cli/src/Unformatted.vue
 
-# ファイルに書き込み
+# Write changes to files
 vize fmt examples/cli/src/Unformatted.vue --write
 
-# オプション付き
+# Use additional options
 vize fmt examples/cli/src/*.vue --single-quote --no-semi --print-width 80
 ```
 
-**オプション一覧：**
+**Options**
 
-| オプション | 説明 | デフォルト |
-|-----------|------|-----------|
-| `--check` | 変更が必要な場合にエラー終了 | - |
-| `--write`, `-w` | ファイルに書き込み | - |
-| `--single-quote` | シングルクォートを使用 | false |
-| `--no-semi` | セミコロンを省略 | false |
-| `--print-width` | 行の長さ | 100 |
-| `--tab-width` | インデント幅 | 2 |
-| `--use-tabs` | タブを使用 | false |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--check` | Exit with an error if changes are required | - |
+| `--write`, `-w` | Write changes to files | - |
+| `--single-quote` | Use single quotes | `false` |
+| `--no-semi` | Omit semicolons | `false` |
+| `--print-width` | Maximum line width | `100` |
+| `--tab-width` | Indentation width | `2` |
+| `--use-tabs` | Use tabs for indentation | `false` |
 
-### リンター (vize lint)
+### Linter (`vize lint`)
 
 ```bash
-# リントエラーを表示
+# Show lint errors
 vize lint examples/cli/src/*.vue
 
-# JSON形式で出力
+# Output JSON
 vize lint examples/cli/src/HasErrors.vue --format json
 
-# 警告の上限を設定
+# Limit the number of warnings
 vize lint examples/cli/src/*.vue --max-warnings 5
 
-# サマリーのみ表示
+# Show only the summary
 vize lint examples/cli/src/*.vue --quiet
 ```
 
-**オプション一覧：**
+**Options**
 
-| オプション | 説明 | デフォルト |
-|-----------|------|-----------|
-| `--format`, `-f` | 出力形式 (text/json) | text |
-| `--max-warnings` | 警告数の上限 | - |
-| `--quiet`, `-q` | サマリーのみ表示 | false |
-| `--fix` | 自動修正（未実装） | false |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--format`, `-f` | Output format (`text` or `json`) | `text` |
+| `--max-warnings` | Maximum allowed warning count | - |
+| `--quiet`, `-q` | Show only the summary | `false` |
+| `--fix` | Apply automatic fixes (not implemented yet) | `false` |
 
-### LSPサーバー (vize lsp)
+### LSP Server (`vize lsp`)
 
 ```bash
-# stdio で起動（エディタ連携用）
+# Start over stdio (for editor integration)
 vize lsp
 
-# TCPポート指定
+# Specify a TCP port
 vize lsp --port 3000
 
-# デバッグログ有効
+# Enable debug logging
 vize lsp --debug
 ```
 
-**エディタ設定例 (VS Code):**
+**Editor configuration example (VS Code)**
 
-`.vscode/settings.json`:
+`.vscode/settings.json`
+
 ```json
 {
   "vize.lsp.path": "/path/to/vize",
@@ -111,9 +112,9 @@ vize lsp --debug
 
 ## Vite + Musea Example
 
-`examples/vite-musea/` ディレクトリにはVite + Museaを使ったコンポーネントギャラリーのサンプルが含まれています。
+`examples/vite-musea/` contains a sample component gallery built with Vite + Musea.
 
-### セットアップ
+### Setup
 
 ```bash
 cd examples/vite-musea
@@ -121,23 +122,23 @@ pnpm install
 pnpm dev
 ```
 
-### 使い方
+### Usage
 
-1. `pnpm dev` で開発サーバーを起動
-2. ブラウザで `http://localhost:5173` を開く
-3. コンポーネントギャラリーは `http://localhost:5173/__musea__` で確認可能
+1. Start the dev server with `pnpm dev`.
+2. Open `http://localhost:5173` in your browser.
+3. Open `http://localhost:5173/__musea__` to view the component gallery.
 
-### ファイル構成
+### Files
 
 | File | Description |
-|----------|------|
-| `src/components/Button.vue` | Buttonコンポーネント |
-| `src/components/Button.art.vue` | Museaのアートファイル（バリアント定義） |
-| `vite.config.ts` | Vite + Musea設定 |
+|------|-------------|
+| `src/components/Button.vue` | Button component |
+| `src/components/Button.art.vue` | Musea art file defining variants |
+| `vite.config.ts` | Vite + Musea configuration |
 
-### Art ファイルの書き方
+### Writing Art Files
 
-`.art.vue` ファイルはコンポーネントのバリアントを定義します：
+`.art.vue` files define component variants:
 
 ```vue
 <art title="Button" component="./Button.vue" category="Components" status="ready">
@@ -154,22 +155,22 @@ import Button from './Button.vue'
 </script>
 ```
 
-**`<art>` 属性：**
+**`<art>` attributes**
 
-| 属性 | 説明 |
-|------|------|
-| `title` | コンポーネントのタイトル（必須） |
-| `component` | 対象コンポーネントへのパス |
-| `category` | カテゴリ |
-| `status` | ステータス (draft/ready/deprecated) |
+| Attribute | Description |
+|-----------|-------------|
+| `title` | Component title (required) |
+| `component` | Path to the target component |
+| `category` | Category name |
+| `status` | Status (`draft`, `ready`, `deprecated`) |
 
-**`<variant>` 属性：**
+**`<variant>` attributes**
 
-| 属性 | 説明 |
-|------|------|
-| `name` | バリアント名（必須） |
-| `default` | デフォルトバリアントとしてマーク |
-| `skip-vrt` | VRT（Visual Regression Test）をスキップ |
+| Attribute | Description |
+|-----------|-------------|
+| `name` | Variant name (required) |
+| `default` | Marks the default variant |
+| `skip-vrt` | Skips the visual regression test |
 
 ---
 
@@ -193,10 +194,16 @@ pnpm -C npm/oxlint-plugin-patina build
 pnpm -C examples/oxlint-patina lint
 ```
 
-This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output. If you only want the success path:
+This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output and renders from Oxlint JSON so the terminal output shows meaningful Vue source snippets. If you only want the success path:
 
 ```bash
 pnpm -C examples/oxlint-patina lint:clean
+```
+
+If you want the raw Oxlint text formatter for comparison:
+
+```bash
+pnpm -C examples/oxlint-patina lint:raw
 ```
 
 To probe `no-unused-vars` on a Vue SFC:
@@ -210,9 +217,10 @@ Current observed behavior in this repository: that probe reports `0` findings on
 ### Files
 
 | File | Description |
-|----------|------|
+|------|-------------|
 | `.oxlintrc.json` | Oxlint config enabling `vue` and the Patina JS plugin |
 | `.oxlintrc.unused-vars.json` | Dedicated probe config for `no-unused-vars` on a Vue SFC |
+| `scripts/run-lint.mjs` | Small formatter that renders Oxlint JSON into clearer terminal output |
 | `src/HasPatinaErrors.vue` | Sample SFC that intentionally triggers Patina diagnostics |
 | `src/Clean.vue` | Clean success-case sample |
 | `src/UnusedVarProbe.vue` | Probe file for current `no-unused-vars` behavior on `.vue` |
@@ -220,21 +228,21 @@ Current observed behavior in this repository: that probe reports `0` findings on
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### `vize` コマンドが見つからない
+### `vize` Command Not Found
 
 ```bash
-# mise を使用している場合
+# If you use mise
 mise cli
 
-# または直接 cargo run を使用
+# Or run Cargo directly
 cargo run --release -- fmt examples/cli/src/*.vue
 ```
 
-### ネイティブバインディングのエラー
+### Native Binding Errors
 
-Museaプラグインを使用する場合、`@vizejs/native` がビルドされている必要があります：
+When using the Musea plugin, `@vizejs/native` must be built:
 
 ```bash
 pnpm build:native
