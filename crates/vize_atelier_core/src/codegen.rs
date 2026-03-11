@@ -223,7 +223,9 @@ mod tests {
             result.code
         );
         assert!(
-            !result.code.contains("_createElementBlock(_Fragment, { key: 0 }, [ _toDisplayString(count) ]"),
+            !result
+                .code
+                .contains("_createElementBlock(_Fragment, { key: 0 }, [ _toDisplayString(count) ]"),
             "template v-if fragment should not leave raw strings in fragment children: {}",
             result.code
         );
@@ -231,8 +233,9 @@ mod tests {
 
     #[test]
     fn test_codegen_v_if_template_fragment_wraps_static_text_in_text_vnode() {
-        let result =
-            compile!(r#"<div><template v-if="ready">Found packages</template><span v-if="pending">updating</span></div>"#);
+        let result = compile!(
+            r#"<div><template v-if="ready">Found packages</template><span v-if="pending">updating</span></div>"#
+        );
 
         assert!(
             result.code.contains("_createTextVNode(\"Found packages\")"),

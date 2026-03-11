@@ -44,6 +44,11 @@ const nullResolveContext = {
   resolve: async () => null,
 };
 
+function expectResolvedId(resolved: Awaited<ReturnType<typeof resolveIdHook>>): string {
+  assert.equal(typeof resolved, "string");
+  return resolved;
+}
+
 {
   const projectRoot = path.join(workspaceRoot, "tests", "_fixtures", "_git", "npmx.dev");
   const importer = toVirtualId(path.join(projectRoot, "app", "pages", "index.vue"));
@@ -54,8 +59,7 @@ const nullResolveContext = {
     importer,
   );
 
-  assert.equal(typeof resolved, "string");
-  assert.match(String(resolved), /vue-data-ui\/dist\/style\.css$/);
+  assert.match(expectResolvedId(resolved), /vue-data-ui\/dist\/style\.css$/);
 }
 
 {
@@ -68,9 +72,8 @@ const nullResolveContext = {
     importer,
   );
 
-  assert.equal(typeof resolved, "string");
   assert.match(
-    String(resolved),
+    expectResolvedId(resolved),
     /@primevue\/forms\/resolvers\/valibot\/index\.mjs\?nuxt_component=async$/,
   );
 }
