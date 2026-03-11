@@ -184,8 +184,8 @@ Run this from the repository root:
 
 ```bash
 pnpm install
-pnpm -C npm/vize-native build
-pnpm -C npm/oxlint-plugin-patina build
+pnpm --filter @vizejs/native build
+pnpm --filter @vizejs/oxlint-plugin-patina build
 ```
 
 ### Run
@@ -194,16 +194,16 @@ pnpm -C npm/oxlint-plugin-patina build
 pnpm -C examples/oxlint-patina lint
 ```
 
-This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output and renders from Oxlint JSON so the terminal output shows meaningful Vue source snippets. If you only want the success path:
+This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output. If you only want the success path:
 
 ```bash
 pnpm -C examples/oxlint-patina lint:clean
 ```
 
-If you want the raw Oxlint text formatter for comparison:
+If you want JSON output:
 
 ```bash
-pnpm -C examples/oxlint-patina lint:raw
+pnpm -C examples/oxlint-patina lint:json
 ```
 
 To probe `no-unused-vars` on a Vue SFC:
@@ -220,7 +220,6 @@ Current observed behavior in this repository: that probe reports `0` findings on
 |------|-------------|
 | `.oxlintrc.json` | Oxlint config enabling `vue` and the Patina JS plugin |
 | `.oxlintrc.unused-vars.json` | Dedicated probe config for `no-unused-vars` on a Vue SFC |
-| `scripts/run-lint.mjs` | Small formatter that renders Oxlint JSON into clearer terminal output |
 | `src/HasPatinaErrors.vue` | Sample SFC that intentionally triggers Patina diagnostics |
 | `src/Clean.vue` | Clean success-case sample |
 | `src/UnusedVarProbe.vue` | Probe file for current `no-unused-vars` behavior on `.vue` |
