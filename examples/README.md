@@ -194,7 +194,7 @@ pnpm --filter @vizejs/oxlint-plugin-patina build
 pnpm -C examples/oxlint-patina lint
 ```
 
-This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output. If you only want the success path:
+This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output and uses the `stylish` formatter so the default code frame does not dominate the output. If you only want the success path:
 
 ```bash
 pnpm -C examples/oxlint-patina lint:clean
@@ -204,6 +204,12 @@ If you want JSON output:
 
 ```bash
 pnpm -C examples/oxlint-patina lint:json
+```
+
+To turn the long Patina `Help:` block back on:
+
+```bash
+pnpm -C examples/oxlint-patina lint:with-help
 ```
 
 To probe `no-unused-vars` on a Vue SFC:
