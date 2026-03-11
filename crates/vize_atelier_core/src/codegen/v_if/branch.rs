@@ -11,7 +11,7 @@ use vize_carton::ToCompactString;
 
 use super::{
     super::{
-        children::{generate_children, generate_children_force_array, is_directive_comment},
+        children::{generate_children_force_array, is_directive_comment},
         context::CodegenContext,
         element::is_whitespace_or_comment,
         element::{
@@ -531,7 +531,6 @@ fn generate_if_branch_template_fragment(
 ) {
     ctx.use_helper(RuntimeHelper::CreateElementBlock);
     ctx.use_helper(RuntimeHelper::Fragment);
-    ctx.use_helper(RuntimeHelper::CreateElementVNode);
     ctx.push("(");
     ctx.push(ctx.helper(RuntimeHelper::OpenBlock));
     ctx.push("(), ");
@@ -540,22 +539,9 @@ fn generate_if_branch_template_fragment(
     ctx.push(ctx.helper(RuntimeHelper::Fragment));
     ctx.push(", { key: ");
     generate_if_branch_key(ctx, branch, branch_index);
-    ctx.push(" }, [");
-    ctx.indent();
-    let filtered: Vec<_> = children
-        .iter()
-        .filter(|c| !is_directive_comment(c))
-        .collect();
-    for (i, child) in filtered.iter().enumerate() {
-        if i > 0 {
-            ctx.push(",");
-        }
-        ctx.newline();
-        generate_node(ctx, child);
-    }
-    ctx.deindent();
-    ctx.newline();
-    ctx.push("], 64 /* STABLE_FRAGMENT */))");
+    ctx.push(" }, ");
+    generate_children_force_array(ctx, children);
+    ctx.push(", 64 /* STABLE_FRAGMENT */))");
 }
 
 /// Generate fragment wrapper for if branch with multiple children.
@@ -575,7 +561,7 @@ fn generate_if_branch_fragment(
     ctx.push(", { key: ");
     generate_if_branch_key(ctx, branch, branch_index);
     ctx.push(" }, ");
-    generate_children(ctx, &branch.children);
+    generate_children_force_array(ctx, &branch.children);
     ctx.push(", 64 /* STABLE_FRAGMENT */))");
 }
 

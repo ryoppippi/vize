@@ -210,6 +210,45 @@ mod tests {
     }
 
     #[test]
+    fn test_codegen_v_if_template_fragment_wraps_interpolation_in_text_vnode() {
+        let result = compile!(
+            r#"<p><template v-if="ready">{{ count }}</template><span v-if="pending">updating</span></p>"#
+        );
+
+        assert!(
+            result
+                .code
+                .contains("_createTextVNode(_toDisplayString(count), 1 /* TEXT */)"),
+            "template v-if fragment should wrap interpolation in a text vnode: {}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("_createElementBlock(_Fragment, { key: 0 }, [ _toDisplayString(count) ]"),
+            "template v-if fragment should not leave raw strings in fragment children: {}",
+            result.code
+        );
+    }
+
+    #[test]
+    fn test_codegen_v_if_template_fragment_wraps_static_text_in_text_vnode() {
+        let result =
+            compile!(r#"<div><template v-if="ready">Found packages</template><span v-if="pending">updating</span></div>"#);
+
+        assert!(
+            result.code.contains("_createTextVNode(\"Found packages\")"),
+            "template v-if fragment should wrap static text in a text vnode: {}",
+            result.code
+        );
+        assert!(
+            !result
+                .code
+                .contains("_createElementBlock(_Fragment, { key: 0 }, [ \"Found packages\" ]"),
+            "template v-if fragment should not emit raw text entries inside fragment arrays: {}",
+            result.code
+        );
+    }
+
+    #[test]
     fn test_codegen_preamble_module() {
         use crate::options::CodegenMode;
         let options = super::CodegenOptions {

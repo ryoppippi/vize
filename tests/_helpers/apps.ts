@@ -255,6 +255,13 @@ function ensureFileContent(filePath: string, content: string): void {
 }
 
 const PRESERVED_WORKTREE_ENTRIES = ["node_modules"] as const;
+const MUTABLE_WORKTREE_CACHE_PATHS = [
+  ".nuxt",
+  ".output",
+  ".vite",
+  "node_modules/.cache",
+  "node_modules/.vite",
+] as const;
 
 type PreservedWorktreeSnapshot = {
   entries: Array<{
@@ -351,6 +358,12 @@ function restorePreservedWorktreeEntries(
   }
 }
 
+function cleanMutableWorktreeCaches(workDir: string): void {
+  for (const relativePath of MUTABLE_WORKTREE_CACHE_PATHS) {
+    fs.rmSync(path.join(workDir, relativePath), { recursive: true, force: true });
+  }
+}
+
 function syncGitFixtureWorktree(name: string): string {
   const sourceDir = getGitFixtureSourceDir(name);
   const workDir = getMutableGitFixtureDir(name);
@@ -377,6 +390,7 @@ function syncGitFixtureWorktree(name: string): string {
   }
 
   restorePreservedWorktreeEntries(workDir, preserved);
+  cleanMutableWorktreeCaches(workDir);
   ensureFileContent(
     path.join(workDir, ".vize-fixture-source.json"),
     `${JSON.stringify(
@@ -898,6 +912,13 @@ export const vuefesApp: AppConfig = {
 
     createVizeSymlinks(path.join(vuefesDir, "node_modules"));
     patchNuxtConfig(path.join(vuefesDir, "nuxt.config.ts"));
+
+    console.log("[vuefes-2025:setup] nuxt prepare...");
+    execSync("npx -y pnpm@10 exec nuxt prepare", {
+      cwd: vuefesDir,
+      stdio: "inherit",
+      timeout: 180_000,
+    });
   },
   build: {
     command: "npx",
