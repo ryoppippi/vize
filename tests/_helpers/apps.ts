@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 const TESTS_DIR = path.resolve(__dirname, "..");
 const GIT_DIR = path.join(TESTS_DIR, "_fixtures", "_git");
 const PROJECTS_DIR = path.join(TESTS_DIR, "_fixtures", "_projects");
+const MUTABLE_GIT_PROJECTS_DIR = path.join(PROJECTS_DIR, "_git-worktrees");
 const NPM_DIR = path.resolve(__dirname, "../../npm");
 
 export interface AppConfig {
@@ -243,11 +244,164 @@ function mirrorLoaderAssetsForViteBase(publicDir: string, baseDirName: string): 
   }
 }
 
+function ensureFileContent(filePath: string, content: string): void {
+  const current = fs.existsSync(filePath) ? fs.readFileSync(filePath, "utf-8") : null;
+  if (current === content) {
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content);
+}
+
+const PRESERVED_WORKTREE_ENTRIES = ["node_modules"] as const;
+
+type PreservedWorktreeSnapshot = {
+  entries: Array<{
+    name: (typeof PRESERVED_WORKTREE_ENTRIES)[number];
+    tempPath: string;
+  }>;
+  root: string | null;
+};
+
+function getGitFixtureSourceDir(name: string): string {
+  return path.join(GIT_DIR, name);
+}
+
+function getMutableGitFixtureDir(name: string): string {
+  return path.join(MUTABLE_GIT_PROJECTS_DIR, name);
+}
+
+function readGitHeadRevision(repoDir: string): string {
+  return execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: repoDir,
+    encoding: "utf-8",
+    env: {
+      ...process.env,
+      LANG: "C",
+      LC_ALL: "C",
+    },
+  }).trim();
+}
+
+function exportGitHeadToDir(repoDir: string, targetDir: string): void {
+  const env = {
+    ...process.env,
+    LANG: "C",
+    LC_ALL: "C",
+  };
+  const archive = execFileSync("git", ["archive", "--format=tar", "HEAD"], {
+    cwd: repoDir,
+    encoding: "buffer",
+    maxBuffer: 200 * 1024 * 1024,
+    env,
+  });
+  fs.mkdirSync(targetDir, { recursive: true });
+  execFileSync("tar", ["-xf", "-"], {
+    cwd: targetDir,
+    input: archive,
+    maxBuffer: 200 * 1024 * 1024,
+    env,
+  });
+}
+
+function preserveMutableWorktreeEntries(workDir: string): PreservedWorktreeSnapshot {
+  if (!fs.existsSync(workDir)) {
+    return { root: null, entries: [] };
+  }
+
+  let root: string | null = null;
+  const entries: PreservedWorktreeSnapshot["entries"] = [];
+
+  for (const name of PRESERVED_WORKTREE_ENTRIES) {
+    const sourcePath = path.join(workDir, name);
+    if (!fs.existsSync(sourcePath)) {
+      continue;
+    }
+
+    if (root == null) {
+      fs.mkdirSync(MUTABLE_GIT_PROJECTS_DIR, { recursive: true });
+      root = fs.mkdtempSync(path.join(MUTABLE_GIT_PROJECTS_DIR, ".preserve-"));
+    }
+
+    const tempPath = path.join(root, name);
+    fs.mkdirSync(path.dirname(tempPath), { recursive: true });
+    fs.renameSync(sourcePath, tempPath);
+    entries.push({ name, tempPath });
+  }
+
+  return { root, entries };
+}
+
+function restorePreservedWorktreeEntries(
+  workDir: string,
+  snapshot: PreservedWorktreeSnapshot,
+): void {
+  try {
+    for (const entry of snapshot.entries) {
+      const targetPath = path.join(workDir, entry.name);
+      fs.rmSync(targetPath, { recursive: true, force: true });
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      fs.renameSync(entry.tempPath, targetPath);
+    }
+  } finally {
+    if (snapshot.root != null) {
+      fs.rmSync(snapshot.root, { recursive: true, force: true });
+    }
+  }
+}
+
+function syncGitFixtureWorktree(name: string): string {
+  const sourceDir = getGitFixtureSourceDir(name);
+  const workDir = getMutableGitFixtureDir(name);
+  const parentDir = path.dirname(workDir);
+
+  fs.mkdirSync(parentDir, { recursive: true });
+
+  const stagingDir = fs.mkdtempSync(path.join(parentDir, `${name}-staging-`));
+  exportGitHeadToDir(sourceDir, stagingDir);
+
+  const preserved = preserveMutableWorktreeEntries(workDir);
+
+  try {
+    fs.rmSync(workDir, { recursive: true, force: true });
+    fs.renameSync(stagingDir, workDir);
+  } catch (error) {
+    if (!fs.existsSync(workDir)) {
+      fs.mkdirSync(workDir, { recursive: true });
+    }
+    restorePreservedWorktreeEntries(workDir, preserved);
+    throw error;
+  } finally {
+    fs.rmSync(stagingDir, { recursive: true, force: true });
+  }
+
+  restorePreservedWorktreeEntries(workDir, preserved);
+  ensureFileContent(
+    path.join(workDir, ".vize-fixture-source.json"),
+    `${JSON.stringify(
+      {
+        revision: readGitHeadRevision(sourceDir),
+        sourceDir,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+
+  return workDir;
+}
+
+const ELK_WORK_DIR = getMutableGitFixtureDir("elk");
+const MISSKEY_WORK_DIR = getMutableGitFixtureDir("misskey");
+const NPMX_WORK_DIR = getMutableGitFixtureDir("npmx.dev");
+const VUEFES_WORK_DIR = getMutableGitFixtureDir("vuefes-2025");
+
 // --- App configurations ---
 
 export const elkApp: AppConfig = {
   name: "elk",
-  cwd: path.join(GIT_DIR, "elk"),
+  cwd: ELK_WORK_DIR,
   command: "npx",
   args: [
     "-y",
@@ -269,7 +423,7 @@ export const elkApp: AppConfig = {
   readyDelay: 15_000,
   startupTimeout: 120_000,
   setup() {
-    const elkDir = path.join(GIT_DIR, "elk");
+    const elkDir = syncGitFixtureWorktree("elk");
 
     addPnpmOverrides(path.join(elkDir, "package.json"), {
       vite: "^8.0.0-beta.0",
@@ -309,7 +463,7 @@ export const elkApp: AppConfig = {
 
 export const misskeyApp: AppConfig = {
   name: "misskey",
-  cwd: path.join(GIT_DIR, "misskey", "packages", "frontend"),
+  cwd: path.join(MISSKEY_WORK_DIR, "packages", "frontend"),
   command: "npx",
   args: ["-y", "pnpm@10", "exec", "vite"],
   port: 5173,
@@ -320,7 +474,7 @@ export const misskeyApp: AppConfig = {
   waitUntil: "domcontentloaded",
   startupTimeout: 180_000,
   setup() {
-    const misskeyDir = path.join(GIT_DIR, "misskey");
+    const misskeyDir = syncGitFixtureWorktree("misskey");
     const frontendDir = path.join(misskeyDir, "packages", "frontend");
 
     // Create .config/default.yml
@@ -595,7 +749,7 @@ export const misskeyApp: AppConfig = {
 
 export const npmxApp: AppConfig = {
   name: "npmx.dev",
-  cwd: path.join(GIT_DIR, "npmx.dev"),
+  cwd: NPMX_WORK_DIR,
   command: "npx",
   args: [
     "-y",
@@ -620,7 +774,7 @@ export const npmxApp: AppConfig = {
   },
   startupTimeout: 120_000,
   setup() {
-    const npmxDir = path.join(GIT_DIR, "npmx.dev");
+    const npmxDir = syncGitFixtureWorktree("npmx.dev");
     const nmDir = path.join(npmxDir, "node_modules");
 
     console.log("[npmx.dev:setup] pnpm install...");
@@ -682,7 +836,7 @@ export const npmxApp: AppConfig = {
 
 export const vuefesApp: AppConfig = {
   name: "vuefes-2025",
-  cwd: path.join(GIT_DIR, "vuefes-2025"),
+  cwd: VUEFES_WORK_DIR,
   command: "npx",
   args: [
     "-y",
@@ -704,7 +858,7 @@ export const vuefesApp: AppConfig = {
   readyDelay: 30_000,
   startupTimeout: 180_000,
   setup() {
-    const vuefesDir = path.join(GIT_DIR, "vuefes-2025");
+    const vuefesDir = syncGitFixtureWorktree("vuefes-2025");
 
     // Ensure pnpm-workspace.yaml exists so pnpm doesn't resolve the parent workspace
     const wsYaml = path.join(vuefesDir, "pnpm-workspace.yaml");

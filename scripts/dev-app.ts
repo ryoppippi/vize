@@ -125,6 +125,20 @@ function getMisskeyNodeVersion(misskeyRoot: string): string {
   return version;
 }
 
+function resolveMisskeyCommandRoot(misskeyRoot: string): string {
+  const versionFile = path.join(misskeyRoot, ".node-version");
+  if (fs.existsSync(versionFile)) {
+    return misskeyRoot;
+  }
+
+  const sourceFixtureRoot = path.join(REPO_ROOT, "tests", "_fixtures", "_git", "misskey");
+  if (fs.existsSync(path.join(sourceFixtureRoot, ".node-version"))) {
+    return sourceFixtureRoot;
+  }
+
+  return misskeyRoot;
+}
+
 function getMisskeyPnpmCommand(
   misskeyRoot: string,
   args: string[],
@@ -474,13 +488,14 @@ async function createLaunchConfig(currentTarget: Target): Promise<LaunchConfig> 
   if (currentTarget === "misskey") {
     const misskeyRoot = path.resolve(misskeyApp.cwd, "../..");
     const port = await resolveAvailablePort(3000);
-    const configName = ensureMisskeyDevConfig(misskeyRoot, port);
-    const misskeyCommand = getMisskeyPnpmCommand(misskeyRoot, ["dev"]);
+    const configName = "vize-dev.yml";
+    const misskeyCommand = getMisskeyPnpmCommand(resolveMisskeyCommandRoot(misskeyRoot), ["dev"]);
     return {
       target: "misskey",
       url: `http://127.0.0.1:${port}`,
       setup: misskeyApp.setup,
       beforeStart: () => {
+        ensureMisskeyDevConfig(misskeyRoot, port);
         runMisskeyBeforeStart(misskeyRoot, configName);
       },
       cwd: misskeyRoot,
