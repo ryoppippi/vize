@@ -310,7 +310,27 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { typeCheck, getTypeCheckCapabilities, typeCheckBatch, compile, compileVapor, parseTemplate, parseSfc, compileSfc, compileSfcBatch, compileSfcBatchWithResults, parseArt, artToCsf, generateArtDoc, generateArtCatalog, generateArtDocsBatch, generateArtPalette } = nativeBinding
+const {
+  typeCheck,
+  getTypeCheckCapabilities,
+  typeCheckBatch,
+  compile,
+  compileVapor,
+  parseTemplate,
+  parseSfc,
+  compileSfc,
+  compileSfcBatch,
+  compileSfcBatchWithResults,
+  parseArt,
+  artToCsf,
+  generateArtDoc,
+  generateArtCatalog,
+  generateArtDocsBatch,
+  generateArtPalette,
+  lint,
+  lintPatinaSfc,
+  getPatinaRules,
+} = nativeBinding
 
 module.exports.typeCheck = typeCheck
 module.exports.getTypeCheckCapabilities = getTypeCheckCapabilities
@@ -328,3 +348,6 @@ module.exports.generateArtDoc = generateArtDoc
 module.exports.generateArtCatalog = generateArtCatalog
 module.exports.generateArtDocsBatch = generateArtDocsBatch
 module.exports.generateArtPalette = generateArtPalette
+module.exports.lint = lint
+module.exports.lintPatinaSfc = lintPatinaSfc
+module.exports.getPatinaRules = getPatinaRules

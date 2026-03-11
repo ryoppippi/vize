@@ -11,7 +11,7 @@
     "dev": "pnpm -C playground dev",
     "build:plugin": "pnpm -C npm/vite-plugin-vize build",
     "install:plugin": "pnpm -C npm/vite-plugin-vize install",
-    "test:js": "pnpm --filter './npm/vite-plugin-vize' --filter './npm/unplugin-vize' --filter './npm/rspack-vize-plugin' run test",
+    "test:js": "pnpm --filter './npm/vite-plugin-vize' --filter './npm/unplugin-vize' --filter './npm/rspack-vize-plugin' --filter './npm/oxlint-plugin-patina' run test",
     "lint": "pnpm -r --filter './npm/*' --filter './playground' run lint",
     "lint:fix": "pnpm -r --filter './npm/*' --filter './playground' run lint:fix",
     "fmt": "pnpm -r --filter './npm/*' --filter './npm/vite-plugin-vize/example' --filter './npm/rspack-vize-plugin/example' --filter './playground' run fmt",
