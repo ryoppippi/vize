@@ -3460,7 +3460,13 @@ version = "0.29.0"
 dependencies = [
  "async-trait",
  "dashmap 6.1.0",
+ "ignore",
  "insta",
+ "oxc_allocator",
+ "oxc_ast",
+ "oxc_ast_visit",
+ "oxc_parser",
+ "oxc_span",
  "parking_lot",
  "ropey",
  "serde",
