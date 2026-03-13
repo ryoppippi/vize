@@ -3312,6 +3312,7 @@ dependencies = [
  "toml",
  "vize_atelier_core",
  "vize_atelier_dom",
+ "vize_atelier_ssr",
  "vize_atelier_vapor",
  "vize_carton",
  "vize_croquis",
@@ -3326,6 +3327,7 @@ dependencies = [
  "vize_armature",
  "vize_atelier_core",
  "vize_carton",
+ "vize_croquis",
  "vize_relief",
 ]
 
