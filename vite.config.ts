@@ -34,23 +34,6 @@ const testedPackages = [
   "./npm/rspack-vize-plugin",
 ];
 
-const publishedCrates = [
-  "vize_carton",
-  "vize_relief",
-  "vize_armature",
-  "vize_atelier_core",
-  "vize_atelier_dom",
-  "vize_atelier_vapor",
-  "vize_atelier_sfc",
-  "vize_glyph",
-  "vize_patina",
-  "vize_canon",
-  "vize_musea",
-  "vize_maestro",
-  "vize_vitrine",
-  "vize",
-];
-
 const cacheInputs = {
   workspace: ["package.json", "vite.config.ts", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
   jsChecks: [
@@ -111,15 +94,6 @@ const devApp = (target?: string) =>
 
 const publishWithVersionTag = (cwd: string, publishCommand: string) =>
   `sh -c 'cd ${cwd} && VERSION=$(node -p "require(\\\"./package.json\\\").version") && case "$VERSION" in *-alpha*) ${publishCommand} --tag alpha ;; *-beta*) ${publishCommand} --tag beta ;; *-rc*) ${publishCommand} --tag rc ;; *) ${publishCommand} ;; esac'`;
-
-const publishCrates = [
-  ...publishedCrates.flatMap((crateName, index) => [
-    `echo 'Publishing ${crateName}...'`,
-    `cargo publish -p ${crateName}`,
-    ...(index < publishedCrates.length - 1 ? ["sleep 30"] : []),
-  ]),
-  "echo 'Done!'",
-].join(" && ");
 
 const setupTasks = {
   setup: noCacheTask("vp install"),
@@ -236,7 +210,7 @@ const releaseTasks = {
     `${runTask("build:vite-plugin")} && ${publishWithVersionTag("npm/vite-plugin-vize", "pnpm publish --access public --no-git-checks")}`,
   ),
   "publish:npm": noCacheTask(runTasks("publish:wasm", "publish:native", "publish:vite-plugin")),
-  "publish:crates": noCacheTask(publishCrates),
+  "publish:crates": noCacheTask("bash ./scripts/publish-crates.sh"),
   publish: noCacheTask(runTasks("publish:npm", "publish:crates")),
 };
 
