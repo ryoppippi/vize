@@ -123,7 +123,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: |
-          PLAYWRIGHT_CLI="$(node <<'EOF'
+          VITE_PLUS_PLAYWRIGHT_CLI="$(node <<'EOF'
           const path = require("node:path");
 
           const vitePlusDir = path.dirname(require.resolve("vite-plus/package.json"));
@@ -137,7 +137,19 @@ jobs:
           process.stdout.write(path.join(path.dirname(playwrightPkg), "cli.js"));
           EOF
           )"
-          node "$PLAYWRIGHT_CLI" install chromium --with-deps
+          PLAYGROUND_PLAYWRIGHT_CLI="$(node <<'EOF'
+          const path = require("node:path");
+
+          const playgroundDir = path.resolve("playground");
+          const playwrightPkg = require.resolve("playwright/package.json", {
+            paths: [playgroundDir],
+          });
+
+          process.stdout.write(path.join(path.dirname(playwrightPkg), "cli.js"));
+          EOF
+          )"
+          node "$VITE_PLUS_PLAYWRIGHT_CLI" install chromium --with-deps
+          node "$PLAYGROUND_PLAYWRIGHT_CLI" install chromium
 
       - name: Run playground tests
         run: vp run --filter './playground' test:browser
