@@ -20,20 +20,7 @@ jobs:
       - name: Format Rust
         run: cargo fmt --all -- --check
 
-  fmt-js:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: pnpm
-      - run: pnpm install
-      - name: Format JS/TS
-        run: pnpm fmt:check
-
-  lint-js:
+  check-js:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,8 +36,8 @@ jobs:
           node-version: "22"
           cache: pnpm
       - run: pnpm install
-      - name: Lint JS/TS
-        run: pnpm lint
+      - name: Check JS/TS
+        run: pnpm exec vp run --workspace-root check
 
   clippy-and-test:
     runs-on: ubuntu-latest
@@ -143,7 +130,7 @@ jobs:
         run: pnpm install
 
       - name: Build npm packages
-        run: pnpm -r --filter './npm/*' run build
+        run: pnpm exec vp run --filter './npm/vize-native' --filter './npm/vite-plugin-vize' build
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -156,19 +143,16 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Run playground tests
-        working-directory: playground
-        run: pnpm test:browser
+        run: pnpm exec vp run --filter './playground' test:browser
 
       - name: Run VRT
-        working-directory: playground
-        run: pnpm test:vrt
+        run: pnpm exec vp run --filter './playground' test:vrt
         continue-on-error: true
         id: vrt
 
       - name: Update VRT snapshots
         if: steps.vrt.outcome == 'failure'
-        working-directory: playground
-        run: pnpm test:vrt:update
+        run: pnpm exec vp run --filter './playground' test:vrt:update
 
       - name: Commit updated snapshots
         if: steps.vrt.outcome == 'failure' && github.event_name == 'pull_request'

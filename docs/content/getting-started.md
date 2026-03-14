@@ -8,16 +8,16 @@ title: Getting Started
 
 ## What is Vize?
 
-Vize (*/viːz/*) is an unofficial, high-performance Vue.js toolchain written entirely in Rust. It provides a unified set of tools for Vue.js development:
+Vize (_/viːz/_) is an unofficial, high-performance Vue.js toolchain written entirely in Rust. It provides a unified set of tools for Vue.js development:
 
-| Tool | Purpose | Replaces |
-|------|---------|----------|
-| `vize build` | SFC compilation | `@vue/compiler-sfc` |
-| `vize lint` | Template and script linting | `eslint-plugin-vue` |
-| `vize fmt` | Code formatting | `prettier` |
-| `vize check` | Type checking | `vue-tsc` |
-| `vize musea` | Component gallery | Storybook |
-| `vize lsp` | Editor integration | Volar |
+| Tool         | Purpose                     | Replaces            |
+| ------------ | --------------------------- | ------------------- |
+| `vize build` | SFC compilation             | `@vue/compiler-sfc` |
+| `vize lint`  | Template and script linting | `eslint-plugin-vue` |
+| `vize fmt`   | Code formatting             | `prettier`          |
+| `vize check` | Type checking               | `vue-tsc`           |
+| `vize musea` | Component gallery           | Storybook           |
+| `vize lsp`   | Editor integration          | Volar               |
 
 All of these share a single parser, a single AST representation, and a single configuration surface — eliminating the overhead and inconsistencies of maintaining separate tools.
 
@@ -113,8 +113,8 @@ Add Vize to your Vite project for native-speed Vue compilation. This is a drop-i
 
 ```javascript
 // vite.config.js
-import { defineConfig } from 'vite';
-import vize from '@vizejs/vite-plugin';
+import { defineConfig } from "vite";
+import vize from "@vizejs/vite-plugin";
 
 export default defineConfig({
   plugins: [vize()],
@@ -140,11 +140,11 @@ Vize provides a dedicated Nuxt module with first-class support:
 ```typescript
 // nuxt.config.ts
 export default defineNuxtConfig({
-  modules: ['@vizejs/nuxt'],
+  modules: ["@vizejs/nuxt"],
   vize: {
     compiler: true,
     musea: {
-      include: ['**/*.art.vue'],
+      include: ["**/*.art.vue"],
     },
   },
 });
@@ -155,13 +155,10 @@ See [Nuxt Integration](./integrations/nuxt.md) for more details.
 ### Using WASM in the Browser
 
 ```javascript
-import init, { compileSfc } from '@vizejs/wasm';
+import init, { compileSfc } from "@vizejs/wasm";
 
 await init();
-const { code } = compileSfc(
-  `<template><div>{{ msg }}</div></template>`,
-  { filename: 'App.vue' }
-);
+const { code } = compileSfc(`<template><div>{{ msg }}</div></template>`, { filename: "App.vue" });
 ```
 
 See [WASM Bindings](./guide/wasm.md) for the full API.

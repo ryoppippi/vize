@@ -22,7 +22,7 @@ pnpm install
 pnpm dev
 
 # Build WASM (from project root)
-pnpm build:wasm
+vp run --workspace-root build:wasm
 
 # Build for production
 pnpm build

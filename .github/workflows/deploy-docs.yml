@@ -42,14 +42,10 @@ jobs:
         run: pnpm install
 
       - name: Build @vizejs/vite-plugin
-        run: pnpm -r --filter '@vizejs/native' --filter '@vizejs/vite-plugin' run build
+        run: pnpm exec vp run --filter './npm/vize-native' --filter './npm/vite-plugin-vize' build
 
       - name: Build docs
-        working-directory: docs
-        run: |
-          npx playwright install --with-deps chromium
-          export PUPPETEER_EXECUTABLE_PATH=$(node -e "console.log(require('playwright').chromium.executablePath())")
-          npx vite build
+        run: pnpm exec vp run --filter './docs' build
 
       - name: Upload docs artifact
         uses: actions/upload-artifact@v4
@@ -108,15 +104,13 @@ jobs:
         run: pnpm install
 
       - name: Build npm packages
-        run: pnpm -r --filter './npm/*' run build
+        run: pnpm exec vp run --filter './npm/vize-native' --filter './npm/vite-plugin-vize' --filter './npm/vite-plugin-musea' build
 
       - name: Build playground
-        working-directory: playground
-        run: pnpm build
+        run: pnpm exec vp run --filter './playground' build
 
       - name: Build musea-examples
-        working-directory: examples/vite-musea
-        run: pnpm build
+        run: pnpm exec vp run --filter './examples/vite-musea' build
 
       - name: Upload playground artifact
         uses: actions/upload-artifact@v4
