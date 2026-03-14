@@ -35,8 +35,9 @@ const testedPackages = [
 ];
 
 const cacheInputs = {
-  workspace: ["package.json", "vite.config.ts", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
+  workspace: [".node-version", "package.json", "vite.config.ts", "pnpm-lock.yaml", "pnpm-workspace.yaml"],
   jsChecks: [
+    ".node-version",
     "package.json",
     "vite.config.ts",
     "pnpm-lock.yaml",
@@ -56,6 +57,7 @@ const cacheInputs = {
     "playground/e2e/**",
   ],
   rust: [
+    ".node-version",
     "package.json",
     "vite.config.ts",
     "Cargo.toml",

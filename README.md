@@ -60,6 +60,17 @@ vize check --strict        # Type check
 
 See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setup, experimental bundler integrations, WASM bindings, and more.
 
+## Development Environment
+
+Node.js is pinned in `.node-version` and managed with `vp env`.
+
+```bash
+vp env install
+vp install
+```
+
+If you want `node`, `npm`, and related shims to follow the pinned version in your shell, run `vp env setup` once and enable managed mode with `vp env on`.
+
 ## Workspace Tasks
 
 Workspace orchestration lives in the root `vite.config.ts` via Vite+'s `run.tasks`.
@@ -73,7 +84,7 @@ vp run --filter './playground' test:browser
 vp run --filter './examples/vite-musea' build
 ```
 
-`mise` tasks delegate to those root Vite+ tasks.
+Use `vp run` directly; `mise` task wrappers have been removed.
 `npm/vscode-vize` and `npm/vscode-art` stay outside the root `vp run` graph, so build those from their package directories.
 
 ## Performance

@@ -167,12 +167,13 @@ See [WASM Bindings](./guide/wasm.md) for the full API.
 
 For contributing to Vize itself:
 
-### With mise (Recommended)
+### With Vite+ commands
 
 ```bash
-mise install && mise setup
-mise cli      # Enable vize CLI command
-mise dev      # Start playground
+vp env install
+vp install
+vp run --workspace-root cli             # Enable vize CLI command
+vp run --workspace-root dev:playground  # Start playground
 ```
 
 ### Manual Setup
@@ -180,13 +181,14 @@ mise dev      # Start playground
 ```bash
 git clone https://github.com/ubugeeei/vize.git
 cd vize
-pnpm install
+vp env install
+vp install
 
 # Build CLI
 cargo build --release -p vize
 
 # Run playground
-pnpm -C playground dev
+vp run --workspace-root dev:playground
 ```
 
 ### Project Structure

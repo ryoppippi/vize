@@ -7,8 +7,9 @@ Vizeのツールをローカル環境で試すためのサンプル集です。
 プロジェクトルートで以下を実行してビルドしておく必要があります：
 
 ```bash
-mise install && mise setup
-mise cli  # vize CLIコマンドを有効化
+vp env install
+vp install
+vp run --workspace-root cli  # vize CLIコマンドを有効化
 ```
 
 または Cargo から直接実行：
@@ -179,8 +180,8 @@ import Button from "./Button.vue";
 ### `vize` コマンドが見つからない
 
 ```bash
-# mise を使用している場合
-mise cli
+# vp run から CLI を有効化
+vp run --workspace-root cli
 
 # または直接 cargo run を使用
 cargo run --release -- fmt examples/cli/src/*.vue

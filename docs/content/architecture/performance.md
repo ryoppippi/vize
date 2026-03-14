@@ -115,7 +115,7 @@ Linting **15,000 Vue SFC files**:
 | -------- | ---------------------- | ---------------- | --------- | ---------------------- | ---------------- | -------- | ------------------------ |
 | **Time** | 65.30s                 | 5.45s            | **12.0x** | 26.82s                 | 5.48s            | **4.9x** | **11.9x**                |
 
-Run `mise run bench:lint` to reproduce.
+Run `vp run --workspace-root bench:lint` to reproduce.
 
 ## Benchmark: Formatter — glyph vs Prettier
 
@@ -125,7 +125,7 @@ Formatting **15,000 Vue SFC files**:
 | -------- | ------------- | --------------- | ---------- | ------------- | --------------- | -------- | -------------------------- |
 | **Time** | 82.69s        | 36ms            | **2,303x** | 19.66s        | 23ms            | **872x** | **3,666x**                 |
 
-Run `mise run bench:fmt` to reproduce.
+Run `vp run --workspace-root bench:fmt` to reproduce.
 
 ## Benchmark: Type Checker — canon vs vue-tsc
 
@@ -137,7 +137,7 @@ Type checking **15,000 Vue SFC files**:
 
 > **Note:** Vize canon is still in early development and does not yet cover the full range of type checking features that vue-tsc provides. The speed difference partly reflects the difference in the amount of work each tool currently performs. These numbers will change as canon's feature set matures.
 
-Run `mise run bench:check` to reproduce.
+Run `vp run --workspace-root bench:check` to reproduce.
 
 ## Benchmark: Vite Plugin — @vizejs/vite-plugin vs @vitejs/plugin-vue
 
@@ -149,4 +149,4 @@ Vite build with **15,000 Vue SFC imports** (all imported in a single entry):
 
 > Note: `@vizejs/vite-plugin` replaces only the Vue SFC compilation step — the performance difference comes entirely from that part. Dependency resolution, module graph construction, bundling (Rolldown), and all other Vite internals are identical to `@vitejs/plugin-vue`. For pure compilation performance, see the [Compiler benchmark](#benchmark-15000-sfc-files) above. `@vizejs/vite-plugin` eagerly pre-compiles `.vue` files using native multi-threaded compilation, which also enables faster HMR.
 
-Run `mise run bench:vite` to reproduce.
+Run `vp run --workspace-root bench:vite` to reproduce.
