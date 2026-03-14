@@ -34,6 +34,8 @@ jobs:
         with:
           node-version-file: ".node-version"
           cache: true
+      - name: Build JS packages
+        run: vp run --workspace-root build:packages
       - name: Check JS/TS
         run: vp run --workspace-root check
 
@@ -120,8 +122,22 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
-        working-directory: playground
-        run: npx playwright install chromium --with-deps
+        run: |
+          PLAYWRIGHT_CLI="$(node <<'EOF'
+          const path = require("node:path");
+
+          const vitePlusDir = path.dirname(require.resolve("vite-plus/package.json"));
+          const vitePlusTestDir = path.dirname(
+            require.resolve("@voidzero-dev/vite-plus-test/package.json", { paths: [vitePlusDir] }),
+          );
+          const playwrightPkg = require.resolve("playwright/package.json", {
+            paths: [vitePlusTestDir],
+          });
+
+          process.stdout.write(path.join(path.dirname(playwrightPkg), "cli.js"));
+          EOF
+          )"
+          node "$PLAYWRIGHT_CLI" install chromium --with-deps
 
       - name: Run playground tests
         run: vp run --filter './playground' test:browser
