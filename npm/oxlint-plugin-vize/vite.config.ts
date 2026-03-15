@@ -10,4 +10,10 @@ export default defineConfig({
   fmt: {
     ignorePatterns: ["dist/**"],
   },
+  pack: {
+    entry: ["src/index.ts"],
+    format: "esm",
+    dts: true,
+    clean: true,
+  },
 });

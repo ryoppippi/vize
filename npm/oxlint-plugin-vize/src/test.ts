@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(packageDir, "../../..");
-const pluginEntry = path.join(workspaceRoot, "npm/oxlint-plugin-patina/dist/index.js");
-const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-patina-test");
+const pluginEntry = path.join(workspaceRoot, "npm/oxlint-plugin-vize/dist/index.mjs");
+const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-vize-test");
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
 const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
 const vuePath = path.join(fixtureDir, "App.vue");
@@ -44,7 +44,7 @@ fs.writeFileSync(
       jsPlugins: [pluginEntry],
       rules: {
         "no-unused-vars": "off",
-        "patina/vue/require-v-for-key": "error",
+        "vize/vue/require-v-for-key": "error",
       },
     },
     null,
@@ -59,13 +59,13 @@ fs.writeFileSync(
       plugins: ["vue"],
       jsPlugins: [pluginEntry],
       settings: {
-        patina: {
+        vize: {
           showHelp: false,
         },
       },
       rules: {
         "no-unused-vars": "off",
-        "patina/vue/require-v-for-key": "error",
+        "vize/vue/require-v-for-key": "error",
       },
     },
     null,
@@ -132,8 +132,8 @@ const defaultRun = runOxlint(["-c", ".oxlintrc.json", "App.vue"]);
 assert.notEqual(defaultRun.exitCode, 0, "oxlint should fail when Patina reports an error");
 assert.match(
   defaultRun.output,
-  /patina\(vue\/require-v-for-key\)/,
-  "Patina rule name should be surfaced",
+  /vize\(vue\/require-v-for-key\)/,
+  "Vize rule name should be surfaced",
 );
 assert.match(
   defaultRun.output,
@@ -155,7 +155,7 @@ const stylishRun = runOxlint(["-c", ".oxlintrc.no-help.json", "-f", "stylish", "
 assert.notEqual(stylishRun.exitCode, 0, "stylish formatter should still report Patina failures");
 assert.match(
   stylishRun.output,
-  /App\.vue[\s\S]*2:1[\s\S]*Elements in iteration expect to have 'v-bind\[:\]key' directives\.[\s\S]*^    Details:$[\s\S]*^      Elements in iteration expect to have 'v-bind\[:\]key' directives\. Element\[:\] <li>$[\s\S]*^    Location:$[\s\S]*^      Vue template line 6, column 9  patina\(vue\/require-v-for-key\)$/mu,
+  /App\.vue[\s\S]*2:1[\s\S]*Elements in iteration expect to have 'v-bind\[:\]key' directives\.[\s\S]*^    Details:$[\s\S]*^      Elements in iteration expect to have 'v-bind\[:\]key' directives\. Element\[:\] <li>$[\s\S]*^    Location:$[\s\S]*^      Vue template line 6, column 9  vize\(vue\/require-v-for-key\)$/mu,
   "Stylish formatter should keep the output concise while surfacing the real Vue location",
 );
 assert.doesNotMatch(stylishRun.output, /^Help:/mu, "showHelp: false should omit the help section");
@@ -166,4 +166,4 @@ assert.doesNotMatch(
 );
 assert.equal(stylishRun.output, readSnapshot("stylish-no-help-output.txt"));
 
-console.log("✅ oxlint-plugin-patina integration tests passed!");
+console.log("✅ oxlint-plugin-vize integration tests passed!");

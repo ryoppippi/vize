@@ -5,7 +5,7 @@ import { getFileState, getDiagnosticsForRule, getScriptMap, type FileState } fro
 import { formatPatinaMessage } from "./format.js";
 import type { PatinaDiagnostic, PatinaRuleMeta } from "./model.js";
 import { mapToScriptLoc } from "./script-map.js";
-import { getPatinaSettings, isVueLikeFile } from "./settings.js";
+import { getVizeSettings, isVueLikeFile } from "./settings.js";
 
 function createOxlintDiagnostic(
   diagnostic: PatinaDiagnostic,
@@ -39,7 +39,7 @@ function createPatinaRule(ruleMeta: PatinaRuleMeta) {
             return;
           }
 
-          const showHelp = getPatinaSettings(context).showHelp ?? true;
+          const showHelp = getVizeSettings(context).showHelp ?? true;
           const state = getFileState(context);
           const diagnostics = getDiagnosticsForRule(context, state, ruleMeta.name);
           if (diagnostics.length === 0) {
@@ -61,7 +61,7 @@ const patinaRules = Object.fromEntries(
 
 export default definePlugin({
   meta: {
-    name: "patina",
+    name: "vize",
   },
   rules: patinaRules,
 });

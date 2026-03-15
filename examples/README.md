@@ -4,10 +4,10 @@ This directory contains runnable examples for trying Vize tools locally.
 
 ## Prerequisites
 
+These examples target Node 24+ and follow the repository's `.node-version`.
 Build the repository from the project root before using the examples:
 
 ```bash
-vp env install
 vp install
 vp run --workspace-root cli  # enable the `vize` CLI command
 ```
@@ -118,14 +118,13 @@ vize lsp --debug
 ### Setup
 
 ```bash
-cd examples/vite-musea
-pnpm install
-pnpm dev
+vp install
+vp run --filter './examples/vite-musea' dev
 ```
 
 ### Usage
 
-1. Start the dev server with `pnpm dev`.
+1. Start the dev server with `vp run --filter './examples/vite-musea' dev`.
 2. Open `http://localhost:5173` in your browser.
 3. Open `http://localhost:5173/__musea__` to view the component gallery.
 
@@ -175,9 +174,9 @@ import Button from "./Button.vue";
 
 ---
 
-## Oxlint + Patina Example
+## Oxlint + Vize Example
 
-`examples/oxlint-patina/` contains the smallest runnable setup for executing Patina from Oxlint through `@vizejs/oxlint-plugin-patina`.
+`examples/oxlint-vize/` contains the smallest runnable setup for executing Patina from Oxlint through `oxlint-plugin-vize`.
 
 ### Setup
 
@@ -186,37 +185,37 @@ Run this from the repository root:
 ```bash
 vp install
 vp run --filter './npm/vize-native' build
-pnpm --filter @vizejs/oxlint-plugin-patina build
+vp run --filter './npm/oxlint-plugin-vize' build
 ```
 
 ### Run
 
 ```bash
-pnpm -C examples/oxlint-patina lint
+vp run --filter './examples/oxlint-vize' lint
 ```
 
 This command intentionally exits non-zero because it includes `src/HasPatinaErrors.vue`. It mixes Oxlint core output with Patina output and uses the `stylish` formatter so the default code frame does not dominate the output. If you only want the success path:
 
 ```bash
-pnpm -C examples/oxlint-patina lint:clean
+vp run --filter './examples/oxlint-vize' lint:clean
 ```
 
 If you want JSON output:
 
 ```bash
-pnpm -C examples/oxlint-patina lint:json
+vp run --filter './examples/oxlint-vize' lint:json
 ```
 
 To turn the long Patina `Help:` block back on:
 
 ```bash
-pnpm -C examples/oxlint-patina lint:with-help
+vp run --filter './examples/oxlint-vize' lint:with-help
 ```
 
 To probe `no-unused-vars` on a Vue SFC:
 
 ```bash
-pnpm -C examples/oxlint-patina lint:unused-vars-probe
+vp run --filter './examples/oxlint-vize' lint:unused-vars-probe
 ```
 
 Current observed behavior in this repository: that probe reports `0` findings on `.vue`, even though the sample file contains an unused binding.
@@ -225,7 +224,7 @@ Current observed behavior in this repository: that probe reports `0` findings on
 
 | File | Description |
 |------|-------------|
-| `.oxlintrc.json` | Oxlint config enabling `vue` and the Patina JS plugin |
+| `.oxlintrc.json` | Oxlint config enabling `vue` and `oxlint-plugin-vize` |
 | `.oxlintrc.unused-vars.json` | Dedicated probe config for `no-unused-vars` on a Vue SFC |
 | `src/HasPatinaErrors.vue` | Sample SFC that intentionally triggers Patina diagnostics |
 | `src/Clean.vue` | Clean success-case sample |

@@ -1,8 +1,8 @@
-# @vizejs/oxlint-plugin-patina
+# oxlint-plugin-vize
 
-Oxlint JS Plugin bridge for Vize Patina.
+Oxlint JS plugin bridge for Vize Patina.
 
-This package lets Oxlint execute Patina through the native `@vizejs/native` binding while still using Oxlint's JS plugin model and rule configuration.
+This package lets Oxlint execute Patina through Vize's native binding while still using Oxlint's JS plugin model and rule configuration.
 
 ## Performance
 
@@ -14,9 +14,27 @@ The bridge is optimized around Oxlint's per-rule execution model:
 
 ## Installation
 
+`oxlint-plugin-vize` targets Node 24+. In this repository, Vite+ reads `.node-version` for you, so the usual setup is:
+
 ```bash
-pnpm add -D oxlint @vizejs/oxlint-plugin-patina
+vp install
+vp run --filter './npm/vize-native' build
+vp run --filter './npm/oxlint-plugin-vize' build
 ```
+
+If `oxlint` is already installed in your project, this is enough:
+
+```bash
+pnpm add -D oxlint-plugin-vize
+```
+
+If you are setting up Oxlint from scratch, install both packages:
+
+```bash
+pnpm add -D oxlint oxlint-plugin-vize
+```
+
+`oxlint-plugin-vize` pulls the appropriate Vize native binding for the current platform through optional dependencies, so no separate `@vizejs/native` install is required for published builds.
 
 ## Usage
 
@@ -25,20 +43,20 @@ Enable Oxlint's built-in `vue` plugin as well as this JS plugin:
 ```json
 {
   "plugins": ["vue"],
-  "jsPlugins": ["@vizejs/oxlint-plugin-patina"],
+  "jsPlugins": ["oxlint-plugin-vize"],
   "rules": {
-    "patina/vue/require-v-for-key": "error",
-    "patina/vue/no-v-html": "warn"
+    "vize/vue/require-v-for-key": "error",
+    "vize/vue/no-v-html": "warn"
   }
 }
 ```
 
-You can pass Patina settings through `settings.patina`:
+You can pass Patina settings through `settings.vize`:
 
 ```json
 {
   "settings": {
-    "patina": {
+    "vize": {
       "locale": "ja",
       "showHelp": false
     }

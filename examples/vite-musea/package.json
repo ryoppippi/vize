@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vp dev --config vite.app.config.ts",
-    "build": "pnpm check && vp build --config vite.app.config.ts",
+    "build": "vp run check && vp build --config vite.app.config.ts",
     "preview": "vp preview --config vite.app.config.ts",
     "check": "vize check && vp check src vite.config.ts vite.app.config.ts playwright.config.ts",
     "check:fix": "vp check --fix src vite.config.ts vite.app.config.ts playwright.config.ts",

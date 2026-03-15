@@ -6,18 +6,19 @@ export function isVueLikeFile(filename: string): boolean {
   return filename.endsWith(".vue");
 }
 
-export function getPatinaSettings(context: Context): PatinaSettings {
-  return parsePatinaSettings((context.settings as Record<string, unknown>).patina);
+export function getVizeSettings(context: Context): PatinaSettings {
+  const settings = context.settings as Record<string, unknown>;
+  return parseVizeSettings(settings.vize ?? settings.patina);
 }
 
-export function parsePatinaSettings(patina: unknown): PatinaSettings {
-  if (typeof patina !== "object" || patina === null || Array.isArray(patina)) {
+export function parseVizeSettings(vize: unknown): PatinaSettings {
+  if (typeof vize !== "object" || vize === null || Array.isArray(vize)) {
     return {};
   }
 
-  const patinaRecord = patina as Record<string, unknown>;
-  const locale = patinaRecord.locale;
-  const showHelp = patinaRecord.showHelp;
+  const vizeRecord = vize as Record<string, unknown>;
+  const locale = vizeRecord.locale;
+  const showHelp = vizeRecord.showHelp;
   const resolved: PatinaSettings = {};
 
   if (typeof locale === "string") {
@@ -38,21 +39,21 @@ export function getCacheKey(filename: string, settings: PatinaSettings): string 
 if (import.meta.vitest) {
   const { describe, expect, it } = import.meta.vitest;
 
-  describe("parsePatinaSettings", () => {
+  describe("parseVizeSettings", () => {
     it("reads locale and showHelp flags", () => {
-      expect(parsePatinaSettings({ locale: "ja", showHelp: false })).toEqual({
+      expect(parseVizeSettings({ locale: "ja", showHelp: false })).toEqual({
         locale: "ja",
         showHelp: false,
       });
     });
 
     it("ignores invalid values", () => {
-      expect(parsePatinaSettings({ locale: 1, showHelp: "no" })).toEqual({});
+      expect(parseVizeSettings({ locale: 1, showHelp: "no" })).toEqual({});
     });
 
-    it("ignores non-object patina settings", () => {
-      expect(parsePatinaSettings(null)).toEqual({});
-      expect(parsePatinaSettings("ja")).toEqual({});
+    it("ignores non-object vize settings", () => {
+      expect(parseVizeSettings(null)).toEqual({});
+      expect(parseVizeSettings("ja")).toEqual({});
     });
   });
 }

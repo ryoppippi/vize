@@ -5,7 +5,7 @@ import type { Context } from "@oxlint/plugins";
 import { lintPatina } from "./binding.js";
 import type { PatinaDiagnostic, SingleScriptMap } from "./model.js";
 import { createSingleScriptMap } from "./script-map.js";
-import { getCacheKey, getPatinaSettings } from "./settings.js";
+import { getCacheKey, getVizeSettings } from "./settings.js";
 
 export interface FileState {
   source: string;
@@ -20,7 +20,7 @@ const fileStateCache = new Map<string, FileState>();
 const EMPTY_DIAGNOSTICS: readonly PatinaDiagnostic[] = [];
 
 export function getFileState(context: Context): FileState {
-  const settings = getPatinaSettings(context);
+  const settings = getVizeSettings(context);
   const cacheKey = getCacheKey(context.physicalFilename, settings);
   const cached = fileStateCache.get(cacheKey);
   if (cached) {
@@ -54,7 +54,7 @@ export function getDiagnosticsForRule(
     return cached;
   }
 
-  const settings = getPatinaSettings(context);
+  const settings = getVizeSettings(context);
 
   if (state.requestedRules.size === 0) {
     state.requestedRules.add(ruleName);
