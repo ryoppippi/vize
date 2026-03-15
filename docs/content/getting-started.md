@@ -23,12 +23,14 @@ All of these share a single parser, a single AST representation, and a single co
 
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 20+
-- [pnpm](https://pnpm.io/) 9+ (recommended) or npm
+- [Node.js](https://nodejs.org/) 24+
+- [pnpm](https://pnpm.io/) 10+ (recommended) or npm
 
 For building from source:
 
 - [Rust](https://rustup.rs/) 1.80+
+
+For local development in this repository, Node is pinned in `.node-version`, and `vp` / Vite+ reads it automatically.
 
 ## Installation
 
@@ -50,32 +52,37 @@ Vize is distributed as multiple npm packages, each serving a specific integratio
 
 ```bash
 # Main package (includes CLI)
-npm install vize
+pnpm add vize
 
-# Native bindings (Node.js) — used by the Vite plugin
-npm install @vizejs/native
+# Native bindings (Node.js) — direct NAPI access from Node
+pnpm add @vizejs/native
 
 # WASM bindings (Browser) — for playgrounds and in-browser compilation
-npm install @vizejs/wasm
+pnpm add @vizejs/wasm
 
 # Vite plugin — drop-in replacement for @vitejs/plugin-vue
-npm install @vizejs/vite-plugin
+pnpm add @vizejs/vite-plugin
+
+# Oxlint bridge — Vize diagnostics inside Oxlint
+pnpm add -D oxlint oxlint-plugin-vize
 
 # Experimental unplugin integration — rollup / webpack / esbuild
-npm install @vizejs/unplugin
+pnpm add @vizejs/unplugin
 
 # Experimental Rspack integration — dedicated path
-npm install @vizejs/rspack-plugin @rspack/core
+pnpm add @vizejs/rspack-plugin @rspack/core
 
 # Nuxt module — first-class Nuxt integration
-npm install @vizejs/nuxt
+pnpm add @vizejs/nuxt
 
 # Musea (component gallery)
-npm install @vizejs/vite-plugin-musea
+pnpm add @vizejs/vite-plugin-musea
 
 # MCP server (AI assistant integration)
-npm install @vizejs/musea-mcp-server
+pnpm add @vizejs/musea-mcp-server
 ```
+
+`@vizejs/native` is useful when you want to call Vize directly from Node. Packages like `@vizejs/vite-plugin` and `oxlint-plugin-vize` resolve their native bindings for you.
 
 > **Bundler status:** `@vizejs/vite-plugin` is the recommended integration today.
 > `@vizejs/unplugin` and `@vizejs/rspack-plugin` are available for non-Vite build systems, but they are still unstable.
@@ -133,6 +140,33 @@ Vite remains the recommended path if you need the most complete and best-tested 
 
 See [Experimental Bundler Integrations](./guide/unplugin.md) for setup details and caveats.
 
+### Using with Oxlint
+
+Run Vize's Vue diagnostics inside Oxlint's JS plugin system:
+
+```bash
+pnpm add -D oxlint oxlint-plugin-vize
+```
+
+```json
+{
+  "plugins": ["vue"],
+  "jsPlugins": ["oxlint-plugin-vize"],
+  "rules": {
+    "vize/vue/require-v-for-key": "error",
+    "vize/vue/no-v-html": "warn"
+  },
+  "settings": {
+    "vize": {
+      "locale": "ja",
+      "showHelp": false
+    }
+  }
+}
+```
+
+This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
+
 ### Using with Nuxt
 
 Vize provides a dedicated Nuxt module with first-class support:
@@ -170,7 +204,6 @@ For contributing to Vize itself:
 ### With Vite+ commands
 
 ```bash
-vp env install
 vp install
 vp run --workspace-root cli             # Enable vize CLI command
 vp run --workspace-root dev:playground  # Start playground
@@ -181,7 +214,6 @@ vp run --workspace-root dev:playground  # Start playground
 ```bash
 git clone https://github.com/ubugeeei/vize.git
 cd vize
-vp env install
 vp install
 
 # Build CLI
@@ -219,6 +251,7 @@ vize/
 - [Philosophy](./philosophy.md) — Design principles and vision
 - [CLI Reference](./guide/cli.md) — Full command documentation
 - [Vite Plugin](./guide/vite-plugin.md) — Configuration options
+- [Oxlint Plugin](./guide/oxlint.md) — Oxlint bridge for Vize diagnostics
 - [Experimental Bundler Integrations](./guide/unplugin.md) — rollup / webpack / esbuild / Rspack status
 - [Musea](./guide/musea.md) — Component gallery guide
 - [Architecture](./architecture/overview.md) — How Vize works internally

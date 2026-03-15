@@ -20,6 +20,7 @@
   <a href="https://crates.io/crates/vize"><img src="https://img.shields.io/crates/v/vize.svg" alt="crates.io" /></a>
   <a href="https://www.npmjs.com/package/vize"><img src="https://img.shields.io/npm/v/vize.svg?label=vize" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/@vizejs/vite-plugin"><img src="https://img.shields.io/npm/v/@vizejs/vite-plugin.svg?label=@vizejs/vite-plugin" alt="npm" /></a>
+  <a href="https://www.npmjs.com/package/oxlint-plugin-vize"><img src="https://img.shields.io/npm/v/oxlint-plugin-vize.svg?label=oxlint-plugin-vize" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/@vizejs/wasm"><img src="https://img.shields.io/npm/v/@vizejs/wasm.svg?label=@vizejs/wasm" alt="npm" /></a>
   <a href="https://github.com/ubugeeei/vize/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
 </p>
@@ -60,16 +61,29 @@ vize check --strict        # Type check
 
 See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setup, experimental bundler integrations, WASM bindings, and more.
 
-## Development Environment
-
-Node.js is pinned in `.node-version` and managed with `vp env`.
+## Oxlint Integration
 
 ```bash
-vp env install
+pnpm add -D oxlint-plugin-vize
+```
+
+If you are setting up Oxlint from scratch:
+
+```bash
+pnpm add -D oxlint oxlint-plugin-vize
+```
+
+`oxlint-plugin-vize` resolves the matching Vize native binding through platform-specific optional dependencies, so consumers do not need a separate `@vizejs/native` install.
+
+## Development Environment
+
+Node.js 24+ is pinned in `.node-version`, and `vp` / Vite+ reads it automatically for workspace commands.
+
+```bash
 vp install
 ```
 
-If you want `node`, `npm`, and related shims to follow the pinned version in your shell, run `vp env setup` once and enable managed mode with `vp env on`.
+If you also want managed shell shims, `vp env install` and `vp env on` remain available.
 
 ## Workspace Tasks
 
