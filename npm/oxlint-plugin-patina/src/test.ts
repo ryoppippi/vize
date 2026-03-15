@@ -6,7 +6,6 @@ import { fileURLToPath } from "node:url";
 
 const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(packageDir, "../../..");
-const oxlintBin = path.join(workspaceRoot, "node_modules/.bin/oxlint");
 const pluginEntry = path.join(workspaceRoot, "npm/oxlint-plugin-patina/dist/index.js");
 const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-patina-test");
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
@@ -14,6 +13,25 @@ const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
 const vuePath = path.join(fixtureDir, "App.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
+
+function findOxlintBin() {
+  const pnpmStoreDir = path.join(workspaceRoot, "node_modules", ".pnpm");
+  const candidates = fs
+    .readdirSync(pnpmStoreDir)
+    .filter((entry) => entry.startsWith("oxlint@"))
+    .sort((left, right) => right.localeCompare(left))
+    .map((entry) => path.join(pnpmStoreDir, entry, "node_modules", "oxlint", "bin", "oxlint"))
+    .filter((entry) => fs.existsSync(entry));
+
+  const match = candidates[0];
+  if (match == null) {
+    throw new Error(`Unable to locate the oxlint binary in ${pnpmStoreDir}`);
+  }
+
+  return match;
+}
+
+const oxlintBin = findOxlintBin();
 
 fs.rmSync(fixtureDir, { force: true, recursive: true });
 fs.mkdirSync(fixtureDir, { recursive: true });

@@ -20,10 +20,10 @@
   "scripts": {
     "build": "tsdown",
     "test": "pnpm run build && node --import tsx src/test.ts",
-    "lint": "oxlint --deny-warnings --type-aware --tsconfig tsconfig.json",
-    "lint:fix": "oxlint --type-aware --tsconfig tsconfig.json --fix",
-    "fmt": "oxfmt --write src tsdown.config.ts",
-    "fmt:check": "oxfmt src tsdown.config.ts"
+    "lint": "vp check src vite.config.ts tsdown.config.ts",
+    "lint:fix": "vp check --fix src vite.config.ts tsdown.config.ts",
+    "fmt": "vp fmt --write src vite.config.ts tsdown.config.ts",
+    "fmt:check": "vp fmt src vite.config.ts tsdown.config.ts"
   },
   "repository": {
     "type": "git",

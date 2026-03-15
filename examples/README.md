@@ -7,8 +7,9 @@ This directory contains runnable examples for trying Vize tools locally.
 Build the repository from the project root before using the examples:
 
 ```bash
-mise install && mise setup
-mise cli  # enable the `vize` CLI command
+vp env install
+vp install
+vp run --workspace-root cli  # enable the `vize` CLI command
 ```
 
 Or build directly with Cargo:
@@ -151,7 +152,7 @@ pnpm dev
 </art>
 
 <script setup lang="ts">
-import Button from './Button.vue'
+import Button from "./Button.vue";
 </script>
 ```
 
@@ -183,8 +184,8 @@ import Button from './Button.vue'
 Run this from the repository root:
 
 ```bash
-pnpm install
-pnpm --filter @vizejs/native build
+vp install
+vp run --filter './npm/vize-native' build
 pnpm --filter @vizejs/oxlint-plugin-patina build
 ```
 
@@ -238,8 +239,7 @@ Current observed behavior in this repository: that probe reports `0` findings on
 ### `vize` Command Not Found
 
 ```bash
-# If you use mise
-mise cli
+vp run --workspace-root cli
 
 # Or run Cargo directly
 cargo run --release -- fmt examples/cli/src/*.vue
@@ -250,5 +250,5 @@ cargo run --release -- fmt examples/cli/src/*.vue
 When using the Musea plugin, `@vizejs/native` must be built:
 
 ```bash
-pnpm build:native
+vp run --workspace-root build:native
 ```
