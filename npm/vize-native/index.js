@@ -294,7 +294,8 @@ const {
   parseSfc,
   compileSfc,
   compileSfcBatch,
-  compileSfcBatchWithResults,
+  compileSfcBatchWithResults, 
+  compileCss,
   parseArt,
   artToCsf,
   generateArtDoc,
@@ -313,6 +314,7 @@ module.exports.parseSfc = parseSfc;
 module.exports.compileSfc = compileSfc;
 module.exports.compileSfcBatch = compileSfcBatch;
 module.exports.compileSfcBatchWithResults = compileSfcBatchWithResults;
+module.exports.compileCss = compileCss
 module.exports.parseArt = parseArt;
 module.exports.artToCsf = artToCsf;
 module.exports.generateArtDoc = generateArtDoc;

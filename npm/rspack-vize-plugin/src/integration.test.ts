@@ -3,7 +3,6 @@ import path from "node:path";
 import { rspack } from "@rspack/core";
 import "./test/setup.ts";
 import { VizePlugin } from "./plugin/index.js";
-import { createVizeVueRules } from "./preset/rules.js";
 import {
   normalizeSnapshot,
   packageRoot,
@@ -14,8 +13,8 @@ import {
 function runCompiler(compiler: ReturnType<typeof rspack>) {
   return new Promise<NonNullable<Parameters<Parameters<typeof compiler.run>[0]>[1]>>(
     (resolve, reject) => {
-      compiler.run((error, stats) => {
-        compiler.close((closeError) => {
+      compiler!.run((error, stats) => {
+        compiler!.close((closeError) => {
           if (error || closeError) {
             reject(error ?? closeError);
             return;
@@ -33,7 +32,7 @@ function runCompiler(compiler: ReturnType<typeof rspack>) {
   );
 }
 
-void test("rspack builds a Vue SFC with dedicated loader and style paths", async (t) => {
+void test("rspack builds a Vue SFC with auto-inject mode", async (t) => {
   const compiler = rspack({
     mode: "development",
     devtool: false,
@@ -60,13 +59,34 @@ void test("rspack builds a Vue SFC with dedicated loader and style paths", async
     },
     module: {
       rules: [
-        ...createVizeVueRules({
-          isProduction: false,
-          nativeCss: true,
-          typescript: true,
-          vizeLoader: path.join(packageRoot, "dist", "loader", "index.js"),
-          vizeStyleLoader: path.join(packageRoot, "dist", "loader", "style-loader.js"),
-        }),
+        // TypeScript support
+        {
+          test: /\.ts$/,
+          loader: "builtin:swc-loader",
+          options: {
+            jsc: { parser: { syntax: "typescript" } },
+          },
+        },
+        // TypeScript post-processing for .vue files
+        {
+          test: /\.vue$/,
+          resourceQuery: { not: [/type=/] },
+          enforce: "post" as const,
+          loader: "builtin:swc-loader",
+          options: {
+            jsc: { parser: { syntax: "typescript" } },
+          },
+          type: "javascript/auto",
+        },
+        // Simple .vue rule — VizePlugin auto-injects style sub-request handling
+        {
+          test: /\.vue$/,
+          use: [
+            {
+              loader: path.join(packageRoot, "dist", "loader", "index.mjs"),
+            },
+          ],
+        },
       ],
     },
     plugins: [

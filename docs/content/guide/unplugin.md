@@ -69,14 +69,19 @@ Use the dedicated `@vizejs/rspack-plugin` package instead of `@vizejs/unplugin`:
 
 ```javascript
 // rspack.config.mjs
-import { VizePlugin, createVizeVueRules } from "@vizejs/rspack-plugin";
+import { VizePlugin } from "@vizejs/rspack-plugin";
 
 export default {
   experiments: {
     css: true,
   },
   module: {
-    rules: [...createVizeVueRules()],
+    rules: [
+      {
+        test: /\.vue$/,
+        loader: "@vizejs/rspack-plugin/loader",
+      },
+    ],
   },
   plugins: [new VizePlugin()],
 };
