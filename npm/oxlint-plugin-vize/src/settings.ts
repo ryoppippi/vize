@@ -1,6 +1,8 @@
 import type { Context } from "@oxlint/plugins";
 
-import type { PatinaSettings } from "./model.js";
+import type { HelpLevel, PatinaSettings } from "./model.js";
+
+const HELP_LEVELS = new Set<HelpLevel>(["none", "short", "full"]);
 
 export function isVueLikeFile(filename: string): boolean {
   return filename.endsWith(".vue");
@@ -18,6 +20,7 @@ export function parseVizeSettings(vize: unknown): PatinaSettings {
 
   const vizeRecord = vize as Record<string, unknown>;
   const locale = vizeRecord.locale;
+  const helpLevel = vizeRecord.helpLevel;
   const showHelp = vizeRecord.showHelp;
   const resolved: PatinaSettings = {};
 
@@ -25,30 +28,42 @@ export function parseVizeSettings(vize: unknown): PatinaSettings {
     resolved.locale = locale;
   }
 
+  if (typeof helpLevel === "string" && HELP_LEVELS.has(helpLevel as HelpLevel)) {
+    resolved.helpLevel = helpLevel as HelpLevel;
+    return resolved;
+  }
+
   if (typeof showHelp === "boolean") {
-    resolved.showHelp = showHelp;
+    resolved.helpLevel = showHelp ? "full" : "none";
   }
 
   return resolved;
 }
 
 export function getCacheKey(filename: string, settings: PatinaSettings): string {
-  return `${filename}::${settings.locale ?? ""}`;
+  return `${filename}::${settings.locale ?? ""}::${settings.helpLevel ?? ""}`;
 }
 
 if (import.meta.vitest) {
   const { describe, expect, it } = import.meta.vitest;
 
   describe("parseVizeSettings", () => {
-    it("reads locale and showHelp flags", () => {
+    it("reads locale and help level", () => {
+      expect(parseVizeSettings({ locale: "ja", helpLevel: "short" })).toEqual({
+        locale: "ja",
+        helpLevel: "short",
+      });
+    });
+
+    it("falls back to showHelp for compatibility", () => {
       expect(parseVizeSettings({ locale: "ja", showHelp: false })).toEqual({
         locale: "ja",
-        showHelp: false,
+        helpLevel: "none",
       });
     });
 
     it("ignores invalid values", () => {
-      expect(parseVizeSettings({ locale: 1, showHelp: "no" })).toEqual({});
+      expect(parseVizeSettings({ locale: 1, showHelp: "no", helpLevel: "verbose" })).toEqual({});
     });
 
     it("ignores non-object vize settings", () => {

@@ -10,6 +10,7 @@ export function lintPatina(
   return loadBinding().lintPatinaSfc(source, {
     filename,
     locale: settings.locale,
+    help_level: settings.helpLevel,
     enabled_rules: enabledRules ? [...enabledRules] : undefined,
   });
 }

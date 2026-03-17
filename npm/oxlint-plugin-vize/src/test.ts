@@ -4,12 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { extractSfcBlocks, formatBlockLabel, getDiagnosticBlock } from "./sfc-blocks.ts";
+
 const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(packageDir, "../../..");
 const pluginEntry = path.join(workspaceRoot, "npm/oxlint-plugin-vize/dist/index.mjs");
 const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-vize-test");
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
 const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
+const shortHelpConfigPath = path.join(fixtureDir, ".oxlintrc.short-help.json");
 const vuePath = path.join(fixtureDir, "App.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
@@ -74,6 +77,27 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
+  shortHelpConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "short",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/vue/require-v-for-key": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
   vuePath,
   `<script setup lang="ts">
 const items = [1]
@@ -120,6 +144,7 @@ function normalizeOutput(output: string): string {
       /^Breaking changes are possible while JS plugins support is under development\.\n/gmu,
       "",
     )
+    .replace(/"start_time": [0-9.]+/gu, '"start_time": 0')
     .replace(/^Finished in .*$/gmu, "")
     .trim();
 }
@@ -137,8 +162,8 @@ assert.match(
 );
 assert.match(
   defaultRun.output,
-  /Elements in iteration expect to have 'v-bind\[:\]key' directives\.[\s\S]*Location:[\s\S]*Vue template line 6, column 9/u,
-  "Template diagnostics should expose the real Vue location in the message",
+  /Elements in iteration expect to have 'v-bind:key' directives\. \(at <template>:6:9\)/u,
+  "Template diagnostics should expose the real Vue location inline in the summary",
 );
 assert.doesNotMatch(
   defaultRun.output,
@@ -155,15 +180,56 @@ const stylishRun = runOxlint(["-c", ".oxlintrc.no-help.json", "-f", "stylish", "
 assert.notEqual(stylishRun.exitCode, 0, "stylish formatter should still report Patina failures");
 assert.match(
   stylishRun.output,
-  /App\.vue[\s\S]*2:1[\s\S]*Elements in iteration expect to have 'v-bind\[:\]key' directives\.[\s\S]*^    Details:$[\s\S]*^      Elements in iteration expect to have 'v-bind\[:\]key' directives\. Element\[:\] <li>$[\s\S]*^    Location:$[\s\S]*^      Vue template line 6, column 9  vize\(vue\/require-v-for-key\)$/mu,
+  /App\.vue[\s\S]*2:1[\s\S]*Elements in iteration expect to have 'v-bind:key' directives\. \(at <template>:6:9\)[\s\S]*^    Details:$[\s\S]*^      Element: <li>  vize\(vue\/require-v-for-key\)$/mu,
   "Stylish formatter should keep the output concise while surfacing the real Vue location",
 );
 assert.doesNotMatch(stylishRun.output, /^Help:/mu, "showHelp: false should omit the help section");
 assert.doesNotMatch(
   stylishRun.output,
-  /^Source:/mu,
-  "Stylish formatter should avoid the old inline source block",
+  /^    Location:/mu,
+  "Stylish formatter should avoid a separate location block",
 );
 assert.equal(stylishRun.output, readSnapshot("stylish-no-help-output.txt"));
+
+const shortHelpRun = runOxlint(["-c", ".oxlintrc.short-help.json", "-f", "stylish", "App.vue"]);
+assert.notEqual(shortHelpRun.exitCode, 0, "short help should still report Patina failures");
+assert.match(
+  shortHelpRun.output,
+  /^    Help:\n      Why:/mu,
+  "short help should keep only the first help line",
+);
+assert.equal(shortHelpRun.output, readSnapshot("stylish-short-help-output.txt"));
+
+const jsonRun = runOxlint(["-c", ".oxlintrc.no-help.json", "-f", "json", "App.vue"]);
+assert.notEqual(jsonRun.exitCode, 0, "json formatter should still report Patina failures");
+assert.equal(jsonRun.output, readSnapshot("json-no-help-output.txt"));
+
+const sampleBlocks = extractSfcBlocks(
+  `<script setup lang="ts">\nconst count = 1\n</script>\n<template>\n  <div>{{ count }}</div>\n</template>\n<style scoped>\n.foo {}\n</style>\n<i18n>\n{}\n</i18n>\n`,
+);
+assert.deepEqual(
+  sampleBlocks.map((block) => formatBlockLabel(block)),
+  ["<script setup>", "<template>", "<style>", "<i18n>"],
+  "SFC block extraction should classify common Vue block types",
+);
+assert.equal(
+  formatBlockLabel(
+    getDiagnosticBlock(
+      {
+        rule: "vize/vue/mock",
+        severity: "error",
+        message: "Mock error. Detail: extra context",
+        location: {
+          start: { line: 5, column: 3, offset: 0 },
+          end: { line: 5, column: 8, offset: 0 },
+        },
+        help: null,
+      },
+      sampleBlocks,
+    ),
+  ),
+  "<template>",
+  "Diagnostics should map back to their containing SFC block",
+);
 
 console.log("✅ oxlint-plugin-vize integration tests passed!");

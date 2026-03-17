@@ -5,7 +5,7 @@
   "settings": {
     "vize": {
       "locale": "en",
-      "showHelp": false
+      "helpLevel": "none"
     }
   },
   "rules": {

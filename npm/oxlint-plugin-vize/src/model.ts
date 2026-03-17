@@ -38,15 +38,18 @@ export interface PatinaBinding {
     options?: {
       filename?: string;
       locale?: string;
+      help_level?: HelpLevel;
       enabled_rules?: string[];
     },
   ): PatinaLintResult;
   getPatinaRules(): PatinaRuleMeta[];
 }
 
+export type HelpLevel = "none" | "short" | "full";
+
 export interface PatinaSettings {
   locale?: string;
-  showHelp?: boolean;
+  helpLevel?: HelpLevel;
 }
 
 export interface LineColumn {
@@ -54,12 +57,16 @@ export interface LineColumn {
   column: number;
 }
 
-export interface ScriptBlock {
+export type SfcBlockKind = "template" | "script" | "script-setup" | "style" | "custom";
+
+export interface SfcBlock {
+  kind: SfcBlockKind;
+  name: string;
   content: string;
   contentStart: LineColumn;
   contentEnd: LineColumn;
 }
 
 export interface SingleScriptMap {
-  block: ScriptBlock;
+  block: SfcBlock;
 }

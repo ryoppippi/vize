@@ -1,31 +1,31 @@
-import type { PatinaDiagnostic } from "./model.js";
+import type { HelpLevel, PatinaDiagnostic } from "./model.js";
 
 const helpTextCache = new Map<string, string>();
 
+interface FormatPatinaMessageOptions {
+  hasMappedLocation: boolean;
+  blockLabel: string;
+  helpLevel: HelpLevel;
+}
+
 export function formatPatinaMessage(
   diagnostic: PatinaDiagnostic,
-  useMappedLocation: boolean,
-  showHelp: boolean,
+  options: FormatPatinaMessageOptions,
 ): string {
   const sections: string[] = [];
-  const summary = sanitizeSummaryLine(createSummaryLine(diagnostic.message));
-  const fullMessage = sanitizeSummaryLine(diagnostic.message);
+  const summaryLine = createSummaryLine(diagnostic.message);
+  const details = createDetailsBody(diagnostic.message, summaryLine);
+  const summary = options.hasMappedLocation
+    ? summaryLine
+    : `${summaryLine} (${formatInlineLocation(options.blockLabel, diagnostic)})`;
 
-  if (fullMessage !== summary) {
-    sections.push(formatSection("Details", fullMessage));
+  if (details) {
+    sections.push(formatSection("Details", details));
   }
 
-  if (!useMappedLocation) {
-    sections.push(
-      formatSection(
-        "Location",
-        `Vue template line ${diagnostic.location.start.line}, column ${diagnostic.location.start.column}`,
-      ),
-    );
-  }
-
-  if (showHelp && diagnostic.help) {
-    sections.push(formatSection("Help", formatHelpText(diagnostic.help)));
+  const helpText = resolveHelpText(diagnostic.help, options.helpLevel);
+  if (helpText) {
+    sections.push(formatSection("Help", helpText));
   }
 
   if (sections.length === 0) {
@@ -35,8 +35,39 @@ export function formatPatinaMessage(
   return `${summary}\n${sections.join("\n")}`;
 }
 
+function createDetailsBody(message: string, summary: string): string | null {
+  if (message === summary) {
+    return null;
+  }
+
+  if (message.startsWith(summary)) {
+    const remainder = message.slice(summary.length).trim();
+    return remainder || null;
+  }
+
+  return message;
+}
+
 function formatSection(title: string, body: string): string {
   return `    ${title}:\n${indentBlock(body, "      ")}`;
+}
+
+function formatInlineLocation(blockLabel: string, diagnostic: PatinaDiagnostic): string {
+  const { line, column } = diagnostic.location.start;
+  return `at ${blockLabel}:${line}:${column}`;
+}
+
+function resolveHelpText(help: string | null, helpLevel: HelpLevel): string | null {
+  if (help == null || helpLevel === "none") {
+    return null;
+  }
+
+  const plainText = formatHelpText(help);
+  if (helpLevel === "short") {
+    return firstMeaningfulLine(plainText);
+  }
+
+  return plainText;
 }
 
 function formatHelpText(help: string): string {
@@ -59,15 +90,22 @@ function formatHelpText(help: string): string {
   return plainText;
 }
 
+function firstMeaningfulLine(text: string): string | null {
+  for (const line of text.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return null;
+}
+
 function indentBlock(text: string, indent: string): string {
   return text
     .split("\n")
     .map((line) => `${indent}${line}`)
     .join("\n");
-}
-
-function sanitizeSummaryLine(text: string): string {
-  return text.replace(/:/gu, "[:]");
 }
 
 function createSummaryLine(message: string): string {

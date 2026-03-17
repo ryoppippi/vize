@@ -58,15 +58,16 @@ You can pass Patina settings through `settings.vize`:
   "settings": {
     "vize": {
       "locale": "ja",
-      "showHelp": false
+      "helpLevel": "short"
     }
   }
 }
 ```
 
-`showHelp` defaults to `true`. Set it to `false` when you want a denser terminal view without the long remediation block.
+- `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
+- `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
 
 ## Current limitations
 
 - Oxlint JS plugins currently rely on the extracted Vue script program. Files without `<script>` or `<script setup>` do not invoke the plugin yet.
-- Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, the real SFC `line/column` is surfaced in the message, while the fallback formatter anchor still points at the script block.
+- Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, Vize now inlines the original SFC block and `line:column` into the summary, while the formatter anchor still points at the script block.

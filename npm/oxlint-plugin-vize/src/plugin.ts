@@ -1,26 +1,38 @@
 import { definePlugin, defineRule, type Diagnostic } from "@oxlint/plugins";
 
 import { getPatinaRules } from "./binding.js";
-import { getFileState, getDiagnosticsForRule, getScriptMap, type FileState } from "./file-state.js";
+import {
+  getFileState,
+  getDiagnosticsForRule,
+  getScriptMap,
+  getSfcBlocks,
+  type FileState,
+} from "./file-state.js";
 import { formatPatinaMessage } from "./format.js";
-import type { PatinaDiagnostic, PatinaRuleMeta } from "./model.js";
+import type { HelpLevel, PatinaDiagnostic, PatinaRuleMeta } from "./model.js";
+import { formatBlockLabel, getDiagnosticBlock } from "./sfc-blocks.js";
 import { mapToScriptLoc } from "./script-map.js";
 import { getVizeSettings, isVueLikeFile } from "./settings.js";
 
 function createOxlintDiagnostic(
   diagnostic: PatinaDiagnostic,
   state: FileState,
-  showHelp: boolean,
+  helpLevel: HelpLevel,
 ): Diagnostic {
   const scriptMap = getScriptMap(state);
   const loc = mapToScriptLoc(diagnostic, scriptMap);
+  const block = loc === null ? getDiagnosticBlock(diagnostic, getSfcBlocks(state)) : null;
 
   return {
     loc: loc ?? {
       start: { line: 1, column: 1 },
       end: { line: 1, column: 1 },
     },
-    message: formatPatinaMessage(diagnostic, loc !== null, showHelp),
+    message: formatPatinaMessage(diagnostic, {
+      hasMappedLocation: loc !== null,
+      blockLabel: formatBlockLabel(block),
+      helpLevel,
+    }),
   };
 }
 
@@ -39,7 +51,7 @@ function createPatinaRule(ruleMeta: PatinaRuleMeta) {
             return;
           }
 
-          const showHelp = getVizeSettings(context).showHelp ?? true;
+          const helpLevel = getVizeSettings(context).helpLevel ?? "full";
           const state = getFileState(context);
           const diagnostics = getDiagnosticsForRule(context, state, ruleMeta.name);
           if (diagnostics.length === 0) {
@@ -47,7 +59,7 @@ function createPatinaRule(ruleMeta: PatinaRuleMeta) {
           }
 
           for (const diagnostic of diagnostics) {
-            context.report(createOxlintDiagnostic(diagnostic, state, showHelp));
+            context.report(createOxlintDiagnostic(diagnostic, state, helpLevel));
           }
         },
       };

@@ -24,7 +24,7 @@ It mixes:
 - Oxlint core diagnostics from `no-console`
 - Patina diagnostics from `oxlint-plugin-vize`
 - The `stylish` formatter so the default code frame does not dominate the output
-- `settings.vize.showHelp: false` so the long Patina remediation block stays hidden by default
+- `settings.vize.helpLevel: "none"` so the long Patina remediation block stays hidden by default
 
 If you want to check `no-unused-vars` specifically:
 
@@ -63,7 +63,7 @@ vp exec oxlint -c .oxlintrc.json -f stylish src
 - Oxlint's built-in `vue` plugin is enabled through `"plugins": ["vue"]`.
 - Oxlint's built-in `no-console` rule is enabled so the example shows native Oxlint output mixed with Patina output in one run.
 - The default example commands use `-f stylish` because Oxlint's default formatter prints a large code frame for every finding, while `stylish` keeps the Patina message body intact.
-- `settings.vize.showHelp` toggles the long Patina remediation block. The example keeps it `false` by default and exposes `lint:with-help` for the verbose view.
+- `settings.vize.helpLevel` controls remediation density. The example keeps it at `"none"` by default and exposes `lint:with-help` for the verbose view.
 - A dedicated `lint:unused-vars-probe` command is included because `no-unused-vars` currently does not emit on the example `.vue` SFC, even without the Patina plugin.
 - The Vize Oxlint plugin is loaded from `../../npm/oxlint-plugin-vize/dist/index.mjs`.
 - The plugin starts with a single-rule native Patina run and only upgrades to a shared full-file pass when multiple Patina rules are enabled for the same file.

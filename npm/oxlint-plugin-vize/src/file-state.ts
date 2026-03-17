@@ -3,13 +3,15 @@ import fs from "node:fs";
 import type { Context } from "@oxlint/plugins";
 
 import { lintPatina } from "./binding.js";
-import type { PatinaDiagnostic, SingleScriptMap } from "./model.js";
+import type { PatinaDiagnostic, SfcBlock, SingleScriptMap } from "./model.js";
+import { extractSfcBlocks } from "./sfc-blocks.js";
 import { createSingleScriptMap } from "./script-map.js";
 import { getCacheKey, getVizeSettings } from "./settings.js";
 
 export interface FileState {
   source: string;
   extractedScript: string;
+  sfcBlocks: readonly SfcBlock[] | undefined;
   scriptMap: SingleScriptMap | null | undefined;
   allDiagnosticsByRule: Map<string, PatinaDiagnostic[]> | null;
   partialDiagnosticsByRule: Map<string, readonly PatinaDiagnostic[]>;
@@ -31,6 +33,7 @@ export function getFileState(context: Context): FileState {
   const state: FileState = {
     source,
     extractedScript: context.sourceCode.text,
+    sfcBlocks: undefined,
     scriptMap: undefined,
     allDiagnosticsByRule: null,
     partialDiagnosticsByRule: new Map(),
@@ -82,6 +85,15 @@ export function getScriptMap(state: FileState): SingleScriptMap | null {
 
   state.scriptMap = createSingleScriptMap(state.source, state.extractedScript);
   return state.scriptMap;
+}
+
+export function getSfcBlocks(state: FileState): readonly SfcBlock[] {
+  if (state.sfcBlocks !== undefined) {
+    return state.sfcBlocks;
+  }
+
+  state.sfcBlocks = extractSfcBlocks(state.source);
+  return state.sfcBlocks;
 }
 
 function indexDiagnosticsByRule(

@@ -62,6 +62,8 @@ pub struct PatinaLintOptionsNapi {
     pub filename: Option<String>,
     /// Locale code: "en", "ja", or "zh"
     pub locale: Option<String>,
+    /// Help display level: "full", "short", or "none"
+    pub help_level: Option<String>,
     /// Optional list of Patina rule names to enable
     pub enabled_rules: Option<Vec<String>>,
 }
@@ -70,6 +72,14 @@ fn patina_locale_from_option(locale: Option<&str>) -> vize_patina::Locale {
     locale
         .and_then(vize_patina::Locale::parse)
         .unwrap_or_default()
+}
+
+fn patina_help_level_from_option(help_level: Option<&str>) -> vize_patina::HelpLevel {
+    match help_level {
+        Some("none") => vize_patina::HelpLevel::None,
+        Some("short") => vize_patina::HelpLevel::Short,
+        _ => vize_patina::HelpLevel::Full,
+    }
 }
 
 fn create_position_object(env: Env, line: u32, column: u32, offset: u32) -> Result<Object> {
@@ -113,11 +123,13 @@ pub fn lint_patina_sfc(
     let opts = options.unwrap_or_default();
     let filename = opts.filename.unwrap_or_else(|| "anonymous.vue".to_string());
     let locale = patina_locale_from_option(opts.locale.as_deref());
+    let help_level = patina_help_level_from_option(opts.help_level.as_deref());
     let enabled_rules = opts
         .enabled_rules
         .map(|rules| rules.into_iter().map(Into::into).collect());
     let linter = Linter::new()
         .with_locale(locale)
+        .with_help_level(help_level)
         .with_enabled_rules(enabled_rules);
     let result = linter.lint_sfc(&source, &filename);
     let lsp_diagnostics = LspEmitter::to_lsp_diagnostics_with_source(&result, &source);
