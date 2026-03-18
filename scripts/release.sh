@@ -25,12 +25,20 @@ confirm_release() {
   fi
 
   local reply=""
+  local prompt="Proceed with release? [y/N] "
 
   # Some task runners detach stdin while preserving the controlling terminal.
-  if [ -t 2 ] && read -r -n 1 -p "Proceed with release? [y/N] " reply < /dev/tty 2>/dev/null; then
-    echo
+  if [ -t 2 ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    printf "%s" "$prompt" > /dev/tty
+    if ! IFS= read -r -n 1 reply < /dev/tty 2>/dev/null; then
+      printf "\n" > /dev/tty
+      echo "Error: Failed to read confirmation from tty. Re-run with -y to skip the prompt." >&2
+      return 1
+    fi
+    printf "\n" > /dev/tty
   elif [ -t 0 ]; then
-    if ! read -r -n 1 -p "Proceed with release? [y/N] " reply; then
+    printf "%s" "$prompt" >&2
+    if ! IFS= read -r -n 1 reply; then
       echo >&2
       echo "Error: Failed to read confirmation from stdin. Re-run with -y to skip the prompt." >&2
       return 1
