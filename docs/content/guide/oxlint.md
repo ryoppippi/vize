@@ -34,6 +34,7 @@ Enable Oxlint's built-in `vue` plugin and load the Vize bridge as a JS plugin:
     }
   },
   "rules": {
+    "eqeqeq": "error",
     "vize/vue/require-v-for-key": "error",
     "vize/vue/no-v-html": "warn",
     "no-console": "warn"
@@ -41,7 +42,7 @@ Enable Oxlint's built-in `vue` plugin and load the Vize bridge as a JS plugin:
 }
 ```
 
-This keeps Oxlint core rules like `no-console`, while adding Vize's Vue diagnostics under the `vize/vue/*` namespace.
+This keeps Oxlint's existing rules running as-is, including core checks like `eqeqeq` and `no-console`, while adding Vize's Vue diagnostics under the `vize/vue/*` namespace. The bridge does not replace or suppress your other Oxlint rules.
 
 For day-to-day terminal usage, the recommended command today is:
 
@@ -60,7 +61,7 @@ Patina settings are passed through `settings.vize`:
   "settings": {
     "vize": {
       "locale": "ja",
-      "preset": "Essential",
+      "preset": "essential",
       "helpLevel": "short"
     }
   }
@@ -68,21 +69,21 @@ Patina settings are passed through `settings.vize`:
 ```
 
 - `locale` controls the diagnostic language.
-- `preset` accepts `"GeneralRecommended"`, `"Essential"`, `"Incremental"`, `"Opinionated"`, or `"Nuxt"`.
-- `preset` defaults to `"GeneralRecommended"`.
+- `preset` accepts `"general-recommended"`, `"essential"`, `"incremental"`, `"opinionated"`, or `"nuxt"`.
+- `preset` defaults to `"general-recommended"`.
 - Bundle presets keep out-of-bundle rules quiet even if they are still listed in `rules`.
-- `"Incremental"` skips bundle gating and runs only the Vize rules you explicitly configure in Oxlint.
-- `"Opinionated"` is the preset that enables built-in script rules such as `vize/script/no-options-api`.
-- Legacy aliases such as `"happy-path"`, `"essential"`, `"incremental"`, `"opinionated"`, and `"nuxt"` are still accepted for compatibility.
+- `"incremental"` skips bundle gating and runs only the Vize rules you explicitly configure in Oxlint.
+- `"opinionated"` is the preset that enables built-in script rules such as `vize/script/no-options-api`.
+- Legacy aliases such as `"GeneralRecommended"`, `"Essential"`, `"Incremental"`, `"Opinionated"`, `"Nuxt"`, and `"happy-path"` are still accepted for compatibility.
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
 - `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
 
 For compatibility with older configs, `settings.patina` is still accepted, but `settings.vize` is the canonical key.
 
-If you want the plugin to behave like a minimal correctness pass, use `"preset": "Essential"`. If you want the stricter Vapor-oriented script checks too, switch to `"preset": "Opinionated"`.
+If you want the plugin to behave like a minimal correctness pass, use `"preset": "essential"`. If you want the stricter Vapor-oriented script checks too, switch to `"preset": "opinionated"`.
 
-If you want to roll Vize out one rule at a time, use `"preset": "Incremental"`. In that mode, the plugin does not inherit any preset bundle; it only runs the Vize rules you explicitly turned on in Oxlint.
+If you want to roll Vize out one rule at a time, use `"preset": "incremental"`. In that mode, the plugin does not inherit any preset bundle; it only runs the Vize rules you explicitly turned on in Oxlint.
 
 ## How It Works
 

@@ -4,18 +4,18 @@ import type { HelpLevel, PatinaPreset, PatinaSettings } from "./model.js";
 
 const HELP_LEVELS = new Set<HelpLevel>(["none", "short", "full"]);
 const PRESET_ALIASES = new Map<string, PatinaPreset>([
-  ["generalrecommended", "GeneralRecommended"],
-  ["happypath", "GeneralRecommended"],
-  ["happy", "GeneralRecommended"],
-  ["default", "GeneralRecommended"],
-  ["recommended", "GeneralRecommended"],
-  ["essential", "Essential"],
-  ["incremental", "Incremental"],
-  ["opinionated", "Opinionated"],
-  ["opnionated", "Opinionated"],
-  ["strict", "Opinionated"],
-  ["all", "Opinionated"],
-  ["nuxt", "Nuxt"],
+  ["generalrecommended", "general-recommended"],
+  ["happypath", "general-recommended"],
+  ["happy", "general-recommended"],
+  ["default", "general-recommended"],
+  ["recommended", "general-recommended"],
+  ["essential", "essential"],
+  ["incremental", "incremental"],
+  ["opinionated", "opinionated"],
+  ["opnionated", "opinionated"],
+  ["strict", "opinionated"],
+  ["all", "opinionated"],
+  ["nuxt", "nuxt"],
 ]);
 
 export function isVueLikeFile(filename: string): boolean {
@@ -63,11 +63,11 @@ export function parseVizeSettings(vize: unknown): PatinaSettings {
 }
 
 export function getActivePreset(settings: PatinaSettings): PatinaPreset {
-  return settings.preset ?? "GeneralRecommended";
+  return settings.preset ?? "general-recommended";
 }
 
 export function isIncrementalPreset(settings: PatinaSettings): boolean {
-  return getActivePreset(settings) === "Incremental";
+  return getActivePreset(settings) === "incremental";
 }
 
 export function getCacheKey(filename: string, settings: PatinaSettings): string {
@@ -83,25 +83,25 @@ if (import.meta.vitest) {
 
   describe("parseVizeSettings", () => {
     it("reads locale, help level, and preset", () => {
-      expect(parseVizeSettings({ locale: "ja", helpLevel: "short", preset: "Essential" })).toEqual({
+      expect(parseVizeSettings({ locale: "ja", helpLevel: "short", preset: "essential" })).toEqual({
         locale: "ja",
         helpLevel: "short",
-        preset: "Essential",
+        preset: "essential",
       });
     });
 
     it("normalizes preset aliases", () => {
       expect(parseVizeSettings({ preset: "recommended" })).toEqual({
-        preset: "GeneralRecommended",
+        preset: "general-recommended",
       });
       expect(parseVizeSettings({ preset: "incremental" })).toEqual({
-        preset: "Incremental",
+        preset: "incremental",
       });
       expect(parseVizeSettings({ preset: "strict" })).toEqual({
-        preset: "Opinionated",
+        preset: "opinionated",
       });
       expect(parseVizeSettings({ preset: "Opnionated" })).toEqual({
-        preset: "Opinionated",
+        preset: "opinionated",
       });
     });
 
@@ -109,7 +109,7 @@ if (import.meta.vitest) {
       expect(parseVizeSettings({ locale: "ja", showHelp: false, preset: "Nuxt" })).toEqual({
         locale: "ja",
         helpLevel: "none",
-        preset: "Nuxt",
+        preset: "nuxt",
       });
     });
 

@@ -158,20 +158,22 @@ pnpm add -D oxlint oxlint-plugin-vize@alpha
   "plugins": ["vue"],
   "jsPlugins": ["oxlint-plugin-vize"],
   "rules": {
+    "eqeqeq": "error",
     "vize/vue/require-v-for-key": "error",
-    "vize/vue/no-v-html": "warn"
+    "vize/vue/no-v-html": "warn",
+    "no-console": "warn"
   },
   "settings": {
     "vize": {
       "locale": "ja",
-      "preset": "GeneralRecommended",
+      "preset": "general-recommended",
       "helpLevel": "short"
     }
   }
 }
 ```
 
-This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. `preset` defaults to `"GeneralRecommended"`, but you can switch it to `"Essential"` for the narrowest correctness-focused pass, `"Opinionated"` when you want stricter built-in script checks too, or `"Incremental"` when you want to enable Vize rules one by one from your Oxlint config. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
+This keeps Oxlint's built-in JavaScript and TypeScript rules running normally, including checks like `eqeqeq` and `no-console`, while adding Vize's Vue-specific diagnostics through the same run. `preset` defaults to `"general-recommended"`, but you can switch it to `"essential"` for the narrowest correctness-focused pass, `"opinionated"` when you want stricter built-in script checks too, or `"incremental"` when you want to enable Vize rules one by one from your Oxlint config. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
 
 ### Using with Nuxt
 

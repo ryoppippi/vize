@@ -1,6 +1,6 @@
 ---
 source: crates/vize_patina/src/preset.rs
-assertion_line: 87
+assertion_line: 97
 expression: "serde_json::to_string_pretty(&snapshot).unwrap()"
 ---
 {
@@ -114,6 +114,7 @@ expression: "serde_json::to_string_pretty(&snapshot).unwrap()"
     "type/require-typed-props",
     "type/require-typed-emits"
   ],
+  "incremental": [],
   "nuxt": [
     "vue/require-v-for-key",
     "vue/valid-v-for",

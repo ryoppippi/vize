@@ -39,9 +39,9 @@ export interface PatinaBinding {
     options?: {
       filename?: string;
       locale?: string;
-      help_level?: HelpLevel;
+      helpLevel?: HelpLevel;
       preset?: PatinaPreset;
-      enabled_rules?: string[];
+      enabledRules?: string[];
     },
   ): PatinaLintResult;
   getPatinaRules(): PatinaRuleMeta[];
@@ -49,11 +49,11 @@ export interface PatinaBinding {
 
 export type HelpLevel = "none" | "short" | "full";
 export type PatinaPreset =
-  | "GeneralRecommended"
-  | "Essential"
-  | "Incremental"
-  | "Opinionated"
-  | "Nuxt";
+  | "general-recommended"
+  | "essential"
+  | "incremental"
+  | "opinionated"
+  | "nuxt";
 
 export interface PatinaSettings {
   locale?: string;
