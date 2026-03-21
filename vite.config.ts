@@ -17,6 +17,7 @@ const checkedPackages = [
   "./examples/oxlint-vize",
   "./playground",
 ];
+const ciCheckedPackages = checkedPackages.filter((pkg) => pkg !== "./examples/oxlint-vize");
 
 const packedPackages = [
   "./npm/vize",
@@ -95,6 +96,8 @@ const noCacheTask = (command: string) => ({
 
 const runInPackages = (taskName: string, packages: string[]) =>
   ["vp", "run", ...packages.map((pkg) => `--filter '${pkg}'`), taskName].join(" ");
+const runInPackagesSequential = (taskName: string, packages: string[]) =>
+  packages.map((pkg) => `vp run --filter '${pkg}' ${taskName}`).join(" && ");
 
 const runTask = (taskName: string) => `vp run --workspace-root ${taskName}`;
 const runTasks = (...taskNames: string[]) => taskNames.map(runTask).join(" && ");
@@ -202,6 +205,11 @@ const benchmarkTasks = {
 
 const checkTasks = {
   check: task(runInPackages("check", checkedPackages), { input: cacheInputs.jsChecks }),
+  // GitHub's ubuntu runners can exhaust their process quota when every package check
+  // spawns lint/typecheck subprocesses at once, so CI runs the same checks serially.
+  "check:ci": task(runInPackagesSequential("check", ciCheckedPackages), {
+    input: cacheInputs.jsChecks,
+  }),
   "check:fix": noCacheTask(runInPackages("check:fix", checkedPackages)),
   "check:rust": task("cargo check --workspace", { input: cacheInputs.rust }),
   clippy: task("cargo clippy --workspace -- -D warnings", { input: cacheInputs.rust }),
