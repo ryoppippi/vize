@@ -164,13 +164,14 @@ pnpm add -D oxlint oxlint-plugin-vize@alpha
   "settings": {
     "vize": {
       "locale": "ja",
+      "preset": "happy-path",
       "helpLevel": "short"
     }
   }
 }
 ```
 
-This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
+This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. `preset` defaults to `"happy-path"`, but you can switch it to `"essential"` for the narrowest correctness-focused pass or `"opinionated"` when you want stricter built-in script checks too. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
 
 ### Using with Nuxt
 

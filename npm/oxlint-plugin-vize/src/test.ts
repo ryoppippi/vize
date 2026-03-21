@@ -13,9 +13,16 @@ const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-vize-
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
 const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
 const shortHelpConfigPath = path.join(fixtureDir, ".oxlintrc.short-help.json");
+const happyPathStyleConfigPath = path.join(fixtureDir, ".oxlintrc.happy-path-style.json");
+const essentialStyleConfigPath = path.join(fixtureDir, ".oxlintrc.essential-style.json");
+const happyPathScriptConfigPath = path.join(fixtureDir, ".oxlintrc.happy-path-script.json");
+const opinionatedScriptConfigPath = path.join(fixtureDir, ".oxlintrc.opinionated-script.json");
 const vuePath = path.join(fixtureDir, "App.vue");
+const scopedStyleVuePath = path.join(fixtureDir, "ScopedStyle.vue");
+const optionsApiVuePath = path.join(fixtureDir, "OptionsApi.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
+const workspaceRootPattern = new RegExp(escapeRegExp(workspaceRoot), "gu");
 
 function findOxlintBin() {
   const pnpmStoreDir = path.join(workspaceRoot, "node_modules", ".pnpm");
@@ -98,6 +105,94 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
+  happyPathStyleConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "happy-path",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/vue/require-scoped-style": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
+  essentialStyleConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "essential",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/vue/require-scoped-style": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
+  happyPathScriptConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "happy-path",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/script/no-options-api": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
+  opinionatedScriptConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "opinionated",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/script/no-options-api": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
   vuePath,
   `<script setup lang="ts">
 const items = [1]
@@ -106,6 +201,37 @@ const items = [1]
   <ul>
     <li v-for="item in items">{{ item }}</li>
   </ul>
+</template>
+`,
+);
+
+fs.writeFileSync(
+  scopedStyleVuePath,
+  `<script setup lang="ts">
+const count = 1
+</script>
+<template>
+  <div class="foo">{{ count }}</div>
+</template>
+<style>
+.foo { color: red; }
+</style>
+`,
+);
+
+fs.writeFileSync(
+  optionsApiVuePath,
+  `<script lang="ts">
+export default {
+  data() {
+    return {
+      count: 1,
+    };
+  },
+};
+</script>
+<template>
+  <div>{{ count }}</div>
 </template>
 `,
 );
@@ -139,14 +265,20 @@ function runOxlint(args: readonly string[]) {
 function normalizeOutput(output: string): string {
   return output
     .replace(ansiEscapePattern, "")
+    .replace(workspaceRootPattern, "<workspaceRoot>")
     .replace(/^WARNING: JS plugins are experimental and not subject to semver\.\n/gmu, "")
     .replace(
       /^Breaking changes are possible while JS plugins support is under development\.\n/gmu,
       "",
     )
+    .replace(/^\s*\[tsgo\] Using: .*$/gmu, "")
     .replace(/"start_time": [0-9.]+/gu, '"start_time": 0')
     .replace(/^Finished in .*$/gmu, "")
     .trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`);
 }
 
 function readSnapshot(name: string): string {
@@ -203,6 +335,86 @@ assert.equal(shortHelpRun.output, readSnapshot("stylish-short-help-output.txt"))
 const jsonRun = runOxlint(["-c", ".oxlintrc.no-help.json", "-f", "json", "App.vue"]);
 assert.notEqual(jsonRun.exitCode, 0, "json formatter should still report Patina failures");
 assert.equal(jsonRun.output, readSnapshot("json-no-help-output.txt"));
+
+const happyPathStyleRun = runOxlint([
+  "-c",
+  ".oxlintrc.happy-path-style.json",
+  "-f",
+  "stylish",
+  "ScopedStyle.vue",
+]);
+assert.notEqual(
+  happyPathStyleRun.exitCode,
+  0,
+  "happy-path should report require-scoped-style when the rule is enabled",
+);
+assert.match(
+  happyPathStyleRun.output,
+  /vize\(vue\/require-scoped-style\)/,
+  "happy-path should keep reporting rules that belong to the default preset",
+);
+assert.equal(
+  happyPathStyleRun.output,
+  readSnapshot("stylish-happy-path-require-scoped-style-output.txt"),
+);
+
+const essentialStyleRun = runOxlint([
+  "-c",
+  ".oxlintrc.essential-style.json",
+  "-f",
+  "stylish",
+  "ScopedStyle.vue",
+]);
+assert.equal(
+  essentialStyleRun.exitCode,
+  0,
+  "essential preset should skip require-scoped-style even when the Oxlint rule is configured",
+);
+assert.doesNotMatch(
+  essentialStyleRun.output,
+  /vize\(vue\/require-scoped-style\)/,
+  "essential preset should not surface happy-path-only rules",
+);
+
+const happyPathScriptRun = runOxlint([
+  "-c",
+  ".oxlintrc.happy-path-script.json",
+  "-f",
+  "stylish",
+  "OptionsApi.vue",
+]);
+assert.equal(
+  happyPathScriptRun.exitCode,
+  0,
+  "happy-path should not enable opinionated script rules by default",
+);
+assert.doesNotMatch(
+  happyPathScriptRun.output,
+  /vize\(script\/no-options-api\)/,
+  "happy-path should keep script/no-options-api opt-in",
+);
+
+const opinionatedScriptRun = runOxlint([
+  "-c",
+  ".oxlintrc.opinionated-script.json",
+  "-f",
+  "stylish",
+  "OptionsApi.vue",
+]);
+assert.notEqual(
+  opinionatedScriptRun.exitCode,
+  0,
+  "opinionated preset should enable script/no-options-api",
+);
+assert.match(
+  opinionatedScriptRun.output,
+  /vize\(script\/no-options-api\)/,
+  "opinionated preset should surface opinionated script diagnostics",
+);
+assert.equal(
+  opinionatedScriptRun.output,
+  readSnapshot("stylish-opinionated-no-options-api-output.txt"),
+);
 
 const sampleBlocks = extractSfcBlocks(
   `<script setup lang="ts">\nconst count = 1\n</script>\n<template>\n  <div>{{ count }}</div>\n</template>\n<style scoped>\n.foo {}\n</style>\n<i18n>\n{}\n</i18n>\n`,

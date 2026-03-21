@@ -30,6 +30,7 @@ export interface PatinaRuleMeta {
   category: string;
   fixable: boolean;
   defaultSeverity: "error" | "warning";
+  presets: PatinaPreset[];
 }
 
 export interface PatinaBinding {
@@ -39,6 +40,7 @@ export interface PatinaBinding {
       filename?: string;
       locale?: string;
       help_level?: HelpLevel;
+      preset?: PatinaPreset;
       enabled_rules?: string[];
     },
   ): PatinaLintResult;
@@ -46,10 +48,12 @@ export interface PatinaBinding {
 }
 
 export type HelpLevel = "none" | "short" | "full";
+export type PatinaPreset = "happy-path" | "essential" | "opinionated" | "nuxt";
 
 export interface PatinaSettings {
   locale?: string;
   helpLevel?: HelpLevel;
+  preset?: PatinaPreset;
 }
 
 export interface LineColumn {

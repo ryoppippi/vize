@@ -60,6 +60,7 @@ Patina settings are passed through `settings.vize`:
   "settings": {
     "vize": {
       "locale": "ja",
+      "preset": "essential",
       "helpLevel": "short"
     }
   }
@@ -67,11 +68,17 @@ Patina settings are passed through `settings.vize`:
 ```
 
 - `locale` controls the diagnostic language.
+- `preset` accepts `"happy-path"`, `"essential"`, `"opinionated"`, or `"nuxt"`.
+- `preset` defaults to `"happy-path"`.
+- Rules outside the selected preset stay quiet even if they are still listed in `rules`.
+- `opinionated` is the preset that enables built-in script rules such as `vize/script/no-options-api`.
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
 - `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
 
 For compatibility with older configs, `settings.patina` is still accepted, but `settings.vize` is the canonical key.
+
+If you want the plugin to behave like a minimal correctness pass, use `"preset": "essential"`. If you want the stricter Vapor-oriented script checks too, switch to `"preset": "opinionated"`.
 
 ## How It Works
 

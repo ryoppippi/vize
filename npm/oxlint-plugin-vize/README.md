@@ -56,15 +56,39 @@ You can pass Patina settings through `settings.vize`:
   "settings": {
     "vize": {
       "locale": "ja",
+      "preset": "essential",
       "helpLevel": "short"
     }
   }
 }
 ```
 
+- `preset` accepts `"happy-path"`, `"essential"`, `"opinionated"`, or `"nuxt"`.
+- `preset` defaults to `"happy-path"`.
+- Rules outside the selected preset stay quiet even if they are still listed in `rules`.
+- `opinionated` is the preset that enables Vize's built-in script rules such as `vize/script/no-options-api`.
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
 - `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
+
+For example, this keeps Oxlint focused on correctness-only diagnostics:
+
+```json
+{
+  "settings": {
+    "vize": {
+      "preset": "essential",
+      "helpLevel": "short"
+    }
+  },
+  "rules": {
+    "vize/vue/require-v-for-key": "error",
+    "vize/vue/require-scoped-style": "error"
+  }
+}
+```
+
+In that config, `vize/vue/require-v-for-key` can report, while `vize/vue/require-scoped-style` stays silent because it belongs to the broader `happy-path` preset.
 
 For day-to-day terminal runs, the recommended command today is:
 

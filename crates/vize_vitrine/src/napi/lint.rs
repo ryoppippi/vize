@@ -23,6 +23,15 @@ use std::{
 };
 use vize_carton::append;
 
+struct PatinaRuleMetaNapi<'a> {
+    name: &'a str,
+    description: &'a str,
+    category: &'a str,
+    fixable: bool,
+    default_severity: &'a str,
+    presets: Vec<&'static str>,
+}
+
 /// Lint options for NAPI
 #[napi(object)]
 #[derive(Default)]
@@ -66,6 +75,8 @@ pub struct PatinaLintOptionsNapi {
     pub locale: Option<String>,
     /// Help display level: "full", "short", or "none"
     pub help_level: Option<String>,
+    /// Lint preset: "happy-path", "opinionated", "essential", or "nuxt"
+    pub preset: Option<String>,
     /// Optional list of Patina rule names to enable
     pub enabled_rules: Option<Vec<String>>,
 }
@@ -82,6 +93,98 @@ fn patina_help_level_from_option(help_level: Option<&str>) -> vize_patina::HelpL
         Some("short") => vize_patina::HelpLevel::Short,
         _ => vize_patina::HelpLevel::Full,
     }
+}
+
+fn patina_preset_from_option(preset: Option<&str>) -> vize_patina::LintPreset {
+    preset
+        .and_then(vize_patina::LintPreset::parse)
+        .unwrap_or_default()
+}
+
+#[inline]
+const fn rule_category_name(category: vize_patina::RuleCategory) -> &'static str {
+    match category {
+        vize_patina::RuleCategory::Essential => "Essential",
+        vize_patina::RuleCategory::StronglyRecommended => "StronglyRecommended",
+        vize_patina::RuleCategory::Recommended => "Recommended",
+        vize_patina::RuleCategory::Vapor => "Vapor",
+        vize_patina::RuleCategory::Musea => "Musea",
+        vize_patina::RuleCategory::Accessibility => "Accessibility",
+        vize_patina::RuleCategory::HtmlConformance => "HtmlConformance",
+        vize_patina::RuleCategory::TypeAware => "TypeAware",
+    }
+}
+
+#[inline]
+const fn severity_name(severity: vize_patina::Severity) -> &'static str {
+    match severity {
+        vize_patina::Severity::Error => "error",
+        vize_patina::Severity::Warning => "warning",
+    }
+}
+
+fn collect_patina_rule_metadata() -> Vec<PatinaRuleMetaNapi<'static>> {
+    use vize_carton::FxHashSet;
+    use vize_patina::{builtin_script_rules, LintPreset, Linter, RuleRegistry};
+
+    let linter = Linter::with_preset(LintPreset::Opinionated);
+    let happy_path_rules: FxHashSet<&'static str> =
+        RuleRegistry::with_preset(LintPreset::HappyPath)
+            .rules()
+            .iter()
+            .map(|rule| rule.meta().name)
+            .collect();
+    let essential_rules: FxHashSet<&'static str> = RuleRegistry::with_preset(LintPreset::Essential)
+        .rules()
+        .iter()
+        .map(|rule| rule.meta().name)
+        .collect();
+    let nuxt_rules: FxHashSet<&'static str> = RuleRegistry::with_preset(LintPreset::Nuxt)
+        .rules()
+        .iter()
+        .map(|rule| rule.meta().name)
+        .collect();
+
+    let mut rules: Vec<_> = linter
+        .rules()
+        .iter()
+        .map(|rule| {
+            let meta = rule.meta();
+            let mut presets = Vec::with_capacity(4);
+            if essential_rules.contains(meta.name) {
+                presets.push(LintPreset::Essential.as_str());
+            }
+            if happy_path_rules.contains(meta.name) {
+                presets.push(LintPreset::HappyPath.as_str());
+            }
+            if nuxt_rules.contains(meta.name) {
+                presets.push(LintPreset::Nuxt.as_str());
+            }
+            presets.push(LintPreset::Opinionated.as_str());
+
+            PatinaRuleMetaNapi {
+                name: meta.name,
+                description: meta.description,
+                category: rule_category_name(meta.category),
+                fixable: meta.fixable,
+                default_severity: severity_name(meta.default_severity),
+                presets,
+            }
+        })
+        .collect();
+
+    for script_rule in builtin_script_rules() {
+        rules.push(PatinaRuleMetaNapi {
+            name: script_rule.name,
+            description: script_rule.description,
+            category: script_rule.category,
+            fixable: script_rule.fixable,
+            default_severity: severity_name(script_rule.default_severity),
+            presets: script_rule.presets.to_vec(),
+        });
+    }
+
+    rules
 }
 
 fn create_position_object(env: Env, line: u32, column: u32, offset: u32) -> Result<Object> {
@@ -126,10 +229,11 @@ pub fn lint_patina_sfc(
     let filename = opts.filename.unwrap_or_else(|| "anonymous.vue".to_string());
     let locale = patina_locale_from_option(opts.locale.as_deref());
     let help_level = patina_help_level_from_option(opts.help_level.as_deref());
+    let preset = patina_preset_from_option(opts.preset.as_deref());
     let enabled_rules = opts
         .enabled_rules
         .map(|rules| rules.into_iter().map(Into::into).collect());
-    let linter = Linter::new()
+    let linter = Linter::with_preset(preset)
         .with_locale(locale)
         .with_help_level(help_level)
         .with_enabled_rules(enabled_rules);
@@ -195,25 +299,21 @@ pub fn lint_patina_sfc(
 /// Get Patina's currently registered rule metadata.
 #[napi(js_name = "getPatinaRules")]
 pub fn get_patina_rules(env: Env) -> Result<napi::bindgen_prelude::Array> {
-    use vize_patina::{Linter, Severity};
+    let rule_metadata = collect_patina_rule_metadata();
+    let mut rules = env.create_array(rule_metadata.len() as u32)?;
 
-    let linter = Linter::new();
-    let mut rules = env.create_array(linter.rules().len() as u32)?;
-
-    for (index, rule) in linter.rules().iter().enumerate() {
-        let meta = rule.meta();
+    for (index, rule) in rule_metadata.iter().enumerate() {
         let mut obj = env.create_object()?;
-        obj.set("name", meta.name)?;
-        obj.set("description", meta.description)?;
-        obj.set("category", format!("{:?}", meta.category))?;
-        obj.set("fixable", meta.fixable)?;
-        obj.set(
-            "defaultSeverity",
-            match meta.default_severity {
-                Severity::Error => "error",
-                Severity::Warning => "warning",
-            },
-        )?;
+        obj.set("name", rule.name)?;
+        obj.set("description", rule.description)?;
+        obj.set("category", rule.category)?;
+        obj.set("fixable", rule.fixable)?;
+        obj.set("defaultSeverity", rule.default_severity)?;
+        let mut presets = env.create_array(rule.presets.len() as u32)?;
+        for (preset_index, preset) in rule.presets.iter().enumerate() {
+            presets.set(preset_index as u32, *preset)?;
+        }
+        obj.set("presets", presets)?;
         rules.set(index as u32, obj)?;
     }
 
@@ -225,9 +325,7 @@ pub fn get_patina_rules(env: Env) -> Result<napi::bindgen_prelude::Array> {
 pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<LintResultNapi> {
     use ignore::Walk;
     use std::time::Instant;
-    use vize_patina::{
-        format_results, format_summary, HelpLevel, LintPreset, Linter, OutputFormat,
-    };
+    use vize_patina::{format_results, format_summary, HelpLevel, Linter, OutputFormat};
 
     let opts = options.unwrap_or_default();
     let start = Instant::now();
@@ -274,11 +372,7 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
         Some("short") => HelpLevel::Short,
         _ => HelpLevel::Full,
     };
-    let preset = opts
-        .preset
-        .as_deref()
-        .and_then(LintPreset::parse)
-        .unwrap_or_default();
+    let preset = patina_preset_from_option(opts.preset.as_deref());
     let linter = Linter::with_preset(preset).with_help_level(help_level);
     let error_count = AtomicUsize::new(0);
     let warning_count = AtomicUsize::new(0);
@@ -349,4 +443,35 @@ pub fn lint(patterns: Vec<String>, options: Option<LintOptionsNapi>) -> Result<L
         file_count: files.len() as u32,
         time_ms: elapsed.as_secs_f64() * 1000.0,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::collect_patina_rule_metadata;
+
+    #[test]
+    fn patina_rule_metadata_includes_happy_path_membership() {
+        let rules = collect_patina_rule_metadata();
+        let require_scoped_style = rules
+            .iter()
+            .find(|rule| rule.name == "vue/require-scoped-style")
+            .expect("vue/require-scoped-style should be exposed");
+
+        assert_eq!(
+            require_scoped_style.presets,
+            vec!["happy-path", "nuxt", "opinionated"]
+        );
+    }
+
+    #[test]
+    fn patina_rule_metadata_includes_opinionated_script_rules() {
+        let rules = collect_patina_rule_metadata();
+        let no_options_api = rules
+            .iter()
+            .find(|rule| rule.name == "script/no-options-api")
+            .expect("script/no-options-api should be exposed");
+
+        assert_eq!(no_options_api.presets, vec!["opinionated", "nuxt"]);
+        assert_eq!(no_options_api.default_severity, "error");
+    }
 }

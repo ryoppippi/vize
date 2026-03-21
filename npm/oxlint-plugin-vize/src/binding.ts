@@ -11,6 +11,7 @@ export function lintPatina(
     filename,
     locale: settings.locale,
     help_level: settings.helpLevel,
+    preset: settings.preset,
     enabled_rules: enabledRules ? [...enabledRules] : undefined,
   });
 }

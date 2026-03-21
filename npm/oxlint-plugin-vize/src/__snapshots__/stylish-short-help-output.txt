@@ -1,4 +1,4 @@
-/Users/ubugeeei/projects/personal/oss/ubugeeei/vize/__agent_only/oxlint-plugin-vize-test/App.vue
+<workspaceRoot>/__agent_only/oxlint-plugin-vize-test/App.vue
   2:1  error  Elements in iteration expect to have 'v-bind:key' directives. (at <template>:6:9)
     Details:
       Element: <li>
