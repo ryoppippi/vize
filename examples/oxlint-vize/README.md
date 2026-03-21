@@ -26,6 +26,12 @@ It mixes:
 - The `stylish` formatter so the default code frame does not dominate the output
 - `settings.vize.helpLevel: "none"` so the long Patina remediation block stays hidden by default
 
+If you want the currently recommended balance of terminal readability plus concise remediation hints:
+
+```bash
+vp run --filter './examples/oxlint-vize' lint:short-help
+```
+
 If you want to check `no-unused-vars` specifically:
 
 ```bash
@@ -46,6 +52,8 @@ If you want JSON output from the same command:
 vp run --filter './examples/oxlint-vize' lint:json
 ```
 
+Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), treat that JSON output as best-effort debugging output for now, not as a source of truth for original template/style locations.
+
 If you want the long Patina `Help:` block as well:
 
 ```bash
@@ -62,11 +70,13 @@ vp exec oxlint -c .oxlintrc.json -f stylish src
 
 - Oxlint's built-in `vue` plugin is enabled through `"plugins": ["vue"]`.
 - Oxlint's built-in `no-console` rule is enabled so the example shows native Oxlint output mixed with Patina output in one run.
-- The default example commands use `-f stylish` because Oxlint's default formatter prints a large code frame for every finding, while `stylish` keeps the Patina message body intact.
-- `settings.vize.helpLevel` controls remediation density. The example keeps it at `"none"` by default and exposes `lint:with-help` for the verbose view.
+- The default example commands use `-f stylish` because Oxlint's default formatter prints a large code frame for every finding, while `stylish` keeps the Patina message body intact and remains the most usable formatter today.
+- `settings.vize.helpLevel` controls remediation density. `lint` keeps it at `"none"`, `lint:short-help` is the recommended terminal compromise, and `lint:with-help` shows the full verbose help block.
+- `helpLevel: "full"` only changes how much remediation text Patina prints. It does not fix Oxlint's current original-SFC reporting limitation.
 - A dedicated `lint:unused-vars-probe` command is included because `no-unused-vars` currently does not emit on the example `.vue` SFC, even without the Patina plugin.
 - The Vize Oxlint plugin is loaded from `../../npm/oxlint-plugin-vize/dist/index.mjs`.
 - The plugin starts with a single-rule native Patina run and only upgrades to a shared full-file pass when multiple Patina rules are enabled for the same file.
 - Patina help text is normalized to plain text so terminal output stays readable even without Markdown rendering.
 - Because of the current Oxlint JS Plugin limitation, the example `.vue` files include `<script setup>`.
+- Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter anchors still come from the extracted script program. The human-readable summary carries the original SFC `line:column`, which is why `stylish` is the recommended workflow for now.
 - `src/HasPatinaErrors.vue` is the failing mixed-output sample, `src/Clean.vue` is the clean sample, and `src/UnusedVarProbe.vue` is the `no-unused-vars` probe.

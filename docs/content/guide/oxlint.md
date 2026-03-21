@@ -6,18 +6,16 @@ title: Oxlint Plugin
 
 `oxlint-plugin-vize` lets Oxlint execute Vize Patina diagnostics through Oxlint's JS plugin system. This is useful when you want Oxlint's Rust-native JavaScript and TypeScript rules together with Vize's Vue-specific diagnostics in a single run.
 
+> [!IMPORTANT]
+> As of March 21, 2026, `oxlint-plugin-vize` is not yet on npm. The first public release is planned as an alpha.
+> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint -f stylish` for human-readable terminal runs and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
+
 ## Installation
 
-If `oxlint` is already installed:
+Once the alpha release is published:
 
 ```bash
-pnpm add -D oxlint-plugin-vize
-```
-
-If you are setting up Oxlint from scratch:
-
-```bash
-pnpm add -D oxlint oxlint-plugin-vize
+pnpm add -D oxlint oxlint-plugin-vize@alpha
 ```
 
 `oxlint-plugin-vize` installs the matching Vize native binding for the current platform through optional dependencies, so no separate `@vizejs/native` install is required for consumers.
@@ -30,6 +28,11 @@ Enable Oxlint's built-in `vue` plugin and load the Vize bridge as a JS plugin:
 {
   "plugins": ["vue"],
   "jsPlugins": ["oxlint-plugin-vize"],
+  "settings": {
+    "vize": {
+      "helpLevel": "short"
+    }
+  },
   "rules": {
     "vize/vue/require-v-for-key": "error",
     "vize/vue/no-v-html": "warn",
@@ -39,6 +42,14 @@ Enable Oxlint's built-in `vue` plugin and load the Vize bridge as a JS plugin:
 ```
 
 This keeps Oxlint core rules like `no-console`, while adding Vize's Vue diagnostics under the `vize/vue/*` namespace.
+
+For day-to-day terminal usage, the recommended command today is:
+
+```bash
+pnpm exec oxlint -c .oxlintrc.json -f stylish src
+```
+
+`stylish` is currently the best compromise for mixed Oxlint + Vize output because Vize can inline the original SFC location into the message body even though Oxlint still anchors JS plugin diagnostics to the extracted script program.
 
 ## Settings
 
@@ -57,6 +68,7 @@ Patina settings are passed through `settings.vize`:
 
 - `locale` controls the diagnostic language.
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
+- `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
 
 For compatibility with older configs, `settings.patina` is still accepted, but `settings.vize` is the canonical key.
@@ -71,6 +83,13 @@ For compatibility with older configs, `settings.patina` is still accepted, but `
 
 - Oxlint JS plugins currently rely on the extracted Vue script program. Files without `<script>` or `<script setup>` do not invoke the plugin yet.
 - Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, Vize inlines the original SFC block and `line:column` into the summary, while the fallback formatter anchor still points at the script block.
+- Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter parity is not there yet. `stylish` is usable for humans, but `json` and other machine-readable outputs should be treated as debugging aids rather than a source of truth for original template/style positions.
+
+## Alpha Scope
+
+- The planned alpha release is for human-in-the-loop terminal linting first, especially `oxlint -f stylish`.
+- The alpha is not yet a promise of precise original-SFC spans across every Oxlint formatter.
+- Once Oxlint's JS plugin reporting can preserve original Vue positions reliably, Vize can improve formatter parity, CI parser friendliness, and deeper editor/reporting integrations without relying on summary fallbacks.
 
 ## Local Development in This Repository
 

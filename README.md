@@ -20,7 +20,6 @@
   <a href="https://crates.io/crates/vize"><img src="https://img.shields.io/crates/v/vize.svg" alt="crates.io" /></a>
   <a href="https://www.npmjs.com/package/vize"><img src="https://img.shields.io/npm/v/vize.svg?label=vize" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/@vizejs/vite-plugin"><img src="https://img.shields.io/npm/v/@vizejs/vite-plugin.svg?label=@vizejs/vite-plugin" alt="npm" /></a>
-  <a href="https://www.npmjs.com/package/oxlint-plugin-vize"><img src="https://img.shields.io/npm/v/oxlint-plugin-vize.svg?label=oxlint-plugin-vize" alt="npm" /></a>
   <a href="https://www.npmjs.com/package/@vizejs/wasm"><img src="https://img.shields.io/npm/v/@vizejs/wasm.svg?label=@vizejs/wasm" alt="npm" /></a>
   <a href="https://github.com/ubugeeei/vize/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
 </p>
@@ -63,14 +62,18 @@ See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setu
 
 ## Oxlint Integration
 
-```bash
-pnpm add -D oxlint-plugin-vize
-```
+`oxlint-plugin-vize` is being prepared for a first alpha npm release. As of March 21, 2026, it is not published yet.
 
-If you are setting up Oxlint from scratch:
+Until the upstream Oxlint JS plugin reporting issue ([oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465)) is resolved, the recommended workflow is terminal-first and formatter-light:
+
+- prefer `oxlint -f stylish` for mixed Oxlint + Vize output
+- treat machine-readable / full-fidelity original-SFC reporting as best-effort
+- use the local runnable example in `examples/oxlint-vize` if you want to try it from this repository today
+
+Once the alpha is published, install it with:
 
 ```bash
-pnpm add -D oxlint oxlint-plugin-vize
+pnpm add -D oxlint oxlint-plugin-vize@alpha
 ```
 
 `oxlint-plugin-vize` resolves the matching Vize native binding through platform-specific optional dependencies, so consumers do not need a separate `@vizejs/native` install.

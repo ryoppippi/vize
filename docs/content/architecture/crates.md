@@ -202,4 +202,4 @@ Both targets expose the same compilation pipeline, ensuring consistent output.
 | `@vizejs/vite-plugin-musea` | —                     | Musea Vite plugin                                          |
 | `@vizejs/musea-mcp-server`  | —                     | MCP server for AI assistant integration                    |
 
-`oxlint-plugin-vize` publishes platform-specific optional dependencies on `@vizejs/native-*`, which makes `pnpm add -D oxlint-plugin-vize` enough for most consumers.
+`oxlint-plugin-vize` is being prepared for an alpha npm release. When published, it will pull platform-specific optional dependencies on `@vizejs/native-*`, so `pnpm add -D oxlint oxlint-plugin-vize@alpha` will be enough for most consumers.

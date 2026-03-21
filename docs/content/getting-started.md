@@ -63,8 +63,9 @@ pnpm add @vizejs/wasm
 # Vite plugin — drop-in replacement for @vitejs/plugin-vue
 pnpm add @vizejs/vite-plugin
 
-# Oxlint bridge — Vize diagnostics inside Oxlint
-pnpm add -D oxlint oxlint-plugin-vize
+# Oxlint bridge — planned alpha release
+# Once the alpha is published:
+pnpm add -D oxlint oxlint-plugin-vize@alpha
 
 # Experimental unplugin integration — rollup / webpack / esbuild
 pnpm add @vizejs/unplugin
@@ -87,6 +88,9 @@ pnpm add @vizejs/musea-mcp-server
 > **Bundler status:** `@vizejs/vite-plugin` is the recommended integration today.
 > `@vizejs/unplugin` and `@vizejs/rspack-plugin` are available for non-Vite build systems, but they are still unstable.
 > Rspack intentionally uses the dedicated `@vizejs/rspack-plugin` path because its loader and CSS integration are Rspack-specific.
+>
+> **Oxlint plugin status:** `oxlint-plugin-vize` is targeting an alpha npm release first.
+> As of March 21, 2026 it is not yet published, and until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) is fixed, `oxlint -f stylish` is the recommended human-readable workflow.
 
 ## Quick Start
 
@@ -145,7 +149,8 @@ See [Experimental Bundler Integrations](./guide/unplugin.md) for setup details a
 Run Vize's Vue diagnostics inside Oxlint's JS plugin system:
 
 ```bash
-pnpm add -D oxlint oxlint-plugin-vize
+# Once the alpha is published:
+pnpm add -D oxlint oxlint-plugin-vize@alpha
 ```
 
 ```json
@@ -159,13 +164,13 @@ pnpm add -D oxlint oxlint-plugin-vize
   "settings": {
     "vize": {
       "locale": "ja",
-      "showHelp": false
+      "helpLevel": "short"
     }
   }
 }
 ```
 
-This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
+This keeps Oxlint's built-in JavaScript and TypeScript rules, while adding Vize's Vue-specific diagnostics through the same run. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
 
 ### Using with Nuxt
 

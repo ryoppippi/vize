@@ -4,6 +4,10 @@ Oxlint JS plugin bridge for Vize Patina.
 
 This package lets Oxlint execute Patina through Vize's native binding while still using Oxlint's JS plugin model and rule configuration.
 
+> [!IMPORTANT]
+> As of March 21, 2026, `oxlint-plugin-vize` is not yet on npm. The first public release is planned as an alpha.
+> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint -f stylish` for terminal workflows and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
+
 ## Performance
 
 The bridge is optimized around Oxlint's per-rule execution model:
@@ -22,16 +26,10 @@ vp run --filter './npm/vize-native' build
 vp run --filter './npm/oxlint-plugin-vize' build
 ```
 
-If `oxlint` is already installed in your project, this is enough:
+Once the alpha release is published, install it with:
 
 ```bash
-pnpm add -D oxlint-plugin-vize
-```
-
-If you are setting up Oxlint from scratch, install both packages:
-
-```bash
-pnpm add -D oxlint oxlint-plugin-vize
+pnpm add -D oxlint oxlint-plugin-vize@alpha
 ```
 
 `oxlint-plugin-vize` pulls the appropriate Vize native binding for the current platform through optional dependencies, so no separate `@vizejs/native` install is required for published builds.
@@ -65,9 +63,25 @@ You can pass Patina settings through `settings.vize`:
 ```
 
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
+- `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
+
+For day-to-day terminal runs, the recommended command today is:
+
+```bash
+pnpm exec oxlint -c .oxlintrc.json -f stylish src
+```
+
+`stylish` is currently the most usable compromise for mixed Oxlint + Vize output because the Patina summary can inline the original SFC location even though Oxlint still anchors JS plugin diagnostics to the extracted script program.
 
 ## Current limitations
 
 - Oxlint JS plugins currently rely on the extracted Vue script program. Files without `<script>` or `<script setup>` do not invoke the plugin yet.
 - Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, Vize now inlines the original SFC block and `line:column` into the summary, while the formatter anchor still points at the script block.
+- Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter parity is not there yet. `stylish` is recommended for human-readable terminal output, while `json` and other machine-readable outputs are best treated as debugging aids for now.
+
+## Alpha expectations
+
+- The planned alpha release is meant for terminal-first workflows.
+- The alpha is not yet a promise of precise original-SFC spans across every Oxlint formatter.
+- Once Oxlint can preserve original Vue positions for JS plugins reliably, Vize can improve formatter parity and machine-readable reporting without relying on summary fallbacks.
