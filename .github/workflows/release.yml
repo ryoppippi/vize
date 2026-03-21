@@ -866,6 +866,7 @@ jobs:
         release-npm-fresco,
         release-npm-wasm,
         release-npm-vite-plugin,
+        release-npm-oxlint-plugin,
         release-npm-unplugin,
         release-npm-rspack-plugin,
         release-npm-musea-mcp-server,
