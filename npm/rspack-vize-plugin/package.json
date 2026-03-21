@@ -1,6 +1,6 @@
 {
   "name": "@vizejs/rspack-plugin",
-  "version": "0.33.0",
+  "version": "0.37.0",
   "description": "High-performance Rspack plugin for Vue SFC compilation powered by Vize",
   "keywords": [
     "compiler",
@@ -39,6 +39,11 @@
       "types": "./dist/loader/style-loader.d.mts",
       "import": "./dist/loader/style-loader.mjs",
       "default": "./dist/loader/style-loader.mjs"
+    },
+    "./scope-loader": {
+      "types": "./dist/loader/scope-loader.d.mts",
+      "import": "./dist/loader/scope-loader.mjs",
+      "default": "./dist/loader/scope-loader.mjs"
     }
   },
   "publishConfig": {
