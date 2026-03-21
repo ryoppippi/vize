@@ -28,6 +28,10 @@
 > This project is under active development and is not yet ready for production use.
 > APIs and features may change without notice.
 
+> [!IMPORTANT]
+> For day-to-day editor support, keep using the official Vue language tools (`vuejs/language-tools`) for now.
+> Treat `vize lsp` and the VS Code extension as experimental until the LSP and type-checking behavior stabilizes.
+
 > [!NOTE]
 > `@vizejs/vite-plugin` is the recommended bundler integration today.
 > `@vizejs/unplugin` (rollup / webpack / esbuild) and `@vizejs/rspack-plugin` are available, but non-Vite integrations are still unstable and should be tested carefully before adoption.
@@ -66,7 +70,7 @@ See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setu
 
 Until the upstream Oxlint JS plugin reporting issue ([oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465)) is resolved, the recommended workflow is terminal-first and formatter-light:
 
-- prefer `oxlint -f stylish` for mixed Oxlint + Vize output
+- prefer `oxlint-vize -f stylish` for mixed Oxlint + Vize output
 - treat machine-readable / full-fidelity original-SFC reporting as best-effort
 - use the local runnable example in `examples/oxlint-vize` if you want to try it from this repository today
 

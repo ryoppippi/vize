@@ -6,6 +6,9 @@
     "access": "public"
   },
   "type": "module",
+  "bin": {
+    "oxlint-vize": "bin/oxlint-vize"
+  },
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
   "exports": {
@@ -15,6 +18,7 @@
     }
   },
   "files": [
+    "bin",
     "dist"
   ],
   "scripts": {

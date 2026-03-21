@@ -1,6 +1,7 @@
 # Oxlint + Vize Example
 
 This is the smallest runnable example of Vize Patina executed through `oxlint-plugin-vize`.
+The local scripts use the temporary `oxlint-vize` wrapper workflow so scriptless `.vue` files can still be linted during the alpha period.
 
 ## Prerequisites
 
@@ -60,10 +61,10 @@ If you want the long Patina `Help:` block as well:
 vp run --filter './examples/oxlint-vize' lint:with-help
 ```
 
-If you want the raw direct CLI path, that also works once the plugin has been built:
+If you want the raw direct CLI path, use the wrapper entry once the plugin has been built:
 
 ```bash
-vp exec oxlint -c .oxlintrc.json -f stylish src
+vp exec node ../../npm/oxlint-plugin-vize/dist/cli.mjs -c .oxlintrc.json -f stylish src
 ```
 
 ## Notes
@@ -71,12 +72,13 @@ vp exec oxlint -c .oxlintrc.json -f stylish src
 - Oxlint's built-in `vue` plugin is enabled through `"plugins": ["vue"]`.
 - Oxlint's built-in `no-console` rule is enabled so the example shows native Oxlint output mixed with Patina output in one run.
 - The default example commands use `-f stylish` because Oxlint's default formatter prints a large code frame for every finding, while `stylish` keeps the Patina message body intact and remains the most usable formatter today.
+- The wrapper appends a temporary `<script setup>` block only for scriptless `.vue` files, then rewrites the reported path back to the original file. This is an alpha-period workaround and is intended to be removed once upstream JS plugin coverage improves.
 - `settings.vize.helpLevel` controls remediation density. `lint` keeps it at `"none"`, `lint:short-help` is the recommended terminal compromise, and `lint:with-help` shows the full verbose help block.
 - `helpLevel: "full"` only changes how much remediation text Patina prints. It does not fix Oxlint's current original-SFC reporting limitation.
 - A dedicated `lint:unused-vars-probe` command is included because `no-unused-vars` currently does not emit on the example `.vue` SFC, even without the Patina plugin.
 - The Vize Oxlint plugin is loaded from `../../npm/oxlint-plugin-vize/dist/index.mjs`.
 - The plugin starts with a single-rule native Patina run and only upgrades to a shared full-file pass when multiple Patina rules are enabled for the same file.
 - Patina help text is normalized to plain text so terminal output stays readable even without Markdown rendering.
-- Because of the current Oxlint JS Plugin limitation, the example `.vue` files include `<script setup>`.
+- The wrapper removes the need for `<script setup>` in pure template/style files, but the workaround is temporary and should disappear once upstream support is fixed.
 - Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter anchors still come from the extracted script program. The human-readable summary carries the original SFC `line:column`, which is why `stylish` is the recommended workflow for now.
 - `src/HasPatinaErrors.vue` is the failing mixed-output sample, `src/Clean.vue` is the clean sample, and `src/UnusedVarProbe.vue` is the `no-unused-vars` probe.

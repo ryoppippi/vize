@@ -8,7 +8,7 @@ title: Oxlint Plugin
 
 > [!IMPORTANT]
 > As of March 21, 2026, `oxlint-plugin-vize` is not yet on npm. The first public release is planned as an alpha.
-> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint -f stylish` for human-readable terminal runs and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
+> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint-vize -f stylish` for human-readable terminal runs and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
 
 ## Installation
 
@@ -47,9 +47,10 @@ This keeps Oxlint's existing rules running as-is, including core checks like `eq
 For day-to-day terminal usage, the recommended command today is:
 
 ```bash
-pnpm exec oxlint -c .oxlintrc.json -f stylish src
+pnpm exec oxlint-vize -c .oxlintrc.json -f stylish src
 ```
 
+`oxlint-vize` is a thin wrapper around `oxlint`. During the alpha period, it appends a temporary `<script setup>` block only for scriptless `.vue` files so Oxlint's JS plugin pipeline still invokes Vize, then rewrites the reported path back to the original file. This workaround is intended to be removed once upstream coverage improves.
 `stylish` is currently the best compromise for mixed Oxlint + Vize output because Vize can inline the original SFC location into the message body even though Oxlint still anchors JS plugin diagnostics to the extracted script program.
 
 ## Settings
@@ -93,13 +94,13 @@ If you want to roll Vize out one rule at a time, use `"preset": "incremental"`. 
 
 ## Current Limitations
 
-- Oxlint JS plugins currently rely on the extracted Vue script program. Files without `<script>` or `<script setup>` do not invoke the plugin yet.
+- Raw `oxlint` still misses files without `<script>` or `<script setup>`. The temporary `oxlint-vize` wrapper works around this by generating a transient script block for scriptless `.vue` files before invoking `oxlint`.
 - Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, Vize inlines the original SFC block and `line:column` into the summary, while the fallback formatter anchor still points at the script block.
 - Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter parity is not there yet. `stylish` is usable for humans, but `json` and other machine-readable outputs should be treated as debugging aids rather than a source of truth for original template/style positions.
 
 ## Alpha Scope
 
-- The planned alpha release is for human-in-the-loop terminal linting first, especially `oxlint -f stylish`.
+- The planned alpha release is for human-in-the-loop terminal linting first, especially `oxlint-vize -f stylish`.
 - The alpha is not yet a promise of precise original-SFC spans across every Oxlint formatter.
 - Once Oxlint's JS plugin reporting can preserve original Vue positions reliably, Vize can improve formatter parity, CI parser friendliness, and deeper editor/reporting integrations without relying on summary fallbacks.
 

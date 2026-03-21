@@ -6,7 +6,7 @@ This package lets Oxlint execute Patina through Vize's native binding while stil
 
 > [!IMPORTANT]
 > As of March 21, 2026, `oxlint-plugin-vize` is not yet on npm. The first public release is planned as an alpha.
-> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint -f stylish` for terminal workflows and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
+> Until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) lands, prefer `oxlint-vize -f stylish` for terminal workflows and treat machine-readable / full-fidelity original-SFC reporting as best-effort.
 
 ## Performance
 
@@ -101,14 +101,15 @@ If you want to adopt Vize one rule at a time, use `"preset": "incremental"`. In 
 For day-to-day terminal runs, the recommended command today is:
 
 ```bash
-pnpm exec oxlint -c .oxlintrc.json -f stylish src
+pnpm exec oxlint-vize -c .oxlintrc.json -f stylish src
 ```
 
+`oxlint-vize` is a thin wrapper around `oxlint`. During the alpha period, it appends a temporary `<script setup>` block only for scriptless `.vue` files so Oxlint's JS plugin pipeline still invokes Vize, then rewrites reported paths back to the original files. This workaround is intended to be removed once upstream JS plugin coverage improves.
 `stylish` is currently the most usable compromise for mixed Oxlint + Vize output because the Patina summary can inline the original SFC location even though Oxlint still anchors JS plugin diagnostics to the extracted script program.
 
 ## Current limitations
 
-- Oxlint JS plugins currently rely on the extracted Vue script program. Files without `<script>` or `<script setup>` do not invoke the plugin yet.
+- Raw `oxlint` still misses files without `<script>` or `<script setup>`. The temporary `oxlint-vize` wrapper works around this by generating a transient script block for scriptless `.vue` files before invoking `oxlint`.
 - Oxlint JS plugins only accept ranges inside the extracted Vue script program. For template diagnostics, Vize now inlines the original SFC block and `line:column` into the summary, while the formatter anchor still points at the script block.
 - Because of [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465), formatter parity is not there yet. `stylish` is recommended for human-readable terminal output, while `json` and other machine-readable outputs are best treated as debugging aids for now.
 

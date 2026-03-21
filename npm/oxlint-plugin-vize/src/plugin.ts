@@ -6,6 +6,7 @@ import {
   getDiagnosticsForRule,
   getScriptMap,
   getSfcBlocks,
+  markRuleAsReported,
   type FileState,
 } from "./file-state.js";
 import { formatPatinaMessage } from "./format.js";
@@ -25,7 +26,9 @@ function createOxlintDiagnostic(
   helpLevel: HelpLevel,
 ): Diagnostic {
   const scriptMap = getScriptMap(state);
-  const loc = mapToScriptLoc(diagnostic, scriptMap);
+  const loc = state.usesOriginalLocations
+    ? createOriginalSfcLoc(diagnostic)
+    : mapToScriptLoc(diagnostic, scriptMap);
   const block = loc === null ? getDiagnosticBlock(diagnostic, getSfcBlocks(state)) : null;
 
   return {
@@ -38,6 +41,19 @@ function createOxlintDiagnostic(
       blockLabel: formatBlockLabel(block),
       helpLevel,
     }),
+  };
+}
+
+function createOriginalSfcLoc(diagnostic: PatinaDiagnostic): Diagnostic["loc"] {
+  return {
+    start: {
+      line: diagnostic.location.start.line,
+      column: Math.max(0, diagnostic.location.start.column - 1),
+    },
+    end: {
+      line: diagnostic.location.end.line,
+      column: Math.max(0, diagnostic.location.end.column - 1),
+    },
   };
 }
 
@@ -66,6 +82,9 @@ function createPatinaRule(ruleMeta: PatinaRuleMeta) {
           const state = getFileState(context);
           const diagnostics = getDiagnosticsForRule(context, state, ruleMeta.name);
           if (diagnostics.length === 0) {
+            return;
+          }
+          if (!markRuleAsReported(state, ruleMeta.name)) {
             return;
           }
 

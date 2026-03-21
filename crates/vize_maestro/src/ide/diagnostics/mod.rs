@@ -115,10 +115,14 @@ impl DiagnosticService {
         tracing::info!("collect: patina lint diagnostics: {}", lint_diags.len());
         diagnostics.extend(lint_diags);
 
-        // Collect type checker diagnostics (vize_canon)
-        let type_diags = super::TypeService::collect_diagnostics(state, uri);
-        tracing::info!("collect: type checker diagnostics: {}", type_diags.len());
-        diagnostics.extend(type_diags);
+        if state.is_lsp_typecheck_enabled() {
+            // Collect type checker diagnostics (vize_canon)
+            let type_diags = super::TypeService::collect_diagnostics(state, uri);
+            tracing::info!("collect: type checker diagnostics: {}", type_diags.len());
+            diagnostics.extend(type_diags);
+        } else {
+            tracing::info!("collect: type checker diagnostics skipped (disabled by config)");
+        }
 
         // Also lint inline <art> blocks in regular .vue files
         let inline_art_diags = Self::collect_inline_art_diagnostics(uri, &content);
@@ -140,17 +144,21 @@ impl DiagnosticService {
         let mut diagnostics = Self::collect(state, uri);
         tracing::info!("sync diagnostics count: {}", diagnostics.len());
 
-        // Try to get tsgo diagnostics (with timeout, skip on failure)
-        // Use 10s timeout - polling for diagnostics internally uses 5s
-        let tsgo_future = Self::collect_tsgo_diagnostics(state, uri);
-        match tokio::time::timeout(std::time::Duration::from_secs(10), tsgo_future).await {
-            Ok(tsgo_diags) => {
-                tracing::info!("tsgo diagnostics count: {}", tsgo_diags.len());
-                diagnostics.extend(tsgo_diags);
+        if state.is_lsp_typecheck_enabled() {
+            // Try to get tsgo diagnostics (with timeout, skip on failure)
+            // Use 10s timeout - polling for diagnostics internally uses 5s
+            let tsgo_future = Self::collect_tsgo_diagnostics(state, uri);
+            match tokio::time::timeout(std::time::Duration::from_secs(10), tsgo_future).await {
+                Ok(tsgo_diags) => {
+                    tracing::info!("tsgo diagnostics count: {}", tsgo_diags.len());
+                    diagnostics.extend(tsgo_diags);
+                }
+                Err(_) => {
+                    tracing::warn!("tsgo diagnostics timed out for {}", uri);
+                }
             }
-            Err(_) => {
-                tracing::warn!("tsgo diagnostics timed out for {}", uri);
-            }
+        } else {
+            tracing::info!("collect_async: tsgo diagnostics skipped (disabled by config)");
         }
 
         diagnostics

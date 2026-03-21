@@ -9,6 +9,7 @@ import { extractSfcBlocks, formatBlockLabel, getDiagnosticBlock } from "./sfc-bl
 const packageDir = path.dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = path.resolve(packageDir, "../../..");
 const pluginEntry = path.join(workspaceRoot, "npm/oxlint-plugin-vize/dist/index.mjs");
+const cliEntry = path.join(workspaceRoot, "npm/oxlint-plugin-vize/dist/cli.mjs");
 const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-vize-test");
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
 const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
@@ -25,11 +26,14 @@ const generalRecommendedScriptConfigPath = path.join(
 const incrementalComboConfigPath = path.join(fixtureDir, ".oxlintrc.incremental-combo.json");
 const opinionatedScriptConfigPath = path.join(fixtureDir, ".oxlintrc.opinionated-script.json");
 const coreRulesConfigPath = path.join(fixtureDir, ".oxlintrc.core-rules.json");
+const scriptlessConfigPath = path.join(fixtureDir, ".oxlintrc.scriptless.json");
 const vuePath = path.join(fixtureDir, "App.vue");
 const scopedStyleVuePath = path.join(fixtureDir, "ScopedStyle.vue");
 const incrementalComboVuePath = path.join(fixtureDir, "IncrementalCombo.vue");
 const optionsApiVuePath = path.join(fixtureDir, "OptionsApi.vue");
+const dualScriptVuePath = path.join(fixtureDir, "DualScript.vue");
 const coreRulesVuePath = path.join(fixtureDir, "CoreRules.vue");
+const scriptlessVuePath = path.join(fixtureDir, "Scriptless.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
 const workspaceRootPattern = new RegExp(escapeRegExp(workspaceRoot), "gu");
@@ -250,6 +254,28 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
+  scriptlessConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "incremental",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/vue/require-v-for-key": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
   vuePath,
   `<script setup lang="ts">
 const items = [1]
@@ -314,6 +340,26 @@ export default {
 );
 
 fs.writeFileSync(
+  dualScriptVuePath,
+  `<script lang="ts">
+export default {
+  data() {
+    return {
+      count: 1,
+    };
+  },
+};
+</script>
+<script setup lang="ts">
+const ready = true
+</script>
+<template>
+  <div>{{ count }} {{ ready }}</div>
+</template>
+`,
+);
+
+fs.writeFileSync(
   coreRulesVuePath,
   `<script setup lang="ts">
 const count = 1
@@ -330,12 +376,48 @@ if (count == 1) {
 `,
 );
 
+fs.writeFileSync(
+  scriptlessVuePath,
+  `<template>
+  <ul>
+    <li v-for="item in [1, 2]">{{ item }}</li>
+  </ul>
+</template>
+`,
+);
+
 function runOxlint(args: readonly string[]) {
   let output = "";
   let exitCode = 0;
 
   try {
     execFileSync(oxlintBin, args, {
+      cwd: fixtureDir,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+  } catch (error) {
+    const execError = error as {
+      status?: number;
+      stdout?: string | Buffer;
+      stderr?: string | Buffer;
+    };
+    exitCode = execError.status ?? 1;
+    output = String(execError.stdout ?? "") + String(execError.stderr ?? "");
+  }
+
+  return {
+    exitCode,
+    output: normalizeOutput(output),
+  };
+}
+
+function runOxlintVize(args: readonly string[]) {
+  let output = "";
+  let exitCode = 0;
+
+  try {
+    execFileSync(process.execPath, [cliEntry, ...args], {
       cwd: fixtureDir,
       encoding: "utf8",
       stdio: "pipe",
@@ -562,6 +644,49 @@ assert.equal(
   opinionatedScriptRun.output,
   readSnapshot("stylish-opinionated-no-options-api-output.txt"),
 );
+
+const dualScriptRun = runOxlint([
+  "-c",
+  ".oxlintrc.opinionated-script.json",
+  "-f",
+  "stylish",
+  "DualScript.vue",
+]);
+assert.notEqual(
+  dualScriptRun.exitCode,
+  0,
+  "dual-script SFCs should still report opinionated script diagnostics",
+);
+assert.equal(
+  dualScriptRun.output.match(/vize\(script\/no-options-api\)/gu)?.length ?? 0,
+  1,
+  "dual-script SFCs should not duplicate the same rule diagnostic across <script> and <script setup>",
+);
+assert.equal(dualScriptRun.output, readSnapshot("stylish-dual-script-no-options-api-output.txt"));
+
+const scriptlessRun = runOxlintVize([
+  "-c",
+  ".oxlintrc.scriptless.json",
+  "-f",
+  "stylish",
+  "Scriptless.vue",
+]);
+assert.notEqual(
+  scriptlessRun.exitCode,
+  0,
+  "oxlint-vize should lint scriptless SFCs through the temporary-file workaround",
+);
+assert.match(
+  scriptlessRun.output,
+  /Scriptless\.vue[\s\S]*3:9[\s\S]*Elements in iteration expect to have 'v-bind:key' directives\./u,
+  "scriptless workaround should report the original file location instead of the temporary script block",
+);
+assert.doesNotMatch(
+  scriptlessRun.output,
+  /node_modules\/\.cache\/oxlint-plugin-vize/u,
+  "scriptless workaround should not leak temporary cache paths to users",
+);
+assert.equal(scriptlessRun.output, readSnapshot("stylish-scriptless-workaround-output.txt"));
 
 const sampleBlocks = extractSfcBlocks(
   `<script setup lang="ts">\nconst count = 1\n</script>\n<template>\n  <div>{{ count }}</div>\n</template>\n<style scoped>\n.foo {}\n</style>\n<i18n>\n{}\n</i18n>\n`,

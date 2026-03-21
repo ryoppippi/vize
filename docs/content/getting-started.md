@@ -21,6 +21,9 @@ Vize (_/viːz/_) is an unofficial, high-performance Vue.js toolchain written ent
 
 All of these share a single parser, a single AST representation, and a single configuration surface — eliminating the overhead and inconsistencies of maintaining separate tools.
 
+> **Editor support note:** For day-to-day editor support, keep using the official Vue language tools (`vuejs/language-tools`) for now.
+> `vize lsp` is available, but it should still be treated as experimental until the LSP and type-checking behavior stabilizes.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) 24+
@@ -90,7 +93,7 @@ pnpm add @vizejs/musea-mcp-server
 > Rspack intentionally uses the dedicated `@vizejs/rspack-plugin` path because its loader and CSS integration are Rspack-specific.
 >
 > **Oxlint plugin status:** `oxlint-plugin-vize` is targeting an alpha npm release first.
-> As of March 21, 2026 it is not yet published, and until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) is fixed, `oxlint -f stylish` is the recommended human-readable workflow.
+> As of March 21, 2026 it is not yet published, and until [oxc-project/oxc#20465](https://github.com/oxc-project/oxc/issues/20465) is fixed, `oxlint-vize -f stylish` is the recommended human-readable workflow.
 
 ## Quick Start
 
@@ -173,7 +176,7 @@ pnpm add -D oxlint oxlint-plugin-vize@alpha
 }
 ```
 
-This keeps Oxlint's built-in JavaScript and TypeScript rules running normally, including checks like `eqeqeq` and `no-console`, while adding Vize's Vue-specific diagnostics through the same run. `preset` defaults to `"general-recommended"`, but you can switch it to `"essential"` for the narrowest correctness-focused pass, `"opinionated"` when you want stricter built-in script checks too, or `"incremental"` when you want to enable Vize rules one by one from your Oxlint config. For now, prefer `pnpm exec oxlint -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
+This keeps Oxlint's built-in JavaScript and TypeScript rules running normally, including checks like `eqeqeq` and `no-console`, while adding Vize's Vue-specific diagnostics through the same run. `preset` defaults to `"general-recommended"`, but you can switch it to `"essential"` for the narrowest correctness-focused pass, `"opinionated"` when you want stricter built-in script checks too, or `"incremental"` when you want to enable Vize rules one by one from your Oxlint config. For now, prefer `pnpm exec oxlint-vize -f stylish` for terminal usage, and treat machine-readable output as best-effort until Oxlint's JS plugin range reporting improves upstream. See [Oxlint Plugin](./guide/oxlint.md) for details and current limitations.
 
 ### Using with Nuxt
 
