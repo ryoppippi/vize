@@ -12,7 +12,12 @@ import { formatPatinaMessage } from "./format.js";
 import type { HelpLevel, PatinaDiagnostic, PatinaRuleMeta } from "./model.js";
 import { formatBlockLabel, getDiagnosticBlock } from "./sfc-blocks.js";
 import { mapToScriptLoc } from "./script-map.js";
-import { getActivePreset, getVizeSettings, isVueLikeFile } from "./settings.js";
+import {
+  getActivePreset,
+  getVizeSettings,
+  isIncrementalPreset,
+  isVueLikeFile,
+} from "./settings.js";
 
 function createOxlintDiagnostic(
   diagnostic: PatinaDiagnostic,
@@ -53,7 +58,7 @@ function createPatinaRule(ruleMeta: PatinaRuleMeta) {
 
           const settings = getVizeSettings(context);
           const activePreset = getActivePreset(settings);
-          if (!ruleMeta.presets.includes(activePreset)) {
+          if (!isIncrementalPreset(settings) && !ruleMeta.presets.includes(activePreset)) {
             return;
           }
 

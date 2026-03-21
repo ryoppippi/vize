@@ -6,7 +6,7 @@ import { lintPatina } from "./binding.js";
 import type { PatinaDiagnostic, SfcBlock, SingleScriptMap } from "./model.js";
 import { extractSfcBlocks } from "./sfc-blocks.js";
 import { createSingleScriptMap } from "./script-map.js";
-import { getCacheKey, getVizeSettings } from "./settings.js";
+import { getCacheKey, getVizeSettings, isIncrementalPreset } from "./settings.js";
 
 export interface FileState {
   source: string;
@@ -58,6 +58,15 @@ export function getDiagnosticsForRule(
   }
 
   const settings = getVizeSettings(context);
+  if (isIncrementalPreset(settings)) {
+    const diagnostics = lintPatina(state.source, context.physicalFilename, settings, [
+      ruleName,
+    ]).diagnostics;
+    const indexedDiagnostics = indexDiagnosticsByRule(diagnostics);
+    const ruleDiagnostics = indexedDiagnostics.get(ruleName) ?? EMPTY_DIAGNOSTICS;
+    state.partialDiagnosticsByRule.set(ruleName, ruleDiagnostics);
+    return ruleDiagnostics;
+  }
 
   if (state.requestedRules.size === 0) {
     state.requestedRules.add(ruleName);

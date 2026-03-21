@@ -46,7 +46,7 @@ pub struct LintOptionsNapi {
     pub fix: Option<bool>,
     /// Help display level: "full", "short", "none"
     pub help_level: Option<String>,
-    /// Lint preset: "happy-path", "opinionated", "essential", or "nuxt"
+    /// Lint preset: "GeneralRecommended", "Essential", "Incremental", "Opinionated", or "Nuxt"
     pub preset: Option<String>,
 }
 
@@ -75,7 +75,7 @@ pub struct PatinaLintOptionsNapi {
     pub locale: Option<String>,
     /// Help display level: "full", "short", or "none"
     pub help_level: Option<String>,
-    /// Lint preset: "happy-path", "opinionated", "essential", or "nuxt"
+    /// Lint preset: "GeneralRecommended", "Essential", "Incremental", "Opinionated", or "Nuxt"
     pub preset: Option<String>,
     /// Optional list of Patina rule names to enable
     pub enabled_rules: Option<Vec<String>>,
@@ -96,9 +96,42 @@ fn patina_help_level_from_option(help_level: Option<&str>) -> vize_patina::HelpL
 }
 
 fn patina_preset_from_option(preset: Option<&str>) -> vize_patina::LintPreset {
-    preset
-        .and_then(vize_patina::LintPreset::parse)
-        .unwrap_or_default()
+    match preset {
+        Some("GeneralRecommended" | "generalRecommended" | "general-recommended")
+        | Some("happy-path" | "happy_path" | "happy" | "default" | "recommended") => {
+            vize_patina::LintPreset::HappyPath
+        }
+        Some("Essential" | "essential") => vize_patina::LintPreset::Essential,
+        Some("Incremental" | "incremental") => vize_patina::LintPreset::Incremental,
+        Some("Opinionated" | "opinionated" | "Opnionated" | "opnionated" | "strict" | "all") => {
+            vize_patina::LintPreset::Opinionated
+        }
+        Some("Nuxt" | "nuxt") => vize_patina::LintPreset::Nuxt,
+        _ => vize_patina::LintPreset::default(),
+    }
+}
+
+#[inline]
+const fn plugin_preset_name(preset: vize_patina::LintPreset) -> &'static str {
+    match preset {
+        vize_patina::LintPreset::HappyPath => "GeneralRecommended",
+        vize_patina::LintPreset::Opinionated => "Opinionated",
+        vize_patina::LintPreset::Essential => "Essential",
+        vize_patina::LintPreset::Incremental => "Incremental",
+        vize_patina::LintPreset::Nuxt => "Nuxt",
+    }
+}
+
+#[inline]
+fn plugin_preset_name_from_raw(preset: &'static str) -> &'static str {
+    match preset {
+        "happy-path" | "happy_path" | "happy" | "default" | "recommended" => "GeneralRecommended",
+        "essential" => "Essential",
+        "incremental" => "Incremental",
+        "opinionated" | "strict" | "all" | "opnionated" => "Opinionated",
+        "nuxt" => "Nuxt",
+        _ => preset,
+    }
 }
 
 #[inline]
@@ -152,15 +185,15 @@ fn collect_patina_rule_metadata() -> Vec<PatinaRuleMetaNapi<'static>> {
             let meta = rule.meta();
             let mut presets = Vec::with_capacity(4);
             if essential_rules.contains(meta.name) {
-                presets.push(LintPreset::Essential.as_str());
+                presets.push(plugin_preset_name(LintPreset::Essential));
             }
             if happy_path_rules.contains(meta.name) {
-                presets.push(LintPreset::HappyPath.as_str());
+                presets.push(plugin_preset_name(LintPreset::HappyPath));
             }
             if nuxt_rules.contains(meta.name) {
-                presets.push(LintPreset::Nuxt.as_str());
+                presets.push(plugin_preset_name(LintPreset::Nuxt));
             }
-            presets.push(LintPreset::Opinionated.as_str());
+            presets.push(plugin_preset_name(LintPreset::Opinionated));
 
             PatinaRuleMetaNapi {
                 name: meta.name,
@@ -180,7 +213,11 @@ fn collect_patina_rule_metadata() -> Vec<PatinaRuleMetaNapi<'static>> {
             category: script_rule.category,
             fixable: script_rule.fixable,
             default_severity: severity_name(script_rule.default_severity),
-            presets: script_rule.presets.to_vec(),
+            presets: script_rule
+                .presets
+                .iter()
+                .map(|preset| plugin_preset_name_from_raw(preset))
+                .collect(),
         });
     }
 
@@ -459,7 +496,7 @@ mod tests {
 
         assert_eq!(
             require_scoped_style.presets,
-            vec!["happy-path", "nuxt", "opinionated"]
+            vec!["GeneralRecommended", "Nuxt", "Opinionated"]
         );
     }
 
@@ -471,7 +508,7 @@ mod tests {
             .find(|rule| rule.name == "script/no-options-api")
             .expect("script/no-options-api should be exposed");
 
-        assert_eq!(no_options_api.presets, vec!["opinionated", "nuxt"]);
+        assert_eq!(no_options_api.presets, vec!["Opinionated", "Nuxt"]);
         assert_eq!(no_options_api.default_severity, "error");
     }
 }

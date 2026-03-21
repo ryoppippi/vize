@@ -236,6 +236,39 @@ export default {
     }
 
     #[test]
+    fn test_lint_sfc_incremental_stays_silent_without_explicit_rules() {
+        let linter = Linter::with_preset(LintPreset::Incremental);
+        let sfc = r#"<script>
+export default {
+  methods: {
+    increment() {}
+  }
+}
+</script>
+"#;
+        let result = linter.lint_sfc(sfc, "test.vue");
+        assert_eq!(result.error_count, 0);
+        assert_eq!(result.warning_count, 0);
+    }
+
+    #[test]
+    fn test_lint_sfc_incremental_allows_explicit_script_rule_enablement() {
+        let linter = Linter::with_preset(LintPreset::Incremental)
+            .with_enabled_rules(Some(vec!["script/no-options-api".into()]));
+        let sfc = r#"<script>
+export default {
+  props: {
+    count: Number
+  }
+}
+</script>
+"#;
+        let result = linter.lint_sfc(sfc, "test.vue");
+        assert_eq!(result.error_count, 1);
+        assert_eq!(result.diagnostics[0].rule_name, "script/no-options-api");
+    }
+
+    #[test]
     fn test_lint_sfc_opinionated_reports_no_next_tick() {
         let linter = Linter::with_preset(LintPreset::Opinionated);
         let sfc = r#"<script setup lang="ts">

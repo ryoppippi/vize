@@ -56,17 +56,19 @@ You can pass Patina settings through `settings.vize`:
   "settings": {
     "vize": {
       "locale": "ja",
-      "preset": "essential",
+      "preset": "Essential",
       "helpLevel": "short"
     }
   }
 }
 ```
 
-- `preset` accepts `"happy-path"`, `"essential"`, `"opinionated"`, or `"nuxt"`.
-- `preset` defaults to `"happy-path"`.
-- Rules outside the selected preset stay quiet even if they are still listed in `rules`.
-- `opinionated` is the preset that enables Vize's built-in script rules such as `vize/script/no-options-api`.
+- `preset` accepts `"GeneralRecommended"`, `"Essential"`, `"Incremental"`, `"Opinionated"`, or `"Nuxt"`.
+- `preset` defaults to `"GeneralRecommended"`.
+- Bundle presets keep out-of-bundle rules quiet even if they are still listed in `rules`.
+- `"Incremental"` skips bundle gating and runs only the Vize rules you explicitly configure in Oxlint.
+- `"Opinionated"` is the preset that enables Vize's built-in script rules such as `vize/script/no-options-api`.
+- Legacy aliases such as `"happy-path"`, `"essential"`, `"incremental"`, `"opinionated"`, and `"nuxt"` are still accepted for compatibility.
 - `helpLevel` accepts `"full"`, `"short"`, or `"none"`.
 - `helpLevel: "full"` only expands the Patina remediation text. It does not restore original-SFC formatter anchors or machine-readable range fidelity.
 - `showHelp` is still accepted for backward compatibility, but `helpLevel` is the preferred setting.
@@ -77,7 +79,7 @@ For example, this keeps Oxlint focused on correctness-only diagnostics:
 {
   "settings": {
     "vize": {
-      "preset": "essential",
+      "preset": "Essential",
       "helpLevel": "short"
     }
   },
@@ -88,7 +90,9 @@ For example, this keeps Oxlint focused on correctness-only diagnostics:
 }
 ```
 
-In that config, `vize/vue/require-v-for-key` can report, while `vize/vue/require-scoped-style` stays silent because it belongs to the broader `happy-path` preset.
+In that config, `vize/vue/require-v-for-key` can report, while `vize/vue/require-scoped-style` stays silent because it belongs to the broader `"GeneralRecommended"` preset.
+
+If you want to adopt Vize one rule at a time, use `"preset": "Incremental"`. In that mode, preset membership no longer suppresses configured rules, so only the Vize rules you list under `rules` will run.
 
 For day-to-day terminal runs, the recommended command today is:
 

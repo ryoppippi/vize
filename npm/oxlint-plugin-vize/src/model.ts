@@ -48,7 +48,12 @@ export interface PatinaBinding {
 }
 
 export type HelpLevel = "none" | "short" | "full";
-export type PatinaPreset = "happy-path" | "essential" | "opinionated" | "nuxt";
+export type PatinaPreset =
+  | "GeneralRecommended"
+  | "Essential"
+  | "Incremental"
+  | "Opinionated"
+  | "Nuxt";
 
 export interface PatinaSettings {
   locale?: string;

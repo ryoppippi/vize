@@ -13,12 +13,20 @@ const fixtureDir = path.join(workspaceRoot, "__agent_only", "oxlint-plugin-vize-
 const configPath = path.join(fixtureDir, ".oxlintrc.json");
 const noHelpConfigPath = path.join(fixtureDir, ".oxlintrc.no-help.json");
 const shortHelpConfigPath = path.join(fixtureDir, ".oxlintrc.short-help.json");
-const happyPathStyleConfigPath = path.join(fixtureDir, ".oxlintrc.happy-path-style.json");
+const generalRecommendedStyleConfigPath = path.join(
+  fixtureDir,
+  ".oxlintrc.general-recommended-style.json",
+);
 const essentialStyleConfigPath = path.join(fixtureDir, ".oxlintrc.essential-style.json");
-const happyPathScriptConfigPath = path.join(fixtureDir, ".oxlintrc.happy-path-script.json");
+const generalRecommendedScriptConfigPath = path.join(
+  fixtureDir,
+  ".oxlintrc.general-recommended-script.json",
+);
+const incrementalComboConfigPath = path.join(fixtureDir, ".oxlintrc.incremental-combo.json");
 const opinionatedScriptConfigPath = path.join(fixtureDir, ".oxlintrc.opinionated-script.json");
 const vuePath = path.join(fixtureDir, "App.vue");
 const scopedStyleVuePath = path.join(fixtureDir, "ScopedStyle.vue");
+const incrementalComboVuePath = path.join(fixtureDir, "IncrementalCombo.vue");
 const optionsApiVuePath = path.join(fixtureDir, "OptionsApi.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
@@ -105,7 +113,7 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
-  happyPathStyleConfigPath,
+  generalRecommendedStyleConfigPath,
   JSON.stringify(
     {
       plugins: ["vue"],
@@ -113,7 +121,7 @@ fs.writeFileSync(
       settings: {
         vize: {
           helpLevel: "none",
-          preset: "happy-path",
+          preset: "GeneralRecommended",
         },
       },
       rules: {
@@ -135,7 +143,7 @@ fs.writeFileSync(
       settings: {
         vize: {
           helpLevel: "none",
-          preset: "essential",
+          preset: "Essential",
         },
       },
       rules: {
@@ -149,7 +157,7 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
-  happyPathScriptConfigPath,
+  generalRecommendedScriptConfigPath,
   JSON.stringify(
     {
       plugins: ["vue"],
@@ -157,12 +165,35 @@ fs.writeFileSync(
       settings: {
         vize: {
           helpLevel: "none",
-          preset: "happy-path",
+          preset: "GeneralRecommended",
         },
       },
       rules: {
         "no-unused-vars": "off",
         "vize/script/no-options-api": "error",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
+  incrementalComboConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "Incremental",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/script/no-options-api": "error",
+        "vize/vue/require-scoped-style": "error",
       },
     },
     null,
@@ -179,7 +210,7 @@ fs.writeFileSync(
       settings: {
         vize: {
           helpLevel: "none",
-          preset: "opinionated",
+          preset: "Opinionated",
         },
       },
       rules: {
@@ -233,6 +264,26 @@ export default {
 <template>
   <div>{{ count }}</div>
 </template>
+`,
+);
+
+fs.writeFileSync(
+  incrementalComboVuePath,
+  `<script lang="ts">
+export default {
+  data() {
+    return {
+      count: 1,
+    };
+  },
+};
+</script>
+<template>
+  <div class="foo">{{ count }}</div>
+</template>
+<style>
+.foo { color: red; }
+</style>
 `,
 );
 
@@ -338,7 +389,7 @@ assert.equal(jsonRun.output, readSnapshot("json-no-help-output.txt"));
 
 const happyPathStyleRun = runOxlint([
   "-c",
-  ".oxlintrc.happy-path-style.json",
+  ".oxlintrc.general-recommended-style.json",
   "-f",
   "stylish",
   "ScopedStyle.vue",
@@ -346,16 +397,16 @@ const happyPathStyleRun = runOxlint([
 assert.notEqual(
   happyPathStyleRun.exitCode,
   0,
-  "happy-path should report require-scoped-style when the rule is enabled",
+  "GeneralRecommended should report require-scoped-style when the rule is enabled",
 );
 assert.match(
   happyPathStyleRun.output,
   /vize\(vue\/require-scoped-style\)/,
-  "happy-path should keep reporting rules that belong to the default preset",
+  "GeneralRecommended should keep reporting rules that belong to the default preset",
 );
 assert.equal(
   happyPathStyleRun.output,
-  readSnapshot("stylish-happy-path-require-scoped-style-output.txt"),
+  readSnapshot("stylish-general-recommended-require-scoped-style-output.txt"),
 );
 
 const essentialStyleRun = runOxlint([
@@ -368,31 +419,55 @@ const essentialStyleRun = runOxlint([
 assert.equal(
   essentialStyleRun.exitCode,
   0,
-  "essential preset should skip require-scoped-style even when the Oxlint rule is configured",
+  "Essential preset should skip require-scoped-style even when the Oxlint rule is configured",
 );
 assert.doesNotMatch(
   essentialStyleRun.output,
   /vize\(vue\/require-scoped-style\)/,
-  "essential preset should not surface happy-path-only rules",
+  "Essential preset should not surface GeneralRecommended-only rules",
 );
 
-const happyPathScriptRun = runOxlint([
+const generalRecommendedScriptRun = runOxlint([
   "-c",
-  ".oxlintrc.happy-path-script.json",
+  ".oxlintrc.general-recommended-script.json",
   "-f",
   "stylish",
   "OptionsApi.vue",
 ]);
 assert.equal(
-  happyPathScriptRun.exitCode,
+  generalRecommendedScriptRun.exitCode,
   0,
-  "happy-path should not enable opinionated script rules by default",
+  "GeneralRecommended should not enable Opinionated script rules by default",
 );
 assert.doesNotMatch(
-  happyPathScriptRun.output,
+  generalRecommendedScriptRun.output,
   /vize\(script\/no-options-api\)/,
-  "happy-path should keep script/no-options-api opt-in",
+  "GeneralRecommended should keep script/no-options-api opt-in",
 );
+
+const incrementalComboRun = runOxlint([
+  "-c",
+  ".oxlintrc.incremental-combo.json",
+  "-f",
+  "stylish",
+  "IncrementalCombo.vue",
+]);
+assert.notEqual(
+  incrementalComboRun.exitCode,
+  0,
+  "Incremental preset should report explicitly configured rules",
+);
+assert.match(
+  incrementalComboRun.output,
+  /vize\(script\/no-options-api\)/,
+  "Incremental preset should allow explicitly configured script rules",
+);
+assert.match(
+  incrementalComboRun.output,
+  /vize\(vue\/require-scoped-style\)/,
+  "Incremental preset should allow explicitly configured template or style rules",
+);
+assert.equal(incrementalComboRun.output, readSnapshot("stylish-incremental-combo-output.txt"));
 
 const opinionatedScriptRun = runOxlint([
   "-c",
@@ -404,12 +479,12 @@ const opinionatedScriptRun = runOxlint([
 assert.notEqual(
   opinionatedScriptRun.exitCode,
   0,
-  "opinionated preset should enable script/no-options-api",
+  "Opinionated preset should enable script/no-options-api",
 );
 assert.match(
   opinionatedScriptRun.output,
   /vize\(script\/no-options-api\)/,
-  "opinionated preset should surface opinionated script diagnostics",
+  "Opinionated preset should surface Opinionated script diagnostics",
 );
 assert.equal(
   opinionatedScriptRun.output,
