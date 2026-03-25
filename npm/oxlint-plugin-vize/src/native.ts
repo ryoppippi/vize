@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import { createRequire } from "node:module";
 
 import type { PatinaBinding } from "./model.js";
@@ -70,7 +71,7 @@ export function loadBinding(): PatinaBinding {
     return bindingCache;
   }
 
-  const attemptedPackages = [getBindingPackageName(), FALLBACK_BINDING_PACKAGE];
+  const attemptedPackages = getAttemptedPackages();
   let lastError: unknown = null;
 
   for (const packageName of attemptedPackages) {
@@ -91,4 +92,60 @@ export function loadBinding(): PatinaBinding {
   throw new Error(
     `Failed to load the Vize native binding. Tried ${attemptedPackages.join(", ")}.${message}`,
   );
+}
+
+function getAttemptedPackages(): readonly string[] {
+  const platformBindingPackage = getBindingPackageName();
+  return shouldPreferWorkspaceBinding(resolveFallbackBindingPath())
+    ? [FALLBACK_BINDING_PACKAGE, platformBindingPackage]
+    : [platformBindingPackage, FALLBACK_BINDING_PACKAGE];
+}
+
+function resolveFallbackBindingPath(): string | null {
+  try {
+    return require.resolve(FALLBACK_BINDING_PACKAGE);
+  } catch {
+    return null;
+  }
+}
+
+function shouldPreferWorkspaceBinding(resolvedPath: string | null): boolean {
+  const override = process.env.VIZE_PREFER_WORKSPACE_BINDING;
+  if (override === "1" || override === "true") {
+    return true;
+  }
+  if (override === "0" || override === "false") {
+    return false;
+  }
+  if (resolvedPath == null) {
+    return false;
+  }
+
+  return resolvedPath.includes(`${path.sep}npm${path.sep}vize-native${path.sep}`);
+}
+
+if (import.meta.vitest) {
+  const { describe, expect, it } = import.meta.vitest;
+
+  describe("shouldPreferWorkspaceBinding", () => {
+    it("detects the local workspace native package", () => {
+      expect(
+        shouldPreferWorkspaceBinding(
+          `${path.sep}Users${path.sep}example${path.sep}repo${path.sep}npm${path.sep}vize-native${path.sep}index.js`,
+        ),
+      ).toBe(true);
+    });
+
+    it("ignores published platform packages", () => {
+      expect(
+        shouldPreferWorkspaceBinding(
+          `${path.sep}repo${path.sep}node_modules${path.sep}.pnpm${path.sep}@vizejs+native-darwin-arm64${path.sep}node_modules${path.sep}@vizejs${path.sep}native-darwin-arm64${path.sep}index.js`,
+        ),
+      ).toBe(false);
+    });
+
+    it("returns false when the fallback package cannot be resolved", () => {
+      expect(shouldPreferWorkspaceBinding(null)).toBe(false);
+    });
+  });
 }

@@ -44,6 +44,26 @@ Enable Oxlint's built-in `vue` plugin and load the Vize bridge as a JS plugin:
 
 This keeps Oxlint's existing rules running as-is, including core checks like `eqeqeq` and `no-console`, while adding Vize's Vue diagnostics under the `vize/vue/*` namespace. The bridge does not replace or suppress your other Oxlint rules.
 
+If you are willing to use a JS/TS Oxlint config, `oxlint-plugin-vize` also exports preset rule maps so you do not need to list dozens of `vize/*` rules by hand:
+
+```js
+import { configs } from "oxlint-plugin-vize";
+
+export default {
+  plugins: ["vue"],
+  jsPlugins: ["oxlint-plugin-vize"],
+  settings: {
+    vize: {
+      helpLevel: "short",
+      preset: "opinionated",
+    },
+  },
+  rules: configs.opinionated,
+};
+```
+
+`configs.recommended`, `configs.essential`, `configs.opinionated`, `configs.nuxt`, and `configs.all` intentionally skip Vize's unstable type-aware rules during the alpha period. If you want to opt into them, use `configs.recommendedWithTypeAware`, `configs.opinionatedWithTypeAware`, or `createVizeRuleConfig({ includeTypeAware: true, preset: ... })`.
+
 For day-to-day terminal usage, the recommended command today is:
 
 ```bash

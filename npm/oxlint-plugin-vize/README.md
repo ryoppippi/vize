@@ -53,6 +53,26 @@ Enable Oxlint's built-in `vue` plugin as well as this JS plugin:
 
 This bridge only adds the `vize/*` rules. Oxlint's existing core rules and built-in plugin rules still run as configured, so checks like `eqeqeq`, `no-console`, or your existing `vue/*` setup continue to report normally.
 
+If you want a lower-config JS/TS Oxlint setup during the alpha period, the package also exports preset rule maps:
+
+```js
+import { configs } from "oxlint-plugin-vize";
+
+export default {
+  plugins: ["vue"],
+  jsPlugins: ["oxlint-plugin-vize"],
+  settings: {
+    vize: {
+      helpLevel: "short",
+      preset: "opinionated",
+    },
+  },
+  rules: configs.opinionated,
+};
+```
+
+`configs.recommended`, `configs.essential`, `configs.opinionated`, `configs.nuxt`, and `configs.all` intentionally skip Vize's unstable type-aware rules for now. If you explicitly want those alpha-stage rules too, use `configs.recommendedWithTypeAware`, `configs.opinionatedWithTypeAware`, or `createVizeRuleConfig({ includeTypeAware: true, preset: ... })`.
+
 You can pass Patina settings through `settings.vize`:
 
 ```json

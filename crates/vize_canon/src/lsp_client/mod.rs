@@ -28,6 +28,13 @@ use vize_carton::FxHashMap;
 use vize_carton::String;
 use vize_carton::ToCompactString;
 
+fn should_log_tsgo_path() -> bool {
+    match std::env::var("VIZE_LOG_TSGO_PATH") {
+        Ok(value) => matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"),
+        Err(_) => false,
+    }
+}
+
 /// LSP Client for tsgo
 pub struct TsgoLspClient {
     process: Child,
@@ -81,7 +88,9 @@ impl TsgoLspClient {
             .or_else(Self::find_tsgo_in_common_locations)
             .unwrap_or_else(|| "tsgo".into());
 
-        eprintln!("\x1b[90m[tsgo] Using: {tsgo}\x1b[0m");
+        if should_log_tsgo_path() {
+            eprintln!("\x1b[90m[tsgo] Using: {tsgo}\x1b[0m");
+        }
 
         // Determine project root (for node_modules resolution)
         let project_root = working_dir

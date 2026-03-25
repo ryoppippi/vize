@@ -27,6 +27,7 @@ const incrementalComboConfigPath = path.join(fixtureDir, ".oxlintrc.incremental-
 const opinionatedScriptConfigPath = path.join(fixtureDir, ".oxlintrc.opinionated-script.json");
 const coreRulesConfigPath = path.join(fixtureDir, ".oxlintrc.core-rules.json");
 const scriptlessConfigPath = path.join(fixtureDir, ".oxlintrc.scriptless.json");
+const largeJsonConfigPath = path.join(fixtureDir, ".oxlintrc.large-json.json");
 const vuePath = path.join(fixtureDir, "App.vue");
 const scopedStyleVuePath = path.join(fixtureDir, "ScopedStyle.vue");
 const incrementalComboVuePath = path.join(fixtureDir, "IncrementalCombo.vue");
@@ -34,6 +35,7 @@ const optionsApiVuePath = path.join(fixtureDir, "OptionsApi.vue");
 const dualScriptVuePath = path.join(fixtureDir, "DualScript.vue");
 const coreRulesVuePath = path.join(fixtureDir, "CoreRules.vue");
 const scriptlessVuePath = path.join(fixtureDir, "Scriptless.vue");
+const hugeJsonVuePath = path.join(fixtureDir, "HugeJson.vue");
 const snapshotsDir = path.join(packageDir, "__snapshots__");
 const ansiEscapePattern = new RegExp(String.raw`\u001B\[[0-9;]*m`, "gu");
 const workspaceRootPattern = new RegExp(escapeRegExp(workspaceRoot), "gu");
@@ -276,6 +278,30 @@ fs.writeFileSync(
 );
 
 fs.writeFileSync(
+  largeJsonConfigPath,
+  JSON.stringify(
+    {
+      plugins: ["vue"],
+      jsPlugins: [pluginEntry],
+      settings: {
+        vize: {
+          helpLevel: "none",
+          preset: "incremental",
+        },
+      },
+      rules: {
+        "no-unused-vars": "off",
+        "vize/vue/component-name-in-template-casing": "warn",
+        "vize/vue/no-multi-spaces": "warn",
+        "vize/vue/require-component-registration": "warn",
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+fs.writeFileSync(
   vuePath,
   `<script setup lang="ts">
 const items = [1]
@@ -386,16 +412,26 @@ fs.writeFileSync(
 `,
 );
 
+fs.writeFileSync(
+  hugeJsonVuePath,
+  `<template>
+${Array.from({ length: 700 }, (_, index) => `  <demo-card  :title="'Item ${index}'" />`).join("\n")}
+</template>
+`,
+);
+
 function runOxlint(args: readonly string[]) {
   let output = "";
   let exitCode = 0;
 
   try {
-    execFileSync(oxlintBin, args, {
-      cwd: fixtureDir,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
+    output = String(
+      execFileSync(oxlintBin, args, {
+        cwd: fixtureDir,
+        encoding: "utf8",
+        stdio: "pipe",
+      }),
+    );
   } catch (error) {
     const execError = error as {
       status?: number;
@@ -417,11 +453,13 @@ function runOxlintVize(args: readonly string[]) {
   let exitCode = 0;
 
   try {
-    execFileSync(process.execPath, [cliEntry, ...args], {
-      cwd: fixtureDir,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
+    output = String(
+      execFileSync(process.execPath, [cliEntry, ...args], {
+        cwd: fixtureDir,
+        encoding: "utf8",
+        stdio: "pipe",
+      }),
+    );
   } catch (error) {
     const execError = error as {
       status?: number;
@@ -511,6 +549,65 @@ assert.equal(shortHelpRun.output, readSnapshot("stylish-short-help-output.txt"))
 const jsonRun = runOxlint(["-c", ".oxlintrc.no-help.json", "-f", "json", "App.vue"]);
 assert.notEqual(jsonRun.exitCode, 0, "json formatter should still report Patina failures");
 assert.equal(jsonRun.output, readSnapshot("json-no-help-output.txt"));
+
+const scriptlessJsonRun = runOxlintVize([
+  "-c",
+  ".oxlintrc.scriptless.json",
+  "-f",
+  "json",
+  "Scriptless.vue",
+]);
+assert.notEqual(
+  scriptlessJsonRun.exitCode,
+  0,
+  "scriptless JSON output should still fail when Patina reports an error",
+);
+assert.match(
+  scriptlessJsonRun.output,
+  /"filename": ".*Scriptless\.vue"/u,
+  "scriptless JSON output should rewrite temporary filenames back to the original SFC",
+);
+assert.doesNotMatch(
+  scriptlessJsonRun.output,
+  /__oxlint_plugin_vize_temp__/u,
+  "scriptless JSON output should not leak temporary workaround paths",
+);
+assert.equal(scriptlessJsonRun.output, readSnapshot("json-scriptless-workaround-output.txt"));
+
+const largeJsonRun = runOxlintVize([
+  "-c",
+  ".oxlintrc.large-json.json",
+  "-f",
+  "json",
+  "HugeJson.vue",
+]);
+assert.equal(
+  largeJsonRun.exitCode,
+  0,
+  "large JSON runs with warning-only diagnostics should still stay parseable",
+);
+const largeJsonPayload = JSON.parse(largeJsonRun.output) as {
+  diagnostics: Array<{ code: string; filename: string }>;
+  number_of_files: number;
+};
+assert.equal(largeJsonPayload.number_of_files, 1, "large JSON output should stay parseable");
+assert.equal(
+  largeJsonPayload.diagnostics.every((diagnostic) => diagnostic.filename === "HugeJson.vue"),
+  true,
+  "large JSON output should keep reporting the original scriptless filename",
+);
+assert.equal(
+  largeJsonPayload.diagnostics.some(
+    (diagnostic) => diagnostic.code === "vize(vue/require-component-registration)",
+  ),
+  true,
+  "large JSON output should preserve diagnostics past the old spawnSync capture limit",
+);
+assert.equal(
+  largeJsonPayload.diagnostics.length > 1000,
+  true,
+  "large JSON output should include all diagnostics instead of truncating mid-stream",
+);
 
 const coreRulesRun = runOxlint([
   "-c",

@@ -35,7 +35,7 @@ export function prepareScriptlessWorkaroundFiles(
 
     ignoreArgs.push("--ignore-pattern", toCliPath(relativeFilename));
     tempArgs.push(tempFilename);
-    pathReplacements.set(tempFilename, filename);
+    registerPathReplacementVariants(pathReplacements, cwd, tempFilename, filename);
   }
 
   return {
@@ -54,4 +54,43 @@ export function prepareScriptlessWorkaroundFiles(
 
 function toCliPath(filename: string): string {
   return filename.split(path.sep).join("/");
+}
+
+function registerPathReplacementVariants(
+  replacements: Map<string, string>,
+  cwd: string,
+  tempFilename: string,
+  originalFilename: string,
+): void {
+  const relativeTempFilename = path.relative(cwd, tempFilename);
+  const relativeOriginalFilename = getReportedOriginalFilename(cwd, originalFilename);
+  const variants = new Set([
+    [tempFilename, relativeOriginalFilename],
+    [toCliPath(tempFilename), toCliPath(relativeOriginalFilename)],
+    [relativeTempFilename, relativeOriginalFilename],
+    [toCliPath(relativeTempFilename), toCliPath(relativeOriginalFilename)],
+  ]);
+
+  for (const [from, to] of variants) {
+    if (!from || !to) {
+      continue;
+    }
+
+    replacements.set(from, to);
+  }
+}
+
+function getReportedOriginalFilename(cwd: string, filename: string): string {
+  const relativeFilename = path.relative(cwd, filename);
+
+  if (
+    relativeFilename &&
+    !relativeFilename.startsWith(`..${path.sep}`) &&
+    relativeFilename !== ".." &&
+    !path.isAbsolute(relativeFilename)
+  ) {
+    return relativeFilename;
+  }
+
+  return filename;
 }
