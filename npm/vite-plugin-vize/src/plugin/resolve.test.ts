@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,7 +10,31 @@ import { toVirtualId } from "../virtual.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const workspaceRoot = path.resolve(__dirname, "../../../..");
+const tempRoots: string[] = [];
+
+process.on("exit", () => {
+  for (const root of tempRoots) {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+function writeFixtureFile(filePath: string, content = ""): void {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content);
+}
+
+function createTempProject(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "vite-plugin-vize-resolve-"));
+  tempRoots.push(root);
+
+  writeFixtureFile(
+    path.join(root, "package.json"),
+    JSON.stringify({ name: "resolve-fixture", private: true }, null, 2),
+  );
+  writeFixtureFile(path.join(root, "app", "pages", "index.vue"), "<template />\n");
+
+  return root;
+}
 
 function createState(root: string): VizePluginState {
   return {
@@ -60,7 +85,22 @@ function expectResolvedId(resolved: Awaited<ReturnType<typeof resolveIdHook>>): 
 }
 
 {
-  const projectRoot = path.join(workspaceRoot, "tests", "_fixtures", "_git", "npmx.dev");
+  const projectRoot = createTempProject();
+  writeFixtureFile(
+    path.join(projectRoot, "node_modules", "vue-data-ui", "package.json"),
+    JSON.stringify(
+      {
+        name: "vue-data-ui",
+        exports: {
+          "./style.css": "./dist/style.css",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFixtureFile(path.join(projectRoot, "node_modules", "vue-data-ui", "dist", "style.css"));
+
   const importer = toVirtualId(path.join(projectRoot, "app", "pages", "index.vue"));
   const resolved = await resolveIdHook(
     nullResolveContext,
@@ -70,30 +110,54 @@ function expectResolvedId(resolved: Awaited<ReturnType<typeof resolveIdHook>>): 
     undefined,
   );
 
-  assert.match(expectResolvedId(resolved), /vue-data-ui\/dist\/style\.css$/);
+  assert.match(expectResolvedId(resolved), /node_modules[\\/]vue-data-ui[\\/]dist[\\/]style\.css$/);
 }
 
 {
-  const projectRoot = path.join(workspaceRoot, "tests", "_fixtures", "_git", "vuefes-2025");
-  if (fs.existsSync(path.join(projectRoot, "package.json"))) {
-    const importer = toVirtualId(path.join(projectRoot, "app", "pages", "index.vue"));
-    const resolved = await resolveIdHook(
-      nullResolveContext,
-      createState(projectRoot),
-      "@primevue/forms/resolvers/valibot?nuxt_component=async",
-      importer,
-      undefined,
-    );
+  const projectRoot = createTempProject();
+  writeFixtureFile(
+    path.join(projectRoot, "node_modules", "@primevue", "forms", "package.json"),
+    JSON.stringify(
+      {
+        name: "@primevue/forms",
+        exports: {
+          "./resolvers/valibot": "./resolvers/valibot/index.mjs",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+  writeFixtureFile(
+    path.join(
+      projectRoot,
+      "node_modules",
+      "@primevue",
+      "forms",
+      "resolvers",
+      "valibot",
+      "index.mjs",
+    ),
+    "export default {};",
+  );
 
-    assert.match(
-      expectResolvedId(resolved),
-      /@primevue\/forms\/resolvers\/valibot\/index\.mjs\?nuxt_component=async$/,
-    );
-  }
+  const importer = toVirtualId(path.join(projectRoot, "app", "pages", "index.vue"));
+  const resolved = await resolveIdHook(
+    nullResolveContext,
+    createState(projectRoot),
+    "@primevue/forms/resolvers/valibot?nuxt_component=async",
+    importer,
+    undefined,
+  );
+
+  assert.match(
+    expectResolvedId(resolved),
+    /node_modules[\\/]@primevue[\\/]forms[\\/]resolvers[\\/]valibot[\\/]index\.mjs\?nuxt_component=async$/,
+  );
 }
 
 {
-  const projectRoot = path.join(workspaceRoot, "tests", "_fixtures", "_git", "npmx.dev");
+  const projectRoot = createTempProject();
   const source = path.join(projectRoot, "app", "pages", "index.vue");
   const resolved = await resolveIdHook(
     nullResolveContext,
@@ -111,7 +175,7 @@ function expectResolvedId(resolved: Awaited<ReturnType<typeof resolveIdHook>>): 
 }
 
 {
-  const projectRoot = path.join(workspaceRoot, "tests", "_fixtures", "_git", "npmx.dev");
+  const projectRoot = createTempProject();
   const source = path.join(projectRoot, "app", "pages", "index.vue");
   const resolved = await resolveIdHook(
     nullResolveContext,

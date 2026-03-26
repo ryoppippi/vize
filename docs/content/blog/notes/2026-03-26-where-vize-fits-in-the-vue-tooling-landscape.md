@@ -1,9 +1,9 @@
 ---
-title: What Makes Vize Different from Vue Language Tools, Golar, Verter, Vite+, and Oxlint?
+title: Where Vize Fits in the Vue Tooling Landscape
 description: A map of where Vize sits in the current Vue tooling landscape, and how it differs from adjacent projects.
 ---
 
-# What Makes Vize Different from Vue Language Tools, Golar, Verter, Vite+, and Oxlint?
+# Where Vize Fits in the Vue Tooling Landscape
 
 <div class="blog-post-meta">
   <div class="blog-meta-chip">
