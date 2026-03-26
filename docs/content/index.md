@@ -47,6 +47,9 @@ features:
   - title: Philosophy
     details: "Art-inspired architecture, oxidation ecosystem (OXC, oxlint, tsgo), and a unified toolchain vision."
     link: philosophy.md
+  - title: Blog
+    details: Release notes for shipped changes, plus irregular notes for design updates, devlogs, and project thinking.
+    link: blog/index.md
 ---
 
 ## Author
