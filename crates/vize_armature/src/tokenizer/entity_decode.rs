@@ -1,11 +1,10 @@
 //! Decode at most one HTML entity from the start of a byte slice (`&name;`, `&#...;`, …).
 //! Rules align with `htmlize::unescape_bytes_in` (WHATWG), using the same `ENTITIES` map.
 
-use std::borrow::Cow;
 use std::cmp::min;
 use std::num::IntErrorKind;
 
-use htmlize::{Context, ENTITIES, ENTITY_MAX_LENGTH, ENTITY_MIN_LENGTH, REPLACEMENT_CHAR_BYTES};
+use htmlize::{Context, ENTITIES, ENTITY_MAX_LENGTH, ENTITY_MIN_LENGTH};
 
 /// If `input` starts with a valid entity, returns the first decoded scalar and the number of
 /// bytes consumed (including `&` and an optional `;`). Otherwise `None` so the tokenizer can
@@ -92,7 +91,7 @@ fn decode_numeric_entity(input: &[u8]) -> Option<(char, usize)> {
             if dec.is_empty() {
                 return None;
             }
-            u32::from_str_radix(std::str::from_utf8(dec).ok()?, 10)
+            std::str::from_utf8(dec).ok()?.parse::<u32>()
         }
         _ => return None,
     };
@@ -102,52 +101,49 @@ fn decode_numeric_entity(input: &[u8]) -> Option<(char, usize)> {
         end = pos + 1;
     }
 
-    let cow = match number {
+    let ch = match number {
         Ok(n) => correct_numeric_entity(n),
-        Err(e) if *e.kind() == IntErrorKind::PosOverflow => Cow::Borrowed(REPLACEMENT_CHAR_BYTES),
+        Err(e) if *e.kind() == IntErrorKind::PosOverflow => '\u{FFFD}',
         Err(_) => return None,
     };
-    let ch = first_scalar(cow.as_ref())?;
     Some((ch, end))
 }
 
 /// <https://html.spec.whatwg.org/multipage/parsing.html#numeric-character-reference-end-state>
 #[allow(clippy::match_same_arms)]
-fn correct_numeric_entity(number: u32) -> Cow<'static, [u8]> {
+fn correct_numeric_entity(number: u32) -> char {
     match number {
-        0x00 => Cow::Borrowed(REPLACEMENT_CHAR_BYTES),
-        0x11_0000.. => Cow::Borrowed(REPLACEMENT_CHAR_BYTES),
-        0xD800..=0xDFFF => Cow::Borrowed(REPLACEMENT_CHAR_BYTES),
-        0x80 => Cow::Borrowed("\u{20AC}".as_bytes()),
-        0x82 => Cow::Borrowed("\u{201A}".as_bytes()),
-        0x83 => Cow::Borrowed("\u{0192}".as_bytes()),
-        0x84 => Cow::Borrowed("\u{201E}".as_bytes()),
-        0x85 => Cow::Borrowed("\u{2026}".as_bytes()),
-        0x86 => Cow::Borrowed("\u{2020}".as_bytes()),
-        0x87 => Cow::Borrowed("\u{2021}".as_bytes()),
-        0x88 => Cow::Borrowed("\u{02C6}".as_bytes()),
-        0x89 => Cow::Borrowed("\u{2030}".as_bytes()),
-        0x8A => Cow::Borrowed("\u{0160}".as_bytes()),
-        0x8B => Cow::Borrowed("\u{2039}".as_bytes()),
-        0x8C => Cow::Borrowed("\u{0152}".as_bytes()),
-        0x8E => Cow::Borrowed("\u{017D}".as_bytes()),
-        0x91 => Cow::Borrowed("\u{2018}".as_bytes()),
-        0x92 => Cow::Borrowed("\u{2019}".as_bytes()),
-        0x93 => Cow::Borrowed("\u{201C}".as_bytes()),
-        0x94 => Cow::Borrowed("\u{201D}".as_bytes()),
-        0x95 => Cow::Borrowed("\u{2022}".as_bytes()),
-        0x96 => Cow::Borrowed("\u{2013}".as_bytes()),
-        0x97 => Cow::Borrowed("\u{2014}".as_bytes()),
-        0x98 => Cow::Borrowed("\u{02DC}".as_bytes()),
-        0x99 => Cow::Borrowed("\u{2122}".as_bytes()),
-        0x9A => Cow::Borrowed("\u{0161}".as_bytes()),
-        0x9B => Cow::Borrowed("\u{203A}".as_bytes()),
-        0x9C => Cow::Borrowed("\u{0153}".as_bytes()),
-        0x9E => Cow::Borrowed("\u{017E}".as_bytes()),
-        0x9F => Cow::Borrowed("\u{0178}".as_bytes()),
-        c => char::from_u32(c)
-            .map(|c| Cow::Owned(c.to_string().into_bytes()))
-            .unwrap_or_else(|| Cow::Borrowed(REPLACEMENT_CHAR_BYTES)),
+        0x00 => '\u{FFFD}',
+        0x11_0000.. => '\u{FFFD}',
+        0xD800..=0xDFFF => '\u{FFFD}',
+        0x80 => '\u{20AC}',
+        0x82 => '\u{201A}',
+        0x83 => '\u{0192}',
+        0x84 => '\u{201E}',
+        0x85 => '\u{2026}',
+        0x86 => '\u{2020}',
+        0x87 => '\u{2021}',
+        0x88 => '\u{02C6}',
+        0x89 => '\u{2030}',
+        0x8A => '\u{0160}',
+        0x8B => '\u{2039}',
+        0x8C => '\u{0152}',
+        0x8E => '\u{017D}',
+        0x91 => '\u{2018}',
+        0x92 => '\u{2019}',
+        0x93 => '\u{201C}',
+        0x94 => '\u{201D}',
+        0x95 => '\u{2022}',
+        0x96 => '\u{2013}',
+        0x97 => '\u{2014}',
+        0x98 => '\u{02DC}',
+        0x99 => '\u{2122}',
+        0x9A => '\u{0161}',
+        0x9B => '\u{203A}',
+        0x9C => '\u{0153}',
+        0x9E => '\u{017E}',
+        0x9F => '\u{0178}',
+        c => char::from_u32(c).unwrap_or('\u{FFFD}'),
     }
 }
 
@@ -217,6 +213,22 @@ mod tests {
         let (c, n) = try_decode_entity(s, Context::Attribute).unwrap();
         assert_eq!(c, '<');
         assert_eq!(n, 4);
+    }
+
+    #[test]
+    fn numeric_surrogate_replaced() {
+        let s = b"&#55296;";
+        let (c, n) = try_decode_entity(s, Context::General).unwrap();
+        assert_eq!(c, '\u{FFFD}');
+        assert_eq!(n, 8);
+    }
+
+    #[test]
+    fn numeric_windows_1252_mapping() {
+        let s = b"&#128;";
+        let (c, n) = try_decode_entity(s, Context::General).unwrap();
+        assert_eq!(c, '\u{20AC}');
+        assert_eq!(n, 6);
     }
 
     #[test]
