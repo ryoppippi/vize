@@ -1,7 +1,7 @@
 //! Type-aware lint rules.
 //!
 //! These rules require semantic analysis (Croquis) and/or type
-//! information from external type checkers (tsgo) to function properly.
+//! information from external corsa-backed type checkers to function properly.
 //!
 //! ## Rule Categories
 //!

@@ -1,6 +1,6 @@
 ---
-source: crates/vize_patina/src/linter/native_type_aware.rs
-assertion_line: 854
+source: crates/vize_patina/src/linter/native_type_aware/tests.rs
+assertion_line: 157
 expression: diagnostics
 ---
 [
