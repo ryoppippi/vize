@@ -1,8 +1,9 @@
 //! Batch TypeScript type checking for Vue SFC.
 //!
-//! This module provides batch type checking via the Corsa CLI.
-//! It transforms Vue SFC files into pure TypeScript and runs Corsa on
-//! the virtualized project in `node_modules/.vize/canon/`.
+//! This module provides batch type checking via `corsa-bind`.
+//! It transforms Vue SFC files into pure TypeScript, materializes a virtual
+//! project in `node_modules/.vize/canon/`, and requests diagnostics from
+//! Corsa's LSP instead of parsing CLI text output.
 
 mod error;
 mod executor;

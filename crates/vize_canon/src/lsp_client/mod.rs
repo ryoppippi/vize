@@ -12,6 +12,7 @@ use serde_json::Value;
 use std::path::PathBuf;
 use vize_carton::{FxHashMap, String};
 
+mod bootstrap;
 mod diagnostics;
 mod events;
 mod lifecycle;

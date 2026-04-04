@@ -12,7 +12,7 @@
 //!
 //! ## Architecture
 //!
-//! ### Batch Type Checking (via Corsa CLI)
+//! ### Batch Type Checking (via corsa-bind)
 //!
 //! ```text
 //! ┌─────────────────────────────────────────────────────────────────┐
@@ -30,8 +30,8 @@
 //! │                                       │                         │
 //! │                                       ▼                         │
 //! │                            ┌──────────────────────────┐        │
-//! │                            │  Corsa (CLI)             │        │
-//! │                            │  Pure TypeScript only    │        │
+//! │                            │  Corsa LSP               │        │
+//! │                            │  via corsa-bind          │        │
 //! │                            └──────────┬───────────────┘        │
 //! │                                       │                         │
 //! │                                       ▼                         │

@@ -1,12 +1,10 @@
 use super::{
-    paths::{
-        find_corsa_in_common_locations, find_corsa_in_local_node_modules, find_corsa_in_path,
-        find_node_modules_with_vue, resolve_temp_dir_base,
-    },
+    bootstrap::resolve_corsa_executable,
+    paths::{find_node_modules_with_vue, resolve_temp_dir_base},
     utils::{json_from_value, parse_uri},
     CorsaLspClient,
 };
-use corsa_lsp::{LspClient, LspSpawnConfig, VirtualChange, VirtualDocument};
+use corsa_lsp::{VirtualChange, VirtualDocument};
 use corsa_runtime::block_on;
 use lsp_types::{
     notification::{Exit, Initialized},
@@ -23,14 +21,7 @@ use vize_carton::{cstr, String, ToCompactString};
 impl CorsaLspClient {
     /// Start the Corsa LSP server.
     pub fn new(corsa_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
-        let executable: String = corsa_path
-            .map(String::from)
-            .or_else(|| std::env::var("CORSA_PATH").ok().map(String::from))
-            .or_else(|| std::env::var("TSGO_PATH").ok().map(String::from))
-            .or_else(|| find_corsa_in_local_node_modules(working_dir))
-            .or_else(find_corsa_in_common_locations)
-            .or_else(find_corsa_in_path)
-            .unwrap_or_else(|| "corsa".into());
+        let executable = resolve_corsa_executable(corsa_path, working_dir);
 
         eprintln!("\x1b[90m[corsa] Using: {executable}\x1b[0m");
 
@@ -52,30 +43,37 @@ impl CorsaLspClient {
         install_node_modules_link(project_root.as_deref(), &temp_dir_path);
         write_temp_tsconfig(&temp_dir_path)?;
 
-        let client = block_on(LspClient::spawn(
-            LspSpawnConfig::new(executable.as_str()).with_cwd(temp_dir_path.clone()),
-        ))
-        .map_err(|e| cstr!("Failed to start Corsa LSP: {e}"))?;
-        let overlay = client.overlay();
-        let events = client.subscribe();
-
         let temp_root = temp_dir_path.canonicalize().ok();
-        let mut client = Self {
-            client,
-            overlay,
-            events,
-            diagnostics: Default::default(),
-            diagnostic_result_ids: Default::default(),
-            temp_dir: Some(temp_dir_path),
-            closed: false,
-        };
-        client.initialize(temp_root.as_ref())?;
-        client.drain_pending_messages();
-
-        Ok(client)
+        Self::spawn_initialized_client(
+            executable.as_str(),
+            temp_dir_path,
+            temp_root,
+            Some(temp_dir_base.join(&*cstr!("{}-{}", std::process::id(), client_id))),
+        )
     }
 
-    fn initialize(&mut self, project_root: Option<&PathBuf>) -> Result<(), String> {
+    /// Start the Corsa LSP server rooted at an on-disk workspace.
+    pub fn new_for_workspace(
+        corsa_path: Option<&str>,
+        workspace_root: &Path,
+    ) -> Result<Self, String> {
+        let workspace_root = workspace_root
+            .canonicalize()
+            .unwrap_or_else(|_| workspace_root.to_path_buf());
+        let working_dir = workspace_root.to_string_lossy();
+        let executable = resolve_corsa_executable(corsa_path, Some(working_dir.as_ref()));
+
+        eprintln!("\x1b[90m[corsa] Using: {executable}\x1b[0m");
+
+        Self::spawn_initialized_client(
+            executable.as_str(),
+            workspace_root.clone(),
+            Some(workspace_root),
+            None,
+        )
+    }
+
+    pub(super) fn initialize(&mut self, project_root: Option<&PathBuf>) -> Result<(), String> {
         let root_uri = project_root
             .map(|path| cstr!("file://{}", path.display()))
             .map(|uri| parse_uri(uri.as_str()))
