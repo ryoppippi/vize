@@ -1,10 +1,10 @@
 use super::{
     paths::{
-        find_node_modules_with_vue, find_tsgo_in_common_locations, find_tsgo_in_local_node_modules,
-        resolve_temp_dir_base,
+        find_corsa_in_common_locations, find_corsa_in_local_node_modules, find_corsa_in_path,
+        find_node_modules_with_vue, resolve_temp_dir_base,
     },
     utils::{json_from_value, parse_uri},
-    TsgoLspClient,
+    CorsaLspClient,
 };
 use corsa_lsp::{LspClient, LspSpawnConfig, VirtualChange, VirtualDocument};
 use corsa_runtime::block_on;
@@ -20,17 +20,19 @@ use std::{
 };
 use vize_carton::{cstr, String, ToCompactString};
 
-impl TsgoLspClient {
-    /// Start tsgo LSP server.
-    pub fn new(tsgo_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
-        let tsgo: String = tsgo_path
+impl CorsaLspClient {
+    /// Start the Corsa LSP server.
+    pub fn new(corsa_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
+        let executable: String = corsa_path
             .map(String::from)
+            .or_else(|| std::env::var("CORSA_PATH").ok().map(String::from))
             .or_else(|| std::env::var("TSGO_PATH").ok().map(String::from))
-            .or_else(|| find_tsgo_in_local_node_modules(working_dir))
-            .or_else(find_tsgo_in_common_locations)
-            .unwrap_or_else(|| "tsgo".into());
+            .or_else(|| find_corsa_in_local_node_modules(working_dir))
+            .or_else(find_corsa_in_common_locations)
+            .or_else(find_corsa_in_path)
+            .unwrap_or_else(|| "corsa".into());
 
-        eprintln!("\x1b[90m[tsgo] Using: {tsgo}\x1b[0m");
+        eprintln!("\x1b[90m[corsa] Using: {executable}\x1b[0m");
 
         let project_root = working_dir
             .map(PathBuf::from)
@@ -51,9 +53,9 @@ impl TsgoLspClient {
         write_temp_tsconfig(&temp_dir_path)?;
 
         let client = block_on(LspClient::spawn(
-            LspSpawnConfig::new(tsgo.as_str()).with_cwd(temp_dir_path.clone()),
+            LspSpawnConfig::new(executable.as_str()).with_cwd(temp_dir_path.clone()),
         ))
-        .map_err(|e| cstr!("Failed to start tsgo LSP: {e}"))?;
+        .map_err(|e| cstr!("Failed to start Corsa LSP: {e}"))?;
         let overlay = client.overlay();
         let events = client.subscribe();
 
@@ -105,7 +107,7 @@ impl TsgoLspClient {
         }))?;
 
         let _response = block_on(self.client.request::<Initialize>(params))
-            .map_err(|e| cstr!("Failed to initialize tsgo LSP: {e}"))?;
+            .map_err(|e| cstr!("Failed to initialize Corsa LSP: {e}"))?;
         self.client
             .notify::<Initialized>(InitializedParams {})
             .map_err(|e| cstr!("Failed to send initialized notification: {e}"))?;
@@ -122,7 +124,7 @@ impl TsgoLspClient {
         self.drain_pending_messages();
         let _ = block_on(self.client.request::<Shutdown>(()));
         let _ = self.client.notify::<Exit>(());
-        block_on(self.client.close()).map_err(|e| cstr!("Failed to close tsgo LSP: {e}"))?;
+        block_on(self.client.close()).map_err(|e| cstr!("Failed to close Corsa LSP: {e}"))?;
         self.closed = true;
         Ok(())
     }
@@ -183,7 +185,7 @@ impl TsgoLspClient {
     }
 }
 
-impl Drop for TsgoLspClient {
+impl Drop for CorsaLspClient {
     fn drop(&mut self) {
         let _ = self.shutdown();
         if let Some(ref dir) = self.temp_dir {
@@ -208,6 +210,7 @@ fn install_node_modules_link(project_root: Option<&Path>, temp_dir_path: &Path) 
     }
 }
 
+/// Write a minimal `tsconfig.json` that keeps the native checker in strict mode.
 fn write_temp_tsconfig(temp_dir_path: &Path) -> Result<(), String> {
     let tsconfig_content = json!({
         "compilerOptions": {

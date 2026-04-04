@@ -14,7 +14,7 @@ fn unique_case_dir(name: &str) -> PathBuf {
         .join("__agent_only")
         .join("tests")
         .join(format!(
-            "tsgo-temp-dir-{name}-{}-{case_id}",
+            "corsa-temp-dir-{name}-{}-{case_id}",
             std::process::id()
         ))
 }
@@ -36,7 +36,7 @@ fn resolves_temp_dir_under_package_root_when_node_modules_exists() {
         case_dir
             .join("playground")
             .join("__agent_only")
-            .join("vize-tsgo")
+            .join("vize-corsa")
     );
 
     let _ = fs::remove_dir_all(&case_dir);
@@ -57,7 +57,7 @@ fn falls_back_to_nearest_available_node_modules_root() {
 
     assert_eq!(
         resolved,
-        workspace_root.join("__agent_only").join("vize-tsgo")
+        workspace_root.join("__agent_only").join("vize-corsa")
     );
     assert!(!resolved.starts_with(&source_dir));
 

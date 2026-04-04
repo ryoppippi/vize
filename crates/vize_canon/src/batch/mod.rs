@@ -1,7 +1,7 @@
 //! Batch TypeScript type checking for Vue SFC.
 //!
-//! This module provides batch type checking via tsgo CLI.
-//! It transforms Vue SFC files into pure TypeScript and runs tsgo on
+//! This module provides batch type checking via the Corsa CLI.
+//! It transforms Vue SFC files into pure TypeScript and runs Corsa on
 //! the virtualized project in `node_modules/.vize/canon/`.
 
 mod error;
@@ -12,8 +12,8 @@ mod type_checker;
 mod virtual_project;
 mod virtual_ts;
 
-pub use error::{PackageManager, TsgoError, TsgoNotFoundError, TsgoResult};
-pub use executor::TsgoExecutor;
+pub use error::{CorsaError, CorsaNotFoundError, CorsaResult, PackageManager};
+pub use executor::CorsaExecutor;
 pub use import_rewriter::{ImportRewriter, ImportSourceMap, OffsetAdjustment, RewriteResult};
 pub use source_map::{CompositeSourceMap, SfcSourceMap};
 pub use type_checker::{BatchTypeChecker, TypeCheckResult, TypeChecker};
@@ -31,7 +31,7 @@ pub enum SfcBlockType {
     Style,
 }
 
-/// Diagnostic from tsgo.
+/// Diagnostic reported by Corsa.
 #[derive(Debug, Clone)]
 pub struct Diagnostic {
     /// Original file path.

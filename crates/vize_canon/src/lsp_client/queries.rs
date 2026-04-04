@@ -1,6 +1,6 @@
 use super::{
     utils::{json_from_value, text_document_position, value_to_json},
-    TsgoLspClient,
+    CorsaLspClient,
 };
 use corsa_runtime::block_on;
 use lsp_types::{
@@ -14,7 +14,7 @@ use lsp_types::{
 use serde_json::{json, Value};
 use vize_carton::{cstr, String};
 
-impl TsgoLspClient {
+impl CorsaLspClient {
     /// Get hover information at a position.
     pub fn hover(
         &mut self,

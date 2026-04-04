@@ -1,7 +1,7 @@
-//! tsgo Server - JSON-RPC server wrapping tsgo for Vue SFC type checking.
+//! Corsa server for Vue SFC type checking.
 //!
 //! This server provides a JSON-RPC interface over Unix socket or stdin/stdout
-//! for type checking Vue Single File Components using tsgo as the backend.
+//! for type checking Vue Single File Components using Corsa as the backend.
 //!
 //! ## Protocol
 //!
@@ -17,8 +17,8 @@
 //!
 //! ## Unix Socket Mode
 //!
-//! Start server: `vize check-server --socket /tmp/vize.sock`
-//! Connect: `echo '{"jsonrpc":"2.0","id":1,"method":"check",...}' | nc -U /tmp/vize.sock`
+//! Start server: `vize check-server --socket ./__agent_only/vize.sock`
+//! Connect: `echo '{"jsonrpc":"2.0","id":1,"method":"check",...}' | nc -U ./__agent_only/vize.sock`
 
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader, Write};
@@ -93,24 +93,24 @@ pub struct Diagnostic {
 /// Server configuration
 #[derive(Debug, Clone, Default)]
 pub struct ServerConfig {
-    /// Path to tsgo executable (uses PATH if not specified)
-    pub tsgo_path: Option<String>,
-    /// Working directory for tsgo
+    /// Path to the Corsa executable (uses PATH if not specified)
+    pub corsa_path: Option<String>,
+    /// Working directory for module resolution
     pub working_dir: Option<String>,
 }
 
-/// tsgo Server
+/// Corsa server.
 #[allow(clippy::disallowed_types)]
-pub struct TsgoServer {
+pub struct CorsaServer {
     config: ServerConfig,
     running: Arc<AtomicBool>,
     /// Cache of generated Virtual TypeScript (uri -> content)
     cache: FxHashMap<String, String>,
-    /// LSP client for tsgo (lazy initialized)
-    lsp_client: Option<crate::lsp_client::TsgoLspClient>,
+    /// LSP client for Corsa (lazy initialized)
+    lsp_client: Option<crate::lsp_client::CorsaLspClient>,
 }
 
-impl TsgoServer {
+impl CorsaServer {
     /// Create a new server with default configuration.
     pub fn new() -> Self {
         Self::with_config(ServerConfig::default())
@@ -382,8 +382,8 @@ impl TsgoServer {
         // Cache the virtual TS
         self.cache.insert(uri.into(), virtual_ts.clone());
 
-        // Run tsgo on the virtual TypeScript (using LSP with virtual file)
-        let diagnostics = self.run_tsgo(uri, &virtual_ts)?;
+        // Run Corsa on the virtual TypeScript through the LSP client.
+        let diagnostics = self.run_corsa(uri, &virtual_ts)?;
 
         let error_count = diagnostics.iter().filter(|d| d.severity == "error").count();
 
@@ -394,12 +394,12 @@ impl TsgoServer {
         })
     }
 
-    /// Run tsgo on TypeScript content and parse diagnostics using LSP.
-    fn run_tsgo(&mut self, uri: &str, content: &str) -> Result<Vec<Diagnostic>, String> {
+    /// Run Corsa on TypeScript content and parse diagnostics using LSP.
+    fn run_corsa(&mut self, uri: &str, content: &str) -> Result<Vec<Diagnostic>, String> {
         // Initialize LSP client if needed
         if self.lsp_client.is_none() {
-            let client = crate::lsp_client::TsgoLspClient::new(
-                self.config.tsgo_path.as_deref(),
+            let client = crate::lsp_client::CorsaLspClient::new(
+                self.config.corsa_path.as_deref(),
                 self.config.working_dir.as_deref(),
             )?;
             self.lsp_client = Some(client);
@@ -457,7 +457,7 @@ impl TsgoServer {
     }
 }
 
-impl Default for TsgoServer {
+impl Default for CorsaServer {
     fn default() -> Self {
         Self::new()
     }

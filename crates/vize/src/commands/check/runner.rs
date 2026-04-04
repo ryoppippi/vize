@@ -1,6 +1,6 @@
 //! Check command execution logic.
 //!
-//! Contains the direct tsgo LSP runner, Unix socket runner, file collection,
+//! Contains the direct Corsa LSP runner, Unix socket runner, file collection,
 //! and globals parsing.
 
 #![allow(clippy::disallowed_macros)]
@@ -177,13 +177,13 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     }
 }
 
-/// Run type checking directly with tsgo LSP (no file I/O).
+/// Run type checking directly with Corsa LSP (no file I/O).
 pub(crate) fn run_direct(args: &CheckArgs) {
     use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};
     use vize_canon::{
-        lsp_client::TsgoLspClient,
+        lsp_client::CorsaLspClient,
         virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions},
     };
     use vize_carton::Bump;
@@ -432,7 +432,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     }
 
     if !args.quiet {
-        eprintln!("Running tsgo LSP on {} files...", generated.len());
+        eprintln!("Running Corsa LSP on {} files...", generated.len());
     }
 
     let check_start = Instant::now();
@@ -524,7 +524,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             .into_iter()
             .map(|indices| {
                 let project_root = project_root.clone();
-                let tsgo_path = args.tsgo_path.clone();
+                let corsa_path = args.corsa_path.clone();
                 let total_errors = &total_errors;
                 let all_diagnostics = &all_diagnostics;
                 let uri_map = &uri_map;
@@ -533,10 +533,10 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                 s.spawn(move || {
                     // Initialize LSP client for this thread
                     let mut lsp_client =
-                        match TsgoLspClient::new(tsgo_path.as_deref(), project_root.as_deref()) {
+                        match CorsaLspClient::new(corsa_path.as_deref(), project_root.as_deref()) {
                             Ok(client) => client,
                             Err(e) => {
-                                eprintln!("\x1b[31mError:\x1b[0m Failed to start tsgo LSP: {}", e);
+                                eprintln!("\x1b[31mError:\x1b[0m Failed to start Corsa LSP: {}", e);
                                 return;
                             }
                         };
@@ -558,7 +558,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                     lsp_client.wait_for_diagnostics(files_to_open.len());
 
                     // PHASE 2: Request diagnostics in batch (pipelined)
-                    // tsgo doesn't publish diagnostics automatically - we must request them
+                    // Corsa does not always publish diagnostics proactively, so request them.
                     let uris: Vec<vize_carton::String> = indices
                         .iter()
                         .map(|i| cstr!("file://{}.mts", generated[*i].original))
@@ -601,7 +601,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                             });
 
                             // Module resolution: fundamental limitation of single-file mode.
-                            // tsgo cannot resolve .vue imports, path aliases, or npm packages
+                            // Corsa cannot resolve .vue imports, path aliases, or npm packages
                             // without a full project context. This is NOT a virtual TS bug.
                             if matches!(
                                 code_num,

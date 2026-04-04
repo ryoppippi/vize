@@ -1,6 +1,9 @@
 use std::path::{Path, PathBuf};
 use vize_carton::{cstr, String};
 
+const EXECUTABLE_NAMES: [&str; 2] = ["corsa", "tsgo"];
+
+/// Walk upward until a `node_modules/vue` anchor is found.
 pub(super) fn find_node_modules_with_vue(start: &Path) -> Option<PathBuf> {
     let mut dir = start;
     loop {
@@ -12,6 +15,7 @@ pub(super) fn find_node_modules_with_vue(start: &Path) -> Option<PathBuf> {
     }
 }
 
+/// Resolve the base directory used for per-client scratch state.
 pub(super) fn resolve_temp_dir_base(project_root: Option<&Path>) -> PathBuf {
     let fallback_root = project_root
         .map(Path::to_path_buf)
@@ -22,21 +26,22 @@ pub(super) fn resolve_temp_dir_base(project_root: Option<&Path>) -> PathBuf {
         .and_then(|path| path.parent().map(Path::to_path_buf))
         .unwrap_or(fallback_root)
         .join("__agent_only")
-        .join("vize-tsgo")
+        .join("vize-corsa")
 }
 
-pub(super) fn find_tsgo_in_local_node_modules(working_dir: Option<&str>) -> Option<String> {
+/// Resolve a project-local Corsa executable from the current directory or ancestors.
+pub(super) fn find_corsa_in_local_node_modules(working_dir: Option<&str>) -> Option<String> {
     let base_dir = working_dir
         .map(PathBuf::from)
         .or_else(|| std::env::current_dir().ok())?;
 
-    if let Some(path) = search_tsgo_in_dir(&base_dir) {
+    if let Some(path) = search_corsa_in_dir(&base_dir) {
         return Some(path);
     }
 
     let mut current = base_dir.as_path();
     while let Some(parent) = current.parent() {
-        if let Some(path) = search_tsgo_in_dir(parent) {
+        if let Some(path) = search_corsa_in_dir(parent) {
             return Some(path);
         }
         current = parent;
@@ -45,24 +50,27 @@ pub(super) fn find_tsgo_in_local_node_modules(working_dir: Option<&str>) -> Opti
     None
 }
 
-pub(super) fn find_tsgo_in_common_locations() -> Option<String> {
+/// Resolve a globally installed Corsa executable from common package-manager paths.
+pub(super) fn find_corsa_in_common_locations() -> Option<String> {
     let home = std::env::var("HOME").ok()?;
-    let candidates: [String; 10] = [
-        cstr!("{home}/.npm-global/bin/tsgo"),
-        cstr!("{home}/.npm/bin/tsgo"),
-        cstr!("{home}/.local/share/pnpm/tsgo"),
-        cstr!("{home}/.volta/bin/tsgo"),
-        cstr!("{home}/.local/share/mise/shims/tsgo"),
-        cstr!("{home}/.asdf/shims/tsgo"),
-        cstr!("{home}/.local/share/fnm/node-versions/current/bin/tsgo"),
-        cstr!("{home}/.nvm/versions/node/current/bin/tsgo"),
-        "/opt/homebrew/bin/tsgo".into(),
-        "/usr/local/bin/tsgo".into(),
-    ];
+    for executable in EXECUTABLE_NAMES {
+        let candidates: [String; 10] = [
+            cstr!("{home}/.npm-global/bin/{executable}"),
+            cstr!("{home}/.npm/bin/{executable}"),
+            cstr!("{home}/.local/share/pnpm/{executable}"),
+            cstr!("{home}/.volta/bin/{executable}"),
+            cstr!("{home}/.local/share/mise/shims/{executable}"),
+            cstr!("{home}/.asdf/shims/{executable}"),
+            cstr!("{home}/.local/share/fnm/node-versions/current/bin/{executable}"),
+            cstr!("{home}/.nvm/versions/node/current/bin/{executable}"),
+            cstr!("/opt/homebrew/bin/{executable}"),
+            cstr!("/usr/local/bin/{executable}"),
+        ];
 
-    for path in candidates {
-        if Path::new(path.as_str()).exists() {
-            return Some(path);
+        for path in candidates {
+            if Path::new(path.as_str()).exists() {
+                return Some(path);
+            }
         }
     }
 
@@ -75,9 +83,11 @@ pub(super) fn find_tsgo_in_common_locations() -> Option<String> {
             let npm_root = std::string::String::from_utf8_lossy(&output.stdout);
             let npm_root = npm_root.trim();
             if let Some(lib_parent) = Path::new(npm_root).parent() {
-                let tsgo_path = lib_parent.join("bin/tsgo");
-                if tsgo_path.exists() {
-                    return Some(tsgo_path.to_string_lossy().into());
+                for executable in EXECUTABLE_NAMES {
+                    let corsa_path = lib_parent.join("bin").join(executable);
+                    if corsa_path.exists() {
+                        return Some(corsa_path.to_string_lossy().into());
+                    }
                 }
             }
         }
@@ -86,7 +96,18 @@ pub(super) fn find_tsgo_in_common_locations() -> Option<String> {
     None
 }
 
-fn search_tsgo_in_dir(dir: &Path) -> Option<String> {
+/// Resolve a `corsa` executable from `PATH`, with `tsgo` as a legacy fallback.
+pub(super) fn find_corsa_in_path() -> Option<String> {
+    for executable in EXECUTABLE_NAMES {
+        if let Ok(path) = which::which(executable) {
+            return Some(path.to_string_lossy().into());
+        }
+    }
+
+    None
+}
+
+fn search_corsa_in_dir(dir: &Path) -> Option<String> {
     let platform_suffix = platform_suffix();
     let pnpm_pattern = dir.join("node_modules/.pnpm");
     if pnpm_pattern.exists() {
@@ -97,38 +118,49 @@ fn search_tsgo_in_dir(dir: &Path) -> Option<String> {
                 if name_str.starts_with("@typescript+native-preview-")
                     && name_str.contains(platform_suffix)
                 {
-                    let native_path = entry.path().join(&*cstr!(
-                        "node_modules/@typescript/native-preview-{}/lib/tsgo",
-                        platform_suffix
-                    ));
-                    if native_path.exists() {
-                        return Some(native_path.to_string_lossy().into());
+                    for executable in EXECUTABLE_NAMES {
+                        let native_path = entry.path().join(&*cstr!(
+                            "node_modules/@typescript/native-preview-{}/lib/{}",
+                            platform_suffix,
+                            executable
+                        ));
+                        if native_path.exists() {
+                            return Some(native_path.to_string_lossy().into());
+                        }
                     }
                 }
             }
         }
     }
 
-    let native_candidates = [
-        dir.join(&*cstr!(
-            "node_modules/@typescript/native-preview-{}/lib/tsgo",
-            platform_suffix
-        )),
-        dir.join("node_modules/@typescript/native-preview/lib/tsgo"),
-    ];
-    for candidate in &native_candidates {
-        if candidate.exists() {
-            return Some(candidate.to_string_lossy().into());
+    for executable in EXECUTABLE_NAMES {
+        let native_candidates = [
+            dir.join(&*cstr!(
+                "node_modules/@typescript/native-preview-{}/lib/{}",
+                platform_suffix,
+                executable
+            )),
+            dir.join(&*cstr!(
+                "node_modules/@typescript/native-preview/lib/{executable}"
+            )),
+        ];
+        for candidate in &native_candidates {
+            if candidate.exists() {
+                return Some(candidate.to_string_lossy().into());
+            }
         }
     }
 
-    let fallback_candidates = [
-        dir.join("node_modules/.bin/tsgo"),
-        dir.join("node_modules/@typescript/native-preview/bin/tsgo"),
-    ];
-    for candidate in &fallback_candidates {
-        if candidate.exists() {
-            return Some(candidate.to_string_lossy().into());
+    for executable in EXECUTABLE_NAMES {
+        let fallback_candidates = [
+            dir.join("node_modules/.bin").join(executable),
+            dir.join("node_modules/@typescript/native-preview/bin")
+                .join(executable),
+        ];
+        for candidate in &fallback_candidates {
+            if candidate.exists() {
+                return Some(candidate.to_string_lossy().into());
+            }
         }
     }
 

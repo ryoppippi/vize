@@ -1,53 +1,57 @@
-//! tsgo CLI executor.
+//! Corsa CLI executor.
 //!
-//! This module handles executing tsgo CLI for type checking.
+//! This module resolves and executes the native TypeScript checker CLI.
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use super::error::{TsgoNotFoundError, TsgoResult};
+use super::error::{CorsaNotFoundError, CorsaResult};
 use super::type_checker::TypeCheckResult;
 use super::virtual_project::VirtualProject;
 use super::Diagnostic;
 use vize_carton::String;
 
-/// tsgo CLI executor.
-pub struct TsgoExecutor {
-    /// Path to tsgo executable.
-    tsgo_path: PathBuf,
+/// Corsa CLI executor.
+pub struct CorsaExecutor {
+    /// Path to the resolved executable.
+    corsa_path: PathBuf,
 }
 
-impl TsgoExecutor {
-    /// Create a new executor by finding tsgo.
-    pub fn new(project_root: &Path) -> Result<Self, TsgoNotFoundError> {
-        // 1. Try local node_modules/.bin/tsgo
-        let local_tsgo = project_root.join("node_modules/.bin/tsgo");
-        if local_tsgo.exists() {
-            return Ok(Self {
-                tsgo_path: local_tsgo,
-            });
+impl CorsaExecutor {
+    /// Create a new executor by finding a local or global Corsa executable.
+    pub fn new(project_root: &Path) -> Result<Self, CorsaNotFoundError> {
+        // 1. Prefer local Node executables so project-pinned versions win.
+        for executable in ["corsa", "tsgo"] {
+            let local_corsa = project_root.join("node_modules/.bin").join(executable);
+            if local_corsa.exists() {
+                return Ok(Self {
+                    corsa_path: local_corsa,
+                });
+            }
         }
 
-        // 2. Try which::which to find in PATH
-        if let Ok(global_tsgo) = which::which("tsgo") {
-            return Ok(Self {
-                tsgo_path: global_tsgo,
-            });
+        // 2. Try PATH lookups next.
+        for executable in ["corsa", "tsgo"] {
+            if let Ok(global_corsa) = which::which(executable) {
+                return Ok(Self {
+                    corsa_path: global_corsa,
+                });
+            }
         }
 
-        // 3. Try mise shims directory
-        if let Some(mise_tsgo) = Self::find_mise_tsgo() {
+        // 3. Try mise shims directory.
+        if let Some(mise_corsa) = Self::find_mise_corsa() {
             return Ok(Self {
-                tsgo_path: mise_tsgo,
+                corsa_path: mise_corsa,
             });
         }
 
         // 4. Not found
-        Err(TsgoNotFoundError::new(project_root))
+        Err(CorsaNotFoundError::new(project_root))
     }
 
-    /// Find tsgo in mise shims directory.
-    fn find_mise_tsgo() -> Option<PathBuf> {
+    /// Find Corsa in mise shims directory.
+    fn find_mise_corsa() -> Option<PathBuf> {
         // Try MISE_DATA_DIR environment variable first
         let mise_data_dir = std::env::var("MISE_DATA_DIR")
             .map(PathBuf::from)
@@ -57,42 +61,48 @@ impl TsgoExecutor {
                 dirs::data_local_dir().map(|d| d.join("mise"))
             })?;
 
-        let shims_tsgo = mise_data_dir.join("shims").join("tsgo");
-        if shims_tsgo.exists() {
-            return Some(shims_tsgo);
+        for executable in ["corsa", "tsgo"] {
+            let shims_corsa = mise_data_dir.join("shims").join(executable);
+            if shims_corsa.exists() {
+                return Some(shims_corsa);
+            }
         }
 
         // Also try XDG_DATA_HOME/mise/shims
         if let Some(xdg_data) = std::env::var("XDG_DATA_HOME").ok().map(PathBuf::from) {
-            let xdg_tsgo = xdg_data.join("mise").join("shims").join("tsgo");
-            if xdg_tsgo.exists() {
-                return Some(xdg_tsgo);
+            for executable in ["corsa", "tsgo"] {
+                let xdg_corsa = xdg_data.join("mise").join("shims").join(executable);
+                if xdg_corsa.exists() {
+                    return Some(xdg_corsa);
+                }
             }
         }
 
         // Try home directory directly
         if let Some(home) = dirs::home_dir() {
-            let home_tsgo = home.join(".local/share/mise/shims/tsgo");
-            if home_tsgo.exists() {
-                return Some(home_tsgo);
+            for executable in ["corsa", "tsgo"] {
+                let home_corsa = home.join(".local/share/mise/shims").join(executable);
+                if home_corsa.exists() {
+                    return Some(home_corsa);
+                }
             }
         }
 
         None
     }
 
-    /// Get the tsgo path.
-    pub fn tsgo_path(&self) -> &Path {
-        &self.tsgo_path
+    /// Get the resolved executable path.
+    pub fn corsa_path(&self) -> &Path {
+        &self.corsa_path
     }
 
     /// Run type checking on the virtual project.
-    pub fn check(&self, project: &VirtualProject) -> TsgoResult<TypeCheckResult> {
+    pub fn check(&self, project: &VirtualProject) -> CorsaResult<TypeCheckResult> {
         // Materialize the virtual project first
         project.materialize()?;
 
-        // Run tsgo
-        let output = Command::new(&self.tsgo_path)
+        // Run the native checker CLI.
+        let output = Command::new(&self.corsa_path)
             .current_dir(project.virtual_root())
             .args([
                 "--project",
@@ -106,7 +116,7 @@ impl TsgoExecutor {
         // Parse output
         #[allow(clippy::disallowed_types)]
         let stderr = std::string::String::from_utf8_lossy(&output.stderr);
-        let diagnostics = self.parse_tsgo_output(&stderr, project);
+        let diagnostics = self.parse_corsa_output(&stderr, project);
 
         let exit_code = output.status.code().unwrap_or(-1);
 
@@ -117,11 +127,11 @@ impl TsgoExecutor {
         })
     }
 
-    /// Parse tsgo CLI output into diagnostics.
-    fn parse_tsgo_output(&self, output: &str, project: &VirtualProject) -> Vec<Diagnostic> {
+    /// Parse Corsa CLI output into diagnostics.
+    fn parse_corsa_output(&self, output: &str, project: &VirtualProject) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
 
-        // tsgo output format: file(line,col): error TSxxxx: message
+        // Native checker output format: file(line,col): error TSxxxx: message
         // Example: src/App.vue.ts(10,5): error TS2304: Cannot find name 'foo'.
         for line in output.lines() {
             if let Some(diag) = self.parse_diagnostic_line(line, project) {
@@ -222,13 +232,13 @@ impl TsgoExecutor {
 
 #[cfg(test)]
 mod tests {
-    use super::TsgoExecutor;
+    use super::CorsaExecutor;
     use std::path::PathBuf;
 
     #[test]
     fn test_parse_location() {
-        let executor = TsgoExecutor {
-            tsgo_path: PathBuf::from("tsgo"),
+        let executor = CorsaExecutor {
+            corsa_path: PathBuf::from("corsa"),
         };
 
         assert_eq!(executor.parse_location("10,5"), Some((10, 5)));
@@ -238,8 +248,8 @@ mod tests {
 
     #[test]
     fn test_parse_message() {
-        let executor = TsgoExecutor {
-            tsgo_path: PathBuf::from("tsgo"),
+        let executor = CorsaExecutor {
+            corsa_path: PathBuf::from("corsa"),
         };
 
         let result = executor.parse_message("error TS2304: Cannot find name 'foo'.");

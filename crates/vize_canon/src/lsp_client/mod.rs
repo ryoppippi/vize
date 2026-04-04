@@ -1,6 +1,6 @@
-//! LSP Client for tsgo.
+//! LSP client adapter for Corsa.
 //!
-//! This module preserves the legacy `TsgoLspClient` surface used across the
+//! This module preserves the legacy `CorsaLspClient` surface used across the
 //! workspace while delegating process management and virtual document syncing to
 //! `corsa-bind`'s `corsa_lsp`.
 
@@ -22,8 +22,8 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-/// LSP Client for tsgo
-pub struct TsgoLspClient {
+/// Thin adapter over `corsa_lsp::LspClient`.
+pub struct CorsaLspClient {
     client: LspClient,
     overlay: LspOverlay,
     events: BroadcastReceiver<corsa_lsp::jsonrpc::InboundEvent>,

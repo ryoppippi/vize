@@ -1,4 +1,4 @@
-//! Core tsgo bridge implementation backed by `corsa-bind`.
+//! Core Corsa bridge implementation backed by `corsa-bind`.
 
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -9,15 +9,15 @@ use vize_carton::profiler::{CacheStats, Profiler};
 use vize_carton::{cstr, String};
 
 use super::types::*;
-use crate::lsp_client::TsgoLspClient;
+use crate::lsp_client::CorsaLspClient;
 
-/// Bridge to tsgo for type checking via LSP.
+/// Bridge to Corsa for type checking via LSP.
 #[allow(clippy::disallowed_types)]
-pub struct TsgoBridge {
+pub struct CorsaBridge {
     /// Configuration
-    config: TsgoBridgeConfig,
+    config: CorsaBridgeConfig,
     /// Shared LSP client state
-    client: Arc<Mutex<Option<TsgoLspClient>>>,
+    client: Arc<Mutex<Option<CorsaLspClient>>>,
     /// Whether the bridge is initialized
     initialized: AtomicBool,
     /// Profiler for performance tracking
@@ -27,15 +27,15 @@ pub struct TsgoBridge {
 }
 
 #[allow(clippy::disallowed_types)]
-impl TsgoBridge {
-    /// Create a new tsgo bridge with default configuration.
+impl CorsaBridge {
+    /// Create a new Corsa bridge with default configuration.
     pub fn new() -> Self {
-        Self::with_config(TsgoBridgeConfig::default())
+        Self::with_config(CorsaBridgeConfig::default())
     }
 
-    /// Create a new tsgo bridge with custom configuration.
+    /// Create a new Corsa bridge with custom configuration.
     #[allow(clippy::disallowed_types)]
-    pub fn with_config(config: TsgoBridgeConfig) -> Self {
+    pub fn with_config(config: CorsaBridgeConfig) -> Self {
         let profiler = if config.enable_profiling {
             Profiler::enabled()
         } else {
@@ -51,9 +51,9 @@ impl TsgoBridge {
         }
     }
 
-    /// Spawn and initialize the tsgo process.
-    pub async fn spawn(&self) -> Result<(), TsgoBridgeError> {
-        let _timer = self.profiler.timer("tsgo_spawn");
+    /// Spawn and initialize the Corsa process.
+    pub async fn spawn(&self) -> Result<(), CorsaBridgeError> {
+        let _timer = self.profiler.timer("corsa_spawn");
 
         if self.initialized.load(Ordering::SeqCst) {
             return Ok(());
@@ -67,8 +67,8 @@ impl TsgoBridge {
                 return Ok(());
             }
 
-            let tsgo_path = config
-                .tsgo_path
+            let corsa_path = config
+                .corsa_path
                 .as_ref()
                 .map(|path| path.to_string_lossy().into_owned());
             let working_dir = config
@@ -76,8 +76,8 @@ impl TsgoBridge {
                 .as_ref()
                 .map(|path| path.to_string_lossy().into_owned());
 
-            let client = TsgoLspClient::new(tsgo_path.as_deref(), working_dir.as_deref())
-                .map_err(TsgoBridgeError::SpawnFailed)?;
+            let client = CorsaLspClient::new(corsa_path.as_deref(), working_dir.as_deref())
+                .map_err(CorsaBridgeError::SpawnFailed)?;
             *guard = Some(client);
             Ok(())
         })
@@ -97,7 +97,7 @@ impl TsgoBridge {
         &self,
         name: &str,
         content: &str,
-    ) -> Result<String, TsgoBridgeError> {
+    ) -> Result<String, CorsaBridgeError> {
         let _timer = self.profiler.timer("open_virtual_document");
         let uri = normalize_document_uri(name);
         let content = content.to_owned();
@@ -107,7 +107,7 @@ impl TsgoBridge {
             .with_client(move |client| {
                 client
                     .did_open_fast(uri.as_str(), content.as_str())
-                    .map_err(TsgoBridgeError::CommunicationError)?;
+                    .map_err(CorsaBridgeError::CommunicationError)?;
                 Ok(client.diagnostics_cache_len())
             })
             .await?;
@@ -125,7 +125,7 @@ impl TsgoBridge {
         &self,
         name: &str,
         content: &str,
-    ) -> Result<String, TsgoBridgeError> {
+    ) -> Result<String, CorsaBridgeError> {
         self.open_virtual_document(name, content).await
     }
 
@@ -135,7 +135,7 @@ impl TsgoBridge {
         uri: &str,
         content: &str,
         _version: i32,
-    ) -> Result<(), TsgoBridgeError> {
+    ) -> Result<(), CorsaBridgeError> {
         let _timer = self.profiler.timer("update_virtual_document");
         let uri = uri.to_owned();
         let content = content.to_owned();
@@ -144,7 +144,7 @@ impl TsgoBridge {
             .with_client(move |client| {
                 client
                     .did_change(uri.as_str(), content.as_str())
-                    .map_err(TsgoBridgeError::CommunicationError)?;
+                    .map_err(CorsaBridgeError::CommunicationError)?;
                 Ok(client.diagnostics_cache_len())
             })
             .await?;
@@ -158,13 +158,13 @@ impl TsgoBridge {
     }
 
     /// Close a virtual document.
-    pub async fn close_virtual_document(&self, uri: &str) -> Result<(), TsgoBridgeError> {
+    pub async fn close_virtual_document(&self, uri: &str) -> Result<(), CorsaBridgeError> {
         let uri = uri.to_owned();
         let cache_len = self
             .with_client(move |client| {
                 client
                     .did_close(uri.as_str())
-                    .map_err(TsgoBridgeError::CommunicationError)?;
+                    .map_err(CorsaBridgeError::CommunicationError)?;
                 Ok(client.diagnostics_cache_len())
             })
             .await?;
@@ -173,13 +173,13 @@ impl TsgoBridge {
     }
 
     /// Get diagnostics for a document.
-    pub async fn get_diagnostics(&self, uri: &str) -> Result<Vec<LspDiagnostic>, TsgoBridgeError> {
+    pub async fn get_diagnostics(&self, uri: &str) -> Result<Vec<LspDiagnostic>, CorsaBridgeError> {
         let uri = uri.to_owned();
         let (used_cache, cache_len, diagnostics) = self
             .with_client(move |client| {
                 let fetch = client
                     .request_diagnostics_full(uri.as_str())
-                    .map_err(TsgoBridgeError::CommunicationError)?;
+                    .map_err(CorsaBridgeError::CommunicationError)?;
                 let diagnostics = convert_bridge_diagnostics(&fetch.diagnostics)?;
                 Ok((
                     fetch.used_cache,
@@ -204,7 +204,7 @@ impl TsgoBridge {
         &self,
         name: &str,
         content: &str,
-    ) -> Result<TypeCheckResult, TsgoBridgeError> {
+    ) -> Result<TypeCheckResult, CorsaBridgeError> {
         let _timer = self.profiler.timer("type_check");
 
         let uri = self.open_virtual_document(name, content).await?;
@@ -221,7 +221,7 @@ impl TsgoBridge {
     }
 
     /// Shutdown the bridge.
-    pub async fn shutdown(&self) -> Result<(), TsgoBridgeError> {
+    pub async fn shutdown(&self) -> Result<(), CorsaBridgeError> {
         if !self.initialized.load(Ordering::SeqCst) {
             return Ok(());
         }
@@ -232,7 +232,7 @@ impl TsgoBridge {
             if let Some(client) = guard.as_mut() {
                 client
                     .shutdown()
-                    .map_err(TsgoBridgeError::CommunicationError)?;
+                    .map_err(CorsaBridgeError::CommunicationError)?;
             }
             *guard = None;
             Ok(())
@@ -275,14 +275,14 @@ impl TsgoBridge {
         uri: &str,
         line: u32,
         character: u32,
-    ) -> Result<Option<LspHover>, TsgoBridgeError> {
-        let _timer = self.profiler.timer("tsgo_hover");
+    ) -> Result<Option<LspHover>, CorsaBridgeError> {
+        let _timer = self.profiler.timer("corsa_hover");
         let uri = uri.to_owned();
         let result = self
             .with_client(move |client| {
                 client
                     .hover_raw(uri.as_str(), line, character)
-                    .map_err(TsgoBridgeError::CommunicationError)
+                    .map_err(CorsaBridgeError::CommunicationError)
             })
             .await?;
 
@@ -299,14 +299,14 @@ impl TsgoBridge {
         uri: &str,
         line: u32,
         character: u32,
-    ) -> Result<Vec<LspLocation>, TsgoBridgeError> {
-        let _timer = self.profiler.timer("tsgo_definition");
+    ) -> Result<Vec<LspLocation>, CorsaBridgeError> {
+        let _timer = self.profiler.timer("corsa_definition");
         let uri = uri.to_owned();
         let result = self
             .with_client(move |client| {
                 client
                     .definition_raw(uri.as_str(), line, character)
-                    .map_err(TsgoBridgeError::CommunicationError)
+                    .map_err(CorsaBridgeError::CommunicationError)
             })
             .await?;
 
@@ -328,13 +328,13 @@ impl TsgoBridge {
         line: u32,
         character: u32,
         include_declaration: bool,
-    ) -> Result<Vec<LspLocation>, TsgoBridgeError> {
+    ) -> Result<Vec<LspLocation>, CorsaBridgeError> {
         let uri = uri.to_owned();
         let result = self
             .with_client(move |client| {
                 client
                     .references_raw(uri.as_str(), line, character, include_declaration)
-                    .map_err(TsgoBridgeError::CommunicationError)
+                    .map_err(CorsaBridgeError::CommunicationError)
             })
             .await?;
 
@@ -351,12 +351,12 @@ impl TsgoBridge {
         uri: &str,
         line: u32,
         character: u32,
-    ) -> Result<Option<Value>, TsgoBridgeError> {
+    ) -> Result<Option<Value>, CorsaBridgeError> {
         let uri = uri.to_owned();
         self.with_client(move |client| {
             client
                 .prepare_rename_raw(uri.as_str(), line, character)
-                .map_err(TsgoBridgeError::CommunicationError)
+                .map_err(CorsaBridgeError::CommunicationError)
         })
         .await
     }
@@ -368,13 +368,13 @@ impl TsgoBridge {
         line: u32,
         character: u32,
         new_name: &str,
-    ) -> Result<Option<Value>, TsgoBridgeError> {
+    ) -> Result<Option<Value>, CorsaBridgeError> {
         let uri = uri.to_owned();
         let new_name = new_name.to_owned();
         self.with_client(move |client| {
             client
                 .rename_raw(uri.as_str(), line, character, new_name.as_str())
-                .map_err(TsgoBridgeError::CommunicationError)
+                .map_err(CorsaBridgeError::CommunicationError)
         })
         .await
     }
@@ -383,7 +383,7 @@ impl TsgoBridge {
     pub async fn will_rename_files(
         &self,
         renames: &[(&str, &str)],
-    ) -> Result<Option<Value>, TsgoBridgeError> {
+    ) -> Result<Option<Value>, CorsaBridgeError> {
         let renames: Vec<(String, String)> = renames
             .iter()
             .map(|(old_uri, new_uri)| ((*old_uri).into(), (*new_uri).into()))
@@ -396,7 +396,7 @@ impl TsgoBridge {
                 .collect();
             client
                 .will_rename_files_raw(&renames_ref)
-                .map_err(TsgoBridgeError::CommunicationError)
+                .map_err(CorsaBridgeError::CommunicationError)
         })
         .await
     }
@@ -407,14 +407,14 @@ impl TsgoBridge {
         uri: &str,
         line: u32,
         character: u32,
-    ) -> Result<Vec<LspCompletionItem>, TsgoBridgeError> {
-        let _timer = self.profiler.timer("tsgo_completion");
+    ) -> Result<Vec<LspCompletionItem>, CorsaBridgeError> {
+        let _timer = self.profiler.timer("corsa_completion");
         let uri = uri.to_owned();
         let result = self
             .with_client(move |client| {
                 client
                     .completion_raw(uri.as_str(), line, character)
-                    .map_err(TsgoBridgeError::CommunicationError)
+                    .map_err(CorsaBridgeError::CommunicationError)
             })
             .await?;
 
@@ -429,32 +429,32 @@ impl TsgoBridge {
         Ok(Vec::new())
     }
 
-    async fn with_client<R, F>(&self, f: F) -> Result<R, TsgoBridgeError>
+    async fn with_client<R, F>(&self, f: F) -> Result<R, CorsaBridgeError>
     where
         R: Send + 'static,
-        F: FnOnce(&mut TsgoLspClient) -> Result<R, TsgoBridgeError> + Send + 'static,
+        F: FnOnce(&mut CorsaLspClient) -> Result<R, CorsaBridgeError> + Send + 'static,
     {
         if !self.initialized.load(Ordering::SeqCst) {
-            return Err(TsgoBridgeError::NotInitialized);
+            return Err(CorsaBridgeError::NotInitialized);
         }
 
         let client = Arc::clone(&self.client);
         spawn_blocking_result(move || {
             let mut guard = lock_client(&client)?;
-            let client = guard.as_mut().ok_or(TsgoBridgeError::ProcessTerminated)?;
+            let client = guard.as_mut().ok_or(CorsaBridgeError::ProcessTerminated)?;
             f(client)
         })
         .await
     }
 }
 
-impl Default for TsgoBridge {
+impl Default for CorsaBridge {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Drop for TsgoBridge {
+impl Drop for CorsaBridge {
     fn drop(&mut self) {
         // Async shutdown is handled by explicit callers.
     }
@@ -464,7 +464,7 @@ impl Drop for TsgoBridge {
 #[allow(clippy::disallowed_types)]
 pub struct BatchTypeChecker {
     /// Bridge instance
-    bridge: Arc<TsgoBridge>,
+    bridge: Arc<CorsaBridge>,
     /// Batch size
     batch_size: usize,
 }
@@ -472,7 +472,7 @@ pub struct BatchTypeChecker {
 #[allow(clippy::disallowed_types)]
 impl BatchTypeChecker {
     /// Create a new batch type checker.
-    pub fn new(bridge: Arc<TsgoBridge>) -> Self {
+    pub fn new(bridge: Arc<CorsaBridge>) -> Self {
         Self {
             bridge,
             batch_size: 10,
@@ -489,7 +489,7 @@ impl BatchTypeChecker {
     pub async fn check_batch(
         &self,
         documents: &[(String, String)],
-    ) -> Vec<Result<TypeCheckResult, TsgoBridgeError>> {
+    ) -> Vec<Result<TypeCheckResult, CorsaBridgeError>> {
         let _timer = self.bridge.profiler().timer("batch_type_check");
         let mut results = Vec::with_capacity(documents.len());
 
@@ -536,43 +536,44 @@ fn normalize_document_uri(name: &str) -> String {
 
 fn convert_bridge_diagnostics(
     diagnostics: &[lsp_types::Diagnostic],
-) -> Result<Vec<LspDiagnostic>, TsgoBridgeError> {
+) -> Result<Vec<LspDiagnostic>, CorsaBridgeError> {
     diagnostics
         .iter()
         .map(|diagnostic| {
             let value = serde_json::to_value(diagnostic).map_err(|e| {
-                TsgoBridgeError::CommunicationError(cstr!("Failed to encode diagnostic: {e}"))
+                CorsaBridgeError::CommunicationError(cstr!("Failed to encode diagnostic: {e}"))
             })?;
             serde_json::from_value(value).map_err(|e| {
-                TsgoBridgeError::CommunicationError(cstr!("Failed to parse diagnostic: {e}"))
+                CorsaBridgeError::CommunicationError(cstr!("Failed to parse diagnostic: {e}"))
             })
         })
         .collect()
 }
 
-fn parse_json_value<T>(value: Value) -> Result<T, TsgoBridgeError>
+fn parse_json_value<T>(value: Value) -> Result<T, CorsaBridgeError>
 where
     T: serde::de::DeserializeOwned,
 {
-    serde_json::from_value(value)
-        .map_err(|e| TsgoBridgeError::CommunicationError(cstr!("Failed to parse tsgo result: {e}")))
+    serde_json::from_value(value).map_err(|e| {
+        CorsaBridgeError::CommunicationError(cstr!("Failed to parse Corsa result: {e}"))
+    })
 }
 
 #[allow(clippy::disallowed_types)]
 fn lock_client<'a>(
-    client: &'a Arc<Mutex<Option<TsgoLspClient>>>,
-) -> Result<std::sync::MutexGuard<'a, Option<TsgoLspClient>>, TsgoBridgeError> {
+    client: &'a Arc<Mutex<Option<CorsaLspClient>>>,
+) -> Result<std::sync::MutexGuard<'a, Option<CorsaLspClient>>, CorsaBridgeError> {
     client
         .lock()
-        .map_err(|_| TsgoBridgeError::CommunicationError("tsgo client lock poisoned".into()))
+        .map_err(|_| CorsaBridgeError::CommunicationError("Corsa client lock poisoned".into()))
 }
 
-async fn spawn_blocking_result<R, F>(f: F) -> Result<R, TsgoBridgeError>
+async fn spawn_blocking_result<R, F>(f: F) -> Result<R, CorsaBridgeError>
 where
     R: Send + 'static,
-    F: FnOnce() -> Result<R, TsgoBridgeError> + Send + 'static,
+    F: FnOnce() -> Result<R, CorsaBridgeError> + Send + 'static,
 {
-    task::spawn_blocking(f)
-        .await
-        .map_err(|e| TsgoBridgeError::CommunicationError(cstr!("Blocking tsgo task failed: {e}")))?
+    task::spawn_blocking(f).await.map_err(|e| {
+        CorsaBridgeError::CommunicationError(cstr!("Blocking Corsa task failed: {e}"))
+    })?
 }

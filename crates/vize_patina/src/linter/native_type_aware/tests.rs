@@ -1,6 +1,6 @@
 use super::{
     has_active_type_aware_rules, lint_sfc_with_corsa, RULE_NO_FLOATING_PROMISES,
-    RULE_REQUIRE_TYPED_EMITS, RULE_REQUIRE_TYPED_PROPS,
+    RULE_NO_UNSAFE_TEMPLATE_BINDING, RULE_REQUIRE_TYPED_EMITS, RULE_REQUIRE_TYPED_PROPS,
 };
 use crate::{LintPreset, Linter};
 
@@ -79,6 +79,29 @@ loadData()
 }
 
 #[test]
+fn no_unsafe_template_binding_uses_corsa() {
+    if !corsa_available() {
+        return;
+    }
+
+    let linter = Linter::with_preset(LintPreset::Opinionated);
+    let source = r#"<script setup lang="ts">
+const payload: any = { label: 'unsafe' }
+const anyHandler: any = () => {}
+</script>
+
+<template>
+  <div>{{ payload.label }}</div>
+  <button @click="anyHandler()">Save</button>
+</template>"#;
+    let result = lint_sfc_with_corsa(&linter, source, "TypeAwareFixture.vue");
+    assert!(result
+        .diagnostics
+        .iter()
+        .any(|diag| diag.rule_name == RULE_NO_UNSAFE_TEMPLATE_BINDING));
+}
+
+#[test]
 fn voided_promises_are_ignored() {
     if !corsa_available() {
         return;
@@ -124,6 +147,29 @@ defineEmits({
 }
 
 #[test]
+fn typed_template_bindings_are_ignored() {
+    if !corsa_available() {
+        return;
+    }
+
+    let linter = Linter::with_preset(LintPreset::Opinionated);
+    let source = r#"<script setup lang="ts">
+const payload = { label: 'safe' }
+const onSave = () => {}
+</script>
+
+<template>
+  <div>{{ payload.label }}</div>
+  <button @click="onSave">Save</button>
+</template>"#;
+    let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
+    assert!(!result
+        .diagnostics
+        .iter()
+        .any(|diag| diag.rule_name == RULE_NO_UNSAFE_TEMPLATE_BINDING));
+}
+
+#[test]
 fn type_aware_diagnostics_snapshot() {
     if !corsa_available() {
         return;
@@ -133,14 +179,21 @@ fn type_aware_diagnostics_snapshot() {
     let source = r#"<script setup lang="ts">
 defineProps(['msg'])
 defineEmits(['save'])
+const payload: any = { label: 'unsafe' }
+const anyHandler: any = () => {}
 
 async function loadData(): Promise<number> {
   return 1
 }
 
 loadData()
-</script>"#;
-    let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
+</script>
+
+<template>
+  <div>{{ payload.label }}</div>
+  <button @click="anyHandler()">Save</button>
+</template>"#;
+    let result = lint_sfc_with_corsa(&linter, source, "TypeAwareFixture.vue");
     let diagnostics = result
         .diagnostics
         .iter()

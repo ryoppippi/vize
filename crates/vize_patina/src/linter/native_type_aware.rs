@@ -12,6 +12,7 @@ mod driver;
 mod markers;
 mod parsing;
 mod rule_queries;
+mod template_queries;
 
 #[cfg(test)]
 mod tests;
@@ -19,12 +20,14 @@ mod tests;
 const RULE_REQUIRE_TYPED_PROPS: &str = "type/require-typed-props";
 const RULE_REQUIRE_TYPED_EMITS: &str = "type/require-typed-emits";
 const RULE_NO_FLOATING_PROMISES: &str = "type/no-floating-promises";
+const RULE_NO_UNSAFE_TEMPLATE_BINDING: &str = "type/no-unsafe-template-binding";
 
 pub(crate) fn has_active_type_aware_rules(linter: &Linter) -> bool {
     [
         RULE_REQUIRE_TYPED_PROPS,
         RULE_REQUIRE_TYPED_EMITS,
         RULE_NO_FLOATING_PROMISES,
+        RULE_NO_UNSAFE_TEMPLATE_BINDING,
     ]
     .into_iter()
     .any(|rule_name| linter.registry.has_rule(rule_name) && linter.is_rule_enabled(rule_name))
@@ -131,4 +134,13 @@ pub(super) fn has_promise_like_return(probe: &TypeProbe) -> bool {
     probe.return_types.iter().any(|return_type| {
         !return_type.is_empty() && is_promise_like_type_texts(return_type, no_properties)
     })
+}
+
+pub(super) fn has_unsafe_template_type(probe: Option<&TypeProbe>) -> bool {
+    let Some(probe) = probe else {
+        return false;
+    };
+    !probe.type_texts.is_empty()
+        && (is_any_like_type_texts(&probe.type_texts)
+            || is_unknown_like_type_texts(&probe.type_texts))
 }

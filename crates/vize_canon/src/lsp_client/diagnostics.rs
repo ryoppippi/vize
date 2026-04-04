@@ -1,6 +1,6 @@
 use super::{
     utils::{convert_diagnostics, parse_uri},
-    DiagnosticFetch, LspDiagnostic, TsgoLspClient,
+    CorsaLspClient, DiagnosticFetch, LspDiagnostic,
 };
 use corsa_runtime::{block_on, spawn};
 use lsp_types::{
@@ -11,7 +11,7 @@ use lsp_types::{
 use std::time::Duration;
 use vize_carton::{cstr, String};
 
-impl TsgoLspClient {
+impl CorsaLspClient {
     /// Get cached diagnostics for a URI.
     pub fn get_diagnostics(&self, uri: &str) -> Vec<LspDiagnostic> {
         self.diagnostics
@@ -64,7 +64,7 @@ impl TsgoLspClient {
             match handle.join() {
                 Ok(Ok((uri, response))) => joined.push((uri, response)),
                 Ok(Err(err)) => {
-                    eprintln!("\x1b[90m[tsgo] batch request skipped: {err}\x1b[0m");
+                    eprintln!("\x1b[90m[corsa] batch request skipped: {err}\x1b[0m");
                 }
                 Err(_) => {}
             }

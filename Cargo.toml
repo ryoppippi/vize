@@ -104,9 +104,9 @@ insta = { version = "1.41", features = ["toml"] }
 criterion = "0.5"
 
 # Local corsa bindings
-corsa = { package = "corsa", path = "../corsa-bind/crates/corsa" }
-corsa_lsp = { package = "corsa_lsp", path = "../corsa-bind/crates/corsa_lsp" }
-corsa_runtime = { package = "corsa_runtime", path = "../corsa-bind/crates/corsa_runtime" }
+corsa = { package = "corsa", path = "../corsa-bind/src/bindings/rust/corsa" }
+corsa_lsp = { package = "corsa_lsp", path = "../corsa-bind/src/core/corsa_lsp" }
+corsa_runtime = { package = "corsa_runtime", path = "../corsa-bind/src/core/corsa_runtime" }
 
 [profile.release]
 lto = true

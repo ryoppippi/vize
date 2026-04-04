@@ -1,17 +1,24 @@
 use super::{
-    has_promise_like_return, push_warning, should_warn_for_emit_validator,
-    should_warn_for_prop_access, with_corsa_session, LintResult, Linter, RULE_NO_FLOATING_PROMISES,
-    RULE_REQUIRE_TYPED_EMITS, RULE_REQUIRE_TYPED_PROPS,
+    has_promise_like_return, has_unsafe_template_type, push_warning,
+    should_warn_for_emit_validator, should_warn_for_prop_access, with_corsa_session, LintResult,
+    Linter, RULE_NO_FLOATING_PROMISES, RULE_NO_UNSAFE_TEMPLATE_BINDING, RULE_REQUIRE_TYPED_EMITS,
+    RULE_REQUIRE_TYPED_PROPS,
 };
 use crate::diagnostic::LintDiagnostic;
 use std::path::Path;
 use vize_armature::Parser as TemplateParser;
-use vize_croquis::{virtual_ts::generate_virtual_ts, Analyzer, AnalyzerOptions};
+use vize_carton::FxHashSet;
+use vize_croquis::{
+    script_parser,
+    virtual_ts::{generate_virtual_ts_with_croquis, VirtualTsConfig},
+    Analyzer, AnalyzerOptions,
+};
 
 use super::{
     markers::{push_promise_marker, QueryKind},
     parsing::collect_floating_candidates,
     rule_queries::{collect_emit_queries, collect_prop_queries, push_macro_warning, MacroWarning},
+    template_queries::{collect_template_queries, TemplateQueryKind},
 };
 
 pub(super) fn lint_with_descriptor<'a>(
@@ -64,13 +71,27 @@ pub(super) fn lint_with_descriptor<'a>(
         .map(|(_, offset)| *offset)
         .unwrap_or(0);
     let from_file = Path::new(filename).parent();
-    let mut virtual_ts = generate_virtual_ts(
-        Some(script_content),
+    let parse_result = if let Some(script_setup) = descriptor.script_setup.as_ref() {
+        let generic = script_setup
+            .attrs
+            .get("generic")
+            .map(|value| value.as_ref());
+        script_parser::parse_script_setup_with_generic(script_content, generic)
+    } else {
+        script_parser::parse_script(script_content)
+    };
+    let config = VirtualTsConfig {
+        script_offset: script_block.loc.start as u32,
+        template_offset,
+        ..Default::default()
+    };
+    let mut virtual_ts = generate_virtual_ts_with_croquis(
+        script_content,
+        &parse_result,
         template_ast.as_ref().map(|(root, _)| root),
-        &analysis.bindings,
+        &config,
         None,
         from_file,
-        template_offset,
     );
 
     let mut macro_queries = Vec::new();
@@ -105,12 +126,23 @@ pub(super) fn lint_with_descriptor<'a>(
         }
     }
 
-    if macro_queries.is_empty() {
+    let template_queries = if linter.registry.has_rule(RULE_NO_UNSAFE_TEMPLATE_BINDING)
+        && linter.is_rule_enabled(RULE_NO_UNSAFE_TEMPLATE_BINDING)
+    {
+        template_ast.as_ref().map_or_else(Vec::new, |(root, _)| {
+            collect_template_queries(&virtual_ts, root, template_offset)
+        })
+    } else {
+        Vec::new()
+    };
+
+    if macro_queries.is_empty() && template_queries.is_empty() {
         return result;
     }
 
     let mut should_warn_for_props = false;
     let mut should_warn_for_emits = false;
+    let mut warned_template_owners = FxHashSet::default();
     let _ = with_corsa_session(linter, filename, |session| {
         let active_project = session.open_virtual_project(&virtual_ts.content)?;
         for query in &macro_queries {
@@ -152,6 +184,31 @@ pub(super) fn lint_with_descriptor<'a>(
                         }
                     }
                 }
+            }
+        }
+
+        for query in &template_queries {
+            let probe = session.probe_type_at_offset(
+                &active_project,
+                &virtual_ts.content,
+                query.generated_offset,
+                false,
+                false,
+            )?;
+            if !has_unsafe_template_type(probe.as_ref()) {
+                continue;
+            }
+
+            let owner_key = query.owner_key();
+            if matches!(query.kind, TemplateQueryKind::Expression)
+                && warned_template_owners.contains(&owner_key)
+            {
+                continue;
+            }
+
+            push_warning(&mut result, query.diagnostic());
+            if matches!(query.kind, TemplateQueryKind::CallCallee) {
+                warned_template_owners.insert(owner_key);
             }
         }
         Ok(())

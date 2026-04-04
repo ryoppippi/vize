@@ -1,4 +1,4 @@
-use super::TsgoLspClient;
+use super::CorsaLspClient;
 use lsp_types::{
     notification::{Notification, PublishDiagnostics},
     Diagnostic, DocumentDiagnosticReport, DocumentDiagnosticReportKind,
@@ -8,7 +8,7 @@ use serde_json::Value;
 use std::time::{Duration, Instant};
 use vize_carton::String;
 
-impl TsgoLspClient {
+impl CorsaLspClient {
     pub(crate) fn diagnostics_cache_len(&self) -> usize {
         self.diagnostics.len()
     }

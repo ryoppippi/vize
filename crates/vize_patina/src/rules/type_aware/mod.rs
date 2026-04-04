@@ -11,7 +11,8 @@
 //! - `type/no-floating-promises` - Disallow unhandled Promise results
 //!
 //! ### Template Rules
-//! - `type/no-unsafe-template-binding` - Disallow type-unsafe template bindings
+//! - `type/no-unsafe-template-binding` - Disallow template expressions that
+//!   stay `any`/`unknown` when resolved through Corsa
 
 #[cfg(not(target_arch = "wasm32"))]
 mod require_typed_emits;
@@ -20,6 +21,8 @@ mod require_typed_props;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use crate::rules::opinionated::type_aware::NoFloatingPromises;
+#[cfg(not(target_arch = "wasm32"))]
+pub use crate::rules::opinionated::type_aware::NoUnsafeTemplateBinding;
 #[cfg(not(target_arch = "wasm32"))]
 pub use require_typed_emits::RequireTypedEmits;
 #[cfg(not(target_arch = "wasm32"))]
