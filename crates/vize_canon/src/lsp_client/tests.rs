@@ -45,21 +45,19 @@ fn resolves_temp_dir_under_package_root_when_node_modules_exists() {
 #[test]
 fn falls_back_to_nearest_available_node_modules_root() {
     let case_dir = unique_case_dir("fallback");
-    let source_dir = case_dir.join("playground").join("src").join("shared");
+    let workspace_root = case_dir.join("workspace");
+    let source_dir = workspace_root.join("playground").join("src").join("shared");
+    let node_modules_vue = workspace_root.join("node_modules").join("vue");
 
     let _ = fs::remove_dir_all(&case_dir);
     fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(&node_modules_vue).unwrap();
 
     let resolved = resolve_temp_dir_base(Some(&source_dir));
-    let expected_root = source_dir
-        .ancestors()
-        .find(|path| path.join("node_modules").join("vue").is_dir())
-        .unwrap()
-        .to_path_buf();
 
     assert_eq!(
         resolved,
-        expected_root.join("__agent_only").join("vize-tsgo")
+        workspace_root.join("__agent_only").join("vize-tsgo")
     );
     assert!(!resolved.starts_with(&source_dir));
 
