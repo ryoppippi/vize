@@ -1,14 +1,22 @@
-use super::{LintResult, Linter};
+use super::{
+    corsa_session::{CorsaTypeAwareSession, TypeProbe},
+    LintResult, Linter,
+};
 use crate::diagnostic::LintDiagnostic;
+use corsa::utils::{
+    is_any_like_type_texts, is_promise_like_type_texts, is_unknown_like_type_texts,
+};
 use oxc_allocator::Allocator as OxcAllocator;
-use oxc_ast::ast::{CallExpression, ChainElement, Expression, Statement};
+use oxc_ast::ast::{
+    CallExpression, ChainElement, Expression, ObjectExpression, ObjectPropertyKind, PropertyKey,
+    Statement,
+};
 use oxc_parser::Parser as OxcParser;
 use oxc_span::{GetSpan, SourceType};
 use oxc_syntax::operator::UnaryOperator;
 use std::path::Path;
 use vize_armature::Parser as TemplateParser;
-use vize_canon::{offset_to_position, LspHover, LspHoverContents, LspMarkedString};
-use vize_carton::{CompactString, String, ToCompactString};
+use vize_carton::{String, ToCompactString};
 use vize_croquis::{
     virtual_ts::{generate_virtual_ts, VirtualTsOutput},
     Analyzer, AnalyzerOptions,
@@ -28,7 +36,7 @@ pub(crate) fn has_active_type_aware_rules(linter: &Linter) -> bool {
     .any(|rule_name| linter.registry.has_rule(rule_name) && linter.is_rule_enabled(rule_name))
 }
 
-pub(crate) fn lint_sfc_with_tsgo(linter: &Linter, source: &str, filename: &str) -> LintResult {
+pub(crate) fn lint_sfc_with_corsa(linter: &Linter, source: &str, filename: &str) -> LintResult {
     let mut result = match super::script_rules::parse_sfc_for_lint(source, filename) {
         Ok(descriptor) => lint_with_descriptor(linter, source, filename, descriptor),
         Err(_) => {
@@ -120,34 +128,76 @@ fn lint_with_descriptor<'a>(
     );
 
     let mut macro_queries = Vec::new();
+
     if linter.registry.has_rule(RULE_REQUIRE_TYPED_PROPS)
         && linter.is_rule_enabled(RULE_REQUIRE_TYPED_PROPS)
     {
         if let Some(call) = analysis.macros.define_props() {
-            push_macro_marker(
-                &mut virtual_ts,
-                script_content,
-                call.start,
-                call.end,
-                "__vize_patina_props_",
-                RULE_REQUIRE_TYPED_PROPS,
-                &mut macro_queries,
-            );
+            if call.type_args.is_none() {
+                if is_runtime_array_macro(call.runtime_args.as_ref().map(|args| args.as_str())) {
+                    push_warning(
+                        &mut result,
+                        LintDiagnostic::warn(
+                            RULE_REQUIRE_TYPED_PROPS,
+                            "Prop should have a type definition",
+                            script_block.loc.start as u32 + call.start,
+                            script_block.loc.start as u32 + call.end,
+                        )
+                        .with_help(
+                            "Use `defineProps<Props>()` or a runtime prop object with concrete constructor types.",
+                        ),
+                    );
+                } else if analysis
+                    .macros
+                    .props()
+                    .iter()
+                    .any(|prop| prop.prop_type.is_none())
+                {
+                    push_prop_type_markers(
+                        &mut virtual_ts,
+                        call.runtime_args.as_ref().map(|args| args.as_str()),
+                        call.start,
+                        call.end,
+                        &mut macro_queries,
+                    );
+                }
+            }
         }
     }
+
     if linter.registry.has_rule(RULE_REQUIRE_TYPED_EMITS)
         && linter.is_rule_enabled(RULE_REQUIRE_TYPED_EMITS)
     {
         if let Some(call) = analysis.macros.define_emits() {
-            push_macro_marker(
-                &mut virtual_ts,
-                script_content,
-                call.start,
-                call.end,
-                "__vize_patina_emits_",
-                RULE_REQUIRE_TYPED_EMITS,
-                &mut macro_queries,
-            );
+            if call.type_args.is_none() {
+                if is_runtime_array_macro(call.runtime_args.as_ref().map(|args| args.as_str())) {
+                    push_warning(
+                        &mut result,
+                        LintDiagnostic::warn(
+                            RULE_REQUIRE_TYPED_EMITS,
+                            "Emit should have a type definition",
+                            script_block.loc.start as u32 + call.start,
+                            script_block.loc.start as u32 + call.end,
+                        )
+                        .with_help(
+                            "Use `defineEmits<...>()` or a validator object with typed payload parameters.",
+                        ),
+                    );
+                } else if analysis
+                    .macros
+                    .emits()
+                    .iter()
+                    .any(|emit| emit.payload_type.is_none())
+                {
+                    push_emit_validator_markers(
+                        &mut virtual_ts,
+                        call.runtime_args.as_ref().map(|args| args.as_str()),
+                        call.start,
+                        call.end,
+                        &mut macro_queries,
+                    );
+                }
+            }
         }
     }
 
@@ -155,79 +205,104 @@ fn lint_with_descriptor<'a>(
         && linter.is_rule_enabled(RULE_NO_FLOATING_PROMISES)
     {
         for candidate in collect_floating_candidates(script_content) {
-            push_macro_marker(
+            push_promise_marker(
                 &mut virtual_ts,
                 script_content,
                 candidate.start,
                 candidate.end,
-                "__vize_patina_promise_",
-                RULE_NO_FLOATING_PROMISES,
                 &mut macro_queries,
             );
         }
     }
 
-    let virtual_uri = build_virtual_uri(filename);
-    let open_result = with_tsgo_client(linter, filename, |client| {
-        client.did_open(&virtual_uri, &virtual_ts.content)?;
+    if macro_queries.is_empty() {
+        return result;
+    }
 
+    let mut should_warn_for_props = false;
+    let mut should_warn_for_emits = false;
+
+    let _ = with_corsa_session(linter, filename, |session| {
+        let active_project = session.open_virtual_project(&virtual_ts.content)?;
         for query in &macro_queries {
-            let hover_result = hover_at_offset(
-                client,
-                &virtual_uri,
+            let probe = session.probe_type_at_offset(
+                &active_project,
                 &virtual_ts.content,
                 query.generated_offset,
-            );
-            let Some(hover) = hover_result? else {
-                continue;
-            };
-            let hover_text = flatten_hover(&hover);
-            if query.rule_name == RULE_REQUIRE_TYPED_PROPS && is_untyped_props_hover(&hover_text) {
-                push_warning(
-                    &mut result,
-                    LintDiagnostic::warn(
-                        RULE_REQUIRE_TYPED_PROPS,
-                        "Prop should have a type definition",
-                        script_block.loc.start as u32 + query.source_start,
-                        script_block.loc.start as u32 + query.source_end,
-                    )
-                    .with_help("Use `defineProps<Props>()` or a runtime prop object with concrete constructor types."),
-                );
-            } else if query.rule_name == RULE_REQUIRE_TYPED_EMITS
-                && is_untyped_emits_hover(&hover_text)
-            {
-                push_warning(
-                    &mut result,
-                    LintDiagnostic::warn(
-                        RULE_REQUIRE_TYPED_EMITS,
-                        "Emit should have a type definition",
-                        script_block.loc.start as u32 + query.source_start,
-                        script_block.loc.start as u32 + query.source_end,
-                    )
-                    .with_help("Use `defineEmits<...>()` or a validator object with typed payload parameters."),
-                );
-            } else if query.rule_name == RULE_NO_FLOATING_PROMISES
-                && is_promise_like_hover(&hover_text)
-            {
-                push_warning(
-                    &mut result,
-                    LintDiagnostic::warn(
-                        RULE_NO_FLOATING_PROMISES,
-                        "Floating Promise must be awaited, returned, or explicitly ignored with `void`",
-                        script_block.loc.start as u32 + query.source_start,
-                        script_block.loc.start as u32 + query.source_end,
-                    )
-                    .with_help("Add `await`, return the Promise, or prefix it with `void` when the fire-and-forget behavior is intentional."),
-                );
+                false,
+                matches!(query.kind, QueryKind::EmitValidator | QueryKind::Promise),
+            )?;
+
+            match query.kind {
+                QueryKind::PropType => {
+                    should_warn_for_props |= should_warn_for_prop_access(probe.as_ref());
+                }
+                QueryKind::EmitValidator => {
+                    should_warn_for_emits |= should_warn_for_emit_validator(probe.as_ref());
+                }
+                QueryKind::Promise => {
+                    if let Some(probe) = probe.as_ref() {
+                        if has_promise_like_return(probe)
+                            || is_promise_like_type_texts(&probe.type_texts, &probe.property_names)
+                        {
+                            push_warning(
+                                &mut result,
+                                LintDiagnostic::warn(
+                                    RULE_NO_FLOATING_PROMISES,
+                                    "Floating Promise must be awaited, returned, or explicitly ignored with `void`",
+                                    script_block.loc.start as u32 + query.source_start,
+                                    script_block.loc.start as u32 + query.source_end,
+                                )
+                                .with_help(
+                                    "Add `await`, return the Promise, or prefix it with `void` when the fire-and-forget behavior is intentional.",
+                                ),
+                            );
+                        }
+                    }
+                }
             }
         }
-
-        client.did_close(&virtual_uri)?;
         Ok(())
     });
 
-    if open_result.is_err() {
-        let _ = with_tsgo_client(linter, filename, |client| client.did_close(&virtual_uri));
+    if should_warn_for_props {
+        if let Some(query) = macro_queries
+            .iter()
+            .find(|query| matches!(query.kind, QueryKind::PropType))
+        {
+            push_warning(
+                &mut result,
+                LintDiagnostic::warn(
+                    RULE_REQUIRE_TYPED_PROPS,
+                    "Prop should have a type definition",
+                    script_block.loc.start as u32 + query.source_start,
+                    script_block.loc.start as u32 + query.source_end,
+                )
+                .with_help(
+                    "Use `defineProps<Props>()` or a runtime prop object with concrete constructor types.",
+                ),
+            );
+        }
+    }
+
+    if should_warn_for_emits {
+        if let Some(query) = macro_queries
+            .iter()
+            .find(|query| matches!(query.kind, QueryKind::EmitValidator))
+        {
+            push_warning(
+                &mut result,
+                LintDiagnostic::warn(
+                    RULE_REQUIRE_TYPED_EMITS,
+                    "Emit should have a type definition",
+                    script_block.loc.start as u32 + query.source_start,
+                    script_block.loc.start as u32 + query.source_end,
+                )
+                .with_help(
+                    "Use `defineEmits<...>()` or a validator object with typed payload parameters.",
+                ),
+            );
+        }
     }
 
     result
@@ -238,125 +313,106 @@ fn push_warning(result: &mut LintResult, diagnostic: LintDiagnostic) {
     result.diagnostics.push(diagnostic);
 }
 
-fn with_tsgo_client<T>(
+fn with_corsa_session<T>(
     linter: &Linter,
     filename: &str,
-    f: impl FnOnce(&mut vize_canon::lsp_client::TsgoLspClient) -> Result<T, String>,
+    f: impl FnOnce(&mut CorsaTypeAwareSession) -> Result<T, String>,
 ) -> Result<T, String> {
     let mut guard = linter
-        .native_tsgo
+        .native_corsa
         .lock()
-        .map_err(|_| "Failed to lock tsgo client".to_compact_string())?;
+        .map_err(|_| "Failed to lock corsa type session".to_compact_string())?;
 
-    if guard.is_none() {
-        let fallback_dir = std::env::current_dir()
-            .ok()
-            .and_then(|path| path.to_str().map(|value| value.to_compact_string()));
-        let working_dir = Path::new(filename)
-            .parent()
-            .filter(|path| !path.as_os_str().is_empty())
-            .and_then(|path| path.to_str())
-            .or(fallback_dir.as_deref())
-            .unwrap_or(".");
-        *guard = Some(vize_canon::lsp_client::TsgoLspClient::new(
-            None,
-            Some(working_dir),
-        )?);
+    let needs_new_session = guard
+        .as_ref()
+        .is_none_or(|session| !session.matches_source_file(filename));
+
+    if needs_new_session {
+        if let Some(session) = guard.as_mut() {
+            session.close();
+        }
+        *guard = Some(CorsaTypeAwareSession::new(filename)?);
     }
 
-    let client = guard
+    let session = guard
         .as_mut()
-        .ok_or_else(|| "Failed to initialize tsgo client".to_compact_string())?;
+        .ok_or_else(|| "Failed to initialize corsa type session".to_compact_string())?;
 
-    let result = f(client);
+    let result = f(session);
     if result.is_err() {
-        let _ = client.shutdown();
+        session.close();
         *guard = None;
     }
     result
 }
 
-fn build_virtual_uri(filename: &str) -> String {
-    let mut path = std::env::current_dir().unwrap_or_else(|_| ".".into());
-    path.push("__agent_only");
-    path.push("vize-patina");
-    let _ = std::fs::create_dir_all(&path);
-
-    let base_name = Path::new(filename)
-        .file_name()
-        .and_then(|value| value.to_str())
-        .unwrap_or("Component.vue");
-    path.push(base_name);
-    path.set_extension("patina.ts");
-
-    let mut uri = String::with_capacity(path.as_os_str().len() + 8);
-    uri.push_str("file://");
-    uri.push_str(path.to_string_lossy().as_ref());
-    uri
-}
-
-fn hover_at_offset(
-    client: &mut vize_canon::lsp_client::TsgoLspClient,
-    uri: &str,
-    generated_source: &str,
-    generated_offset: u32,
-) -> Result<Option<LspHover>, String> {
-    let position = offset_to_position(generated_source, generated_offset);
-    client.hover(uri, position.line, position.column)
-}
-
-fn flatten_hover(hover: &LspHover) -> CompactString {
-    match &hover.contents {
-        LspHoverContents::Markup(markup) => markup.value.as_str().to_compact_string(),
-        LspHoverContents::String(value) => value.as_str().to_compact_string(),
-        LspHoverContents::Array(values) => {
-            let mut text = String::default();
-            for (index, value) in values.iter().enumerate() {
-                if index > 0 {
-                    text.push('\n');
-                }
-                match value {
-                    LspMarkedString::String(value) => text.push_str(value),
-                    LspMarkedString::LanguageString { value, .. } => text.push_str(value),
-                }
-            }
-            text
-        }
+fn should_warn_for_prop_access(probe: Option<&TypeProbe>) -> bool {
+    let Some(probe) = probe else {
+        return true;
+    };
+    if probe.type_texts.is_empty() {
+        return true;
     }
+    is_any_like_type_texts(&probe.type_texts) || is_unknown_like_type_texts(&probe.type_texts)
 }
 
-fn is_untyped_props_hover(text: &str) -> bool {
-    text.contains(": unknown")
-        || text.contains(": any")
-        || text.contains("?: any")
-        || text.contains(": {}")
-        || text.ends_with("unknown")
-        || text.ends_with("{}")
+fn should_warn_for_emit_validator(probe: Option<&TypeProbe>) -> bool {
+    let Some(probe) = probe else {
+        return true;
+    };
+    if probe.call_signatures.is_empty() {
+        return true;
+    }
+    probe.call_signatures.iter().any(|signature| {
+        signature.iter().any(|parameter_type| {
+            parameter_type.is_empty()
+                || is_any_like_type_texts(parameter_type)
+                || is_unknown_like_type_texts(parameter_type)
+        })
+    })
 }
 
-fn is_untyped_emits_hover(text: &str) -> bool {
-    text.contains("...args: any[]") || text.contains(": unknown") || text.ends_with("unknown")
+fn has_promise_like_return(probe: &TypeProbe) -> bool {
+    let no_properties: &[vize_carton::CompactString] = &[];
+    probe.return_types.iter().any(|return_type| {
+        !return_type.is_empty() && is_promise_like_type_texts(return_type, no_properties)
+    })
 }
 
-fn is_promise_like_hover(text: &str) -> bool {
-    text.contains("Promise<") || text.contains("PromiseLike<") || text.contains("Thenable<")
+fn is_runtime_array_macro(runtime_args: Option<&str>) -> bool {
+    let Some(runtime_args) = runtime_args.map(str::trim_start) else {
+        return false;
+    };
+    if runtime_args.starts_with('[') {
+        return true;
+    }
+    runtime_args
+        .find('(')
+        .and_then(|open| runtime_args.get(open + 1..))
+        .map(str::trim_start)
+        .is_some_and(|after_paren| after_paren.starts_with('['))
 }
 
-struct MacroHoverQuery {
-    rule_name: &'static str,
+#[derive(Clone, Copy, Debug)]
+enum QueryKind {
+    PropType,
+    EmitValidator,
+    Promise,
+}
+
+struct MacroQuery {
+    kind: QueryKind,
     generated_offset: u32,
     source_start: u32,
     source_end: u32,
 }
 
-fn push_macro_marker(
+fn push_promise_marker(
     virtual_ts: &mut VirtualTsOutput,
     script_content: &str,
     source_start: u32,
     source_end: u32,
-    prefix: &str,
-    rule_name: &'static str,
-    queries: &mut Vec<MacroHoverQuery>,
+    queries: &mut Vec<MacroQuery>,
 ) {
     let Some(insert_offset) = marker_insert_offset(&virtual_ts.content) else {
         return;
@@ -366,33 +422,194 @@ fn push_macro_marker(
         return;
     };
 
-    let mut marker_name = String::with_capacity(prefix.len() + 8);
-    marker_name.push_str(prefix);
+    let mut marker_name = String::with_capacity(28);
+    marker_name.push_str("__vize_patina_promise_");
     let query_index = queries.len().to_compact_string();
     marker_name.push_str(query_index.as_str());
 
-    let mut line = String::with_capacity(marker_name.len() + expression_source.len() + 24);
-    line.push_str("    const ");
+    let mut line = String::with_capacity(marker_name.len() + expression_source.len() + 40);
+    line.push_str("    function ");
     let name_offset = line.len() as u32;
     line.push_str(&marker_name);
-    line.push_str(" = (");
+    line.push_str("() { return (");
     line.push_str(expression_source);
-    line.push_str(");\n");
+    line.push_str("); }\n");
 
     let generated_offset = insert_offset as u32 + name_offset;
     virtual_ts.content.insert_str(insert_offset, &line);
-    queries.push(MacroHoverQuery {
-        rule_name,
+    queries.push(MacroQuery {
+        kind: QueryKind::Promise,
         generated_offset,
         source_start,
         source_end,
     });
 }
 
+fn push_prop_type_markers(
+    virtual_ts: &mut VirtualTsOutput,
+    runtime_args: Option<&str>,
+    source_start: u32,
+    source_end: u32,
+    queries: &mut Vec<MacroQuery>,
+) {
+    let Some(runtime_args) = runtime_args else {
+        return;
+    };
+    let Some(insert_offset) = marker_insert_offset(&virtual_ts.content) else {
+        return;
+    };
+    let prop_sources = extract_runtime_object_property_values(runtime_args);
+    if prop_sources.is_empty() {
+        return;
+    }
+
+    let mut block = String::with_capacity(runtime_args.len() + 128);
+    for (index, prop_source) in prop_sources.iter().enumerate() {
+        let mut prop_name = String::with_capacity(24);
+        prop_name.push_str("__vize_patina_prop_");
+        prop_name.push_str(queries.len().to_compact_string().as_str());
+        prop_name.push('_');
+        prop_name.push_str(index.to_compact_string().as_str());
+
+        block.push_str("    const ");
+        let name_offset = block.len() as u32;
+        block.push_str(&prop_name);
+        block.push_str(" = (undefined as unknown as __RuntimePropCtor<typeof (");
+        block.push_str(prop_source.as_str());
+        block.push_str(")>);\n");
+
+        queries.push(MacroQuery {
+            kind: QueryKind::PropType,
+            generated_offset: insert_offset as u32 + name_offset,
+            source_start,
+            source_end,
+        });
+    }
+
+    virtual_ts.content.insert_str(insert_offset, &block);
+}
+
+fn push_emit_validator_markers(
+    virtual_ts: &mut VirtualTsOutput,
+    runtime_args: Option<&str>,
+    source_start: u32,
+    source_end: u32,
+    queries: &mut Vec<MacroQuery>,
+) {
+    let Some(runtime_args) = runtime_args else {
+        return;
+    };
+    let Some(insert_offset) = marker_insert_offset(&virtual_ts.content) else {
+        return;
+    };
+
+    let validator_sources = extract_runtime_object_property_values(runtime_args);
+    if validator_sources.is_empty() {
+        return;
+    }
+
+    let mut block = String::with_capacity(runtime_args.len() + 128);
+    for (index, validator_source) in validator_sources.iter().enumerate() {
+        let mut validator_name = String::with_capacity(24);
+        validator_name.push_str("__vize_patina_emit_");
+        validator_name.push_str(queries.len().to_compact_string().as_str());
+        validator_name.push('_');
+        validator_name.push_str(index.to_compact_string().as_str());
+
+        block.push_str("    const ");
+        let name_offset = block.len() as u32;
+        block.push_str(&validator_name);
+        block.push_str(" = (");
+        block.push_str(validator_source.as_str());
+        block.push_str(");\n");
+
+        queries.push(MacroQuery {
+            kind: QueryKind::EmitValidator,
+            generated_offset: insert_offset as u32 + name_offset,
+            source_start,
+            source_end,
+        });
+    }
+
+    virtual_ts.content.insert_str(insert_offset, &block);
+}
+
 fn marker_insert_offset(content: &str) -> Option<usize> {
     content
         .rfind("\n}\n\n// Invoke setup")
         .map(|index| index + 1)
+}
+
+fn extract_runtime_object_property_values(source: &str) -> Vec<String> {
+    let mut wrapped = String::with_capacity(source.len() + 32);
+    wrapped.push_str("const __vize_runtime = (");
+    let expression_offset = wrapped.len();
+    wrapped.push_str(source);
+    wrapped.push_str(");");
+
+    let allocator = OxcAllocator::default();
+    let source_type = SourceType::from_path("runtime.ts").unwrap_or_default();
+    let parsed = OxcParser::new(&allocator, wrapped.as_str(), source_type).parse();
+    if parsed.panicked {
+        return Vec::new();
+    }
+
+    let Some(Statement::VariableDeclaration(declaration)) = parsed.program.body.first() else {
+        return Vec::new();
+    };
+    let Some(declarator) = declaration.declarations.first() else {
+        return Vec::new();
+    };
+    let Some(init) = declarator.init.as_ref() else {
+        return Vec::new();
+    };
+    let Some(object) = unwrap_object_expression(init) else {
+        return Vec::new();
+    };
+
+    let mut values = Vec::with_capacity(object.properties.len());
+    for property in &object.properties {
+        let ObjectPropertyKind::ObjectProperty(property) = property else {
+            continue;
+        };
+        if property_name(&property.key).is_none() {
+            continue;
+        }
+        let value_start = property.value.span().start as usize;
+        let value_end = property.value.span().end as usize;
+        let local_start = value_start.saturating_sub(expression_offset);
+        let local_end = value_end.saturating_sub(expression_offset);
+        if let Some(value_source) = source.get(local_start..local_end) {
+            values.push(value_source.to_compact_string());
+        }
+    }
+
+    values
+}
+
+fn unwrap_object_expression<'a>(
+    expression: &'a Expression<'a>,
+) -> Option<&'a ObjectExpression<'a>> {
+    match expression {
+        Expression::ObjectExpression(object) => Some(object),
+        Expression::ParenthesizedExpression(paren) => unwrap_object_expression(&paren.expression),
+        Expression::TSAsExpression(ts_as) => unwrap_object_expression(&ts_as.expression),
+        Expression::TSSatisfiesExpression(ts_satisfies) => {
+            unwrap_object_expression(&ts_satisfies.expression)
+        }
+        Expression::TSNonNullExpression(ts_non_null) => {
+            unwrap_object_expression(&ts_non_null.expression)
+        }
+        _ => None,
+    }
+}
+
+fn property_name<'a>(key: &'a PropertyKey<'a>) -> Option<&'a str> {
+    match key {
+        PropertyKey::StaticIdentifier(identifier) => Some(identifier.name.as_str()),
+        PropertyKey::StringLiteral(string) => Some(string.value.as_str()),
+        _ => None,
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -438,13 +655,17 @@ fn is_explicitly_handled(expression: &Expression<'_>) -> bool {
             is_explicitly_handled(&ts_non_null.expression)
         }
         Expression::ChainExpression(chain) => match &chain.expression {
-            ChainElement::CallExpression(call) => is_handled_call(call),
+            ChainElement::CallExpression(call) => {
+                is_macro_call_expression(&call.callee) || is_handled_call(call)
+            }
             ChainElement::TSNonNullExpression(non_null) => {
                 is_explicitly_handled(&non_null.expression)
             }
             _ => false,
         },
-        Expression::CallExpression(call) => is_handled_call(call),
+        Expression::CallExpression(call) => {
+            is_macro_call_expression(&call.callee) || is_handled_call(call)
+        }
         _ => false,
     }
 }
@@ -456,23 +677,40 @@ fn is_handled_call(call: &CallExpression<'_>) -> bool {
         .is_some_and(|name| matches!(name, "then" | "catch" | "finally"))
 }
 
+fn is_macro_call_expression(expression: &Expression<'_>) -> bool {
+    match expression {
+        Expression::Identifier(identifier) => matches!(
+            identifier.name.as_str(),
+            "defineProps"
+                | "defineEmits"
+                | "defineExpose"
+                | "defineOptions"
+                | "defineSlots"
+                | "defineModel"
+                | "withDefaults"
+        ),
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        has_active_type_aware_rules, lint_sfc_with_tsgo, RULE_NO_FLOATING_PROMISES,
+        has_active_type_aware_rules, lint_sfc_with_corsa, RULE_NO_FLOATING_PROMISES,
         RULE_REQUIRE_TYPED_EMITS, RULE_REQUIRE_TYPED_PROPS,
     };
     use crate::{LintPreset, Linter};
 
-    fn tsgo_available() -> bool {
-        let mut client = match vize_canon::lsp_client::TsgoLspClient::new(
-            None,
-            Some(env!("CARGO_MANIFEST_DIR")),
-        ) {
-            Ok(client) => client,
+    fn corsa_available() -> bool {
+        let mut session = match super::CorsaTypeAwareSession::new("Component.vue") {
+            Ok(session) => session,
             Err(_) => return false,
         };
-        let _ = client.shutdown();
+        if session.open_virtual_project("const value = 1;\n").is_err() {
+            session.close();
+            return false;
+        }
+        session.close();
         true
     }
 
@@ -483,8 +721,8 @@ mod tests {
     }
 
     #[test]
-    fn require_typed_props_uses_tsgo() {
-        if !tsgo_available() {
+    fn require_typed_props_uses_corsa() {
+        if !corsa_available() {
             return;
         }
 
@@ -492,7 +730,7 @@ mod tests {
         let source = r#"<script setup lang="ts">
 defineProps(['msg', 'count'])
 </script>"#;
-        let result = lint_sfc_with_tsgo(&linter, source, "Component.vue");
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
         assert!(result
             .diagnostics
             .iter()
@@ -500,8 +738,8 @@ defineProps(['msg', 'count'])
     }
 
     #[test]
-    fn require_typed_emits_uses_tsgo() {
-        if !tsgo_available() {
+    fn require_typed_emits_uses_corsa() {
+        if !corsa_available() {
             return;
         }
 
@@ -509,7 +747,7 @@ defineProps(['msg', 'count'])
         let source = r#"<script setup lang="ts">
 defineEmits(['save'])
 </script>"#;
-        let result = lint_sfc_with_tsgo(&linter, source, "Component.vue");
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
         assert!(result
             .diagnostics
             .iter()
@@ -517,8 +755,8 @@ defineEmits(['save'])
     }
 
     #[test]
-    fn no_floating_promises_uses_tsgo() {
-        if !tsgo_available() {
+    fn no_floating_promises_uses_corsa() {
+        if !corsa_available() {
             return;
         }
 
@@ -530,7 +768,7 @@ async function loadData(): Promise<number> {
 
 loadData()
 </script>"#;
-        let result = lint_sfc_with_tsgo(&linter, source, "Component.vue");
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
         assert!(result
             .diagnostics
             .iter()
@@ -539,7 +777,7 @@ loadData()
 
     #[test]
     fn voided_promises_are_ignored() {
-        if !tsgo_available() {
+        if !corsa_available() {
             return;
         }
 
@@ -551,10 +789,68 @@ async function loadData(): Promise<number> {
 
 void loadData()
 </script>"#;
-        let result = lint_sfc_with_tsgo(&linter, source, "Component.vue");
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
         assert!(!result
             .diagnostics
             .iter()
             .any(|diag| diag.rule_name == RULE_NO_FLOATING_PROMISES));
+    }
+
+    #[test]
+    fn runtime_validators_are_treated_as_typed() {
+        if !corsa_available() {
+            return;
+        }
+
+        let linter = Linter::with_preset(LintPreset::Opinionated);
+        let source = r#"<script setup lang="ts">
+defineProps({
+  msg: { type: String, required: true },
+  count: { type: Number, default: 0 },
+})
+
+defineEmits({
+  save: (value: number) => typeof value === 'number',
+})
+</script>"#;
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
+        assert!(!result.diagnostics.iter().any(|diag| matches!(
+            diag.rule_name,
+            RULE_REQUIRE_TYPED_PROPS | RULE_REQUIRE_TYPED_EMITS
+        )));
+    }
+
+    #[test]
+    fn type_aware_diagnostics_snapshot() {
+        if !corsa_available() {
+            return;
+        }
+
+        let linter = Linter::with_preset(LintPreset::Opinionated);
+        let source = r#"<script setup lang="ts">
+defineProps(['msg'])
+defineEmits(['save'])
+
+async function loadData(): Promise<number> {
+  return 1
+}
+
+loadData()
+</script>"#;
+        let result = lint_sfc_with_corsa(&linter, source, "Component.vue");
+        let diagnostics = result
+            .diagnostics
+            .iter()
+            .map(|diag| {
+                (
+                    diag.rule_name,
+                    diag.message.as_str(),
+                    diag.start,
+                    diag.end,
+                    diag.help.as_deref(),
+                )
+            })
+            .collect::<Vec<_>>();
+        insta::assert_debug_snapshot!(diagnostics);
     }
 }

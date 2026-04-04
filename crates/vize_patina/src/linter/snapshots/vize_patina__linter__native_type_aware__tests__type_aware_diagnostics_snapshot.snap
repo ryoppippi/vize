@@ -1,0 +1,34 @@
+---
+source: crates/vize_patina/src/linter/native_type_aware.rs
+assertion_line: 854
+expression: diagnostics
+---
+[
+    (
+        "type/require-typed-props",
+        "Prop should have a type definition",
+        25,
+        45,
+        Some(
+            "Use `defineProps<Props>()` or a runtime prop object with concrete constructor types.",
+        ),
+    ),
+    (
+        "type/require-typed-emits",
+        "Emit should have a type definition",
+        46,
+        67,
+        Some(
+            "Use `defineEmits<...>()` or a validator object with typed payload parameters.",
+        ),
+    ),
+    (
+        "type/no-floating-promises",
+        "Floating Promise must be awaited, returned, or explicitly ignored with `void`",
+        128,
+        138,
+        Some(
+            "Add `await`, return the Promise, or prefix it with `void` when the fire-and-forget behavior is intentional.",
+        ),
+    ),
+]

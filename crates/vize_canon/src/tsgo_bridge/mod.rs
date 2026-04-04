@@ -5,8 +5,6 @@
 //! without writing temporary files to disk.
 
 mod bridge;
-mod protocol;
-mod reader;
 mod types;
 
 pub use bridge::{BatchTypeChecker, TsgoBridge};

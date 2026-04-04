@@ -6,6 +6,8 @@
 //! - [`engine`]: Core linting methods and template extraction
 
 mod config;
+#[cfg(not(target_arch = "wasm32"))]
+mod corsa_session;
 mod engine;
 #[cfg(not(target_arch = "wasm32"))]
 mod native_type_aware;
