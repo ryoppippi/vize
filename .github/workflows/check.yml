@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  CORSA_BIND_REF: 4b48bedfd3c09f3fb027f7a51b52e6f94416aef3
+  CORSA_BIND_REF: 3253d696fb3d3fdcb0bc9d0f6fc69523561c3897
 
 jobs:
   fmt-rust:
