@@ -8,12 +8,23 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  CORSA_BIND_REF: 4b48bedfd3c09f3fb027f7a51b52e6f94416aef3
 
 jobs:
   fmt-rust:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout corsa-bind
+        uses: actions/checkout@v4
+        with:
+          repository: ubugeeei/corsa-bind
+          ref: ${{ env.CORSA_BIND_REF }}
+          path: .github-deps/corsa-bind
+      - name: Link corsa-bind sibling
+        run: |
+          rm -rf ../corsa-bind
+          ln -s "$GITHUB_WORKSPACE/.github-deps/corsa-bind" ../corsa-bind
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -24,6 +35,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout corsa-bind
+        uses: actions/checkout@v4
+        with:
+          repository: ubugeeei/corsa-bind
+          ref: ${{ env.CORSA_BIND_REF }}
+          path: .github-deps/corsa-bind
+      - name: Link corsa-bind sibling
+        run: |
+          rm -rf ../corsa-bind
+          ln -s "$GITHUB_WORKSPACE/.github-deps/corsa-bind" ../corsa-bind
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Build vize CLI
@@ -48,6 +69,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout corsa-bind
+        uses: actions/checkout@v4
+        with:
+          repository: ubugeeei/corsa-bind
+          ref: ${{ env.CORSA_BIND_REF }}
+          path: .github-deps/corsa-bind
+      - name: Link corsa-bind sibling
+        run: |
+          rm -rf ../corsa-bind
+          ln -s "$GITHUB_WORKSPACE/.github-deps/corsa-bind" ../corsa-bind
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -61,6 +92,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout corsa-bind
+        uses: actions/checkout@v4
+        with:
+          repository: ubugeeei/corsa-bind
+          ref: ${{ env.CORSA_BIND_REF }}
+          path: .github-deps/corsa-bind
+      - name: Link corsa-bind sibling
+        run: |
+          rm -rf ../corsa-bind
+          ln -s "$GITHUB_WORKSPACE/.github-deps/corsa-bind" ../corsa-bind
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -82,6 +123,16 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           token: ${{ github.token }}
+      - name: Checkout corsa-bind
+        uses: actions/checkout@v4
+        with:
+          repository: ubugeeei/corsa-bind
+          ref: ${{ env.CORSA_BIND_REF }}
+          path: .github-deps/corsa-bind
+      - name: Link corsa-bind sibling
+        run: |
+          rm -rf ../corsa-bind
+          ln -s "$GITHUB_WORKSPACE/.github-deps/corsa-bind" ../corsa-bind
 
       # Rust is always needed for @vizejs/native (used by vite-plugin-vize)
       - name: Setup Rust
