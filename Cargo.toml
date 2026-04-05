@@ -103,10 +103,10 @@ insta = { version = "1.41", features = ["toml"] }
 # Benchmarking
 criterion = "0.5"
 
-# Local corsa bindings
-corsa = { package = "corsa", path = "../corsa-bind/src/bindings/rust/corsa" }
-corsa_lsp = { package = "corsa_lsp", path = "../corsa-bind/src/core/corsa_lsp" }
-corsa_runtime = { package = "corsa_runtime", path = "../corsa-bind/src/core/corsa_runtime" }
+# Published corsa crates
+corsa = { package = "corsa", version = "0.1.0" }
+corsa_lsp = { package = "corsa_lsp", version = "0.1.0" }
+corsa_runtime = { package = "corsa_runtime", version = "0.1.0" }
 
 [profile.release]
 lto = true
