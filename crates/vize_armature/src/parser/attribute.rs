@@ -67,24 +67,25 @@ impl<'a> Parser<'a> {
 
     /// Process attribute data (value content)
     pub(super) fn on_attrib_data_impl(&mut self, start: usize, end: usize) {
-        let content = self.get_source(start, end).into();
-        self.accumulate_attr_or_dir_value(content, start, end);
+        let source = self.source;
+        self.accumulate_attr_or_dir_value(&source[start..end], start, end);
     }
 
     /// Process attribute entity
     pub(super) fn on_attrib_entity_impl(&mut self, ch: char, start: usize, end: usize) {
-        self.accumulate_attr_or_dir_value(ch.to_string().into(), start, end);
+        let mut content = [0_u8; 4];
+        self.accumulate_attr_or_dir_value(ch.encode_utf8(&mut content), start, end);
     }
 
     /// Helper to accumulate attribute or directive value
-    fn accumulate_attr_or_dir_value(&mut self, content: String, start: usize, end: usize) {
+    fn accumulate_attr_or_dir_value(&mut self, content: &str, start: usize, end: usize) {
         // Update current attribute
         if let Some(ref mut attr) = self.current_attr {
             Self::accumulate_value(
                 &mut attr.value_content,
                 &mut attr.value_start,
                 &mut attr.value_end,
-                &content,
+                content,
                 start,
                 end,
             );
@@ -96,7 +97,7 @@ impl<'a> Parser<'a> {
                 &mut dir.value_content,
                 &mut dir.value_start,
                 &mut dir.value_end,
-                &content,
+                content,
                 start,
                 end,
             );
