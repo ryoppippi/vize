@@ -120,9 +120,12 @@ impl CorsaLspClient {
         }
 
         self.drain_pending_messages();
+        let _ = block_on(self.session.close());
         let _ = block_on(self.client.request::<Shutdown>(()));
         let _ = self.client.notify::<Exit>(());
         block_on(self.client.close()).map_err(|e| cstr!("Failed to close Corsa LSP: {e}"))?;
+        self.document_texts.clear();
+        self.overlay_versions.clear();
         self.closed = true;
         Ok(())
     }
@@ -137,7 +140,8 @@ impl CorsaLspClient {
     /// Open a virtual document without waiting for diagnostics.
     pub fn did_open_fast(&mut self, uri: &str, content: &str) -> Result<(), String> {
         let uri = parse_uri(uri)?;
-        self.clear_document_state(uri.as_str());
+        let uri_key = uri.as_str().to_owned();
+        self.clear_document_state(uri_key.as_str());
 
         if self.overlay.document(&uri).is_some() {
             self.overlay
@@ -149,6 +153,7 @@ impl CorsaLspClient {
                 .map_err(|e| cstr!("Failed to open virtual document: {e}"))?;
         }
 
+        self.sync_overlay_document(uri_key.as_str(), content)?;
         self.drain_pending_messages();
         Ok(())
     }
@@ -156,7 +161,8 @@ impl CorsaLspClient {
     /// Update an already-open virtual document.
     pub fn did_change(&mut self, uri: &str, content: &str) -> Result<(), String> {
         let uri = parse_uri(uri)?;
-        self.clear_document_state(uri.as_str());
+        let uri_key = uri.as_str().to_owned();
+        self.clear_document_state(uri_key.as_str());
 
         if self.overlay.document(&uri).is_some() {
             self.overlay
@@ -168,6 +174,7 @@ impl CorsaLspClient {
                 .map_err(|e| cstr!("Failed to open virtual document: {e}"))?;
         }
 
+        self.sync_overlay_document(uri_key.as_str(), content)?;
         self.drain_pending_messages();
         Ok(())
     }
@@ -178,6 +185,7 @@ impl CorsaLspClient {
         self.overlay
             .close(&uri)
             .map_err(|e| cstr!("Failed to close virtual document: {e}"))?;
+        self.delete_overlay_document(uri.as_str())?;
         self.clear_document_state(uri.as_str());
         Ok(())
     }

@@ -13,6 +13,7 @@ native = [
   "dep:which",
   "dep:walkdir",
   "dep:dirs",
+  "dep:corsa",
   "dep:lsp-types",
   "dep:corsa_lsp",
   "dep:corsa_runtime",
@@ -50,6 +51,7 @@ tracing = "0.1"
 which = { version = "7", optional = true }
 dirs = { version = "5", optional = true }
 thiserror.workspace = true
+corsa = { workspace = true, optional = true }
 corsa_lsp = { workspace = true, optional = true }
 corsa_runtime = { workspace = true, optional = true }
 

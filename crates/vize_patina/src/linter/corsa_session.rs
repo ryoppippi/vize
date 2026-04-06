@@ -1,6 +1,6 @@
-use corsa::api::{ApiClient, ManagedSnapshot, ProjectHandle};
+use corsa::api::ProjectSession;
 use std::path::PathBuf;
-use vize_carton::{CompactString, String};
+use vize_carton::String;
 
 mod errors;
 mod paths;
@@ -10,29 +10,17 @@ mod session;
 #[cfg(test)]
 mod tests;
 
+pub(super) type TypeProbe = corsa::api::TypeProbe;
+
 pub(crate) struct CorsaTypeAwareSession {
-    client: ApiClient,
+    session: ProjectSession,
     project_root: PathBuf,
     session_root: PathBuf,
     virtual_file_path: PathBuf,
-    config_path_wire: String,
     virtual_file_wire: String,
-    initialized_snapshot: bool,
+    supports_overlay_updates: bool,
+    overlay_version: i32,
     closed: bool,
-}
-
-pub(super) struct ActiveProject {
-    snapshot: ManagedSnapshot,
-    project: ProjectHandle,
-}
-
-#[derive(Debug, Default)]
-pub(super) struct TypeProbe {
-    pub type_texts: Vec<CompactString>,
-    pub property_names: Vec<CompactString>,
-    pub property_types: Vec<Vec<CompactString>>,
-    pub call_signatures: Vec<Vec<Vec<CompactString>>>,
-    pub return_types: Vec<Vec<CompactString>>,
 }
 
 impl Drop for CorsaTypeAwareSession {

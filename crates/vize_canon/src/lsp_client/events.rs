@@ -45,6 +45,10 @@ impl CorsaLspClient {
     }
 
     pub fn wait_for_diagnostics(&mut self, expected_count: usize) {
+        if self.supports_project_diagnostics_api() || self.supports_file_diagnostics_api() {
+            return;
+        }
+
         let max_wait = Duration::from_secs(30);
         let idle_timeout = Duration::from_millis(30);
         let start = Instant::now();

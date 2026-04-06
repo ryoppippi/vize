@@ -1,8 +1,8 @@
 //! Corsa-backed batch executor.
 //!
-//! This module materializes the virtual project, asks the Corsa LSP to compute
-//! diagnostics for every generated file, and maps those diagnostics back to the
-//! original source positions.
+//! This module materializes the virtual project, asks the Corsa project-session
+//! API for diagnostics across every generated file, and maps those diagnostics
+//! back to the original source positions.
 
 use std::path::{Path, PathBuf};
 
@@ -16,7 +16,7 @@ mod diagnostics;
 
 use diagnostics::map_batch_diagnostics;
 
-/// Batch executor backed by `corsa-bind`'s LSP client.
+/// Batch executor backed by `corsa`'s project-session diagnostics API.
 pub struct CorsaExecutor {
     /// Path to the resolved Corsa executable.
     corsa_path: PathBuf,

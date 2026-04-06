@@ -4,11 +4,12 @@ use super::{
         allocate_session_root, path_to_wire, resolve_corsa_executable, resolve_project_root,
         TSCONFIG_CONTENTS, TSCONFIG_FILE_NAME, VIRTUAL_FILE_NAME,
     },
-    ActiveProject, CorsaTypeAwareSession,
+    CorsaTypeAwareSession,
 };
 use corsa::{
     api::{
-        ApiClient, ApiMode, ApiSpawnConfig, FileChangeSummary, FileChanges, UpdateSnapshotParams,
+        ApiMode, ApiSpawnConfig, FileChangeSummary, FileChanges, OverlayChanges, OverlayUpdate,
+        ProjectSession,
     },
     runtime::block_on,
 };
@@ -32,11 +33,23 @@ impl CorsaTypeAwareSession {
         })?;
 
         let virtual_file_path = session_root.join(VIRTUAL_FILE_NAME);
+        std::fs::write(&virtual_file_path, "").map_err(|error| {
+            io_error_message(
+                "Failed to prime patina virtual TypeScript",
+                &virtual_file_path,
+                &error,
+            )
+        })?;
+
+        let config_path_wire = path_to_wire(&config_path);
+        let virtual_file_wire = path_to_wire(&virtual_file_path);
         let executable = resolve_corsa_executable(&project_root);
-        let client = block_on(ApiClient::spawn(
+        let session = block_on(ProjectSession::spawn(
             ApiSpawnConfig::new(executable)
                 .with_mode(ApiMode::SyncMsgpackStdio)
                 .with_cwd(&session_root),
+            config_path_wire.as_str(),
+            Some(virtual_file_wire.as_str().into()),
         ))
         .map_err(|error| {
             compact_error(
@@ -44,15 +57,18 @@ impl CorsaTypeAwareSession {
                 error.to_compact_string().as_str(),
             )
         })?;
+        let supports_overlay_updates = block_on(session.describe_capabilities())
+            .map(|capabilities| capabilities.overlay.update_snapshot_overlay_changes)
+            .unwrap_or(false);
 
         Ok(Self {
-            client,
+            session,
             project_root,
             session_root,
-            config_path_wire: path_to_wire(&config_path),
-            virtual_file_wire: path_to_wire(&virtual_file_path),
+            virtual_file_wire,
             virtual_file_path,
-            initialized_snapshot: false,
+            supports_overlay_updates,
+            overlay_version: 0,
             closed: false,
         })
     }
@@ -64,7 +80,29 @@ impl CorsaTypeAwareSession {
     pub(in crate::linter) fn open_virtual_project(
         &mut self,
         generated_source: &str,
-    ) -> Result<ActiveProject, String> {
+    ) -> Result<(), String> {
+        if self.supports_overlay_updates {
+            self.overlay_version = self.overlay_version.saturating_add(1);
+            return block_on(self.session.refresh_with_overlay_changes(
+                None,
+                Some(OverlayChanges {
+                    upsert: vec![OverlayUpdate {
+                        document: self.virtual_file_wire.as_str().into(),
+                        text: generated_source.into(),
+                        version: Some(self.overlay_version),
+                        language_id: Some("typescript".into()),
+                    }],
+                    delete: Vec::new(),
+                }),
+            ))
+            .map_err(|error| {
+                compact_error(
+                    "Failed to update patina type snapshot",
+                    error.to_compact_string().as_str(),
+                )
+            });
+        }
+
         std::fs::write(&self.virtual_file_path, generated_source).map_err(|error| {
             io_error_message(
                 "Failed to write patina virtual TypeScript",
@@ -73,45 +111,21 @@ impl CorsaTypeAwareSession {
             )
         })?;
 
-        let file_changes = if self.initialized_snapshot {
-            Some(FileChanges::Summary(FileChangeSummary {
-                changed: vec![self.virtual_file_wire.as_str().into()],
-                created: Vec::new(),
-                deleted: Vec::new(),
-            }))
-        } else {
-            self.initialized_snapshot = true;
-            None
-        };
-
-        let snapshot = block_on(self.client.update_snapshot(UpdateSnapshotParams {
-            open_project: Some(self.config_path_wire.as_str().into()),
-            file_changes,
-        }))
+        block_on(
+            self.session
+                .refresh(Some(FileChanges::Summary(FileChangeSummary {
+                    changed: vec![self.virtual_file_wire.as_str().into()],
+                    created: Vec::new(),
+                    deleted: Vec::new(),
+                }))),
+        )
         .map_err(|error| {
             compact_error(
                 "Failed to update patina type snapshot",
                 error.to_compact_string().as_str(),
             )
         })?;
-
-        let default_project =
-            block_on(snapshot.get_default_project_for_file(self.virtual_file_wire.as_str()))
-                .map_err(|error| {
-                    compact_error(
-                        "Failed to resolve patina project",
-                        error.to_compact_string().as_str(),
-                    )
-                })?;
-
-        let project = default_project
-            .or_else(|| snapshot.projects.first().cloned())
-            .ok_or_else(|| "Failed to resolve patina project".to_compact_string())?;
-
-        Ok(ActiveProject {
-            snapshot,
-            project: project.id,
-        })
+        Ok(())
     }
 
     pub(in crate::linter) fn close(&mut self) {
@@ -119,7 +133,7 @@ impl CorsaTypeAwareSession {
             return;
         }
         self.closed = true;
-        let _ = block_on(self.client.close());
+        let _ = block_on(self.session.close());
         let _ = std::fs::remove_dir_all(&self.session_root);
     }
 }
