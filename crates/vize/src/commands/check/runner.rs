@@ -589,6 +589,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                         // Filter and format diagnostics
                         #[allow(clippy::disallowed_types)]
                         let mut file_diags: Vec<std::string::String> = Vec::new();
+                        let mut seen_diags = vize_carton::FxHashSet::default();
                         for diag in &diagnostics {
                             let code_num = diag.code.as_ref().and_then(|c| match c {
                                 serde_json::Value::Number(n) => n.as_u64(),
@@ -627,15 +628,9 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                             }
 
                             let severity = match diag.severity {
-                                Some(1) => {
-                                    total_errors.fetch_add(1, AtomicOrdering::Relaxed);
-                                    "error"
-                                }
+                                Some(1) => "error",
                                 Some(2) => "warning",
-                                _ => {
-                                    total_errors.fetch_add(1, AtomicOrdering::Relaxed);
-                                    "error"
-                                }
+                                _ => "error",
                             };
                             #[allow(clippy::disallowed_types)]
                             let code_str = diag
@@ -655,10 +650,19 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                                 diag.range.start.line,
                                 diag.range.start.character,
                             );
-                            file_diags.push(format!(
+                            let dedupe_key =
+                                format!("{}:{}{} {}", severity, line, code_str, diag.message);
+                            if !seen_diags.insert(dedupe_key) {
+                                continue;
+                            }
+                            let rendered = format!(
                                 "{}:{}:{}{} {}",
                                 severity, line, col, code_str, diag.message
-                            ));
+                            );
+                            if severity == "error" {
+                                total_errors.fetch_add(1, AtomicOrdering::Relaxed);
+                            }
+                            file_diags.push(rendered);
                         }
 
                         if !file_diags.is_empty() {

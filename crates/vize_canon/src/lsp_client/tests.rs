@@ -1,4 +1,7 @@
-use super::{paths::resolve_temp_dir_base, utils::convert_diagnostics};
+use super::{
+    paths::{find_corsa_in_local_node_modules, resolve_temp_dir_base},
+    utils::convert_diagnostics,
+};
 use lsp_types::{Diagnostic, DiagnosticSeverity, NumberOrString, Position, Range};
 use std::{
     fs,
@@ -60,6 +63,88 @@ fn falls_back_to_nearest_available_node_modules_root() {
         workspace_root.join("__agent_only").join("vize-corsa")
     );
     assert!(!resolved.starts_with(&source_dir));
+
+    let _ = fs::remove_dir_all(&case_dir);
+}
+
+#[test]
+fn prefers_project_local_cache_before_native_preview() {
+    let case_dir = unique_case_dir("project-cache");
+    let workspace_root = case_dir.join("workspace");
+    let source_dir = workspace_root.join("packages").join("demo").join("src");
+    let local_cache = workspace_root.join(".cache").join("tsgo");
+    let native_preview = workspace_root
+        .join("node_modules")
+        .join("@typescript")
+        .join("native-preview-darwin-arm64")
+        .join("lib")
+        .join("tsgo");
+
+    let _ = fs::remove_dir_all(&case_dir);
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(local_cache.parent().unwrap()).unwrap();
+    fs::create_dir_all(native_preview.parent().unwrap()).unwrap();
+    fs::write(&local_cache, "").unwrap();
+    fs::write(&native_preview, "").unwrap();
+
+    let resolved = find_corsa_in_local_node_modules(Some(source_dir.to_string_lossy().as_ref()));
+
+    assert_eq!(
+        resolved,
+        Some(local_cache.to_string_lossy().into_owned().into())
+    );
+
+    let _ = fs::remove_dir_all(&case_dir);
+}
+
+#[test]
+fn falls_back_to_sibling_corsa_bind_cache() {
+    let case_dir = unique_case_dir("sibling-cache");
+    let workspace_root = case_dir.join("workspace");
+    let source_dir = workspace_root.join("packages").join("demo").join("src");
+    let sibling_cache = case_dir.join("corsa-bind").join(".cache").join("tsgo");
+
+    let _ = fs::remove_dir_all(&case_dir);
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(sibling_cache.parent().unwrap()).unwrap();
+    fs::write(&sibling_cache, "").unwrap();
+
+    let resolved = find_corsa_in_local_node_modules(Some(source_dir.to_string_lossy().as_ref()));
+
+    assert_eq!(
+        resolved,
+        Some(sibling_cache.to_string_lossy().into_owned().into())
+    );
+
+    let _ = fs::remove_dir_all(&case_dir);
+}
+
+#[test]
+fn prefers_sibling_cache_before_workspace_native_preview() {
+    let case_dir = unique_case_dir("sibling-over-native");
+    let workspace_root = case_dir.join("workspace");
+    let source_dir = workspace_root.join("packages").join("demo").join("src");
+    let sibling_cache = case_dir.join("corsa-bind").join(".cache").join("tsgo");
+    let native_preview = workspace_root
+        .join("node_modules")
+        .join("@typescript")
+        .join("native-preview-darwin-arm64")
+        .join("lib")
+        .join("tsgo");
+
+    let _ = fs::remove_dir_all(&case_dir);
+    fs::create_dir_all(&source_dir).unwrap();
+    fs::create_dir_all(sibling_cache.parent().unwrap()).unwrap();
+    fs::create_dir_all(native_preview.parent().unwrap()).unwrap();
+    fs::write(&sibling_cache, "").unwrap();
+    fs::write(&native_preview, "").unwrap();
+
+    let resolved = find_corsa_in_local_node_modules(Some(source_dir.to_string_lossy().as_ref()));
+
+    assert_eq!(
+        resolved,
+        Some(sibling_cache.to_string_lossy().into_owned().into())
+    );
 
     let _ = fs::remove_dir_all(&case_dir);
 }

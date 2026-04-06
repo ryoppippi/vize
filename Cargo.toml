@@ -104,9 +104,9 @@ insta = { version = "1.41", features = ["toml"] }
 criterion = "0.5"
 
 # Published corsa crates
-corsa = { package = "corsa", version = "0.1.0" }
-corsa_lsp = { package = "corsa_lsp", version = "0.1.0" }
-corsa_runtime = { package = "corsa_runtime", version = "0.1.0" }
+corsa = { package = "corsa", version = "0.3.1" }
+corsa_lsp = { package = "corsa_lsp", version = "0.3.1" }
+corsa_runtime = { package = "corsa_runtime", version = "0.3.1" }
 
 [profile.release]
 lto = true

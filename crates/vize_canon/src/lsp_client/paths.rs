@@ -35,19 +35,24 @@ pub(super) fn find_corsa_in_local_node_modules(working_dir: Option<&str>) -> Opt
         .map(PathBuf::from)
         .or_else(|| std::env::current_dir().ok())?;
 
-    if let Some(path) = search_corsa_in_dir(&base_dir) {
-        return Some(path);
-    }
-
-    let mut current = base_dir.as_path();
-    while let Some(parent) = current.parent() {
-        if let Some(path) = search_corsa_in_dir(parent) {
+    let mut fallback = None;
+    let mut current = Some(base_dir.as_path());
+    while let Some(dir) = current {
+        if let Some(path) = search_project_cache(dir) {
             return Some(path);
         }
-        current = parent;
+        if let Some(parent) = dir.parent() {
+            if let Some(path) = search_project_cache(&parent.join("corsa-bind")) {
+                return Some(path);
+            }
+        }
+        if fallback.is_none() {
+            fallback = search_local_install(dir);
+        }
+        current = dir.parent();
     }
 
-    None
+    fallback
 }
 
 /// Resolve a globally installed Corsa executable from common package-manager paths.
@@ -107,7 +112,7 @@ pub(super) fn find_corsa_in_path() -> Option<String> {
     None
 }
 
-fn search_corsa_in_dir(dir: &Path) -> Option<String> {
+fn search_local_install(dir: &Path) -> Option<String> {
     let platform_suffix = platform_suffix();
     let pnpm_pattern = dir.join("node_modules/.pnpm");
     if pnpm_pattern.exists() {
@@ -158,6 +163,40 @@ fn search_corsa_in_dir(dir: &Path) -> Option<String> {
                 .join(executable),
         ];
         for candidate in &fallback_candidates {
+            if candidate.exists() {
+                return Some(candidate.to_string_lossy().into());
+            }
+        }
+    }
+
+    None
+}
+
+fn search_project_cache(dir: &Path) -> Option<String> {
+    for executable in EXECUTABLE_NAMES {
+        let cache_candidates = [
+            dir.join(".cache").join(executable),
+            dir.join(".cache").join(cstr!("{executable}.exe").as_str()),
+            dir.join("ref")
+                .join("typescript-go")
+                .join(".cache")
+                .join(executable),
+            dir.join("ref")
+                .join("typescript-go")
+                .join(".cache")
+                .join(cstr!("{executable}.exe").as_str()),
+            dir.join("ref")
+                .join("typescript-go")
+                .join("built")
+                .join("local")
+                .join(executable),
+            dir.join("ref")
+                .join("typescript-go")
+                .join("built")
+                .join("local")
+                .join(cstr!("{executable}.exe").as_str()),
+        ];
+        for candidate in &cache_candidates {
             if candidate.exists() {
                 return Some(candidate.to_string_lossy().into());
             }

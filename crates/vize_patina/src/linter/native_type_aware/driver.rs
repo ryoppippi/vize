@@ -144,10 +144,9 @@ pub(super) fn lint_with_descriptor<'a>(
     let mut should_warn_for_emits = false;
     let mut warned_template_owners = FxHashSet::default();
     let _ = with_corsa_session(linter, filename, |session| {
-        let active_project = session.open_virtual_project(&virtual_ts.content)?;
+        session.open_virtual_project(&virtual_ts.content)?;
         for query in &macro_queries {
             let probe = session.probe_type_at_offset(
-                &active_project,
                 &virtual_ts.content,
                 query.generated_offset,
                 false,
@@ -189,7 +188,6 @@ pub(super) fn lint_with_descriptor<'a>(
 
         for query in &template_queries {
             let probe = session.probe_type_at_offset(
-                &active_project,
                 &virtual_ts.content,
                 query.generated_offset,
                 false,
