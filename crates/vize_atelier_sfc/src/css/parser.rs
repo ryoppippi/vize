@@ -165,7 +165,9 @@ pub(crate) fn bundle_css_internal(
     let mut stylesheet = match bundler.bundle(Path::new(entry_path)) {
         Ok(ss) => ss,
         Err(e) => {
-            let message = format!("CSS bundle error: {:?}", e).to_compact_string();
+            let mut message = String::from("CSS bundle error: ");
+            use std::fmt::Write as _;
+            let _ = write!(&mut message, "{:?}", e);
             return CssInternalResult {
                 code: String::from(""),
                 errors: vec![message],
@@ -179,7 +181,9 @@ pub(crate) fn bundle_css_internal(
             targets,
             ..Default::default()
         }) {
-            let message = format!("CSS minify error: {:?}", e).to_compact_string();
+            let mut message = String::from("CSS minify error: ");
+            use std::fmt::Write as _;
+            let _ = write!(&mut message, "{:?}", e);
             return CssInternalResult {
                 code: String::from(""),
                 errors: vec![message],
@@ -218,7 +222,9 @@ pub(crate) fn bundle_css_internal(
             }
         }
         Err(e) => {
-            let message = format!("CSS print error: {:?}", e).to_compact_string();
+            let mut message = String::from("CSS print error: ");
+            use std::fmt::Write as _;
+            let _ = write!(&mut message, "{:?}", e);
             CssInternalResult {
                 code: String::from(""),
                 errors: vec![message],
