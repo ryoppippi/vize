@@ -535,7 +535,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
                 s.spawn(move || {
                     // Initialize LSP client for this thread
-                    let mut lsp_client = match CorsaProjectClient::new(
+                    let mut corsa_client = match CorsaProjectClient::new(
                         corsa_path.as_deref(),
                         project_root.as_deref(),
                     ) {
@@ -552,18 +552,22 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                     // PHASE 1: Open files
                     // For single server: open all files
                     // For multiple servers: only open assigned files (rely on tsconfig for imports)
-                    let files_to_open: Vec<_> = if num_servers == 1 {
-                        uri_map.iter().collect()
+                    let files_to_open: Vec<(&str, &str)> = if num_servers == 1 {
+                        uri_map
+                            .iter()
+                            .map(|(uri, content)| (uri.as_str(), content.as_str()))
+                            .collect()
                     } else {
-                        indices.iter().map(|i| &uri_map[*i]).collect()
+                        indices
+                            .iter()
+                            .map(|i| {
+                                let (uri, content) = &uri_map[*i];
+                                (uri.as_str(), content.as_str())
+                            })
+                            .collect()
                     };
 
-                    for (uri, content) in &files_to_open {
-                        let _ = lsp_client.did_open_fast(uri, content);
-                    }
-
-                    // Wait for diagnostics
-                    lsp_client.wait_for_diagnostics(files_to_open.len());
+                    let _ = corsa_client.did_open_batch_fast(&files_to_open);
 
                     // PHASE 2: Request diagnostics in batch (pipelined)
                     // Corsa does not always publish diagnostics proactively, so request them.
@@ -572,7 +576,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                         .map(|i| cstr!("file://{}.mts", generated[*i].original))
                         .collect();
 
-                    let batch_results = lsp_client.request_diagnostics_batch(&uris);
+                    let batch_results = corsa_client.request_diagnostics_batch(&uris);
 
                     // Build a map from URI to diagnostics
                     let diag_map: vize_carton::FxHashMap<_, _> =
@@ -678,12 +682,8 @@ pub(crate) fn run_direct(args: &CheckArgs) {
                         }
                     }
 
-                    // PHASE 3: Close files that were opened
-                    for (uri, _) in &files_to_open {
-                        let _ = lsp_client.did_close(uri);
-                    }
-
-                    // Merge diagnostics into shared state
+                    // Merge diagnostics into shared state. The temporary client drops
+                    // after the thread exits, so explicit overlay teardown is redundant.
                     if let Ok(mut diags) = all_diagnostics.lock() {
                         diags.extend(chunk_diagnostics);
                     }
@@ -753,7 +753,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     };
 
     println!(
-        "\n{} Type checked {} files in {:.2?} (collect: {:.2?}, gen: {:.2?}, lsp: {:.2?})",
+        "\n{} Type checked {} files in {:.2?} (collect: {:.2?}, gen: {:.2?}, corsa: {:.2?})",
         status,
         generated.len(),
         total_time,
@@ -781,7 +781,7 @@ pub(crate) fn run_direct(args: &CheckArgs) {
             "timing": {
                 "total_ms": total_time.as_secs_f64() * 1000.0,
                 "gen_ms": gen_time.as_secs_f64() * 1000.0,
-                "lsp_ms": check_time.as_secs_f64() * 1000.0,
+                "corsa_ms": check_time.as_secs_f64() * 1000.0,
             },
             "diagnostics": all_diagnostics.iter().map(|(file, diags)| {
                 serde_json::json!({
@@ -837,11 +837,15 @@ fn default_check_server_count(file_count: usize, cpu_count: usize) -> usize {
         return 1;
     }
 
-    let files_per_server = file_count.div_ceil(8);
-    cpu_count
-        .max(1)
-        .min(files_per_server.max(1))
-        .min(file_count)
+    let requested = if file_count < 2_048 {
+        2
+    } else if file_count < 8_192 {
+        3
+    } else {
+        4
+    };
+
+    requested.min(cpu_count.max(1)).min(file_count)
 }
 
 /// Collect .vue files from patterns.
@@ -925,8 +929,10 @@ mod tests {
 
     #[test]
     fn default_server_count_scales_beyond_previous_cap() {
-        assert_eq!(default_check_server_count(48, 8), 6);
-        assert_eq!(default_check_server_count(160, 12), 12);
+        assert_eq!(default_check_server_count(48, 8), 2);
+        assert_eq!(default_check_server_count(160, 12), 2);
+        assert_eq!(default_check_server_count(4_096, 12), 3);
+        assert_eq!(default_check_server_count(15_000, 12), 4);
     }
 
     #[test]

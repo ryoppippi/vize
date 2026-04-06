@@ -26,7 +26,6 @@ mod tests;
 
 /// Thin adapter over `corsa`'s project-session APIs.
 pub struct CorsaProjectClient {
-    executable: String,
     session: ProjectSession,
     capabilities: Arc<CapabilitiesResponse>,
     project_root: PathBuf,

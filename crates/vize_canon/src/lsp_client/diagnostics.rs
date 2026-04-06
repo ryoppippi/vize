@@ -6,7 +6,7 @@ use super::{
 };
 use corsa::runtime::block_on;
 use lsp_types::Diagnostic;
-use vize_carton::String;
+use vize_carton::{FxHashMap, String};
 
 impl CorsaProjectClient {
     /// Get cached diagnostics for a URI.
@@ -149,21 +149,7 @@ impl CorsaProjectClient {
         external_uri: &str,
         document_uri: &str,
     ) -> Option<Result<DiagnosticFetch, String>> {
-        let mut client = CorsaProjectClient::new_for_workspace(
-            Some(self.executable.as_str()),
-            &self.project_root,
-        )
-        .ok()?;
-        let diagnostics = client.request_diagnostics(document_uri).ok()?;
-        let diagnostics = self.remap_legacy_diagnostics(diagnostics);
-        let diagnostics = diagnostics
-            .into_iter()
-            .filter_map(|diagnostic| {
-                serde_json::to_value(diagnostic)
-                    .ok()
-                    .and_then(|value| serde_json::from_value(value).ok())
-            })
-            .collect();
+        let diagnostics = self.request_materialized_diagnostics(document_uri)?;
         Some(Ok(self.store_file_diagnostics(external_uri, diagnostics)))
     }
 
@@ -171,23 +157,80 @@ impl CorsaProjectClient {
         &mut self,
         uris: &[String],
     ) -> Option<Vec<(String, Vec<LspDiagnostic>)>> {
-        let mut client = CorsaProjectClient::new_for_workspace(
-            Some(self.executable.as_str()),
-            &self.project_root,
-        )
-        .ok()?;
-        let mut results = Vec::with_capacity(uris.len());
+        let mut pairs = Vec::with_capacity(uris.len());
         for uri in uris {
-            let document_uri = self.session_document_uri(uri.as_str());
-            let diagnostics = client.request_diagnostics(document_uri.as_str()).ok()?;
-            let diagnostics = self.remap_legacy_diagnostics(diagnostics);
-            results.push((uri.clone(), diagnostics));
+            pairs.push((uri.clone(), self.session_document_uri(uri.as_str())));
         }
-        Some(results)
+
+        if self.supports_project_diagnostics_api() {
+            return self.request_materialized_diagnostics_batch_via_project_api(&pairs);
+        }
+
+        Some(
+            pairs
+                .into_iter()
+                .map(|(uri, document_uri)| {
+                    let diagnostics = self
+                        .request_materialized_diagnostics(document_uri.as_str())
+                        .unwrap_or_default();
+                    self.diagnostics.insert(uri.clone(), diagnostics.clone());
+                    (uri, convert_diagnostics(&diagnostics))
+                })
+                .collect(),
+        )
     }
 
-    fn remap_legacy_diagnostics(&self, diagnostics: Vec<LspDiagnostic>) -> Vec<LspDiagnostic> {
-        super::utils::remap_serialized_uris(diagnostics.clone(), &self.external_document_uris)
-            .unwrap_or(diagnostics)
+    fn request_materialized_diagnostics(&mut self, document_uri: &str) -> Option<Vec<Diagnostic>> {
+        if self.supports_file_diagnostics_api() {
+            let response = block_on(
+                self.session
+                    .get_diagnostics_for_file(uri_document_identifier(document_uri)),
+            )
+            .ok()?;
+            return Some(self.remap_diagnostics(flatten_file_diagnostics(&response)));
+        }
+
+        if self.supports_project_diagnostics_api() {
+            let report = block_on(self.session.get_diagnostics_for_project()).ok()?;
+            let diagnostics = report
+                .files
+                .iter()
+                .find(|file| document_identifier_uri(&file.file) == document_uri)
+                .map(flatten_file_diagnostics)
+                .unwrap_or_default();
+            return Some(self.remap_diagnostics(diagnostics));
+        }
+
+        None
+    }
+
+    fn request_materialized_diagnostics_batch_via_project_api(
+        &mut self,
+        pairs: &[(String, String)],
+    ) -> Option<Vec<(String, Vec<LspDiagnostic>)>> {
+        let report = block_on(self.session.get_diagnostics_for_project()).ok()?;
+        let mut diagnostics_by_document: FxHashMap<_, _> = report
+            .files
+            .iter()
+            .map(|file| {
+                (
+                    document_identifier_uri(&file.file),
+                    self.remap_diagnostics(flatten_file_diagnostics(file)),
+                )
+            })
+            .collect();
+
+        Some(
+            pairs
+                .iter()
+                .map(|(uri, document_uri)| {
+                    let diagnostics = diagnostics_by_document
+                        .remove(document_uri.as_str())
+                        .unwrap_or_default();
+                    self.diagnostics.insert(uri.clone(), diagnostics.clone());
+                    (uri.clone(), convert_diagnostics(&diagnostics))
+                })
+                .collect(),
+        )
     }
 }

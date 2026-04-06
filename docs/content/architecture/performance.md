@@ -131,11 +131,11 @@ Run `vp run --workspace-root bench:fmt` to reproduce.
 
 Type checking **15,000 Vue SFC files**:
 
-|          | vue-tsc (ST) | Vize canon (ST) | Speedup   | vue-tsc (MT) | Vize canon (MT) | Speedup   | **vue-tsc ST vs Vize MT** |
-| -------- | ------------ | --------------- | --------- | ------------ | --------------- | --------- | ------------------------- |
-| **Time** | 35.69s       | 369ms           | **96.7x** | 26.76s       | 472ms           | **56.7x** | **75.5x**                 |
+|          | vue-tsc (ST) | Vize canon (ST) | Speedup  | vue-tsc (MT) | Vize canon (MT) | Speedup  | **vue-tsc ST vs Vize MT** |
+| -------- | ------------ | --------------- | -------- | ------------ | --------------- | -------- | ------------------------- |
+| **Time** | 22.13s       | 6.28s           | **3.5x** | 20.31s       | 3.33s           | **6.1x** | **6.6x**                  |
 
-> **Note:** Vize canon is still in early development and does not yet cover the full range of type checking features that vue-tsc provides. The speed difference partly reflects the difference in the amount of work each tool currently performs. These numbers will change as canon's feature set matures.
+> **Note:** Vize canon is still in early development and the Corsa-backed diagnostics path is still catching up with vue-tsc fidelity. These measurements reflect the current native project-session implementation with auto-tuned parallel Corsa sessions and will change as diagnostics coverage and parity improve.
 
 Run `vp run --workspace-root bench:check` to reproduce.
 

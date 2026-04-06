@@ -30,7 +30,6 @@ impl CorsaProjectClient {
         let project_root = root_path.as_deref().unwrap_or(&cwd);
         let (session, capabilities) = spawn_project_session(executable, &cwd, project_root)?;
         Ok(Self {
-            executable: executable.into(),
             session,
             capabilities,
             project_root: project_root.to_path_buf(),

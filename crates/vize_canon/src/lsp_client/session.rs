@@ -226,7 +226,7 @@ fn external_document_path(uri: &str) -> Option<PathBuf> {
     Some(session_path)
 }
 
-fn materialize_session_document(
+pub(super) fn materialize_session_document(
     external_uri: &str,
     document_uri: &str,
     content: &str,

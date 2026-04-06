@@ -147,7 +147,7 @@ function runVizeCheckSingleThread(): number {
 // Vize (Corsa) multi-thread
 function runVizeCheckMultiThread(): number {
   return benchmarkCommand(
-    `${VIZE_BIN} check '${GLOB_PATTERN}' --quiet --servers ${CPU_COUNT} --tsconfig ${TSCONFIG_PATH}`,
+    `${VIZE_BIN} check '${GLOB_PATTERN}' --quiet --tsconfig ${TSCONFIG_PATH}`,
   );
 }
 

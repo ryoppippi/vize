@@ -96,7 +96,7 @@ Benchmarks with **15,000 Vue SFC files** (36.9 MB). "User-facing speedup" = trad
 | **Compiler**     | @vue/compiler-sfc 10.43s  | 612ms                     | **16.7x**           |
 | **Linter**       | eslint-plugin-vue 65.30s  | patina 5.48s              | **11.9x**           |
 | **Formatter**    | Prettier 82.69s           | glyph 23ms                | **3,666x**          |
-| **Type Checker** | vue-tsc 35.69s            | canon 472ms               | **75.5x** \*        |
+| **Type Checker** | vue-tsc 22.13s            | canon 3.33s               | **6.6x** \*         |
 | **Vite Plugin**  | @vitejs/plugin-vue 16.98s | @vizejs/vite-plugin 6.90s | **2.5x** \*\*       |
 
 <details>
@@ -109,7 +109,7 @@ Benchmarks with **15,000 Vue SFC files** (36.9 MB). "User-facing speedup" = trad
 
 </details>
 
-\* canon is still in early development and does not yet cover the full feature set of vue-tsc. The speedup partly reflects the difference in work performed.
+\* canon is still in early development and the Corsa-backed diagnostics path is still catching up with vue-tsc fidelity. These numbers reflect the current native project-session implementation and will keep changing as diagnostics coverage improves.
 
 \*\* Vite Plugin benchmark uses Vite v8.0.0 (Rolldown). The plugin replaces only the SFC compilation step; all other Vite internals are unchanged.
 

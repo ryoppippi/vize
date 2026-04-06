@@ -1,7 +1,12 @@
 use super::{
     bootstrap::resolve_corsa_executable,
     paths::{find_node_modules_with_vue, resolve_temp_dir_base},
+    session::materialize_session_document,
     CorsaProjectClient,
+};
+use corsa::{
+    api::{FileChangeSummary, FileChanges},
+    runtime::block_on,
 };
 use serde_json::json;
 use std::{
@@ -14,8 +19,6 @@ impl CorsaProjectClient {
     /// Start a Corsa project session rooted at an isolated scratch workspace.
     pub fn new(corsa_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
         let executable = resolve_corsa_executable(corsa_path, working_dir);
-
-        eprintln!("\x1b[90m[corsa] Using: {executable}\x1b[0m");
 
         let project_root = working_dir
             .map(PathBuf::from)
@@ -55,8 +58,6 @@ impl CorsaProjectClient {
         let working_dir = workspace_root.to_string_lossy();
         let executable = resolve_corsa_executable(corsa_path, Some(working_dir.as_ref()));
 
-        eprintln!("\x1b[90m[corsa] Using: {executable}\x1b[0m");
-
         Self::spawn_initialized_client(
             executable.as_str(),
             workspace_root.clone(),
@@ -88,6 +89,43 @@ impl CorsaProjectClient {
     pub fn did_open_fast(&mut self, uri: &str, content: &str) -> Result<(), String> {
         self.clear_document_state(uri);
         self.sync_overlay_document(uri, content)
+    }
+
+    /// Open many virtual document overlays with a single snapshot refresh when possible.
+    pub fn did_open_batch_fast(&mut self, documents: &[(&str, &str)]) -> Result<(), String> {
+        if documents.is_empty() {
+            return Ok(());
+        }
+
+        if documents
+            .iter()
+            .any(|(uri, _)| self.session_document_uri(uri) == *uri)
+        {
+            for (uri, content) in documents {
+                self.clear_document_state(uri);
+                self.sync_overlay_document(uri, content)?;
+            }
+            return Ok(());
+        }
+
+        let mut summary = FileChangeSummary::default();
+        for (uri, content) in documents {
+            self.clear_document_state(uri);
+            self.document_texts.insert((*uri).into(), (*content).into());
+
+            let document_uri = self.session_document_uri(uri);
+            merge_materialized_file_changes(
+                &mut summary,
+                materialize_session_document(uri, document_uri.as_str(), content),
+            );
+        }
+
+        if summary.changed.is_empty() && summary.created.is_empty() {
+            return Ok(());
+        }
+
+        block_on(self.session.refresh(Some(FileChanges::Summary(summary))))
+            .map_err(|error| cstr!("Failed to refresh Corsa snapshot: {error}"))
     }
 
     /// Update an already-open virtual document overlay.
@@ -144,6 +182,19 @@ fn install_node_modules_link(project_root: Option<&Path>, temp_dir_path: &Path) 
     }
 }
 
+fn merge_materialized_file_changes(
+    summary: &mut FileChangeSummary,
+    file_changes: Option<FileChanges>,
+) {
+    let Some(FileChanges::Summary(file_changes)) = file_changes else {
+        return;
+    };
+
+    summary.changed.extend(file_changes.changed);
+    summary.created.extend(file_changes.created);
+    summary.deleted.extend(file_changes.deleted);
+}
+
 /// Write a minimal `tsconfig.json` that keeps the native checker in strict mode.
 fn write_temp_tsconfig(temp_dir_path: &Path) -> Result<(), String> {
     let tsconfig_content = json!({
@@ -162,4 +213,35 @@ fn write_temp_tsconfig(temp_dir_path: &Path) -> Result<(), String> {
         tsconfig_content.to_compact_string(),
     )
     .map_err(|e| cstr!("Failed to write temp tsconfig.json: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::merge_materialized_file_changes;
+    use corsa::api::{DocumentIdentifier, FileChangeSummary, FileChanges};
+
+    #[test]
+    fn merges_materialized_file_change_summaries() {
+        let mut summary = FileChangeSummary::default();
+        merge_materialized_file_changes(
+            &mut summary,
+            Some(FileChanges::Summary(FileChangeSummary {
+                changed: vec![DocumentIdentifier::from("/workspace/a.ts")],
+                created: vec![DocumentIdentifier::from("/workspace/b.ts")],
+                deleted: Vec::new(),
+            })),
+        );
+        merge_materialized_file_changes(
+            &mut summary,
+            Some(FileChanges::Summary(FileChangeSummary {
+                changed: vec![DocumentIdentifier::from("/workspace/c.ts")],
+                created: Vec::new(),
+                deleted: vec![DocumentIdentifier::from("/workspace/d.ts")],
+            })),
+        );
+
+        assert_eq!(summary.changed.len(), 2);
+        assert_eq!(summary.created.len(), 1);
+        assert_eq!(summary.deleted.len(), 1);
+    }
 }
