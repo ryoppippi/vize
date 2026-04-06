@@ -60,11 +60,28 @@ vize check --strict        # Type check
 
 See the [documentation](https://vizejs.dev) for detailed usage, Vite plugin setup, experimental bundler integrations, WASM bindings, and more.
 
-## Development Environment
-
-Node.js is pinned in `.node-version` and managed with `vp env`.
+## Nix Flake
 
 ```bash
+nix run github:ubugeeei/vize#vp -- --version
+nix run github:ubugeeei/vize#vize -- --help
+nix profile install github:ubugeeei/vize#vize
+```
+
+For local development:
+
+```bash
+nix develop
+vp env install
+vp install
+```
+
+## Development Environment
+
+The primary local setup is `Nix + vp`. Nix provides the Rust / WASM toolchain and the `vp` CLI itself, while Node.js version management stays with `vp` and `.node-version`.
+
+```bash
+nix develop
 vp env install
 vp install
 ```

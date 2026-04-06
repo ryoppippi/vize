@@ -167,16 +167,17 @@ See [WASM Bindings](./guide/wasm.md) for the full API.
 
 For contributing to Vize itself:
 
-### With Vite+ commands
+### With Nix
 
 ```bash
+nix develop
 vp env install
 vp install
 vp run --workspace-root cli             # Enable vize CLI command
 vp run --workspace-root dev:playground  # Start playground
 ```
 
-### Manual Setup
+### Without Nix
 
 ```bash
 git clone https://github.com/ubugeeei/vize.git

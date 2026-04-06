@@ -8,13 +8,7 @@ description = "Canon - The standard of correctness for Vize type checking"
 
 [features]
 default = ["native"]
-native = [
-  "dep:which",
-  "dep:walkdir",
-  "dep:dirs",
-  "dep:corsa",
-  "dep:lsp-types",
-]
+native = ["dep:which", "dep:walkdir", "dep:dirs", "dep:corsa", "dep:lsp-types"]
 
 [dependencies]
 vize_carton.workspace = true

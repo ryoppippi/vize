@@ -7,14 +7,7 @@
  *   3. Run benchmark: node --experimental-strip-types bench/check.ts
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  symlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 import { execSync } from "node:child_process";
@@ -44,9 +37,7 @@ if (!existsSync(join(INPUT_DIR, "tsconfig.json"))) {
 }
 
 const allVueFiles = readdirSync(INPUT_DIR).filter((f) => f.endsWith(".vue"));
-const vueFiles = allVueFiles
-  .filter((f) => f.endsWith(".vue"))
-  .slice(0, FILE_LIMIT);
+const vueFiles = allVueFiles.filter((f) => f.endsWith(".vue")).slice(0, FILE_LIMIT);
 if (vueFiles.length === 0) {
   console.error(`Error: No .vue files found in ${INPUT_DIR}\nRun 'node generate.mjs' first.`);
   process.exit(1);
