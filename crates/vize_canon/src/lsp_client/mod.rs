@@ -1,13 +1,10 @@
-//! LSP client adapter for Corsa.
+//! Corsa project-session client backed by sync msgpack stdio.
 //!
-//! This module preserves the legacy `CorsaLspClient` surface used across the
-//! workspace while preferring `corsa`'s project-session API for diagnostics and
-//! editor queries, with the LSP transport kept as a compatibility fallback.
+//! The module path is still `lsp_client` for workspace compatibility, but the
+//! implementation now talks directly to `corsa`'s `ProjectSession` APIs.
 #![allow(clippy::disallowed_types)]
 
 use corsa::api::{CapabilitiesResponse, ProjectSession};
-use corsa_lsp::{LspClient, LspOverlay};
-use corsa_runtime::BroadcastReceiver;
 use lsp_types::Diagnostic;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -18,7 +15,6 @@ use vize_carton::{FxHashMap, String};
 mod bootstrap;
 mod diagnostics;
 mod diagnostics_api;
-mod events;
 mod lifecycle;
 mod paths;
 mod queries;
@@ -28,22 +24,29 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-/// Thin adapter over `corsa_lsp::LspClient`.
-pub struct CorsaLspClient {
-    client: LspClient,
-    overlay: LspOverlay,
+/// Thin adapter over `corsa`'s project-session APIs.
+pub struct CorsaProjectClient {
+    executable: String,
     session: ProjectSession,
     capabilities: Arc<CapabilitiesResponse>,
-    events: BroadcastReceiver<corsa_lsp::jsonrpc::InboundEvent>,
-    /// Pending diagnostics received via publishDiagnostics
+    project_root: PathBuf,
+    /// Cached diagnostics keyed by document URI.
     pub(crate) diagnostics: FxHashMap<String, Vec<Diagnostic>>,
-    diagnostic_result_ids: FxHashMap<String, String>,
+    /// Per-document overlay versions so Corsa can keep snapshots ordered.
     overlay_versions: FxHashMap<String, i32>,
+    /// Current in-memory contents for virtual overlays and offset mapping.
     document_texts: FxHashMap<String, String>,
-    /// Temporary directory for tsconfig.json (cleaned up on drop)
+    /// Mapping from caller-facing URIs to the session-local URIs Corsa sees.
+    session_document_uris: FxHashMap<String, String>,
+    /// Reverse mapping used to translate API responses back to caller-facing URIs.
+    external_document_uris: FxHashMap<String, String>,
+    /// Temporary directory for tsconfig.json (cleaned up on drop).
     temp_dir: Option<PathBuf>,
     closed: bool,
 }
+
+/// Legacy name kept for callers that still import `CorsaLspClient`.
+pub type CorsaLspClient = CorsaProjectClient;
 
 /// LSP Diagnostic
 #[derive(Debug, Clone, Serialize, Deserialize)]

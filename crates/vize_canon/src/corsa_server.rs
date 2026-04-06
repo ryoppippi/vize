@@ -106,8 +106,8 @@ pub struct CorsaServer {
     running: Arc<AtomicBool>,
     /// Cache of generated Virtual TypeScript (uri -> content)
     cache: FxHashMap<String, String>,
-    /// LSP client for Corsa (lazy initialized)
-    lsp_client: Option<crate::lsp_client::CorsaLspClient>,
+    /// Project-session client for Corsa (lazy initialized).
+    corsa_client: Option<crate::corsa_client::CorsaProjectClient>,
 }
 
 impl CorsaServer {
@@ -123,7 +123,7 @@ impl CorsaServer {
             config,
             running: Arc::new(AtomicBool::new(false)),
             cache: FxHashMap::default(),
-            lsp_client: None,
+            corsa_client: None,
         }
     }
 
@@ -382,7 +382,7 @@ impl CorsaServer {
         // Cache the virtual TS
         self.cache.insert(uri.into(), virtual_ts.clone());
 
-        // Run Corsa on the virtual TypeScript through the LSP client.
+        // Run Corsa on the virtual TypeScript through the project-session API.
         let diagnostics = self.run_corsa(uri, &virtual_ts)?;
 
         let error_count = diagnostics.iter().filter(|d| d.severity == "error").count();
@@ -394,36 +394,30 @@ impl CorsaServer {
         })
     }
 
-    /// Run Corsa on TypeScript content and parse diagnostics using LSP.
+    /// Run Corsa on TypeScript content and parse diagnostics via project sessions.
     fn run_corsa(&mut self, uri: &str, content: &str) -> Result<Vec<Diagnostic>, String> {
-        // Initialize LSP client if needed
-        if self.lsp_client.is_none() {
-            let client = crate::lsp_client::CorsaLspClient::new(
+        if self.corsa_client.is_none() {
+            let client = crate::corsa_client::CorsaProjectClient::new(
                 self.config.corsa_path.as_deref(),
                 self.config.working_dir.as_deref(),
             )?;
-            self.lsp_client = Some(client);
+            self.corsa_client = Some(client);
         }
 
         let client = self
-            .lsp_client
+            .corsa_client
             .as_mut()
-            .expect("lsp_client must be initialized above");
+            .expect("corsa_client must be initialized above");
 
         // Create virtual file URI (file:///path/to/file.vue.ts)
         let virtual_uri = cstr!("file://{uri}.ts");
 
-        // Open the virtual document
         client.did_open(&virtual_uri, content)?;
-
-        // Get diagnostics
-        let lsp_diagnostics = client.get_diagnostics(&virtual_uri);
-
-        // Close the virtual document
+        let corsa_diagnostics = client.request_diagnostics(&virtual_uri)?;
         client.did_close(&virtual_uri)?;
 
-        // Convert LSP diagnostics to our format
-        let diagnostics = lsp_diagnostics
+        // Convert Corsa's editor-style diagnostics to the server payload.
+        let diagnostics = corsa_diagnostics
             .into_iter()
             .map(|d| {
                 let severity: String = match d.severity {
@@ -441,7 +435,7 @@ impl CorsaServer {
                 Diagnostic {
                     message: d.message,
                     severity,
-                    line: d.range.start.line + 1, // LSP is 0-indexed
+                    line: d.range.start.line + 1,
                     column: d.range.start.character + 1,
                     code,
                 }

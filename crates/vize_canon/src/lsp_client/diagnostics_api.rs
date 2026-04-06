@@ -1,10 +1,10 @@
-use super::{utils::convert_diagnostics, CorsaLspClient, LspDiagnostic};
+use super::{utils::convert_diagnostics, CorsaProjectClient, LspDiagnostic};
 use corsa::api::{DocumentIdentifier, FileDiagnosticsResponse, ProjectDiagnosticsResponse};
 use lsp_types::Diagnostic;
 use vize_carton::{cstr, FxHashMap, String};
 
 pub(super) fn map_project_diagnostics(
-    client: &mut CorsaLspClient,
+    client: &mut CorsaProjectClient,
     response: &ProjectDiagnosticsResponse,
     uris: &[String],
 ) -> Vec<(String, Vec<LspDiagnostic>)> {
@@ -35,7 +35,7 @@ pub(super) fn flatten_file_diagnostics(response: &FileDiagnosticsResponse) -> Ve
     diagnostics
 }
 
-fn document_identifier_uri(document: &DocumentIdentifier) -> String {
+pub(super) fn document_identifier_uri(document: &DocumentIdentifier) -> String {
     match document {
         DocumentIdentifier::Uri { uri } => uri.as_str().into(),
         DocumentIdentifier::FileName(path) if path.as_str().starts_with("file://") => {

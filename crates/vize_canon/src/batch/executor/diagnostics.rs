@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use super::super::{Diagnostic, VirtualProject};
-use crate::lsp_client::LspDiagnostic;
+use crate::corsa_client::LspDiagnostic;
 use vize_carton::String;
 
 pub(super) fn map_batch_diagnostics(
@@ -119,13 +119,13 @@ mod tests {
         let diagnostics = map_batch_diagnostics(
             vec![(
                 cstr!("file:///workspace/src/App.vue.ts"),
-                vec![crate::lsp_client::LspDiagnostic {
-                    range: crate::lsp_client::LspRange {
-                        start: crate::lsp_client::LspPosition {
+                vec![crate::corsa_client::LspDiagnostic {
+                    range: crate::corsa_client::LspRange {
+                        start: crate::corsa_client::LspPosition {
                             line: 3,
                             character: 5,
                         },
-                        end: crate::lsp_client::LspPosition {
+                        end: crate::corsa_client::LspPosition {
                             line: 3,
                             character: 12,
                         },

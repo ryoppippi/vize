@@ -1,6 +1,6 @@
 //! Check command execution logic.
 //!
-//! Contains the direct Corsa LSP runner, Unix socket runner, file collection,
+//! Contains the direct Corsa API runner, Unix socket runner, file collection,
 //! and globals parsing.
 
 #![allow(clippy::disallowed_macros)]
@@ -177,13 +177,13 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     }
 }
 
-/// Run type checking directly with Corsa LSP (no file I/O).
+/// Run type checking directly with Corsa project sessions (no file I/O).
 pub(crate) fn run_direct(args: &CheckArgs) {
     use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
     use vize_atelier_core::parser::parse;
     use vize_atelier_sfc::{parse_sfc, SfcParseOptions};
     use vize_canon::{
-        lsp_client::CorsaLspClient,
+        corsa_client::CorsaProjectClient,
         virtual_ts::{generate_virtual_ts_with_offsets, VirtualTsOptions},
     };
     use vize_carton::Bump;
@@ -432,7 +432,10 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     }
 
     if !args.quiet {
-        eprintln!("Running Corsa LSP on {} files...", generated.len());
+        eprintln!(
+            "Running Corsa project sessions on {} files...",
+            generated.len()
+        );
     }
 
     let check_start = Instant::now();
@@ -532,14 +535,19 @@ pub(crate) fn run_direct(args: &CheckArgs) {
 
                 s.spawn(move || {
                     // Initialize LSP client for this thread
-                    let mut lsp_client =
-                        match CorsaLspClient::new(corsa_path.as_deref(), project_root.as_deref()) {
-                            Ok(client) => client,
-                            Err(e) => {
-                                eprintln!("\x1b[31mError:\x1b[0m Failed to start Corsa LSP: {}", e);
-                                return;
-                            }
-                        };
+                    let mut lsp_client = match CorsaProjectClient::new(
+                        corsa_path.as_deref(),
+                        project_root.as_deref(),
+                    ) {
+                        Ok(client) => client,
+                        Err(e) => {
+                            eprintln!(
+                                "\x1b[31mError:\x1b[0m Failed to start Corsa project session: {}",
+                                e
+                            );
+                            return;
+                        }
+                    };
 
                     // PHASE 1: Open files
                     // For single server: open all files

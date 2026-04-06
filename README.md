@@ -93,7 +93,7 @@ Benchmarks with **15,000 Vue SFC files** (36.9 MB). "User-facing speedup" = trad
 
 | Tool             | Traditional (ST)          | Vize (MT)                 | User-facing Speedup |
 | ---------------- | ------------------------- | ------------------------- | ------------------- |
-| **Compiler**     | @vue/compiler-sfc 10.52s  | 380ms                     | **27.7x**           |
+| **Compiler**     | @vue/compiler-sfc 10.43s  | 612ms                     | **16.7x**           |
 | **Linter**       | eslint-plugin-vue 65.30s  | patina 5.48s              | **11.9x**           |
 | **Formatter**    | Prettier 82.69s           | glyph 23ms                | **3,666x**          |
 | **Type Checker** | vue-tsc 35.69s            | canon 472ms               | **75.5x** \*        |
@@ -104,8 +104,8 @@ Benchmarks with **15,000 Vue SFC files** (36.9 MB). "User-facing speedup" = trad
 
 |                   | @vue/compiler-sfc | Vize  | Speedup  |
 | ----------------- | ----------------- | ----- | -------- |
-| **Single Thread** | 10.52s            | 3.82s | **2.8x** |
-| **Multi Thread**  | 3.71s             | 380ms | **9.8x** |
+| **Single Thread** | 10.43s            | 6.06s | **1.7x** |
+| **Multi Thread**  | 3.45s             | 612ms | **5.6x** |
 
 </details>
 

@@ -1,19 +1,14 @@
 use super::{
-    diagnostics_api::{flatten_file_diagnostics, map_project_diagnostics},
+    diagnostics_api::{document_identifier_uri, flatten_file_diagnostics, map_project_diagnostics},
     session::uri_document_identifier,
-    utils::{convert_diagnostics, parse_uri},
-    CorsaLspClient, DiagnosticFetch, LspDiagnostic,
+    utils::convert_diagnostics,
+    CorsaProjectClient, DiagnosticFetch, LspDiagnostic,
 };
-use corsa_runtime::{block_on, spawn};
-use lsp_types::{
-    request::DocumentDiagnosticRequest, DocumentDiagnosticParams, DocumentDiagnosticReport,
-    DocumentDiagnosticReportResult, PartialResultParams, TextDocumentIdentifier,
-    WorkDoneProgressParams,
-};
-use std::time::Duration;
-use vize_carton::{cstr, String};
+use corsa::runtime::block_on;
+use lsp_types::Diagnostic;
+use vize_carton::String;
 
-impl CorsaLspClient {
+impl CorsaProjectClient {
     /// Get cached diagnostics for a URI.
     pub fn get_diagnostics(&self, uri: &str) -> Vec<LspDiagnostic> {
         self.diagnostics
@@ -33,17 +28,24 @@ impl CorsaLspClient {
         &mut self,
         uris: &[String],
     ) -> Vec<(String, Vec<LspDiagnostic>)> {
-        if self.supports_project_diagnostics_api()
-            && uris
-                .iter()
-                .all(|uri| self.can_use_api_for_uri(uri.as_str()))
-        {
-            if let Some(results) = self.request_diagnostics_batch_via_api(uris) {
+        if self.has_materialized_documents(uris) {
+            if let Some(results) = self.request_diagnostics_batch_via_materialized_files(uris) {
                 return results;
             }
         }
 
-        self.request_diagnostics_batch_via_lsp(uris)
+        if self.can_batch_with_project_diagnostics(uris) {
+            if let Some(results) = self.request_diagnostics_batch_via_project_api(uris) {
+                return results;
+            }
+        }
+
+        uris.iter()
+            .map(|uri| {
+                let diagnostics = self.request_diagnostics(uri.as_str()).unwrap_or_default();
+                (uri.clone(), diagnostics)
+            })
+            .collect()
     }
 
     pub(crate) fn request_diagnostics_full(
@@ -51,15 +53,24 @@ impl CorsaLspClient {
         uri: &str,
     ) -> Result<DiagnosticFetch, String> {
         if self.supports_file_diagnostics_api() && self.can_use_api_for_uri(uri) {
-            if let Some(fetch) = self.request_diagnostics_full_via_api(uri) {
+            if let Some(fetch) = self.request_diagnostics_full_via_file_api(uri) {
                 return fetch;
             }
         }
 
-        self.request_diagnostics_full_via_lsp(uri)
+        if self.supports_project_diagnostics_api() && self.can_use_api_for_uri(uri) {
+            if let Some(fetch) = self.request_diagnostics_full_via_project_api(uri) {
+                return fetch;
+            }
+        }
+
+        Ok(DiagnosticFetch {
+            diagnostics: self.cached_diagnostics(uri),
+            used_cache: true,
+        })
     }
 
-    fn request_diagnostics_batch_via_api(
+    fn request_diagnostics_batch_via_project_api(
         &mut self,
         uris: &[String],
     ) -> Option<Vec<(String, Vec<LspDiagnostic>)>> {
@@ -67,142 +78,116 @@ impl CorsaLspClient {
         Some(map_project_diagnostics(self, &report, uris))
     }
 
-    fn request_diagnostics_batch_via_lsp(
-        &mut self,
-        uris: &[String],
-    ) -> Vec<(String, Vec<LspDiagnostic>)> {
-        const MAX_INFLIGHT_DIAGNOSTIC_REQUESTS: usize = 64;
-        let mut results = Vec::with_capacity(uris.len());
-
-        for uri_chunk in uris.chunks(MAX_INFLIGHT_DIAGNOSTIC_REQUESTS) {
-            let mut handles = Vec::with_capacity(uri_chunk.len());
-
-            for uri in uri_chunk {
-                let uri_string = uri.clone();
-                let previous_result_id = self
-                    .diagnostic_result_ids
-                    .get(uri.as_str())
-                    .cloned()
-                    .map(|result_id| result_id.as_str().into());
-                let client = self.client.clone();
-                handles.push(spawn(async move {
-                    let uri = parse_uri(uri_string.as_str())
-                        .map_err(|err| cstr!("Invalid diagnostic URI `{uri_string}`: {err}"))?;
-                    let params = DocumentDiagnosticParams {
-                        text_document: TextDocumentIdentifier::new(uri),
-                        identifier: None,
-                        previous_result_id,
-                        work_done_progress_params: WorkDoneProgressParams::default(),
-                        partial_result_params: PartialResultParams::default(),
-                    };
-                    let response = client
-                        .request::<DocumentDiagnosticRequest>(params)
-                        .await
-                        .map_err(|err| cstr!("{err}"));
-                    Ok::<_, String>((uri_string, response))
-                }));
-            }
-
-            let mut joined = Vec::with_capacity(handles.len());
-            for handle in handles {
-                match handle.join() {
-                    Ok(Ok((uri, response))) => joined.push((uri, response)),
-                    Ok(Err(err)) => {
-                        eprintln!("\x1b[90m[corsa] batch request skipped: {err}\x1b[0m")
-                    }
-                    Err(_) => {}
-                }
-            }
-
-            self.collect_events_until_idle(Duration::from_millis(5), Duration::from_millis(30));
-
-            for (uri, response) in joined {
-                let diagnostics = match response {
-                    Ok(report) => self
-                        .apply_document_diagnostic_result(uri.as_str(), report)
-                        .unwrap_or_else(|| self.cached_diagnostics(uri.as_str())),
-                    Err(_) => self.cached_diagnostics(uri.as_str()),
-                };
-                results.push((uri, convert_diagnostics(&diagnostics)));
-            }
-        }
-
-        results
+    fn can_batch_with_project_diagnostics(&self, uris: &[String]) -> bool {
+        self.supports_project_diagnostics_api()
+            && uris.iter().all(|uri| {
+                let uri = uri.as_str();
+                self.can_use_api_for_uri(uri) && !self.document_texts.contains_key(uri)
+            })
     }
 
-    fn request_diagnostics_full_via_api(
+    fn request_diagnostics_full_via_file_api(
         &mut self,
         uri: &str,
     ) -> Option<Result<DiagnosticFetch, String>> {
+        let document_uri = self.session_document_uri(uri);
+        if document_uri != uri {
+            return self.request_materialized_diagnostics_full(uri, document_uri.as_str());
+        }
+
         let response = block_on(
             self.session
-                .get_diagnostics_for_file(uri_document_identifier(uri)),
+                .get_diagnostics_for_file(uri_document_identifier(document_uri.as_str())),
         )
         .ok()?;
-        let diagnostics = flatten_file_diagnostics(&response);
-        self.diagnostics.insert(uri.into(), diagnostics.clone());
-        Some(Ok(DiagnosticFetch {
-            diagnostics,
-            used_cache: false,
-        }))
+        Some(Ok(self.store_file_diagnostics(
+            uri,
+            self.remap_diagnostics(flatten_file_diagnostics(&response)),
+        )))
     }
 
-    fn request_diagnostics_full_via_lsp(&mut self, uri: &str) -> Result<DiagnosticFetch, String> {
-        let uri = parse_uri(uri)?;
-        let previous_result_id = self
-            .diagnostic_result_ids
-            .get(uri.as_str())
-            .cloned()
-            .map(|result_id| result_id.as_str().into());
-        let params = DocumentDiagnosticParams {
-            text_document: TextDocumentIdentifier::new(uri.clone()),
-            identifier: None,
-            previous_result_id,
-            work_done_progress_params: WorkDoneProgressParams::default(),
-            partial_result_params: PartialResultParams::default(),
-        };
+    fn request_diagnostics_full_via_project_api(
+        &mut self,
+        uri: &str,
+    ) -> Option<Result<DiagnosticFetch, String>> {
+        let report = block_on(self.session.get_diagnostics_for_project()).ok()?;
+        let diagnostics = report
+            .files
+            .iter()
+            .find(|file| document_identifier_uri(&file.file) == uri)
+            .map(flatten_file_diagnostics)
+            .unwrap_or_default();
+        Some(Ok(self.store_file_diagnostics(
+            uri,
+            self.remap_diagnostics(diagnostics),
+        )))
+    }
 
-        let response = block_on(self.client.request::<DocumentDiagnosticRequest>(params));
-        self.drain_pending_messages();
-
-        match response {
-            Ok(report) => {
-                if let Some(diagnostics) =
-                    self.apply_document_diagnostic_result(uri.as_str(), report.clone())
-                {
-                    let used_cache = matches!(
-                        report,
-                        DocumentDiagnosticReportResult::Report(
-                            DocumentDiagnosticReport::Unchanged(_)
-                        ) | DocumentDiagnosticReportResult::Partial(_)
-                    );
-                    return Ok(DiagnosticFetch {
-                        diagnostics,
-                        used_cache,
-                    });
-                }
-            }
-            Err(error) => {
-                if self.wait_for_uri_diagnostics(uri.as_str(), Duration::from_millis(500)) {
-                    return Ok(DiagnosticFetch {
-                        diagnostics: self.cached_diagnostics(uri.as_str()),
-                        used_cache: true,
-                    });
-                }
-                return Err(cstr!("Failed to request diagnostics: {error}"));
-            }
+    fn store_file_diagnostics(
+        &mut self,
+        uri: &str,
+        diagnostics: Vec<Diagnostic>,
+    ) -> DiagnosticFetch {
+        self.diagnostics.insert(uri.into(), diagnostics.clone());
+        DiagnosticFetch {
+            diagnostics,
+            used_cache: false,
         }
+    }
 
-        if self.wait_for_uri_diagnostics(uri.as_str(), Duration::from_millis(100)) {
-            return Ok(DiagnosticFetch {
-                diagnostics: self.cached_diagnostics(uri.as_str()),
-                used_cache: true,
-            });
+    pub(super) fn cached_diagnostics(&self, uri: &str) -> Vec<Diagnostic> {
+        self.diagnostics.get(uri).cloned().unwrap_or_default()
+    }
+
+    fn has_materialized_documents(&mut self, uris: &[String]) -> bool {
+        uris.iter()
+            .any(|uri| self.session_document_uri(uri.as_str()) != uri.as_str())
+    }
+
+    fn request_materialized_diagnostics_full(
+        &mut self,
+        external_uri: &str,
+        document_uri: &str,
+    ) -> Option<Result<DiagnosticFetch, String>> {
+        let mut client = CorsaProjectClient::new_for_workspace(
+            Some(self.executable.as_str()),
+            &self.project_root,
+        )
+        .ok()?;
+        let diagnostics = client.request_diagnostics(document_uri).ok()?;
+        let diagnostics = self.remap_legacy_diagnostics(diagnostics);
+        let diagnostics = diagnostics
+            .into_iter()
+            .filter_map(|diagnostic| {
+                serde_json::to_value(diagnostic)
+                    .ok()
+                    .and_then(|value| serde_json::from_value(value).ok())
+            })
+            .collect();
+        Some(Ok(self.store_file_diagnostics(external_uri, diagnostics)))
+    }
+
+    fn request_diagnostics_batch_via_materialized_files(
+        &mut self,
+        uris: &[String],
+    ) -> Option<Vec<(String, Vec<LspDiagnostic>)>> {
+        let mut client = CorsaProjectClient::new_for_workspace(
+            Some(self.executable.as_str()),
+            &self.project_root,
+        )
+        .ok()?;
+        let mut results = Vec::with_capacity(uris.len());
+        for uri in uris {
+            let document_uri = self.session_document_uri(uri.as_str());
+            let diagnostics = client.request_diagnostics(document_uri.as_str()).ok()?;
+            let diagnostics = self.remap_legacy_diagnostics(diagnostics);
+            results.push((uri.clone(), diagnostics));
         }
+        Some(results)
+    }
 
-        Ok(DiagnosticFetch {
-            diagnostics: self.cached_diagnostics(uri.as_str()),
-            used_cache: true,
-        })
+    fn remap_legacy_diagnostics(&self, diagnostics: Vec<LspDiagnostic>) -> Vec<LspDiagnostic> {
+        super::utils::remap_serialized_uris(diagnostics.clone(), &self.external_document_uris)
+            .unwrap_or(diagnostics)
     }
 }

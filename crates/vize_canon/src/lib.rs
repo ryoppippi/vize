@@ -30,8 +30,8 @@
 //! │                                       │                         │
 //! │                                       ▼                         │
 //! │                            ┌──────────────────────────┐        │
-//! │                            │  Corsa LSP               │        │
-//! │                            │  via corsa-bind          │        │
+//! │                            │  Corsa ProjectSession    │        │
+//! │                            │  sync msgpack stdio      │        │
 //! │                            └──────────┬───────────────┘        │
 //! │                                       │                         │
 //! │                                       ▼                         │
@@ -60,6 +60,9 @@ pub mod corsa_bridge;
 
 #[cfg(feature = "native")]
 pub mod lsp_client;
+
+#[cfg(feature = "native")]
+pub use lsp_client as corsa_client;
 
 #[cfg(all(feature = "native", unix))]
 pub mod corsa_server;

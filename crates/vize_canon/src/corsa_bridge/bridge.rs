@@ -4,20 +4,19 @@ use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 #[allow(clippy::disallowed_types)]
 use std::sync::{Arc, Mutex};
-use tokio::task;
 use vize_carton::profiler::{CacheStats, Profiler};
 use vize_carton::{cstr, String};
 
 use super::types::*;
-use crate::lsp_client::CorsaLspClient;
+use crate::corsa_client::CorsaProjectClient;
 
-/// Bridge to Corsa for type checking via LSP.
+/// Bridge to Corsa for type checking and editor queries via project sessions.
 #[allow(clippy::disallowed_types)]
 pub struct CorsaBridge {
     /// Configuration
     config: CorsaBridgeConfig,
-    /// Shared LSP client state
-    client: Arc<Mutex<Option<CorsaLspClient>>>,
+    /// Shared Corsa project-session state.
+    client: Arc<Mutex<Option<CorsaProjectClient>>>,
     /// Whether the bridge is initialized
     initialized: AtomicBool,
     /// Profiler for performance tracking
@@ -59,29 +58,25 @@ impl CorsaBridge {
             return Ok(());
         }
 
-        let client = Arc::clone(&self.client);
-        let config = self.config.clone();
-        spawn_blocking_result(move || {
-            let mut guard = lock_client(&client)?;
-            if guard.is_some() {
-                return Ok(());
-            }
+        let mut guard = lock_client(&self.client)?;
+        if guard.is_some() {
+            return Ok(());
+        }
 
-            let corsa_path = config
-                .corsa_path
-                .as_ref()
-                .map(|path| path.to_string_lossy().into_owned());
-            let working_dir = config
-                .working_dir
-                .as_ref()
-                .map(|path| path.to_string_lossy().into_owned());
+        let corsa_path = self
+            .config
+            .corsa_path
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned());
+        let working_dir = self
+            .config
+            .working_dir
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned());
 
-            let client = CorsaLspClient::new(corsa_path.as_deref(), working_dir.as_deref())
-                .map_err(CorsaBridgeError::SpawnFailed)?;
-            *guard = Some(client);
-            Ok(())
-        })
-        .await?;
+        let client = CorsaProjectClient::new(corsa_path.as_deref(), working_dir.as_deref())
+            .map_err(CorsaBridgeError::SpawnFailed)?;
+        *guard = Some(client);
 
         self.initialized.store(true, Ordering::SeqCst);
 
@@ -226,18 +221,13 @@ impl CorsaBridge {
             return Ok(());
         }
 
-        let client = Arc::clone(&self.client);
-        spawn_blocking_result(move || {
-            let mut guard = lock_client(&client)?;
-            if let Some(client) = guard.as_mut() {
-                client
-                    .shutdown()
-                    .map_err(CorsaBridgeError::CommunicationError)?;
-            }
-            *guard = None;
-            Ok(())
-        })
-        .await?;
+        let mut guard = lock_client(&self.client)?;
+        if let Some(client) = guard.as_mut() {
+            client
+                .shutdown()
+                .map_err(CorsaBridgeError::CommunicationError)?;
+        }
+        *guard = None;
 
         self.initialized.store(false, Ordering::SeqCst);
         Ok(())
@@ -431,20 +421,15 @@ impl CorsaBridge {
 
     async fn with_client<R, F>(&self, f: F) -> Result<R, CorsaBridgeError>
     where
-        R: Send + 'static,
-        F: FnOnce(&mut CorsaLspClient) -> Result<R, CorsaBridgeError> + Send + 'static,
+        F: FnOnce(&mut CorsaProjectClient) -> Result<R, CorsaBridgeError>,
     {
         if !self.initialized.load(Ordering::SeqCst) {
             return Err(CorsaBridgeError::NotInitialized);
         }
 
-        let client = Arc::clone(&self.client);
-        spawn_blocking_result(move || {
-            let mut guard = lock_client(&client)?;
-            let client = guard.as_mut().ok_or(CorsaBridgeError::ProcessTerminated)?;
-            f(client)
-        })
-        .await
+        let mut guard = lock_client(&self.client)?;
+        let client = guard.as_mut().ok_or(CorsaBridgeError::ProcessTerminated)?;
+        f(client)
     }
 }
 
@@ -561,19 +546,9 @@ where
 
 #[allow(clippy::disallowed_types)]
 fn lock_client<'a>(
-    client: &'a Arc<Mutex<Option<CorsaLspClient>>>,
-) -> Result<std::sync::MutexGuard<'a, Option<CorsaLspClient>>, CorsaBridgeError> {
+    client: &'a Arc<Mutex<Option<CorsaProjectClient>>>,
+) -> Result<std::sync::MutexGuard<'a, Option<CorsaProjectClient>>, CorsaBridgeError> {
     client
         .lock()
         .map_err(|_| CorsaBridgeError::CommunicationError("Corsa client lock poisoned".into()))
-}
-
-async fn spawn_blocking_result<R, F>(f: F) -> Result<R, CorsaBridgeError>
-where
-    R: Send + 'static,
-    F: FnOnce() -> Result<R, CorsaBridgeError> + Send + 'static,
-{
-    task::spawn_blocking(f).await.map_err(|e| {
-        CorsaBridgeError::CommunicationError(cstr!("Blocking Corsa task failed: {e}"))
-    })?
 }

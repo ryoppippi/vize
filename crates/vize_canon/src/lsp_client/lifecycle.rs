@@ -1,15 +1,7 @@
 use super::{
     bootstrap::resolve_corsa_executable,
     paths::{find_node_modules_with_vue, resolve_temp_dir_base},
-    utils::{json_from_value, parse_uri},
-    CorsaLspClient,
-};
-use corsa_lsp::{VirtualChange, VirtualDocument};
-use corsa_runtime::block_on;
-use lsp_types::{
-    notification::{Exit, Initialized},
-    request::{Initialize, Shutdown},
-    InitializeParams, InitializedParams, WorkspaceFolder,
+    CorsaProjectClient,
 };
 use serde_json::json;
 use std::{
@@ -18,8 +10,8 @@ use std::{
 };
 use vize_carton::{cstr, String, ToCompactString};
 
-impl CorsaLspClient {
-    /// Start the Corsa LSP server.
+impl CorsaProjectClient {
+    /// Start a Corsa project session rooted at an isolated scratch workspace.
     pub fn new(corsa_path: Option<&str>, working_dir: Option<&str>) -> Result<Self, String> {
         let executable = resolve_corsa_executable(corsa_path, working_dir);
 
@@ -52,7 +44,7 @@ impl CorsaLspClient {
         )
     }
 
-    /// Start the Corsa LSP server rooted at an on-disk workspace.
+    /// Start a Corsa project session rooted at an on-disk workspace.
     pub fn new_for_workspace(
         corsa_path: Option<&str>,
         workspace_root: &Path,
@@ -73,125 +65,61 @@ impl CorsaLspClient {
         )
     }
 
-    pub(super) fn initialize(&mut self, project_root: Option<&PathBuf>) -> Result<(), String> {
-        let root_uri = project_root
-            .map(|path| cstr!("file://{}", path.display()))
-            .map(|uri| parse_uri(uri.as_str()))
-            .transpose()?;
-        let workspace_folders = root_uri.clone().map(|uri| {
-            vec![WorkspaceFolder {
-                uri,
-                name: "workspace".into(),
-            }]
-        });
-        let params: InitializeParams = json_from_value(json!({
-            "processId": std::process::id(),
-            "capabilities": {
-                "textDocument": {
-                    "publishDiagnostics": {
-                        "relatedInformation": true
-                    },
-                    "diagnostic": {
-                        "dynamicRegistration": false
-                    }
-                },
-                "workspace": {
-                    "workspaceFolders": true,
-                    "configuration": true
-                }
-            },
-            "rootUri": root_uri,
-            "workspaceFolders": workspace_folders
-        }))?;
-
-        let _response = block_on(self.client.request::<Initialize>(params))
-            .map_err(|e| cstr!("Failed to initialize Corsa LSP: {e}"))?;
-        self.client
-            .notify::<Initialized>(InitializedParams {})
-            .map_err(|e| cstr!("Failed to send initialized notification: {e}"))?;
-
-        Ok(())
-    }
-
-    /// Shutdown the LSP server.
+    /// Shutdown the project session.
     pub fn shutdown(&mut self) -> Result<(), String> {
         if self.closed {
             return Ok(());
         }
 
-        self.drain_pending_messages();
-        let _ = block_on(self.session.close());
-        let _ = block_on(self.client.request::<Shutdown>(()));
-        let _ = self.client.notify::<Exit>(());
-        block_on(self.client.close()).map_err(|e| cstr!("Failed to close Corsa LSP: {e}"))?;
+        let _ = corsa::runtime::block_on(self.session.close());
         self.document_texts.clear();
+        self.diagnostics.clear();
         self.overlay_versions.clear();
         self.closed = true;
         Ok(())
     }
 
-    /// Open a virtual document (waits briefly for diagnostics).
+    /// Open a virtual document.
     pub fn did_open(&mut self, uri: &str, content: &str) -> Result<(), String> {
-        self.did_open_fast(uri, content)?;
-        self.read_notifications()?;
-        Ok(())
+        self.did_open_fast(uri, content)
     }
 
-    /// Open a virtual document without waiting for diagnostics.
+    /// Open or replace a virtual document overlay.
     pub fn did_open_fast(&mut self, uri: &str, content: &str) -> Result<(), String> {
-        let uri = parse_uri(uri)?;
-        let uri_key = uri.as_str().to_owned();
-        self.clear_document_state(uri_key.as_str());
-
-        if self.overlay.document(&uri).is_some() {
-            self.overlay
-                .replace(&uri, content)
-                .map_err(|e| cstr!("Failed to update virtual document: {e}"))?;
-        } else {
-            self.overlay
-                .open(VirtualDocument::new(uri, "typescript", content))
-                .map_err(|e| cstr!("Failed to open virtual document: {e}"))?;
-        }
-
-        self.sync_overlay_document(uri_key.as_str(), content)?;
-        self.drain_pending_messages();
-        Ok(())
+        self.clear_document_state(uri);
+        self.sync_overlay_document(uri, content)
     }
 
-    /// Update an already-open virtual document.
+    /// Update an already-open virtual document overlay.
     pub fn did_change(&mut self, uri: &str, content: &str) -> Result<(), String> {
-        let uri = parse_uri(uri)?;
-        let uri_key = uri.as_str().to_owned();
-        self.clear_document_state(uri_key.as_str());
+        self.clear_document_state(uri);
+        self.sync_overlay_document(uri, content)
+    }
 
-        if self.overlay.document(&uri).is_some() {
-            self.overlay
-                .change(&uri, [VirtualChange::replace(content)])
-                .map_err(|e| cstr!("Failed to change virtual document: {e}"))?;
-        } else {
-            self.overlay
-                .open(VirtualDocument::new(uri, "typescript", content))
-                .map_err(|e| cstr!("Failed to open virtual document: {e}"))?;
-        }
-
-        self.sync_overlay_document(uri_key.as_str(), content)?;
-        self.drain_pending_messages();
+    /// Close a virtual document overlay.
+    pub fn did_close(&mut self, uri: &str) -> Result<(), String> {
+        self.delete_overlay_document(uri)?;
+        self.clear_document_state(uri);
         Ok(())
     }
 
-    /// Close a virtual document.
-    pub fn did_close(&mut self, uri: &str) -> Result<(), String> {
-        let uri = parse_uri(uri)?;
-        self.overlay
-            .close(&uri)
-            .map_err(|e| cstr!("Failed to close virtual document: {e}"))?;
-        self.delete_overlay_document(uri.as_str())?;
-        self.clear_document_state(uri.as_str());
-        Ok(())
+    pub(crate) fn diagnostics_cache_len(&self) -> usize {
+        self.diagnostics.len()
+    }
+
+    pub(crate) fn clear_diagnostics_cache(&mut self) {
+        self.diagnostics.clear();
+    }
+
+    /// Compatibility no-op for older call sites that expected publishDiagnostics.
+    pub fn wait_for_diagnostics(&mut self, _expected_documents: usize) {}
+
+    pub(super) fn clear_document_state(&mut self, uri: &str) {
+        self.diagnostics.remove(uri);
     }
 }
 
-impl Drop for CorsaLspClient {
+impl Drop for CorsaProjectClient {
     fn drop(&mut self) {
         let _ = self.shutdown();
         if let Some(ref dir) = self.temp_dir {

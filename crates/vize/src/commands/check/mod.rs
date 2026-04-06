@@ -1,6 +1,6 @@
 //! Check command - Type check Vue SFC files
 //!
-//! Generates Virtual TypeScript from Vue SFCs and uses Corsa LSP for type checking.
+//! Generates Virtual TypeScript from Vue SFCs and uses Corsa project sessions for type checking.
 //! Can connect to a running check-server via Unix socket for faster repeated checks.
 
 mod dts;

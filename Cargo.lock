@@ -3497,8 +3497,6 @@ name = "vize_canon"
 version = "0.39.0"
 dependencies = [
  "corsa",
- "corsa_lsp",
- "corsa_runtime",
  "dashmap 6.1.0",
  "dirs",
  "insta",

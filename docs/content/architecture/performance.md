@@ -24,9 +24,9 @@ Compiling **15,000 Vue SFC files** (36.9 MB total):
 
 |                                | @vue/compiler-sfc | Vize  | Speedup   |
 | ------------------------------ | ----------------- | ----- | --------- |
-| **Single Thread**              | 10.52s            | 3.82s | **2.8x**  |
-| **Multi Thread**               | 3.71s             | 380ms | **9.8x**  |
-| **compiler-sfc ST vs Vize MT** | 10.52s            | 380ms | **27.7x** |
+| **Single Thread**              | 10.43s            | 6.06s | **1.7x**  |
+| **Multi Thread**               | 3.45s             | 612ms | **5.6x**  |
+| **compiler-sfc ST vs Vize MT** | 10.43s            | 612ms | **16.7x** |
 
 The single-threaded improvement comes from Rust's zero-cost abstractions (no GC, no JIT warmup, cache-friendly memory layout). The multi-threaded improvement comes from Rayon's work-stealing thread pool, which scales near-linearly with CPU core count.
 

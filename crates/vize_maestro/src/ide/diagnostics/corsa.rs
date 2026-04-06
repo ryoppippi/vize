@@ -12,7 +12,7 @@ use super::{DiagnosticService, SourceMapping, VirtualTsResult};
 use vize_carton::cstr;
 
 impl DiagnosticService {
-    /// Collect diagnostics from the Corsa LSP backend.
+    /// Collect diagnostics from the Corsa project-session backend.
     pub(super) async fn collect_corsa_diagnostics(
         state: &ServerState,
         uri: &Url,

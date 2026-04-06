@@ -1,8 +1,8 @@
 //! Corsa bridge for the native TypeScript checker.
 //!
 //! This module keeps the rest of the workspace insulated from process spawning,
-//! virtual document syncing, and the API/LSP fallback details hidden behind
-//! the bridge surface.
+//! virtual document syncing, and the msgpack project-session details hidden
+//! behind the bridge surface.
 
 mod bridge;
 mod types;

@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use super::error::{CorsaError, CorsaNotFoundError, CorsaResult};
 use super::type_checker::TypeCheckResult;
 use super::virtual_project::VirtualProject;
-use crate::lsp_client::CorsaLspClient;
+use crate::corsa_client::CorsaProjectClient;
 use vize_carton::{cstr, String};
 
 mod diagnostics;
@@ -61,9 +61,11 @@ impl CorsaExecutor {
         project.materialize()?;
 
         let corsa_path = self.corsa_path.to_string_lossy();
-        let mut client =
-            CorsaLspClient::new_for_workspace(Some(corsa_path.as_ref()), project.virtual_root())
-                .map_err(map_lsp_error)?;
+        let mut client = CorsaProjectClient::new_for_workspace(
+            Some(corsa_path.as_ref()),
+            project.virtual_root(),
+        )
+        .map_err(map_corsa_error)?;
         let uris = collect_virtual_file_uris(project.virtual_root())?;
         let diagnostics = map_batch_diagnostics(client.request_diagnostics_batch(&uris), project);
         let success = diagnostics
@@ -131,7 +133,7 @@ fn collect_virtual_file_uris(virtual_root: &Path) -> CorsaResult<Vec<String>> {
     Ok(uris)
 }
 
-fn map_lsp_error(message: String) -> CorsaError {
+fn map_corsa_error(message: String) -> CorsaError {
     CorsaError::CorsaExecution {
         exit_code: -1,
         message,
