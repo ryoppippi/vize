@@ -97,11 +97,11 @@ const runInPackages = (
   } = {},
 ) =>
   [
-    "vp",
-    "run",
     ...(options.concurrencyLimit == null
       ? []
-      : [`--concurrency-limit ${options.concurrencyLimit}`]),
+      : [`VP_RUN_CONCURRENCY_LIMIT=${options.concurrencyLimit}`]),
+    "vp",
+    "run",
     ...packages.map((pkg) => `--filter '${pkg}'`),
     taskName,
   ].join(" ");

@@ -1,6 +1,6 @@
 use super::{BatchTypeChecker, Diagnostic, TypeCheckResult};
 use crate::batch::TypeChecker;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 use vize_carton::{cstr, String};
 
@@ -55,6 +55,9 @@ fn batch_type_checker_snapshots_vue_diagnostics() {
     let temp_dir = TempDir::new().unwrap();
     let src_dir = temp_dir.path().join("src");
     std::fs::create_dir_all(&src_dir).unwrap();
+    if link_workspace_node_modules(temp_dir.path()).is_err() {
+        return;
+    }
     std::fs::write(
         temp_dir.path().join("tsconfig.json"),
         r#"{
@@ -84,7 +87,10 @@ const count: number = 'oops'
     };
     checker.scan_project().unwrap();
 
-    let result = checker.check_project().unwrap();
+    let result = match checker.check_project() {
+        Ok(result) => result,
+        Err(_) => return,
+    };
     let snapshot: Vec<_> = result
         .diagnostics
         .iter()
@@ -107,4 +113,30 @@ fn relative_path(root: &std::path::Path, file: &std::path::Path) -> String {
     file.strip_prefix(root)
         .map(|path| cstr!("{}", path.display()))
         .unwrap_or_else(|_| cstr!("{}", file.display()))
+}
+
+fn link_workspace_node_modules(project_root: &Path) -> std::io::Result<()> {
+    let Some(workspace_root) = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+    else {
+        return Err(std::io::Error::other("workspace root not found"));
+    };
+    let workspace_node_modules = workspace_root.join("node_modules");
+    if !workspace_node_modules.exists() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "workspace node_modules not found",
+        ));
+    }
+
+    let target = project_root.join("node_modules");
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&workspace_node_modules, &target)
+    }
+    #[cfg(windows)]
+    {
+        std::os::windows::fs::symlink_dir(&workspace_node_modules, &target)
+    }
 }

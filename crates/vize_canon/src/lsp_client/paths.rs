@@ -30,7 +30,7 @@ pub(super) fn resolve_temp_dir_base(project_root: Option<&Path>) -> PathBuf {
 }
 
 /// Resolve a project-local Corsa executable from the current directory or ancestors.
-pub(super) fn find_corsa_in_local_node_modules(working_dir: Option<&str>) -> Option<String> {
+pub(crate) fn find_corsa_in_local_node_modules(working_dir: Option<&str>) -> Option<String> {
     let base_dir = working_dir
         .map(PathBuf::from)
         .or_else(|| std::env::current_dir().ok())?;

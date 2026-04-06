@@ -9,7 +9,9 @@ use std::path::{Path, PathBuf};
 use super::error::{CorsaError, CorsaNotFoundError, CorsaResult};
 use super::type_checker::TypeCheckResult;
 use super::virtual_project::VirtualProject;
-use crate::corsa_client::CorsaProjectClient;
+use crate::{
+    corsa_client::CorsaProjectClient, lsp_client::paths::find_corsa_in_local_node_modules,
+};
 use vize_carton::{cstr, String};
 
 mod diagnostics;
@@ -25,27 +27,22 @@ pub struct CorsaExecutor {
 impl CorsaExecutor {
     /// Create a new executor by finding a local or global Corsa executable.
     pub fn new(project_root: &Path) -> Result<Self, CorsaNotFoundError> {
-        for executable in ["corsa", "tsgo"] {
-            let local_corsa = project_root.join("node_modules/.bin").join(executable);
-            if local_corsa.exists() {
-                return Ok(Self {
-                    corsa_path: local_corsa,
-                });
+        let project_root_str = project_root.to_string_lossy();
+        if let Some(local_corsa) = find_corsa_in_local_node_modules(Some(project_root_str.as_ref()))
+        {
+            if let Some(corsa_path) =
+                normalize_corsa_path(PathBuf::from(local_corsa.as_str().to_owned()))
+            {
+                return Ok(Self { corsa_path });
             }
         }
 
         for executable in ["corsa", "tsgo"] {
             if let Ok(global_corsa) = which::which(executable) {
-                return Ok(Self {
-                    corsa_path: global_corsa,
-                });
+                if let Some(corsa_path) = normalize_corsa_path(global_corsa) {
+                    return Ok(Self { corsa_path });
+                }
             }
-        }
-
-        if let Some(mise_corsa) = Self::find_mise_corsa() {
-            return Ok(Self {
-                corsa_path: mise_corsa,
-            });
         }
 
         Err(CorsaNotFoundError::new(project_root))
@@ -78,41 +75,30 @@ impl CorsaExecutor {
             diagnostics,
         })
     }
+}
 
-    /// Find Corsa in mise shims directory.
-    fn find_mise_corsa() -> Option<PathBuf> {
-        let mise_data_dir = std::env::var("MISE_DATA_DIR")
-            .map(PathBuf::from)
-            .ok()
-            .or_else(|| dirs::data_local_dir().map(|d| d.join("mise")))?;
-
-        for executable in ["corsa", "tsgo"] {
-            let shims_corsa = mise_data_dir.join("shims").join(executable);
-            if shims_corsa.exists() {
-                return Some(shims_corsa);
-            }
-        }
-
-        if let Some(xdg_data) = std::env::var("XDG_DATA_HOME").ok().map(PathBuf::from) {
-            for executable in ["corsa", "tsgo"] {
-                let xdg_corsa = xdg_data.join("mise").join("shims").join(executable);
-                if xdg_corsa.exists() {
-                    return Some(xdg_corsa);
-                }
-            }
-        }
-
-        if let Some(home) = dirs::home_dir() {
-            for executable in ["corsa", "tsgo"] {
-                let home_corsa = home.join(".local/share/mise/shims").join(executable);
-                if home_corsa.exists() {
-                    return Some(home_corsa);
-                }
-            }
-        }
-
-        None
+fn normalize_corsa_path(path: PathBuf) -> Option<PathBuf> {
+    let Some(bin_dir) = path.parent() else {
+        return Some(path);
+    };
+    if bin_dir.file_name().and_then(|name| name.to_str()) != Some(".bin") {
+        return Some(path);
     }
+
+    let Some(node_modules_dir) = bin_dir.parent() else {
+        return Some(path);
+    };
+    if node_modules_dir.file_name().and_then(|name| name.to_str()) != Some("node_modules") {
+        return Some(path);
+    }
+
+    let Some(project_root) = node_modules_dir.parent() else {
+        return Some(path);
+    };
+    let project_root_str = project_root.to_string_lossy();
+    find_corsa_in_local_node_modules(Some(project_root_str.as_ref()))
+        .map(|resolved| PathBuf::from(resolved.as_str().to_owned()))
+        .filter(|resolved| resolved != &path)
 }
 
 fn collect_virtual_file_uris(virtual_root: &Path) -> CorsaResult<Vec<String>> {
@@ -142,7 +128,7 @@ fn map_corsa_error(message: String) -> CorsaError {
 
 #[cfg(test)]
 mod tests {
-    use super::collect_virtual_file_uris;
+    use super::{collect_virtual_file_uris, normalize_corsa_path};
     use std::fs;
     use tempfile::TempDir;
     use vize_carton::cstr;
@@ -166,5 +152,36 @@ mod tests {
                 cstr!("file://{}", root.join("index.ts").display()),
             ]
         );
+    }
+
+    #[test]
+    fn normalizes_node_modules_bin_wrapper_to_native_preview_binary() {
+        let temp_dir = TempDir::new().unwrap();
+        let root = temp_dir.path();
+        let wrapper = root.join("node_modules/.bin/tsgo");
+        let native = root
+            .join("node_modules")
+            .join("@typescript")
+            .join("native-preview")
+            .join("lib")
+            .join("tsgo");
+
+        fs::create_dir_all(wrapper.parent().unwrap()).unwrap();
+        fs::create_dir_all(native.parent().unwrap()).unwrap();
+        fs::write(&wrapper, "").unwrap();
+        fs::write(&native, "").unwrap();
+
+        assert_eq!(normalize_corsa_path(wrapper), Some(native));
+    }
+
+    #[test]
+    fn rejects_node_modules_bin_wrapper_without_native_binary() {
+        let temp_dir = TempDir::new().unwrap();
+        let wrapper = temp_dir.path().join("node_modules/.bin/tsgo");
+
+        fs::create_dir_all(wrapper.parent().unwrap()).unwrap();
+        fs::write(&wrapper, "").unwrap();
+
+        assert_eq!(normalize_corsa_path(wrapper), None);
     }
 }

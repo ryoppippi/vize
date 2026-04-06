@@ -26,7 +26,7 @@
         };
 
         lib = pkgs.lib;
-        vitePlusVersion = "0.1.15";
+        vitePlusVersion = "0.1.11";
         vp = pkgs.writeShellApplication {
           name = "vp";
           runtimeInputs = [
