@@ -1,5 +1,7 @@
 //! Tests for CSS compilation.
 
+#[cfg(feature = "native")]
+use std::{fs, path::PathBuf};
 use vize_carton::ToCompactString;
 use vize_carton::{Bump, BumpVec};
 
@@ -9,7 +11,7 @@ use super::scoped::{
 use super::transform::extract_and_transform_v_bind;
 #[cfg(feature = "native")]
 use super::CssTargets;
-use super::{compile_css, CssCompileOptions};
+use super::{bundle_css, compile_css, CssCompileOptions};
 
 #[test]
 fn test_compile_simple_css() {
@@ -141,6 +143,62 @@ fn test_compile_with_targets() {
     );
     assert!(result.errors.is_empty());
     assert!(result.code.contains("flex"));
+}
+
+#[test]
+#[cfg(feature = "native")]
+fn test_bundle_css_inlines_imports_recursively() {
+    let case_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("__agent_only")
+        .join("tests")
+        .join("css-bundle-native");
+    let nested_dir = case_dir.join("nested");
+    let entry_path = case_dir.join("entry.css");
+    let base_path = nested_dir.join("base.css");
+    let theme_path = case_dir.join("theme.css");
+
+    let _ = fs::remove_dir_all(&case_dir);
+    fs::create_dir_all(&nested_dir).unwrap();
+    fs::write(&theme_path, ".theme { color: blue; }").unwrap();
+    fs::write(
+        &base_path,
+        "@import \"../theme.css\";\n.base { display: flex; }",
+    )
+    .unwrap();
+    fs::write(
+        &entry_path,
+        "@import \"./nested/base.css\";\n.entry { color: red; }",
+    )
+    .unwrap();
+
+    let result = bundle_css(
+        entry_path.to_string_lossy().as_ref(),
+        &CssCompileOptions::default(),
+    );
+
+    assert!(
+        result.errors.is_empty(),
+        "Unexpected errors: {:?}",
+        result.errors
+    );
+    assert!(result.code.contains(".theme"));
+    assert!(result.code.contains(".base"));
+    assert!(result.code.contains(".entry"));
+
+    let _ = fs::remove_dir_all(&case_dir);
+}
+
+#[test]
+#[cfg(not(feature = "native"))]
+fn test_bundle_css_without_native_reports_error() {
+    let result = bundle_css("entry.css", &CssCompileOptions::default());
+
+    assert!(result.code.is_empty());
+    assert_eq!(result.errors.len(), 1);
+    assert_eq!(
+        result.errors[0].as_str(),
+        "CSS bundling requires the `native` feature"
+    );
 }
 
 #[test]

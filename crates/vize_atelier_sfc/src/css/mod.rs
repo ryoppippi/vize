@@ -230,6 +230,19 @@ pub fn bundle_css(entry_path: &str, options: &CssCompileOptions) -> CssCompileRe
     }
 }
 
+/// Bundle CSS is only available with the native LightningCSS backend.
+#[cfg(not(feature = "native"))]
+pub fn bundle_css(_entry_path: &str, _options: &CssCompileOptions) -> CssCompileResult {
+    CssCompileResult {
+        code: String::default(),
+        map: None,
+        css_vars: vec![],
+        errors: vec![String::from("CSS bundling requires the `native` feature")],
+        warnings: vec![],
+        exports: None,
+    }
+}
+
 /// Compile a style block
 pub fn compile_style_block(style: &SfcStyleBlock, options: &CssCompileOptions) -> CssCompileResult {
     let mut opts = options.clone();

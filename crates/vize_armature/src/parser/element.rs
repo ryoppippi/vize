@@ -18,14 +18,14 @@ impl<'a> Parser<'a> {
             return;
         }
 
-        let content = self.get_source(start, end).to_string();
-        self.append_or_merge_text(&content, start, end);
+        let source = self.source;
+        self.append_or_merge_text(&source[start..end], start, end);
     }
 
     /// Process text entity content
     pub(super) fn on_text_entity_impl(&mut self, ch: char, start: usize, end: usize) {
-        let content = ch.to_string();
-        self.append_or_merge_text(&content, start, end);
+        let mut content = [0_u8; 4];
+        self.append_or_merge_text(ch.encode_utf8(&mut content), start, end);
     }
 
     /// Append or merge text node
@@ -41,7 +41,7 @@ impl<'a> Parser<'a> {
             if let Some(entry) = self.stack.last_mut() {
                 if let Some(TemplateChildNode::Text(text_node)) = entry.element.children.last_mut()
                 {
-                    text_node.content.push_str(&content);
+                    text_node.content.push_str(content);
                     text_node.loc.end = end_pos;
                     text_node.loc.source = source_span;
                 }
@@ -53,6 +53,7 @@ impl<'a> Parser<'a> {
             self.add_child(TemplateChildNode::Text(boxed));
         }
     }
+
     /// Process interpolation
     pub(super) fn on_interpolation_impl(&mut self, start: usize, end: usize) {
         let raw_content = self.get_source(start, end);
