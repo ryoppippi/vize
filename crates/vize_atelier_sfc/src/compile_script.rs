@@ -8,6 +8,7 @@ pub mod import_utils;
 pub mod inline;
 pub mod macros;
 pub mod props;
+pub mod statement_sections;
 #[cfg(test)]
 mod tests;
 pub mod typescript;
