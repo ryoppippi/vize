@@ -681,6 +681,70 @@ const emit = defineEmits<(e: 'click') => void>()
     }
 
     #[test]
+    fn test_compile_script_setup_with_next_line_define_props_assignment() {
+        let content = r#"
+import { computed } from 'vue'
+
+interface Props {
+  name: string
+}
+
+const props =
+  defineProps<Props>()
+
+const greeting = computed(() => props.name)
+"#;
+        let result = compile_script_setup(content, "Test", false, false, None).unwrap();
+
+        assert!(
+            result.code.contains("const props = __props"),
+            "Should rewrite defineProps assignment once. Got:\n{}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("const props =\n"),
+            "Should not leave a dangling defineProps assignment. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result
+                .code
+                .contains("const greeting = computed(() => props.name)"),
+            "Code after defineProps should remain intact. Got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
+    fn test_compile_script_setup_with_next_line_define_slots_assignment() {
+        let content = r#"
+const slots =
+  defineSlots<{
+    default?: () => string
+  }>()
+
+const hasDefault = !!slots.default
+"#;
+        let result = compile_script_setup(content, "Test", false, false, None).unwrap();
+
+        assert!(
+            result.code.contains("const slots = _useSlots()"),
+            "Should rewrite defineSlots assignment to useSlots(). Got:\n{}",
+            result.code
+        );
+        assert!(
+            !result.code.contains("const slots =\n"),
+            "Should not leave a dangling defineSlots assignment. Got:\n{}",
+            result.code
+        );
+        assert!(
+            result.code.contains("const hasDefault = !!slots.default"),
+            "Code after defineSlots should remain intact. Got:\n{}",
+            result.code
+        );
+    }
+
+    #[test]
     fn test_compile_script_setup_with_define_expose() {
         let content = r#"
 import { ref } from 'vue'

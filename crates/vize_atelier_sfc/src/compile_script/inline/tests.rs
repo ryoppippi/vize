@@ -538,6 +538,66 @@ const doubled = ref(count * 2)
     }
 
     #[test]
+    fn test_define_props_assignment_value_on_next_line() {
+        let content = r#"
+import { computed } from 'vue'
+
+interface Props {
+    msg: string
+    count: number
+}
+
+const props =
+  defineProps<Props>();
+const doubled = computed(() => props.count * 2)
+"#;
+        let output = compile_setup(content);
+        assert!(
+            output.contains("const props = __props"),
+            "defineProps binding should be rewritten exactly once. Got:\n{}",
+            output
+        );
+        assert!(
+            !output.contains("const props =\n"),
+            "dangling next-line defineProps assignment should be removed. Got:\n{}",
+            output
+        );
+        assert!(
+            output.contains("computed(() => props.count * 2)"),
+            "code after defineProps should remain intact. Got:\n{}",
+            output
+        );
+    }
+
+    #[test]
+    fn test_define_slots_assignment_value_on_next_line() {
+        let content = r#"
+const slots =
+  defineSlots<{
+    default?: () => string
+  }>();
+
+const hasDefault = !!slots.default
+"#;
+        let output = compile_setup(content);
+        assert!(
+            output.contains("const slots = _useSlots()"),
+            "defineSlots binding should be rewritten to useSlots(). Got:\n{}",
+            output
+        );
+        assert!(
+            !output.contains("const slots =\n"),
+            "dangling next-line defineSlots assignment should be removed. Got:\n{}",
+            output
+        );
+        assert!(
+            output.contains("const hasDefault = !!slots.default"),
+            "code after defineSlots should remain intact. Got:\n{}",
+            output
+        );
+    }
+
+    #[test]
     fn test_multiline_conditional_type_ts() {
         // Multi-line conditional type with ? and : continuation markers
         let content = r#"

@@ -21,6 +21,7 @@ use super::super::macros::{
 use super::super::props::{
     extract_emit_names_from_type, extract_prop_types_from_type, extract_with_defaults_defaults,
 };
+use super::super::statement_sections::extract_script_sections;
 use super::super::typescript::transform_typescript_to_js;
 use super::super::{ScriptCompileResult, TemplateParts};
 use super::helpers::{extract_const_name, strip_comments_for_counting};
@@ -690,6 +691,10 @@ fn collect_setup_bindings(ctx: &ScriptCompileContext) -> Vec<&str> {
 ///
 /// Returns a tuple of (user_imports, setup_lines, ts_declarations).
 fn parse_script_content(content: &str, is_ts: bool) -> (Vec<String>, Vec<String>, Vec<String>) {
+    if let Some(sections) = extract_script_sections(content, is_ts) {
+        return sections;
+    }
+
     let mut user_imports = Vec::new();
     let mut setup_lines = Vec::new();
     // Collect TypeScript interfaces/types to preserve at module level (before export default)
