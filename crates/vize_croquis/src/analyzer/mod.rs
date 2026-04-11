@@ -34,7 +34,7 @@ pub use helpers::{
 };
 
 use crate::analysis::Croquis;
-use vize_carton::CompactString;
+use vize_carton::{profile, CompactString};
 
 /// Analysis options for controlling what gets analyzed.
 ///
@@ -180,7 +180,10 @@ impl Analyzer {
         self.script_analyzed = true;
 
         // Use OXC-based parser for accurate AST analysis
-        let result = crate::script_parser::parse_script_setup_with_generic(source, generic);
+        let result = profile!(
+            "croquis.analyzer.script_setup",
+            crate::script_parser::parse_script_setup_with_generic(source, generic)
+        );
 
         // Merge results into summary
         self.summary.bindings = result.bindings;
@@ -207,7 +210,10 @@ impl Analyzer {
         self.script_analyzed = true;
 
         // Use OXC-based parser for non-script-setup
-        let result = crate::script_parser::parse_script(source);
+        let result = profile!(
+            "croquis.analyzer.script_plain",
+            crate::script_parser::parse_script(source)
+        );
 
         // Merge results into summary
         self.summary.bindings = result.bindings;
@@ -230,7 +236,7 @@ impl Analyzer {
     /// Consumes the analyzer.
     #[inline]
     pub fn finish(self) -> Croquis {
-        self.summary
+        profile!("croquis.analyzer.finish", self.summary)
     }
 
     /// Get a reference to the current summary (without consuming).

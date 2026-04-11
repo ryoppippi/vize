@@ -34,7 +34,7 @@ use vize_atelier_core::{
     parser::parse_with_options,
     transform::transform as do_transform,
 };
-use vize_carton::{Bump, String};
+use vize_carton::{profile, Bump, String};
 use vize_croquis::Croquis;
 
 /// Compile a Vue template for DOM with default options
@@ -62,7 +62,10 @@ pub fn compile_template_with_options<'a>(
     };
 
     // Parse
-    let (mut root, errors) = parse_with_options(allocator, source, parser_opts);
+    let (mut root, errors) = profile!(
+        "atelier.dom.template.parse",
+        parse_with_options(allocator, source, parser_opts)
+    );
 
     if !errors.is_empty() {
         let codegen_result = CodegenResult {
@@ -88,7 +91,10 @@ pub fn compile_template_with_options<'a>(
     };
     // Allocate Croquis in the arena so it shares the allocator lifetime
     let analysis: Option<&Croquis> = options.croquis.map(|c| &*allocator.alloc(*c));
-    do_transform(allocator, &mut root, transform_opts, analysis);
+    profile!(
+        "atelier.dom.template.transform",
+        do_transform(allocator, &mut root, transform_opts, analysis)
+    );
 
     // Codegen
     let codegen_opts = CodegenOptions {
@@ -102,7 +108,10 @@ pub fn compile_template_with_options<'a>(
         binding_metadata: options.binding_metadata,
         ..Default::default()
     };
-    let codegen_result = generate(&root, codegen_opts);
+    let codegen_result = profile!(
+        "atelier.dom.template.codegen",
+        generate(&root, codegen_opts)
+    );
 
     (root, errors.to_vec(), codegen_result)
 }

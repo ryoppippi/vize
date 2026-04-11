@@ -3,7 +3,7 @@ use oxc_ast::ast::CallExpression;
 use oxc_ast_visit::{walk::walk_call_expression, Visit};
 use oxc_parser::Parser as OxcParser;
 use oxc_span::{GetSpan, SourceType, Span};
-use vize_carton::String;
+use vize_carton::{profile, String};
 
 #[derive(Clone, Copy)]
 pub(super) struct RelativeRange {
@@ -17,9 +17,15 @@ pub(super) fn collect_call_callee_ranges(
 ) -> Vec<RelativeRange> {
     let allocator = OxcAllocator::default();
     let source_type = SourceType::from_path("template.ts").unwrap_or_default();
-    if let Ok(expression) = OxcParser::new(&allocator, source, source_type).parse_expression() {
+    if let Ok(expression) = profile!(
+        "patina.type_aware.template_calls.parse_expression",
+        OxcParser::new(&allocator, source, source_type).parse_expression()
+    ) {
         let mut collector = CallCalleeCollector::default();
-        collector.visit_expression(&expression);
+        profile!(
+            "patina.type_aware.template_calls.visit_expression",
+            collector.visit_expression(&expression)
+        );
         return collector.into_relative_ranges(0, source.len() as u32);
     }
 
@@ -33,13 +39,19 @@ pub(super) fn collect_call_callee_ranges(
     wrapped.push_str(source);
     wrapped.push_str("\n}");
 
-    let parsed = OxcParser::new(&allocator, wrapped.as_str(), source_type).parse();
+    let parsed = profile!(
+        "patina.type_aware.template_calls.parse_statement",
+        OxcParser::new(&allocator, wrapped.as_str(), source_type).parse()
+    );
     if parsed.panicked || !parsed.errors.is_empty() {
         return Vec::new();
     }
 
     let mut collector = CallCalleeCollector::default();
-    collector.visit_program(&parsed.program);
+    profile!(
+        "patina.type_aware.template_calls.visit_program",
+        collector.visit_program(&parsed.program)
+    );
     collector.into_relative_ranges(PREFIX.len() as u32, source.len() as u32)
 }
 

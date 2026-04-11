@@ -20,6 +20,7 @@ use crate::{
     ast::{RootNode, RuntimeHelper, TemplateChildNode},
     options::CodegenOptions,
 };
+use vize_carton::profile;
 
 use children::is_directive_comment;
 pub use context::{CodegenContext, CodegenResult};
@@ -41,14 +42,17 @@ pub fn generate(root: &RootNode<'_>, options: CodegenOptions) -> CodegenResult {
         .collect();
 
     // Generate function signature
-    generate_function_signature(&mut ctx);
+    profile!(
+        "atelier.codegen.function_signature",
+        generate_function_signature(&mut ctx)
+    );
 
     // Generate body
     ctx.indent();
     ctx.newline();
 
     // Generate component/directive resolution
-    generate_assets(&mut ctx, root);
+    profile!("atelier.codegen.assets", generate_assets(&mut ctx, root));
 
     // Generate return statement
     ctx.push("return ");
@@ -58,7 +62,10 @@ pub fn generate(root: &RootNode<'_>, options: CodegenOptions) -> CodegenResult {
         ctx.push("null");
     } else if root_children.len() == 1 {
         // Single root child - wrap in block
-        generate_root_node(&mut ctx, root_children[0]);
+        profile!(
+            "atelier.codegen.root_node",
+            generate_root_node(&mut ctx, root_children[0])
+        );
     } else {
         // Multiple root children - wrap in fragment block
         ctx.use_helper(RuntimeHelper::OpenBlock);
@@ -77,7 +84,10 @@ pub fn generate(root: &RootNode<'_>, options: CodegenOptions) -> CodegenResult {
                 ctx.push(",");
             }
             ctx.newline();
-            generate_node(&mut ctx, child);
+            profile!(
+                "atelier.codegen.fragment_child",
+                generate_node(&mut ctx, child)
+            );
         }
         ctx.deindent();
         ctx.newline();
@@ -100,15 +110,21 @@ pub fn generate(root: &RootNode<'_>, options: CodegenOptions) -> CodegenResult {
     }
     // Collect helpers from hoisted nodes - generate_hoists() takes &CodegenContext (immutable)
     // so helpers used in hoisted VNodes aren't tracked via use_helper(). Pre-scan them here.
-    collect_hoist_helpers(root, &mut all_helpers);
+    profile!(
+        "atelier.codegen.collect_hoist_helpers",
+        collect_hoist_helpers(root, &mut all_helpers)
+    );
     // Sort helpers for consistent output order
     all_helpers.sort();
     all_helpers.dedup();
 
-    let mut preamble = generate_preamble_from_helpers(&ctx, &all_helpers);
+    let mut preamble = profile!(
+        "atelier.codegen.preamble",
+        generate_preamble_from_helpers(&ctx, &all_helpers)
+    );
 
     // Generate hoisted variable declarations (appended to preamble)
-    let hoists_code = generate_hoists(&ctx, root);
+    let hoists_code = profile!("atelier.codegen.hoists", generate_hoists(&ctx, root));
     if !hoists_code.is_empty() {
         preamble.push('\n');
         preamble.push_str(&hoists_code);

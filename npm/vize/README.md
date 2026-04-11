@@ -90,10 +90,17 @@ The npm CLI currently applies shared config to the `lint` command. You can overr
 vize                              # Compile ./**/*.vue to ./dist
 vize build src/**/*.vue -o out    # Custom input/output
 vize build --ssr                  # SSR mode
+vize build --profile              # Parse, transform, codegen, and I/O profile
 vize fmt --check                  # Check formatting
+vize fmt --check --profile        # Formatter timing profile
 vize lint --fix                   # Auto-fix lint issues
+vize lint --profile               # Rule hook, Croquis, and type-aware timing profile
 vize check --strict               # Strict type checking
+vize check --profile src          # Virtual TS, Croquis, and Corsa timing profile
 ```
+
+Profile output includes hot files and internal operation timings, so compiler, linter, typecheck,
+Croquis, and Corsa costs are visible in the same report style.
 
 ## Alternative Installation
 

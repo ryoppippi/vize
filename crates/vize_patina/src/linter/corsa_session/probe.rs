@@ -1,6 +1,6 @@
 use super::{errors::compact_error, CorsaTypeAwareSession, TypeProbe};
 use corsa::{api::TypeProbeOptions, runtime::block_on};
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 impl CorsaTypeAwareSession {
     pub(in crate::linter) fn probe_type_at_offset(
@@ -10,15 +10,21 @@ impl CorsaTypeAwareSession {
         load_property_types: bool,
         load_signatures: bool,
     ) -> Result<Option<TypeProbe>, String> {
-        let utf16_offset = byte_offset_to_utf16_offset(generated_source, generated_offset);
-        block_on(self.session.probe_type_at_position(
-            self.virtual_file_wire.as_str(),
-            utf16_offset,
-            TypeProbeOptions {
-                load_property_types,
-                load_signatures,
-            },
-        ))
+        let utf16_offset = profile!(
+            "patina.corsa_session.byte_to_utf16",
+            byte_offset_to_utf16_offset(generated_source, generated_offset)
+        );
+        profile!(
+            "patina.corsa_session.probe_type",
+            block_on(self.session.probe_type_at_position(
+                self.virtual_file_wire.as_str(),
+                utf16_offset,
+                TypeProbeOptions {
+                    load_property_types,
+                    load_signatures,
+                },
+            ))
+        )
         .map_err(|error| {
             compact_error(
                 "Failed to query checker type probe",

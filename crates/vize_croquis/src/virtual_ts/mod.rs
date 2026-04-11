@@ -46,6 +46,7 @@ mod types;
 
 use std::path::Path;
 
+use vize_carton::profile;
 use vize_relief::ast::RootNode;
 
 use crate::analysis::BindingMetadata;
@@ -73,33 +74,41 @@ pub fn generate_virtual_ts(
     }
 
     // Generate script output first if present
-    let script_output = script_content.map(|s| gen.generate_script_setup(s, bindings, from_file));
+    let script_output = profile!(
+        "croquis.virtual_ts.script",
+        script_content.map(|s| gen.generate_script_setup(s, bindings, from_file))
+    );
     let has_script = script_output.is_some();
 
     // Generate template output
-    let template_output =
-        template_ast.map(|ast| gen.generate_template(ast, bindings, template_offset, !has_script));
+    let template_output = profile!(
+        "croquis.virtual_ts.template",
+        template_ast.map(|ast| gen.generate_template(ast, bindings, template_offset, !has_script))
+    );
 
     // Combine outputs
-    match (script_output, template_output) {
-        (Some(mut script), Some(template)) => {
-            script.content.push('\n');
-            script.content.push_str(&template.content);
+    profile!(
+        "croquis.virtual_ts.combine",
+        match (script_output, template_output) {
+            (Some(mut script), Some(template)) => {
+                script.content.push('\n');
+                script.content.push_str(&template.content);
 
-            let script_len = script.content.len() as u32;
-            for mut mapping in template.source_map.mappings().iter().cloned() {
-                mapping.generated.start += script_len;
-                mapping.generated.end += script_len;
-                script.source_map.add(mapping);
+                let script_len = script.content.len() as u32;
+                for mut mapping in template.source_map.mappings().iter().cloned() {
+                    mapping.generated.start += script_len;
+                    mapping.generated.end += script_len;
+                    script.source_map.add(mapping);
+                }
+
+                script.diagnostics.extend(template.diagnostics);
+                script
             }
-
-            script.diagnostics.extend(template.diagnostics);
-            script
+            (Some(script), None) => script,
+            (None, Some(template)) => template,
+            (None, None) => VirtualTsOutput::default(),
         }
-        (Some(script), None) => script,
-        (None, Some(template)) => template,
-        (None, None) => VirtualTsOutput::default(),
-    }
+    )
 }
 
 /// Generate virtual TypeScript using croquis analysis.
@@ -118,12 +127,15 @@ pub fn generate_virtual_ts_with_croquis(
         gen = gen.with_import_resolver(resolver);
     }
 
-    gen.generate_from_croquis(
-        script_content,
-        parse_result,
-        template_ast,
-        config,
-        from_file,
+    profile!(
+        "croquis.virtual_ts.from_croquis",
+        gen.generate_from_croquis(
+            script_content,
+            parse_result,
+            template_ast,
+            config,
+            from_file,
+        )
     )
 }
 

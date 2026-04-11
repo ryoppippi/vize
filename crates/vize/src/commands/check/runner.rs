@@ -9,7 +9,7 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use ignore::WalkBuilder;
@@ -17,7 +17,11 @@ use vize_canon::{
     batch::TypeChecker as BatchTypeCheckerTrait, BatchTypeChecker, BatchTypeCheckerOptions,
     DeclarationEmitOptions,
 };
-use vize_carton::{cstr, FxHashSet};
+use vize_carton::{cstr, profiler::global_profiler, FxHashSet, String};
+
+use crate::commands::profile::{
+    print_profile_report, ProfilePhase, ProfilePhaseKind, ProfileReport,
+};
 
 use super::{
     reporting::{JsonFileResult, JsonOutput},
@@ -36,6 +40,7 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     use super::{JsonRpcResponse, ServerCheckResult};
 
     let start = Instant::now();
+    let collect_start = Instant::now();
     #[allow(clippy::disallowed_types)]
     let default_patterns = vec![std::string::String::from(".")];
     let files = if args.patterns.is_empty() {
@@ -43,12 +48,14 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     } else {
         collect_vue_files(&args.patterns)
     };
+    let collect_time = collect_start.elapsed();
 
     if files.is_empty() {
         eprintln!("No .vue files found matching inputs: {:?}", args.patterns);
         return;
     }
 
+    let connect_start = Instant::now();
     let mut stream = match UnixStream::connect(socket_path) {
         Ok(stream) => stream,
         Err(error) => {
@@ -62,6 +69,7 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
             std::process::exit(1);
         }
     };
+    let connect_time = connect_start.elapsed();
 
     if !args.quiet {
         eprintln!("Connected to check-server at {}", socket_path);
@@ -72,6 +80,7 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
     #[allow(clippy::disallowed_types, clippy::disallowed_methods)]
     let mut results: Vec<(std::string::String, ServerCheckResult)> = Vec::new();
 
+    let request_start = Instant::now();
     for path in &files {
         #[allow(clippy::disallowed_types)]
         let source = match fs::read_to_string(path) {
@@ -130,8 +139,9 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
             results.push((filename, result));
         }
     }
+    let request_time = request_start.elapsed();
 
-    let total_time = start.elapsed();
+    let render_start = Instant::now();
     if !args.quiet {
         for (filename, result) in &results {
             if result.diagnostics.is_empty() {
@@ -161,6 +171,8 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
             }
         }
     }
+    let render_time = render_start.elapsed();
+    let total_time = start.elapsed();
 
     let status = if total_errors > 0 {
         "\x1b[31m\u{2717}\x1b[0m"
@@ -173,6 +185,59 @@ pub(crate) fn run_with_socket(args: &CheckArgs, socket_path: &str) {
         files.len(),
         total_time
     );
+    if args.profile {
+        let phases = [
+            ProfilePhase {
+                name: "collect files",
+                duration: collect_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "Vue input discovery",
+            },
+            ProfilePhase {
+                name: "connect socket",
+                duration: connect_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "Unix socket handshake",
+            },
+            ProfilePhase {
+                name: "request checks",
+                duration: request_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "read, send, receive",
+            },
+            ProfilePhase {
+                name: "render diagnostics",
+                duration: render_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "terminal output",
+            },
+        ];
+        let mut recommendations: Vec<String> = Vec::new();
+        if request_time > connect_time * 4 {
+            recommendations.push(
+                "Socket request time dominates; profile the running check-server process next."
+                    .into(),
+            );
+        }
+        let summary = cstr!(
+            "{} Vue file(s), {} error(s), socket {}",
+            files.len(),
+            total_errors,
+            socket_path
+        );
+        let report = ProfileReport {
+            title: "check --socket",
+            summary: summary.as_str(),
+            total: total_time,
+            phases: &phases,
+            files: &[],
+            slow_threshold: Duration::from_millis(0),
+            throughput_bytes: None,
+            operations: None,
+            recommendations: &recommendations,
+        };
+        print_profile_report(&report);
+    }
     if total_errors > 0 {
         println!("  \x1b[31m{} error(s)\x1b[0m", total_errors);
         std::process::exit(1);
@@ -185,6 +250,11 @@ pub(crate) fn run_direct(args: &CheckArgs) {
     use super::nuxt;
 
     let start = Instant::now();
+    if args.profile {
+        let profiler = global_profiler();
+        profiler.clear();
+        profiler.enable();
+    }
 
     let config = crate::config::load_config(None);
     crate::config::write_schema(None);
@@ -257,9 +327,11 @@ pub(crate) fn run_direct(args: &CheckArgs) {
         }
     }
 
+    let profile_artifact_start = Instant::now();
     if args.profile {
         write_profile_virtual_ts(&virtual_files);
     }
+    let profile_artifact_time = profile_artifact_start.elapsed();
 
     if !args.quiet {
         eprintln!(
@@ -293,10 +365,99 @@ pub(crate) fn run_direct(args: &CheckArgs) {
         None
     };
     let emit_time = emit_start.elapsed();
-    let total_time = start.elapsed();
-
+    let diagnostics_render_start = Instant::now();
     let diagnostics = render_diagnostics(&result.diagnostics);
+    let diagnostics_render_time = diagnostics_render_start.elapsed();
+    let total_time = start.elapsed();
     let total_errors = result.error_count();
+
+    if args.profile {
+        let profiler = global_profiler();
+        let operation_summary = profiler.summary();
+        profiler.disable();
+        let mut phases = vec![
+            ProfilePhase {
+                name: "collect inputs",
+                duration: collect_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "tsconfig or explicit patterns",
+            },
+            ProfilePhase {
+                name: "virtual project",
+                duration: gen_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "scan paths and generate Virtual TS",
+            },
+            ProfilePhase {
+                name: "profile artifacts",
+                duration: profile_artifact_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "write node_modules/.vize/check-profile",
+            },
+            ProfilePhase {
+                name: "corsa diagnostics",
+                duration: check_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "project-session diagnostics",
+            },
+            ProfilePhase {
+                name: "render diagnostics",
+                duration: diagnostics_render_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "group diagnostics by file",
+            },
+        ];
+        if args.declaration {
+            phases.push(ProfilePhase {
+                name: "declaration emit",
+                duration: emit_time,
+                kind: ProfilePhaseKind::Wall,
+                note: "materialized Corsa project",
+            });
+        }
+
+        let virtual_bytes = virtual_files
+            .iter()
+            .fold(0usize, |acc, file| acc + file.content.len());
+        let mut recommendations: Vec<String> = Vec::new();
+        if check_time > gen_time * 2 {
+            recommendations.push(
+                "Corsa diagnostics dominate; keep the generated Virtual TS directory and inspect the largest generated files."
+                    .into(),
+            );
+        } else if gen_time > check_time {
+            recommendations.push(
+                "Virtual TS generation dominates; inspect SFCs with large templates, macros, or cross-file imports."
+                    .into(),
+            );
+        }
+        if let Some(largest) = virtual_files.iter().max_by_key(|file| file.content.len()) {
+            recommendations.push(cstr!(
+                "Largest Virtual TS: {} ({} bytes).",
+                largest.original_path.display(),
+                largest.content.len()
+            ));
+        }
+
+        let summary = cstr!(
+            "{} virtual file(s), {} error(s), project {}",
+            virtual_files.len(),
+            total_errors,
+            project_root.display()
+        );
+        let report = ProfileReport {
+            title: "check",
+            summary: summary.as_str(),
+            total: total_time,
+            phases: &phases,
+            files: &[],
+            slow_threshold: Duration::from_millis(0),
+            throughput_bytes: Some(virtual_bytes),
+            operations: Some(&operation_summary),
+            recommendations: &recommendations,
+        };
+        print_profile_report(&report);
+    }
 
     if args.format == "json" {
         let mut files_json: Vec<JsonFileResult> = virtual_files

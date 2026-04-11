@@ -61,8 +61,13 @@ npm install -D vize @vizejs/vite-plugin
 vize build src/**/*.vue    # Compile
 vize fmt --check           # Format check
 vize lint --fix            # Lint & auto-fix
-vize check --strict        # Type check
+vize build --profile       # Profile parse, transform, codegen, and I/O
+vize lint --profile src    # Profile parse, rule hooks, Croquis, and type-aware linting
+vize check --profile src   # Profile Virtual TS, Croquis, and Corsa diagnostics
 ```
+
+`--profile` reports wall/cumulative timings, hot files, and internal operation rows so compiler,
+linter, formatter, typecheck, and Croquis costs can be compared from one output.
 
 ```ts
 // vize.config.ts

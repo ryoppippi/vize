@@ -6,7 +6,7 @@ use crate::diagnostic::LintDiagnostic;
 use corsa::utils::{
     is_any_like_type_texts, is_promise_like_type_texts, is_unknown_like_type_texts,
 };
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 mod driver;
 mod markers;
@@ -34,11 +34,20 @@ pub(crate) fn has_active_type_aware_rules(linter: &Linter) -> bool {
 }
 
 pub(crate) fn lint_sfc_with_corsa(linter: &Linter, source: &str, filename: &str) -> LintResult {
-    let mut result = match super::script_rules::parse_sfc_for_lint(source, filename) {
-        Ok(descriptor) => driver::lint_with_descriptor(linter, source, filename, descriptor),
+    let mut result = match profile!(
+        "patina.type_aware.parse_sfc",
+        super::script_rules::parse_sfc_for_lint(source, filename)
+    ) {
+        Ok(descriptor) => profile!(
+            "patina.type_aware.driver",
+            driver::lint_with_descriptor(linter, source, filename, descriptor)
+        ),
         Err(_) => {
             if let Some((content, byte_offset)) = super::engine::extract_template_fast(source) {
-                let mut fallback = linter.lint_template(&content, filename);
+                let mut fallback = profile!(
+                    "patina.type_aware.fallback_template_lint",
+                    linter.lint_template(&content, filename)
+                );
                 if byte_offset > 0 {
                     for diag in &mut fallback.diagnostics {
                         diag.start += byte_offset;
@@ -75,9 +84,7 @@ pub(super) fn with_corsa_session<T>(
     filename: &str,
     f: impl FnOnce(&mut CorsaTypeAwareSession) -> Result<T, String>,
 ) -> Result<T, String> {
-    let mut guard = linter
-        .native_corsa
-        .lock()
+    let mut guard = profile!("patina.type_aware.corsa.lock", linter.native_corsa.lock())
         .map_err(|_| "Failed to lock corsa type session".to_compact_string())?;
 
     let needs_new_session = guard
@@ -88,14 +95,17 @@ pub(super) fn with_corsa_session<T>(
         if let Some(session) = guard.as_mut() {
             session.close();
         }
-        *guard = Some(CorsaTypeAwareSession::new(filename)?);
+        *guard = Some(profile!(
+            "patina.type_aware.corsa.new_session",
+            CorsaTypeAwareSession::new(filename)
+        )?);
     }
 
     let session = guard
         .as_mut()
         .ok_or_else(|| "Failed to initialize corsa type session".to_compact_string())?;
 
-    let result = f(session);
+    let result = profile!("patina.type_aware.corsa.session_work", f(session));
     if result.is_err() {
         session.close();
         *guard = None;

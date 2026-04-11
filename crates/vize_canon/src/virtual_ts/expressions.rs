@@ -6,6 +6,7 @@
 use super::{helpers::generated_text_range, types::VizeMapping};
 use vize_carton::append;
 use vize_carton::cstr;
+use vize_carton::profile;
 use vize_carton::String;
 use vize_croquis::analysis::ComponentUsage;
 use vize_croquis::analyzer::strip_js_comments;
@@ -28,7 +29,10 @@ pub(crate) fn generate_expression(
 ) {
     let src_start = (template_offset + expr.start) as usize;
     let src_end = (template_offset + expr.end) as usize;
-    let expression = strip_js_comments(expr.content.as_str());
+    let expression = profile!(
+        "canon.virtual_ts.expression.strip_comments",
+        strip_js_comments(expr.content.as_str())
+    );
 
     if let Some(ref guard) = expr.vif_guard {
         // Wrap in if block for type narrowing
@@ -93,7 +97,10 @@ pub(crate) fn generate_component_prop_checks(
             if prop.is_dynamic {
                 let prop_src_start = (template_offset + prop.start) as usize;
                 let prop_src_end = (template_offset + prop.end) as usize;
-                let value = strip_js_comments(value.as_str());
+                let value = profile!(
+                    "canon.virtual_ts.prop_check.strip_comments",
+                    strip_js_comments(value.as_str())
+                );
                 append!(
                     *ts,
                     "{indent}// @vize-map: prop -> {prop_src_start}:{prop_src_end}\n",

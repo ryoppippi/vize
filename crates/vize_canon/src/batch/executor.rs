@@ -18,7 +18,7 @@ use crate::{
     lsp_client::paths::{corsa_search_roots, find_corsa_in_search_roots},
 };
 use oxc_span::SourceType;
-use vize_carton::{cstr, String};
+use vize_carton::{cstr, profile, String};
 
 mod cli;
 mod diagnostics;
@@ -60,25 +60,38 @@ impl CorsaExecutor {
 
     /// Run type checking on the virtual project.
     pub fn check(&self, project: &VirtualProject) -> CorsaResult<TypeCheckResult> {
-        project.materialize()?;
+        profile!("canon.executor.materialize", project.materialize())?;
 
         let corsa_path = self.corsa_path.to_string_lossy();
-        let mut client = match CorsaProjectClient::new_for_workspace(
-            Some(corsa_path.as_ref()),
-            project.virtual_root(),
+        let mut client = match profile!(
+            "canon.corsa.session",
+            CorsaProjectClient::new_for_workspace(
+                Some(corsa_path.as_ref()),
+                project.virtual_root()
+            )
         ) {
             Ok(client) => client,
             Err(error) if should_fallback_to_cli(&error) => {
-                return check_with_cli(&self.corsa_path, project);
+                return profile!(
+                    "canon.corsa.cli_fallback",
+                    check_with_cli(&self.corsa_path, project)
+                );
             }
             Err(error) => return Err(map_corsa_error(error)),
         };
-        let uris = collect_virtual_file_uris(project.virtual_root())?;
-        let diagnostics = map_batch_diagnostics(
+        let uris = profile!(
+            "canon.corsa.collect_uris",
+            collect_virtual_file_uris(project.virtual_root())
+        )?;
+        let raw_diagnostics = profile!(
+            "canon.corsa.diagnostics",
             client
                 .request_diagnostics_batch(&uris)
-                .map_err(map_corsa_error)?,
-            project,
+                .map_err(map_corsa_error)
+        )?;
+        let diagnostics = profile!(
+            "canon.corsa.map_diagnostics",
+            map_batch_diagnostics(raw_diagnostics, project)
         );
         let success = diagnostics
             .iter()
@@ -97,16 +110,21 @@ impl CorsaExecutor {
         project: &VirtualProject,
         options: &DeclarationEmitOptions,
     ) -> CorsaResult<DeclarationEmitResult> {
-        project.materialize()?;
-        let config_path = project
-            .write_declaration_tsconfig(options.out_dir.as_path(), options.declaration_map)?;
-        let output = Command::new(&self.corsa_path)
-            .current_dir(project.virtual_root())
-            .arg("--pretty")
-            .arg("false")
-            .arg("--project")
-            .arg(&config_path)
-            .output()?;
+        profile!("canon.executor.materialize_dts", project.materialize())?;
+        let config_path = profile!(
+            "canon.project.dts_tsconfig",
+            project.write_declaration_tsconfig(options.out_dir.as_path(), options.declaration_map)
+        )?;
+        let output = profile!(
+            "canon.corsa.emit_dts",
+            Command::new(&self.corsa_path)
+                .current_dir(project.virtual_root())
+                .arg("--pretty")
+                .arg("false")
+                .arg("--project")
+                .arg(&config_path)
+                .output()
+        )?;
 
         if !output.status.success() {
             let exit_code = output.status.code().unwrap_or(-1);
@@ -124,10 +142,16 @@ impl CorsaExecutor {
             return Err(CorsaError::CorsaExecution { exit_code, message });
         }
 
-        rewrite_declaration_outputs(options.out_dir.as_path())?;
+        profile!(
+            "canon.dts.rewrite_outputs",
+            rewrite_declaration_outputs(options.out_dir.as_path())
+        )?;
 
         Ok(DeclarationEmitResult {
-            files: collect_declaration_outputs(options.out_dir.as_path())?,
+            files: profile!(
+                "canon.dts.collect_outputs",
+                collect_declaration_outputs(options.out_dir.as_path())
+            )?,
         })
     }
 }

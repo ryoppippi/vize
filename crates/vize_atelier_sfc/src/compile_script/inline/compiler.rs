@@ -9,7 +9,7 @@ use oxc_allocator::Allocator;
 use oxc_ast::ast::{Expression, Statement};
 use oxc_parser::Parser;
 use oxc_span::{GetSpan, SourceType};
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 use crate::script::{transform_destructured_props, ScriptCompileContext};
 use crate::types::SfcError;
@@ -44,24 +44,36 @@ pub fn compile_script_setup_inline(
     scope_id: &str,
     filename: Option<&str>,
 ) -> Result<ScriptCompileResult, SfcError> {
-    let mut ctx = ScriptCompileContext::new(content);
+    let mut ctx = profile!(
+        "atelier.script_inline.context.new",
+        ScriptCompileContext::new(content)
+    );
 
     // Merge type definitions from normal <script> block so that
     // defineProps<TypeRef>() can resolve types defined there.
     if let Some(normal_src) = normal_script_content {
         if !normal_src.is_empty() {
-            ctx.collect_types_from(normal_src);
+            profile!(
+                "atelier.script_inline.collect_normal_types",
+                ctx.collect_types_from(normal_src)
+            );
         }
     }
     if let Some(path) = filename {
-        ctx.collect_imported_types_from_path(content, path);
+        profile!(
+            "atelier.script_inline.collect_setup_import_types",
+            ctx.collect_imported_types_from_path(content, path)
+        );
         if let Some(normal_src) = normal_script_content {
             if !normal_src.is_empty() {
-                ctx.collect_imported_types_from_path(normal_src, path);
+                profile!(
+                    "atelier.script_inline.collect_normal_import_types",
+                    ctx.collect_imported_types_from_path(normal_src, path)
+                );
             }
         }
     }
-    ctx.analyze();
+    profile!("atelier.script_inline.context.analyze", ctx.analyze());
 
     // Use arena-allocated Vec for better performance
     let bump = vize_carton::Bump::new();
@@ -102,7 +114,10 @@ pub fn compile_script_setup_inline(
 
     // withAsyncContext import comes first if needed
     let setup_code_for_await = {
-        let (_, slines, _) = parse_script_content(content, is_ts);
+        let (_, slines, _) = profile!(
+            "atelier.script_inline.parse_for_await",
+            parse_script_content(content, is_ts)
+        );
         slines.join("\n")
     };
     let is_async = contains_top_level_await(&setup_code_for_await, source_is_ts);
@@ -178,7 +193,10 @@ pub fn compile_script_setup_inline(
     }
 
     // Extract user imports and setup lines from script content
-    let (user_imports, setup_lines, ts_declarations) = parse_script_content(content, is_ts);
+    let (user_imports, setup_lines, ts_declarations) = profile!(
+        "atelier.script_inline.parse_sections",
+        parse_script_content(content, is_ts)
+    );
 
     // Template hoisted consts (e.g., const _hoisted_1 = { class: "..." })
     // Must come BEFORE user imports to match Vue's output order
@@ -198,7 +216,10 @@ pub fn compile_script_setup_inline(
     }
 
     // User imports (after hoisted consts) - deduplicate to avoid "already declared" errors
-    let deduped_imports = dedupe_imports(&user_imports, is_ts);
+    let deduped_imports = profile!(
+        "atelier.script_inline.dedupe_imports",
+        dedupe_imports(&user_imports, is_ts)
+    );
     for import in &deduped_imports {
         output.extend_from_slice(import.as_bytes());
     }
@@ -224,30 +245,45 @@ pub fn compile_script_setup_inline(
     };
 
     // Collect props and emits definitions into a buffer (output later after hoisted consts)
-    let props_emits_buf = build_props_emits(&ctx, is_ts, needs_prop_type, needs_merge_defaults);
+    let props_emits_buf = profile!(
+        "atelier.script_inline.build_props_emits",
+        build_props_emits(&ctx, is_ts, needs_prop_type, needs_merge_defaults)
+    );
 
     // Collect model names from defineModel calls (needed before props)
-    let model_infos: Vec<(String, String, Option<String>)> = collect_model_infos(&ctx);
+    let model_infos: Vec<(String, String, Option<String>)> = profile!(
+        "atelier.script_inline.collect_model_infos",
+        collect_model_infos(&ctx)
+    );
 
     // Build additional props/emits from models
-    let model_props_emits_buf = build_model_props_emits(
-        &ctx,
-        &model_infos,
-        is_ts,
-        needs_prop_type,
-        needs_merge_defaults,
+    let model_props_emits_buf = profile!(
+        "atelier.script_inline.build_model_props_emits",
+        build_model_props_emits(
+            &ctx,
+            &model_infos,
+            is_ts,
+            needs_prop_type,
+            needs_merge_defaults,
+        )
     );
 
     // Setup code body - transform props destructure references and separate hoisted/setup code
     let setup_code = setup_lines.join("\n");
     let transformed_setup: String = if let Some(ref destructure) = ctx.macros.props_destructure {
-        transform_destructured_props(&setup_code, destructure)
+        profile!(
+            "atelier.script_inline.transform_props_destructure",
+            transform_destructured_props(&setup_code, destructure)
+        )
     } else {
         setup_code.into()
     };
 
     // Separate hoisted consts (literal consts that can be module-level) from setup code
-    let (hoisted_lines, setup_body_lines) = separate_hoisted_consts(&transformed_setup, &ctx);
+    let (hoisted_lines, setup_body_lines) = profile!(
+        "atelier.script_inline.separate_hoisted",
+        separate_hoisted_consts(&transformed_setup, &ctx)
+    );
 
     // Output hoisted literal consts (before export default)
     if !hoisted_lines.is_empty() {
@@ -419,7 +455,10 @@ pub fn compile_script_setup_inline(
 
     // Output setup code lines (non-hoisted), transforming await expressions for async setup
     if is_async {
-        let transformed_async = transform_await_expressions(&setup_body_lines, source_is_ts);
+        let transformed_async = profile!(
+            "atelier.script_inline.transform_await",
+            transform_await_expressions(&setup_body_lines, source_is_ts)
+        );
         for line in &transformed_async {
             output.extend_from_slice(line.as_bytes());
             output.push(b'\n');
@@ -500,7 +539,10 @@ pub fn compile_script_setup_inline(
         code.into()
     } else {
         // Source is TypeScript but output should be JavaScript - transform to strip TS syntax
-        transform_typescript_to_js(&output_str)
+        profile!(
+            "atelier.script_inline.ts_to_js",
+            transform_typescript_to_js(&output_str)
+        )
     };
 
     Ok(ScriptCompileResult {

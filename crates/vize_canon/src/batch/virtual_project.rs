@@ -15,7 +15,7 @@ use oxc_span::SourceType;
 use serde_json::{Map, Value};
 use vize_atelier_core::parser::parse;
 use vize_atelier_sfc::{parse_sfc, SfcDescriptor, SfcParseOptions};
-use vize_carton::{cstr, Bump, FxHashMap, String as CompactString, ToCompactString};
+use vize_carton::{cstr, profile, Bump, FxHashMap, String as CompactString, ToCompactString};
 use vize_croquis::{Analyzer, AnalyzerOptions, ImportStatementInfo, ReExportInfo, TypeExport};
 
 /// A virtual file in the project.
@@ -108,7 +108,7 @@ impl VirtualProject {
 
     /// Register a supported file path.
     pub fn register_path(&mut self, path: &Path) -> CorsaResult<()> {
-        let content = std::fs::read_to_string(path)?;
+        let content = profile!("canon.file.read", std::fs::read_to_string(path))?;
         self.register_path_with_content(path, &content)
     }
 
@@ -134,19 +134,28 @@ impl VirtualProject {
 
     /// Register a `.vue` file.
     pub fn register_vue_file(&mut self, path: &Path, content: &str) -> CorsaResult<()> {
-        let descriptor = parse_sfc(
-            content,
-            SfcParseOptions {
-                filename: path.to_string_lossy().to_compact_string(),
-                ..Default::default()
-            },
-        )
-        .map_err(|error| CorsaError::SfcParse(error.message.to_compact_string()))?;
+        let descriptor = profile!(
+            "canon.sfc.parse",
+            parse_sfc(
+                content,
+                SfcParseOptions {
+                    filename: path.to_string_lossy().to_compact_string(),
+                    ..Default::default()
+                },
+            )
+            .map_err(|error| CorsaError::SfcParse(error.message.to_compact_string()))
+        )?;
 
         let effective_options =
             virtual_ts_options_for_descriptor(&self.virtual_ts_options, &descriptor);
-        let generated = generate_vue_virtual_ts(path, content, &descriptor, &effective_options)?;
-        let rewritten = self.rewriter.rewrite(&generated.code, SourceType::ts());
+        let generated = profile!(
+            "canon.vue.virtual_ts",
+            generate_vue_virtual_ts(path, content, &descriptor, &effective_options)
+        )?;
+        let rewritten = profile!(
+            "canon.import.rewrite.vue",
+            self.rewriter.rewrite(&generated.code, SourceType::ts())
+        );
         let source_map = CompositeSourceMap::new_vue(
             SfcSourceMap::new(generated.mappings, collect_sfc_block_ranges(&descriptor)),
             rewritten.source_map,
@@ -187,7 +196,10 @@ impl VirtualProject {
         content: &str,
         source_type: SourceType,
     ) -> CorsaResult<()> {
-        let rewritten = self.rewriter.rewrite(content, source_type);
+        let rewritten = profile!(
+            "canon.import.rewrite.script",
+            self.rewriter.rewrite(content, source_type)
+        );
         let virtual_path = mirrored_virtual_path(&self.project_root, &self.virtual_root, path)?;
 
         self.virtual_files.insert(
@@ -205,19 +217,34 @@ impl VirtualProject {
 
     /// Materialize the virtual project to disk for diagnostics collection.
     pub fn materialize(&self) -> CorsaResult<()> {
-        if self.virtual_root.exists() {
-            std::fs::remove_dir_all(&self.virtual_root)?;
-        }
-        std::fs::create_dir_all(&self.virtual_root)?;
+        profile!(
+            "canon.project.prepare_dir",
+            (|| -> CorsaResult<()> {
+                if self.virtual_root.exists() {
+                    std::fs::remove_dir_all(&self.virtual_root)?;
+                }
+                std::fs::create_dir_all(&self.virtual_root)?;
+                Ok(())
+            })()
+        )?;
 
-        for file in self.virtual_files.values() {
-            if let Some(parent) = file.virtual_path.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            std::fs::write(&file.virtual_path, &file.content)?;
-        }
+        profile!(
+            "canon.project.write_files",
+            (|| -> CorsaResult<()> {
+                for file in self.virtual_files.values() {
+                    if let Some(parent) = file.virtual_path.parent() {
+                        std::fs::create_dir_all(parent)?;
+                    }
+                    std::fs::write(&file.virtual_path, &file.content)?;
+                }
+                Ok(())
+            })()
+        )?;
 
-        self.write_tsconfig_file(&self.virtual_root.join("tsconfig.json"), None, false)?;
+        profile!(
+            "canon.project.write_tsconfig",
+            self.write_tsconfig_file(&self.virtual_root.join("tsconfig.json"), None, false)
+        )?;
         Ok(())
     }
 
@@ -228,7 +255,10 @@ impl VirtualProject {
         declaration_map: bool,
     ) -> CorsaResult<PathBuf> {
         let config_path = self.virtual_root.join("tsconfig.declaration.json");
-        self.write_tsconfig_file(&config_path, Some(out_dir), declaration_map)?;
+        profile!(
+            "canon.project.write_dts_tsconfig",
+            self.write_tsconfig_file(&config_path, Some(out_dir), declaration_map)
+        )?;
         Ok(config_path)
     }
 
@@ -441,8 +471,11 @@ impl VirtualProject {
             return Ok(Map::new());
         }
 
-        let content = std::fs::read_to_string(tsconfig_path)?;
-        let config = parse_jsonc_value(&content)?;
+        let content = profile!(
+            "canon.tsconfig.read",
+            std::fs::read_to_string(tsconfig_path)
+        )?;
+        let config = profile!("canon.tsconfig.parse", parse_jsonc_value(&content))?;
         Ok(config
             .get("compilerOptions")
             .and_then(Value::as_object)
@@ -470,7 +503,9 @@ fn generate_vue_virtual_ts(
     let has_both_scripts = descriptor.script.is_some() && descriptor.script_setup.is_some();
 
     if let Some(ref script) = descriptor.script {
-        analyzer.analyze_script_plain(&script.content);
+        profile!("canon.croquis.analyze_script", {
+            analyzer.analyze_script_plain(&script.content);
+        });
     }
 
     let plain_spans: Option<(Vec<ImportStatementInfo>, Vec<ReExportInfo>, Vec<TypeExport>)> =
@@ -489,7 +524,9 @@ fn generate_vue_virtual_ts(
             .attrs
             .get("generic")
             .map(|value| value.as_ref());
-        analyzer.analyze_script_setup_with_generic(&script_setup.content, generic);
+        profile!("canon.croquis.analyze_script_setup", {
+            analyzer.analyze_script_setup_with_generic(&script_setup.content, generic);
+        });
     }
 
     let template_offset = descriptor
@@ -498,12 +535,14 @@ fn generate_vue_virtual_ts(
         .map(|template| template.loc.start as u32)
         .unwrap_or(0);
     let template_ast = descriptor.template.as_ref().map(|template| {
-        let (root, _) = parse(&allocator, &template.content);
-        analyzer.analyze_template(&root);
-        root
+        profile!("canon.template.parse_and_analyze", {
+            let (root, _) = parse(&allocator, &template.content);
+            analyzer.analyze_template(&root);
+            root
+        })
     });
 
-    let mut summary = analyzer.finish();
+    let mut summary = profile!("canon.croquis.finish", analyzer.finish());
 
     if let (Some((plain_imports, plain_reexports, plain_types)), Some(script)) =
         (plain_spans, descriptor.script.as_ref())
@@ -517,13 +556,16 @@ fn generate_vue_virtual_ts(
         summary.type_exports.extend(plain_types);
     }
 
-    let output = generate_virtual_ts_with_offsets(
-        &summary,
-        script_content_ref,
-        template_ast.as_ref(),
-        script_offset,
-        template_offset,
-        options,
+    let output = profile!(
+        "canon.virtual_ts.generate",
+        generate_virtual_ts_with_offsets(
+            &summary,
+            script_content_ref,
+            template_ast.as_ref(),
+            script_offset,
+            template_offset,
+            options,
+        )
     );
 
     let _ = source;

@@ -6,7 +6,7 @@ use oxc_ast::ast::{
 use oxc_parser::Parser as OxcParser;
 use oxc_span::{GetSpan, SourceType};
 use oxc_syntax::operator::UnaryOperator;
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 pub(super) fn is_runtime_array_macro(runtime_args: Option<&str>) -> bool {
     let Some(runtime_args) = runtime_args.map(str::trim_start) else {
@@ -31,7 +31,10 @@ pub(super) fn extract_runtime_object_property_values(source: &str) -> Vec<String
 
     let allocator = OxcAllocator::default();
     let source_type = SourceType::from_path("runtime.ts").unwrap_or_default();
-    let parsed = OxcParser::new(&allocator, wrapped.as_str(), source_type).parse();
+    let parsed = profile!(
+        "patina.type_aware.runtime_object.parse",
+        OxcParser::new(&allocator, wrapped.as_str(), source_type).parse()
+    );
     if parsed.panicked {
         return Vec::new();
     }
@@ -78,7 +81,10 @@ pub(super) struct FloatingCandidate {
 pub(super) fn collect_floating_candidates(source: &str) -> Vec<FloatingCandidate> {
     let allocator = OxcAllocator::default();
     let source_type = SourceType::from_path("script.ts").unwrap_or_default();
-    let parsed = OxcParser::new(&allocator, source, source_type).parse();
+    let parsed = profile!(
+        "patina.type_aware.floating_candidates.parse",
+        OxcParser::new(&allocator, source, source_type).parse()
+    );
     if parsed.panicked {
         return Vec::new();
     }

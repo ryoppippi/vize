@@ -13,13 +13,17 @@ use corsa::{
     },
     runtime::block_on,
 };
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 impl CorsaTypeAwareSession {
     pub(in crate::linter) fn new(filename: &str) -> Result<Self, String> {
         let project_root = resolve_project_root(filename);
         let session_root = allocate_session_root(&project_root);
-        std::fs::create_dir_all(&session_root).map_err(|error| {
+        profile!(
+            "patina.corsa_session.create_dir",
+            std::fs::create_dir_all(&session_root)
+        )
+        .map_err(|error| {
             io_error_message(
                 "Failed to create patina session directory",
                 &session_root,
@@ -28,12 +32,20 @@ impl CorsaTypeAwareSession {
         })?;
 
         let config_path = session_root.join(TSCONFIG_FILE_NAME);
-        std::fs::write(&config_path, TSCONFIG_CONTENTS).map_err(|error| {
+        profile!(
+            "patina.corsa_session.write_tsconfig",
+            std::fs::write(&config_path, TSCONFIG_CONTENTS)
+        )
+        .map_err(|error| {
             io_error_message("Failed to write patina tsconfig", &config_path, &error)
         })?;
 
         let virtual_file_path = session_root.join(VIRTUAL_FILE_NAME);
-        std::fs::write(&virtual_file_path, "").map_err(|error| {
+        profile!(
+            "patina.corsa_session.prime_virtual_file",
+            std::fs::write(&virtual_file_path, "")
+        )
+        .map_err(|error| {
             io_error_message(
                 "Failed to prime patina virtual TypeScript",
                 &virtual_file_path,
@@ -44,22 +56,28 @@ impl CorsaTypeAwareSession {
         let config_path_wire = path_to_wire(&config_path);
         let virtual_file_wire = path_to_wire(&virtual_file_path);
         let executable = resolve_corsa_executable(&project_root);
-        let session = block_on(ProjectSession::spawn(
-            ApiSpawnConfig::new(executable)
-                .with_mode(ApiMode::SyncMsgpackStdio)
-                .with_cwd(&session_root),
-            config_path_wire.as_str(),
-            Some(virtual_file_wire.as_str().into()),
-        ))
+        let session = profile!(
+            "patina.corsa_session.spawn",
+            block_on(ProjectSession::spawn(
+                ApiSpawnConfig::new(executable)
+                    .with_mode(ApiMode::SyncMsgpackStdio)
+                    .with_cwd(&session_root),
+                config_path_wire.as_str(),
+                Some(virtual_file_wire.as_str().into()),
+            ))
+        )
         .map_err(|error| {
             compact_error(
                 "Failed to start corsa type-aware session",
                 error.to_compact_string().as_str(),
             )
         })?;
-        let supports_overlay_updates = block_on(session.describe_capabilities())
-            .map(|capabilities| capabilities.overlay.update_snapshot_overlay_changes)
-            .unwrap_or(false);
+        let supports_overlay_updates = profile!(
+            "patina.corsa_session.describe_capabilities",
+            block_on(session.describe_capabilities())
+        )
+        .map(|capabilities| capabilities.overlay.update_snapshot_overlay_changes)
+        .unwrap_or(false);
 
         Ok(Self {
             session,
@@ -83,18 +101,21 @@ impl CorsaTypeAwareSession {
     ) -> Result<(), String> {
         if self.supports_overlay_updates {
             self.overlay_version = self.overlay_version.saturating_add(1);
-            return block_on(self.session.refresh_with_overlay_changes(
-                None,
-                Some(OverlayChanges {
-                    upsert: vec![OverlayUpdate {
-                        document: self.virtual_file_wire.as_str().into(),
-                        text: generated_source.into(),
-                        version: Some(self.overlay_version),
-                        language_id: Some("typescript".into()),
-                    }],
-                    delete: Vec::new(),
-                }),
-            ))
+            return profile!(
+                "patina.corsa_session.refresh_overlay",
+                block_on(self.session.refresh_with_overlay_changes(
+                    None,
+                    Some(OverlayChanges {
+                        upsert: vec![OverlayUpdate {
+                            document: self.virtual_file_wire.as_str().into(),
+                            text: generated_source.into(),
+                            version: Some(self.overlay_version),
+                            language_id: Some("typescript".into()),
+                        }],
+                        delete: Vec::new(),
+                    }),
+                ))
+            )
             .map_err(|error| {
                 compact_error(
                     "Failed to update patina type snapshot",
@@ -103,7 +124,11 @@ impl CorsaTypeAwareSession {
             });
         }
 
-        std::fs::write(&self.virtual_file_path, generated_source).map_err(|error| {
+        profile!(
+            "patina.corsa_session.write_virtual_file",
+            std::fs::write(&self.virtual_file_path, generated_source)
+        )
+        .map_err(|error| {
             io_error_message(
                 "Failed to write patina virtual TypeScript",
                 &self.virtual_file_path,
@@ -111,13 +136,16 @@ impl CorsaTypeAwareSession {
             )
         })?;
 
-        block_on(
-            self.session
-                .refresh(Some(FileChanges::Summary(FileChangeSummary {
-                    changed: vec![self.virtual_file_wire.as_str().into()],
-                    created: Vec::new(),
-                    deleted: Vec::new(),
-                }))),
+        profile!(
+            "patina.corsa_session.refresh_file",
+            block_on(
+                self.session
+                    .refresh(Some(FileChanges::Summary(FileChangeSummary {
+                        changed: vec![self.virtual_file_wire.as_str().into()],
+                        created: Vec::new(),
+                        deleted: Vec::new(),
+                    }))),
+            )
         )
         .map_err(|error| {
             compact_error(

@@ -7,7 +7,7 @@ use oxc_allocator::Allocator;
 use oxc_ast::ast::{ExportDefaultDeclarationKind, Statement};
 use oxc_parser::Parser;
 use oxc_span::{GetSpan, SourceType};
-use vize_carton::{String, ToCompactString};
+use vize_carton::{profile, String, ToCompactString};
 
 /// Rewrite `export default` to a const declaration with the given name.
 /// Returns (rewritten_code, has_default_export)
@@ -19,7 +19,10 @@ pub fn rewrite_default(input: &str, as_name: &str, is_ts: bool) -> (String, bool
     };
 
     let allocator = Allocator::default();
-    let ret = Parser::new(&allocator, input, source_type).parse();
+    let ret = profile!(
+        "atelier.normal_script.rewrite_default.parse",
+        Parser::new(&allocator, input, source_type).parse()
+    );
 
     if !ret.errors.is_empty() {
         // If parsing fails, return original code
