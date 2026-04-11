@@ -1,4 +1,4 @@
-//! Corsa project-session client backed by sync msgpack stdio.
+//! Corsa project-session client backed by an adaptive stdio transport.
 //!
 //! The module path is still `lsp_client` for workspace compatibility, but the
 //! implementation now talks directly to `corsa`'s `ProjectSession` APIs.
@@ -26,6 +26,8 @@ mod tests;
 
 /// Thin adapter over `corsa`'s project-session APIs.
 pub struct CorsaProjectClient {
+    executable: String,
+    cwd: PathBuf,
     session: ProjectSession,
     capabilities: Arc<CapabilitiesResponse>,
     project_root: PathBuf,

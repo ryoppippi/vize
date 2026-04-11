@@ -6,6 +6,7 @@ use corsa::{
         ApiMode, ApiSpawnConfig, CapabilitiesResponse, DocumentIdentifier, FileChangeSummary,
         FileChanges, OverlayChanges, OverlayUpdate, ProjectSession,
     },
+    error::TsgoError,
     fast::CompactString,
     runtime::block_on,
 };
@@ -24,17 +25,96 @@ pub(super) fn spawn_project_session(
 ) -> Result<(ProjectSession, Arc<CapabilitiesResponse>), String> {
     let config_path = project_root.join("tsconfig.json");
     let config_path_wire = config_path.to_string_lossy();
-    let session = block_on(ProjectSession::spawn(
-        ApiSpawnConfig::new(executable)
-            .with_mode(ApiMode::SyncMsgpackStdio)
-            .with_cwd(cwd),
+    let mode = api_mode_for_executable(executable);
+    let session = match block_on(spawn_project_session_with_mode(
+        executable,
+        cwd,
         config_path_wire.as_ref(),
-        None,
-    ))
-    .map_err(|error| cstr!("Failed to start Corsa API session: {error}"))?;
+        mode,
+    )) {
+        Ok(session) => session,
+        Err(error) if should_retry_json_rpc(mode, &error) => block_on(
+            spawn_project_session_with_mode(
+                executable,
+                cwd,
+                config_path_wire.as_ref(),
+                ApiMode::AsyncJsonRpcStdio,
+            ),
+        )
+        .map_err(|fallback| {
+            cstr!("Failed to start Corsa API session: {fallback} (after msgpack error: {error})")
+        })?,
+        Err(error) => {
+            return Err(cstr!("Failed to start Corsa API session: {error}"));
+        }
+    };
     let capabilities = block_on(session.describe_capabilities())
         .unwrap_or_else(|_| Arc::new(CapabilitiesResponse::default()));
     Ok((session, capabilities))
+}
+
+async fn spawn_project_session_with_mode(
+    executable: &str,
+    cwd: &Path,
+    config_path: &str,
+    mode: ApiMode,
+) -> Result<ProjectSession, TsgoError> {
+    ProjectSession::spawn(
+        ApiSpawnConfig::new(executable)
+            .with_mode(mode)
+            .with_cwd(cwd),
+        config_path,
+        None,
+    )
+    .await
+}
+
+fn should_retry_json_rpc(mode: ApiMode, error: &TsgoError) -> bool {
+    if mode != ApiMode::SyncMsgpackStdio {
+        return false;
+    }
+
+    let TsgoError::Protocol(message) = error else {
+        return false;
+    };
+
+    let message = message.as_str();
+    message.contains("expected tuple marker")
+        || message.contains("expected uint8 marker")
+        || message.contains("expected bin marker")
+}
+
+fn api_mode_for_executable(executable: &str) -> ApiMode {
+    if is_node_wrapper_executable(Path::new(executable)) {
+        ApiMode::AsyncJsonRpcStdio
+    } else {
+        ApiMode::SyncMsgpackStdio
+    }
+}
+
+fn is_node_wrapper_executable(path: &Path) -> bool {
+    if path.extension().and_then(|extension| extension.to_str()) == Some("js") {
+        return true;
+    }
+
+    if path
+        .parent()
+        .and_then(|parent| parent.file_name())
+        .and_then(|name| name.to_str())
+        == Some(".bin")
+    {
+        return true;
+    }
+
+    let Some(parent) = path.parent() else {
+        return false;
+    };
+    let Some(grandparent) = parent.parent() else {
+        return false;
+    };
+
+    parent.file_name().and_then(|name| name.to_str()) == Some("bin")
+        && grandparent.file_name().and_then(|name| name.to_str()) == Some("native-preview")
 }
 
 pub(super) fn uri_document_identifier(uri: &str) -> DocumentIdentifier {
@@ -297,8 +377,46 @@ pub(super) fn line_character_to_utf16_offset(text: &str, line: u32, character: u
 
 #[cfg(test)]
 mod tests {
-    use super::{line_character_to_utf16_offset, uri_document_identifier};
-    use corsa::api::DocumentIdentifier;
+    use super::{
+        api_mode_for_executable, line_character_to_utf16_offset, should_retry_json_rpc,
+        uri_document_identifier,
+    };
+    use corsa::api::{ApiMode, DocumentIdentifier};
+    use corsa::error::TsgoError;
+
+    #[test]
+    fn uses_async_json_rpc_for_node_modules_bin_wrappers() {
+        assert_eq!(
+            api_mode_for_executable("/tmp/project/node_modules/.bin/tsgo"),
+            ApiMode::AsyncJsonRpcStdio
+        );
+    }
+
+    #[test]
+    fn uses_async_json_rpc_for_native_preview_js_entrypoints() {
+        assert_eq!(
+            api_mode_for_executable(
+                "/tmp/project/node_modules/@typescript/native-preview/bin/tsgo.js"
+            ),
+            ApiMode::AsyncJsonRpcStdio
+        );
+    }
+
+    #[test]
+    fn keeps_native_binaries_on_sync_msgpack() {
+        assert_eq!(
+            api_mode_for_executable("/tmp/project/corsa-bind/.cache/tsgo"),
+            ApiMode::SyncMsgpackStdio
+        );
+    }
+
+    #[test]
+    fn retries_json_rpc_after_msgpack_shape_mismatch() {
+        let error = TsgoError::Protocol("expected tuple marker, got 61".into());
+
+        assert!(should_retry_json_rpc(ApiMode::SyncMsgpackStdio, &error));
+        assert!(!should_retry_json_rpc(ApiMode::AsyncJsonRpcStdio, &error));
+    }
 
     #[test]
     fn utf16_offsets_clamp_to_line_boundaries() {
