@@ -82,10 +82,17 @@ export function resolveVizeCli() {
  * status 0 (clean/warnings) and 1 (errors) both carry a valid report;
  * anything else throws with the captured stderr.
  */
-export function runVizeLintJson(cli, cwd, files) {
+export function runVizeLintJson(cli, cwd, files, config) {
   const result = spawnSync(
     cli.command,
-    [...cli.prefix, "lint", "--no-config", "--format", "json", ...files],
+    [
+      ...cli.prefix,
+      "lint",
+      ...(config ? ["--config", config] : ["--no-config"]),
+      "--format",
+      "json",
+      ...files,
+    ],
     { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
   );
   if (result.error) throw result.error;

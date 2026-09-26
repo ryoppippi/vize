@@ -11,23 +11,28 @@ use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
 use vize_carton::{Allocator, CompactString, cstr};
 use vize_croquis::facts::spec::agreement::Agreement;
 use vize_croquis::facts::spec::{
-    bindings, bindings_extract, provide_inject, reactivity, trace, undefined_refs,
+    bindings, bindings_extract, provide_inject, reactivity, trace, undefined_refs, unused_bindings,
 };
 use vize_croquis::facts::{
     Bindings, CroquisFacts, Demand, FactConsumer, FactGroup, FactTable, UndefinedRefs,
+    UnusedBindings,
 };
 
 /// The TS-34 harness reads both groups through a declared demand.
 struct FactSpecHarness;
 impl FactConsumer for FactSpecHarness {
     const NAME: &'static str = "ts-34/fact-spec";
-    const DEMAND: Demand = Demand::NONE.with(Bindings::ID).with(UndefinedRefs::ID);
+    const DEMAND: Demand = Demand::NONE
+        .with(Bindings::ID)
+        .with(UndefinedRefs::ID)
+        .with(UnusedBindings::ID);
 }
 
 /// One run's tally per group.
 #[derive(Default)]
 pub struct Planes {
     pub bindings: Agreement,
+    pub unused: Agreement,
     pub undefined: Agreement,
     pub reactivity: Agreement,
     pub provide: Agreement,
@@ -43,9 +48,10 @@ impl Planes {
 
     pub fn scope_lines(&self, label: &str) -> CompactString {
         cstr!(
-            "{}\n{}\n{}\n{}\n{}",
+            "{}\n{}\n{}\n{}\n{}\n{}",
             self.bindings.scope_line("bindings", label),
             self.undefined.scope_line("undefined-refs", label),
+            self.unused.scope_line("unused-bindings", label),
             self.reactivity.scope_line("reactivity", label),
             self.provide.scope_line("provide-inject", label),
             self.race.scope_line("race-conditions", label)
@@ -89,6 +95,7 @@ pub fn collect_vue_files(root: &Path, out: &mut Vec<PathBuf>) -> std::io::Result
 pub fn run_source(name: &str, source: &str, planes: &mut Planes) {
     let Ok(descriptor) = parse_sfc(source, SfcParseOptions::default()) else {
         planes.bindings.skip("sfc-parse-error");
+        planes.unused.skip("sfc-parse-error");
         planes.undefined.skip("sfc-parse-error");
         planes.reactivity.skip("sfc-parse-error");
         planes.provide.skip("sfc-parse-error");
@@ -104,13 +111,24 @@ pub fn run_source(name: &str, source: &str, planes: &mut Planes) {
         analyze_sfc_descriptor(
             &descriptor,
             template_ast.as_ref(),
-            SfcCroquisOptions::full(),
+            SfcCroquisOptions::full().with_unused_bindings(),
         )
     });
     let mut facts = CroquisFacts::new(&croquis);
     let view = facts.prepare::<FactSpecHarness>();
     let production_bindings = view.get::<Bindings>().expect("declared");
     let production_undefined = view.get::<UndefinedRefs>().expect("declared");
+
+    let production_unused = view.get::<UnusedBindings>().expect("declared");
+    unused_bindings::compare(
+        name,
+        &descriptor,
+        production_bindings,
+        checked.as_deref(),
+        &croquis,
+        production_unused,
+        &mut planes.unused,
+    );
 
     // -- Bindings: <script setup>-only artifacts --------------------------
     let setup = descriptor.script_setup.as_ref();

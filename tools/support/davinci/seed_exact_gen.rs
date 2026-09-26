@@ -277,9 +277,16 @@ fn unmark(snippet: &Snippet) -> Result<(String, Vec<(usize, usize)>), String> {
 
 fn lint(repo_root: &Path, cwd: &Path) -> Result<Vec<DiagnosticRow>, String> {
     let cli = resolve_vize_cli(repo_root);
+    let config = cwd.join("vize.config.json");
+    common::write_json_pretty(
+        &config,
+        &serde_json::json!({"linter": {"rules": {"vue/no-unused-setup-bindings": "warn"}}}),
+    )?;
     let output = Command::new(&cli.command)
         .args(&cli.prefix)
-        .args(["lint", "--no-config", "--format", "json", "**/*.vue"])
+        .args(["lint", "--config"])
+        .arg(&config)
+        .args(["--format", "json", "**/*.vue"])
         .current_dir(cwd)
         .output()
         .map_err(|error| format!("failed to run vize lint: {error}"))?;

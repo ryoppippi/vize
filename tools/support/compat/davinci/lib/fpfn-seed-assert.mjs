@@ -20,7 +20,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { CLASS_A, CLASS_B, describeMappedSpan, spanOverlapsEdits } from "./fpfn-seed-apply.mjs";
+import {
+  CLASS_A,
+  CLASS_B,
+  CLASS_B_RULE,
+  applySeed,
+  planClassB,
+  describeMappedSpan,
+  spanOverlapsEdits,
+} from "./fpfn-seed-apply.mjs";
 import {
   diagnosticKey,
   flattenLintJson,
@@ -130,8 +138,13 @@ export function assertSeededTree({ manifest, outDir, cli, hooks }) {
     cli,
     path.join(outDir, "original"),
     files,
-  );
-  const seededRows = loadLintRows(hooks?.seededLintJson, cli, path.join(outDir, "seeded"), files);
+  ).filter((row) => row.ruleId !== CLASS_B_RULE);
+  const seededRows = loadLintRows(
+    hooks?.seededLintJson,
+    cli,
+    path.join(outDir, "seeded"),
+    files,
+  ).filter((row) => row.ruleId !== CLASS_B_RULE);
 
   const { shifted, unmappable } = shiftBaseline(baselineRows, manifest, outDir);
   const classARows = expectedClassARows(manifest);
@@ -159,24 +172,15 @@ export function assertSeededTree({ manifest, outDir, cli, hooks }) {
     else baselineMisses.push(row);
   }
 
-  const classBInjections = manifest.injections.filter((injection) => injection.class === CLASS_B);
-  const actualSpans = new Set(
-    seededRows.map((row) => [row.path, row.line, row.column, row.endLine, row.endColumn].join("|")),
-  );
-  const classBDetected = classBInjections.filter((injection) =>
-    actualSpans.has(
-      [
-        injection.path,
-        injection.expected.line,
-        injection.expected.column,
-        injection.expected.endLine,
-        injection.expected.endColumn,
-      ].join("|"),
-    ),
-  ).length;
+  const unused = assertUnused({ manifest, outDir, cli, hooks });
+  shifted.push(...unused.shifted);
+  unmappable.push(...unused.unmappable);
+  baselineMisses.push(...unused.baselineMisses);
+  unexpected.push(...unused.unexpected);
 
   const pass =
     classAMisses.length === 0 &&
+    unused.report.misses.length === 0 &&
     baselineMisses.length === 0 &&
     unmappable.length === 0 &&
     unexpected.length === 0;
@@ -186,17 +190,16 @@ export function assertSeededTree({ manifest, outDir, cli, hooks }) {
     tool: "tools/davinci/seed-defects.mjs --assert",
     source: manifest.source,
     scope: manifest.scope,
-    lint: { baselineDiagnostics: baselineRows.length, seededDiagnostics: seededRows.length },
+    lint: {
+      baselineDiagnostics: baselineRows.length + unused.baselineCount,
+      seededDiagnostics: seededRows.length + unused.seededCount,
+    },
     classA: {
       expected: classARows.length,
       detected: classARows.length - classAMisses.length,
       misses: classAMisses,
     },
-    classB: {
-      expected: classBInjections.length,
-      detected: classBDetected,
-      note: "not gated: vize_croquis unused_bindings has no lint consumer today (FN ledger)",
-    },
+    classB: unused.report,
     baselineShift: {
       mapped: shifted.length,
       misses: baselineMisses,
@@ -204,5 +207,66 @@ export function assertSeededTree({ manifest, outDir, cli, hooks }) {
     },
     unexpected,
     verdict: pass ? "pass" : "fail",
+  };
+}
+
+function assertUnused({ manifest, outDir, cli, hooks }) {
+  const plane = path.join(outDir, "class-b");
+  const bManifest = { ...manifest, edits: {} };
+  const files = manifest.files.map((file) => file.path);
+  for (const file of files) {
+    const original = fs.readFileSync(path.join(outDir, "original", file), "utf8");
+    const { seeded, edits } = applySeed(original, null, planClassB(original).plan);
+    bManifest.edits[file] = edits;
+    for (const [tree, text] of [
+      ["original", original],
+      ["seeded", seeded],
+    ]) {
+      const target = path.join(plane, tree, file);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, text);
+    }
+  }
+  const load = (tree, hook) => {
+    const cwd = path.join(plane, tree);
+    const config = path.join(cwd, "vize.config.json");
+    fs.writeFileSync(config, JSON.stringify({ linter: { rules: { [CLASS_B_RULE]: "warn" } } }));
+    const rows = hook
+      ? loadLintRows(hook, cli, cwd, files)
+      : flattenLintJson(runVizeLintJson(cli, cwd, files, config));
+    return hook ? rows.filter((row) => row.ruleId !== "vue/no-undefined-refs") : rows;
+  };
+  const baseline = load("original", hooks?.baselineLintJson);
+  const seeded = load("seeded", hooks?.seededLintJson);
+  const { shifted, unmappable } = shiftBaseline(baseline, bManifest, plane);
+  const expected = manifest.injections
+    .filter((row) => row.class === CLASS_B)
+    .map((row) => ({
+      path: row.path,
+      ruleId: CLASS_B_RULE,
+      severity: 1,
+      line: row.expected.line,
+      column: row.expected.column,
+      endLine: row.expected.endLine,
+      endColumn: row.expected.endColumn,
+    }));
+  const expectedCounts = countByKey([...shifted, ...expected]);
+  const actualCounts = countByKey(seeded);
+  const seedKeys = new Set(expected.map(diagnosticKey));
+  const missing = multisetDifference(expectedCounts, actualCounts);
+  const misses = missing.filter((row) => seedKeys.has(diagnosticKey(row)));
+  return {
+    report: {
+      expected: expected.length,
+      detected: expected.length - misses.length,
+      misses,
+      note: "gated by exact rule, severity and span on the independent class-b mutation plane (opt-in consumer)",
+    },
+    baselineCount: baseline.length,
+    seededCount: seeded.length,
+    shifted,
+    unmappable,
+    baselineMisses: missing.filter((row) => !seedKeys.has(diagnosticKey(row))),
+    unexpected: multisetDifference(actualCounts, expectedCounts),
   };
 }

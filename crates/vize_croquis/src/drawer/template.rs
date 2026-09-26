@@ -161,7 +161,7 @@ impl Drawer {
                             },
                         );
                     }
-                    if self.options.detect_undefined {
+                    if self.checks_binding_reads() {
                         self.check_expression_refs(&interp.content, scope_vars);
                     }
                 })

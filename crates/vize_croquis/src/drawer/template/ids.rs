@@ -10,7 +10,9 @@ use vize_carton::{CompactString, profile};
 use vize_relief::{ElementNode, ExpressionNode, PropNode};
 
 use super::super::Drawer;
-use super::super::helpers::{extract_identifiers_retained, is_keyword};
+use super::super::helpers::{
+    extract_identifiers_checked, extract_identifiers_retained, is_keyword,
+};
 
 /// Attributes that take ID references (not the ID itself).
 const ID_REFERENCE_ATTRIBUTES: &[&str] = &[
@@ -70,6 +72,7 @@ impl Drawer {
         let in_loop = self.is_in_vfor_scope();
 
         for prop in &el.props {
+            self.read_setup_ref_prop(prop);
             match prop {
                 PropNode::Attribute(attr) => {
                     let attr_name = attr.name;
@@ -190,6 +193,13 @@ impl Drawer {
         // retained AST (P1-5) feed the walk directly; the retained parse is a
         // pure function of the same text, so cache entries stay path-agnostic.
         if !self.ident_cache.contains_key(content) {
+            if self.track_unused_bindings
+                && !self.croquis.unused_bindings.is_empty()
+                && retained.is_none()
+                && extract_identifiers_checked(content).is_none()
+            {
+                self.croquis.unused_bindings.clear();
+            }
             let computed = profile!(
                 "croquis.template.expression.extract_identifiers",
                 extract_identifiers_retained(content, retained)
@@ -200,6 +210,9 @@ impl Drawer {
         let Some(idents) = self.ident_cache.get(content) else {
             return;
         };
+        if self.track_unused_bindings && idents.iter().any(|name| name == "eval") {
+            self.croquis.unused_bindings.clear();
+        }
         let report_undefined = self.options.detect_undefined && self.script_drawn;
         // TS-34 input relation for the `UndefinedRefs` spec (debug builds,
         // armed per thread by `facts::spec::trace::record`).
@@ -218,6 +231,11 @@ impl Drawer {
 
             let in_scope_vars = scope_vars.iter().any(|v| v.as_str() == ident_str);
             let in_bindings = self.croquis.bindings.contains(ident_str);
+            if self.track_unused_bindings && in_bindings && !in_scope_vars {
+                self.croquis
+                    .unused_bindings
+                    .retain(|candidate| candidate != ident);
+            }
             let in_scope_chain = self.croquis.scopes.is_defined(ident_str);
 
             let is_builtin = crate::builtins::is_js_global(ident_str)

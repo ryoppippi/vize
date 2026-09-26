@@ -38,6 +38,20 @@ fn the_committed_planes_agree_with_the_specs() {
         run_source(name, source, &mut battery);
     }
     battery.assert_verdicts("battery");
+    if cfg!(debug_assertions) {
+        battery
+            .unused
+            .verdict("unused-bindings", "battery")
+            .unwrap();
+        assert_eq!(
+            (
+                battery.unused.artifacts,
+                battery.unused.compared,
+                battery.unused.facts
+            ),
+            (9, 9, 24)
+        );
+    }
     eprintln!("{}", battery.scope_lines("battery"));
     assert_census(&battery, (9, 9, 87), (9, 9, 11), "battery");
 
@@ -46,6 +60,21 @@ fn the_committed_planes_agree_with_the_specs() {
         run_source(fixture.name, fixture.source, &mut ladder);
     }
     ladder.assert_verdicts("ladder");
+    // Both former candidates are static template refs. This plane exercises
+    // absence; the battery and read-channel witness require positive rows.
+    assert!(ladder.unused.divergences.is_empty());
+    assert_eq!(
+        (
+            ladder.unused.artifacts,
+            ladder.unused.compared,
+            ladder.unused.facts
+        ),
+        if cfg!(debug_assertions) {
+            (6, 5, 0)
+        } else {
+            (6, 0, 0)
+        }
+    );
     eprintln!("{}", ladder.scope_lines("ladder"));
     assert_census(&ladder, (6, 5, 80), (6, 6, 4), "ladder");
 
@@ -63,7 +92,11 @@ fn the_committed_planes_agree_with_the_specs() {
     }
     eprintln!("{}", matrix.scope_lines("matrix plane"));
     assert_census(&matrix, (90, 90, 0), (90, 90, 0), "matrix");
-    assert!(matrix.bindings.divergences.is_empty() && matrix.undefined.divergences.is_empty());
+    assert!(
+        matrix.bindings.divergences.is_empty()
+            && matrix.undefined.divergences.is_empty()
+            && matrix.unused.divergences.is_empty()
+    );
     for (label, plane) in [
         ("battery", &battery.reactivity),
         ("ladder", &ladder.reactivity),
@@ -89,6 +122,90 @@ fn the_committed_planes_agree_with_the_specs() {
             plane.divergences
         );
     }
+}
+
+#[test]
+fn unused_bindings_agree_for_every_read_channel_and_unknown_syntax() {
+    let source = r#"<script setup>
+import FooBar from './Foo.vue';
+import * as UI from './ui';
+const vFocus = {};
+const color = 'red';
+const exposed = 0;
+const closure = () => exposed;
+defineExpose({ closure });
+const unread = 0;
+const element = ref(null);
+</script>
+<template><foo-bar /><UI.Child /><div v-focus ref="element">{{ color }}</div></template>
+<style>div { color: v-bind('color'); }</style>"#;
+    let mut planes = Planes::default();
+    run_source("all-reads.vue", source, &mut planes);
+    run_source(
+        "unknown.vue",
+        "<script setup>const unread = 0;</script><template>{{ broken + }}</template>",
+        &mut planes,
+    );
+    if cfg!(debug_assertions) {
+        planes
+            .unused
+            .verdict("unused-bindings", "read channels")
+            .unwrap();
+        assert_eq!(
+            (
+                planes.unused.artifacts,
+                planes.unused.compared,
+                planes.unused.facts
+            ),
+            (2, 2, 1)
+        );
+    }
+}
+
+#[test]
+fn unused_bindings_require_the_inline_template_view() {
+    use vize_atelier_sfc::croquis::{SfcCroquisOptions, analyze_sfc_descriptor};
+    use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
+    use vize_croquis::facts::{CroquisFacts, Demand, FactConsumer, FactGroup, UnusedBindings};
+
+    struct Reader;
+    impl FactConsumer for Reader {
+        const NAME: &'static str = "test/unused-template-view";
+        const DEMAND: Demand = Demand::NONE.with(UnusedBindings::ID);
+    }
+    let names = |croquis: &vize_croquis::Croquis| {
+        let mut facts = CroquisFacts::new(croquis);
+        let view = facts.prepare::<Reader>();
+        view.get::<UnusedBindings>()
+            .unwrap()
+            .iter()
+            .map(|(name, _)| name.as_str().to_owned())
+            .collect::<Vec<_>>()
+    };
+    let source =
+        "<script setup>const used=0; const unused=1;</script><template>{{used}}</template>";
+    let descriptor = parse_sfc(source, SfcParseOptions::default()).unwrap();
+    let options = SfcCroquisOptions::full().with_unused_bindings();
+    let incomplete = analyze_sfc_descriptor(&descriptor, None, options);
+    assert_eq!(names(&incomplete).len(), 0);
+
+    let allocator = vize_carton::Allocator::new();
+    let (root, errors) = vize_armature::Parser::new(
+        &allocator,
+        descriptor.template.as_ref().unwrap().content.as_ref(),
+    )
+    .parse();
+    assert_eq!(errors.len(), 0);
+    let complete = analyze_sfc_descriptor(&descriptor, Some(&root), options);
+    assert_eq!(names(&complete), ["unused"]);
+
+    let script_only = parse_sfc(
+        "<script setup>const unused=1;</script>",
+        SfcParseOptions::default(),
+    )
+    .unwrap();
+    let known = analyze_sfc_descriptor(&script_only, None, options);
+    assert_eq!(names(&known), ["unused"]);
 }
 
 #[test]
@@ -130,6 +247,7 @@ fn the_corpus_shard_agrees_with_the_specs() {
     for file in &files {
         let Ok(source) = std::fs::read_to_string(file) else {
             shard.bindings.skip("unreadable");
+            shard.unused.skip("unreadable");
             shard.undefined.skip("unreadable");
             shard.reactivity.skip("unreadable");
             shard.provide.skip("unreadable");
@@ -144,6 +262,12 @@ fn the_corpus_shard_agrees_with_the_specs() {
     }
     eprintln!("{}", shard.scope_lines("corpus shard"));
     shard.assert_verdicts("corpus shard");
+    if cfg!(debug_assertions) {
+        shard
+            .unused
+            .verdict("unused-bindings", "corpus shard")
+            .unwrap();
+    }
     shard
         .reactivity
         .verdict("reactivity", "corpus shard")

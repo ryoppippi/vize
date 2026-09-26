@@ -8,6 +8,8 @@ use super::DrawerOptions;
 /// Uses lazy evaluation and efficient data structures to minimize overhead.
 pub struct Drawer {
     pub(crate) options: DrawerOptions,
+    /// Unused binding population is an explicit lint demand.
+    pub(crate) track_unused_bindings: bool,
     /// Resolve Vue 3 Options API template bindings (opt-in, standard build).
     pub(crate) options_api: bool,
     /// Legacy Vue 2.7 / Nuxt 2: implies `options_api` plus Nuxt 2 globals.
@@ -50,6 +52,10 @@ pub struct Drawer {
 }
 
 impl Drawer {
+    pub(crate) fn checks_binding_reads(&self) -> bool {
+        self.options.detect_undefined || self.track_unused_bindings
+    }
+
     /// Create a new drawer with default options
     #[inline]
     pub fn new() -> Self {
@@ -61,6 +67,7 @@ impl Drawer {
     pub fn with_options(options: DrawerOptions) -> Self {
         Self {
             options,
+            track_unused_bindings: false,
             options_api: false,
             legacy_vue2: false,
             croquis: Croquis::new(),
@@ -83,6 +90,7 @@ impl Drawer {
     pub fn with_croquis(options: DrawerOptions, croquis: Croquis, script_drawn: bool) -> Self {
         Self {
             options,
+            track_unused_bindings: false,
             options_api: false,
             legacy_vue2: false,
             croquis,
@@ -95,6 +103,12 @@ impl Drawer {
             template_source: CompactString::default(),
             ident_cache: FxHashMap::default(),
         }
+    }
+
+    /// Collect unread setup bindings using the already parsed script AST.
+    pub fn with_unused_bindings(mut self) -> Self {
+        self.track_unused_bindings = true;
+        self
     }
 
     /// Compatibility wrapper for the old Analyzer naming.

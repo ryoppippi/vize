@@ -62,7 +62,7 @@ pub(crate) fn lint_sfc_with_corsa(linter: &Linter, source: &str, filename: &str)
     )
     .ok();
 
-    lint_sfc_with_corsa_descriptor(linter, source, filename, descriptor.as_ref())
+    lint_sfc_with_corsa_descriptor(linter, source, filename, descriptor.as_ref(), false)
 }
 
 pub(crate) fn lint_sfc_with_corsa_descriptor<'a>(
@@ -70,11 +70,12 @@ pub(crate) fn lint_sfc_with_corsa_descriptor<'a>(
     source: &'a str,
     filename: &str,
     descriptor: Option<&'a SfcDescriptor<'a>>,
+    derived: bool,
 ) -> LintResult {
     let mut result = match descriptor {
         Some(descriptor) => profile!(
             "patina.type_aware.driver",
-            driver::lint_with_descriptor(linter, source, filename, descriptor)
+            driver::lint_with_descriptor(linter, source, filename, descriptor, derived)
         ),
         None => {
             if let Some((content, byte_offset)) = super::engine::extract_template_fast(source) {

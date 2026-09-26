@@ -17,6 +17,7 @@
 //! | group | key | wave |
 //! | ----- | --- | ---- |
 //! | [`Bindings`] | [`BindingKey`] — the script-setup marker, then binding names | P4-3a |
+//! | [`UnusedBindings`] | binding name, with definition span | P4-3c |
 //! | [`UndefinedRefs`] | walk-order ordinal | P4-3a |
 //! | [`ComponentUsages`] | [`ComponentIdentity`] — module plus exported name | P4-3b |
 //! | [`Reactivity`] | registration ordinal, then loss ordinal | P4-3d |
@@ -56,6 +57,7 @@ pub mod race;
 pub mod reactivity;
 pub mod spec;
 pub mod undefined_refs;
+pub mod unused_bindings;
 
 pub use bindings::{BindingFact, BindingKey, Bindings, BindingsTable};
 pub use components::{ComponentIdentity, ComponentUsages, GroupedComponentUse, component_identity};
@@ -74,6 +76,7 @@ pub use access::{
     component_usage_list, used_component_contains, used_component_name_list, used_components_empty,
 };
 pub use undefined_refs::UndefinedRefs;
+pub use unused_bindings::{UnusedBindingFact, UnusedBindings};
 pub use vize_davinci::fact::{
     Demand, FactConsumer, FactError, FactGroup, FactManager, FactRegistry, FactTable, FactView,
     ProducerEntry,
@@ -85,6 +88,7 @@ use crate::Croquis;
 pub const CROQUIS_FACTS: FactRegistry<Croquis> = FactRegistry::new(&[
     ProducerEntry::of::<Bindings>(),
     ProducerEntry::of::<UndefinedRefs>(),
+    ProducerEntry::of::<UnusedBindings>(),
     ProducerEntry::of::<ComponentUsages>(),
     ProducerEntry::of::<Reactivity>(),
     ProducerEntry::of::<ProvideInject>(),
@@ -136,6 +140,7 @@ mod tests {
     use super::{Bindings, CROQUIS_FACTS, CroquisFacts, Demand, FactConsumer, FactGroup};
     use super::{
         ComponentUsages, FactError, ProvideInject, RaceConditions, Reactivity, UndefinedRefs,
+        UnusedBindings,
     };
     use crate::Croquis;
     use vize_davinci::fact::ids;
@@ -153,6 +158,7 @@ mod tests {
             Demand::NONE
                 .with(ids::BINDINGS)
                 .with(ids::UNDEFINED_REFS)
+                .with(ids::UNUSED_BINDINGS)
                 .with(ids::COMPONENT_USAGES)
                 .with(ids::REACTIVITY)
                 .with(ids::PROVIDE_INJECT)
@@ -162,6 +168,7 @@ mod tests {
             (
                 Bindings::ID,
                 UndefinedRefs::ID,
+                UnusedBindings::ID,
                 ComponentUsages::ID,
                 Reactivity::ID,
                 ProvideInject::ID,
@@ -170,6 +177,7 @@ mod tests {
             (
                 ids::BINDINGS,
                 ids::UNDEFINED_REFS,
+                ids::UNUSED_BINDINGS,
                 ids::COMPONENT_USAGES,
                 ids::REACTIVITY,
                 ids::PROVIDE_INJECT,

@@ -7,6 +7,7 @@
 mod drawer;
 mod resolved;
 mod source_offsets;
+mod unused;
 
 use self::drawer::{analyze_scripts, apply_options_api_mode};
 use crate::types::SfcDescriptor;
@@ -25,6 +26,10 @@ pub struct SfcCroquisOptions {
     /// Merge `<script>` into the synthetic script used by downstream tools when
     /// a component also has `<script setup>`.
     pub merge_scripts: bool,
+    /// Populate unused bindings only for a consumer that demands them.
+    pub unused_bindings: bool,
+    /// The supplied template AST is a proven dialect-derived HTML view.
+    pub template_is_derived: bool,
 }
 
 impl SfcCroquisOptions {
@@ -34,6 +39,8 @@ impl SfcCroquisOptions {
         Self {
             analyzer_options: DrawerOptions::full(),
             merge_scripts: true,
+            unused_bindings: false,
+            template_is_derived: false,
         }
     }
 
@@ -44,6 +51,8 @@ impl SfcCroquisOptions {
         Self {
             analyzer_options: DrawerOptions::for_lint(),
             merge_scripts: true,
+            unused_bindings: false,
+            template_is_derived: false,
         }
     }
 
@@ -59,6 +68,8 @@ impl SfcCroquisOptions {
         Self {
             analyzer_options: DrawerOptions::compile_demand(),
             merge_scripts: true,
+            unused_bindings: false,
+            template_is_derived: false,
         }
     }
 
@@ -76,7 +87,21 @@ impl SfcCroquisOptions {
                 experimental_patterned_template: false,
             },
             merge_scripts: true,
+            unused_bindings: false,
+            template_is_derived: false,
         }
+    }
+
+    /// Demand setup binding usage; ordinary compiler routes leave it off.
+    pub const fn with_unused_bindings(mut self) -> Self {
+        self.unused_bindings = true;
+        self
+    }
+
+    /// Preserve authored dialect metadata while admitting its derived AST.
+    pub const fn with_derived_template(mut self) -> Self {
+        self.template_is_derived = true;
+        self
     }
 
     /// Use only the active Vue script block instead of merging split scripts.
@@ -233,15 +258,28 @@ fn analyze_sfc_descriptor_resolved_impl(
         }
     }
     let drawer = Drawer::with_summary(drawer_options, summary, script_analyzed);
+    let drawer = if options.unused_bindings {
+        drawer.with_unused_bindings()
+    } else {
+        drawer
+    };
     let mut drawer = apply_options_api_mode(drawer, options_api, legacy_vue2);
 
     if let Some(root) = template_ast {
         profile!("atelier.sfc.croquis.template", drawer.draw_template(root));
     }
 
+    let mut croquis = drawer.finish();
+    if options.unused_bindings {
+        if descriptor.template.is_some() && template_ast.is_none() {
+            croquis.unused_bindings.clear();
+        } else {
+            unused::apply_style_reads(&mut croquis, descriptor, options.template_is_derived);
+        }
+    }
     let (script_content, script_offset) = script_content_for_descriptor(descriptor, options);
     SfcCroquisAnalysis {
-        croquis: drawer.finish(),
+        croquis,
         script_content,
         script_offset,
     }

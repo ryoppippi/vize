@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
     process::Command,
@@ -16,8 +16,9 @@ pub const CLASS_A: &str = "undefined-template-ref";
 pub const CLASS_B: &str = "unused-binding";
 pub const CLASS_A_RULE: &str = "vue/no-undefined-refs";
 pub const SEEDED_NAME_SUFFIX: &str = "__davinci_seeded";
-pub const UNUSED_BINDING_NAME: &str = "__davinci_seeded_unused";
-pub const UNUSED_BINDING_STATEMENT: &str = "const __davinci_seeded_unused = 0;\n";
+pub const CLASS_B_RULE: &str = "vue/no-unused-setup-bindings";
+pub const UNUSED_BINDING_NAME: &str = "davinciSeededUnused";
+pub const UNUSED_BINDING_STATEMENT: &str = "const davinciSeededUnused = 0;\n";
 pub const RULE_MAP_FIXTURE: &str = "tests/_fixtures/patina-eslint-vue-rule-map.json";
 pub const CORPUS_SHARD: [&str; 3] = ["splitpanes", "layoutit-grid", "cssgridgenerator"];
 
@@ -208,6 +209,7 @@ pub struct ClassAReport {
 pub struct ClassBReport {
     pub expected: usize,
     pub detected: usize,
+    pub misses: Vec<DiagnosticRow>,
     pub note: String,
 }
 
@@ -1290,177 +1292,8 @@ fn multiset_difference(
     sort_diagnostics(out)
 }
 
-pub fn assert_seeded_tree(
-    manifest: &SeedManifest,
-    out_dir: &Path,
-    cli: Option<&VizeCli>,
-    baseline_hook: Option<&Path>,
-    seeded_hook: Option<&Path>,
-) -> Result<SeedAssertReport, String> {
-    let files = manifest
-        .files
-        .iter()
-        .map(|file| file.path.clone())
-        .collect::<Vec<_>>();
-    let baseline_rows = load_lint_rows(baseline_hook, cli, &out_dir.join("original"), &files)?;
-    let seeded_rows = load_lint_rows(seeded_hook, cli, &out_dir.join("seeded"), &files)?;
-    let (shifted, unmappable) = shift_baseline(&baseline_rows, manifest, out_dir)?;
-    let class_a_rows = expected_class_a_rows(manifest);
-    let expected_rows = sort_diagnostics(
-        shifted
-            .iter()
-            .cloned()
-            .chain(class_a_rows.iter().map(|(row, _)| row.clone()))
-            .collect(),
-    );
-    let expected_counts = count_by_key(&expected_rows);
-    let actual_counts = count_by_key(&seeded_rows);
-    let missing_rows = multiset_difference(&expected_counts, &actual_counts);
-    let unexpected = multiset_difference(&actual_counts, &expected_counts);
-    let class_a_keys = class_a_rows
-        .iter()
-        .map(|(row, identifier)| (diagnostic_key(row), identifier.clone()))
-        .collect::<BTreeMap<_, _>>();
-    let mut class_a_misses = Vec::new();
-    let mut baseline_misses = Vec::new();
-    for row in missing_rows {
-        if let Some(identifier) = class_a_keys.get(&diagnostic_key(&row)) {
-            class_a_misses.push(ClassAMiss::from((&row, identifier.clone())));
-        } else {
-            baseline_misses.push(row);
-        }
-    }
-    let class_b_injections = manifest
-        .injections
-        .iter()
-        .filter(|injection| injection.class_name == CLASS_B)
-        .collect::<Vec<_>>();
-    let actual_spans = seeded_rows
-        .iter()
-        .map(|row| {
-            format!(
-                "{}|{}|{}|{}|{}",
-                row.path, row.line, row.column, row.end_line, row.end_column
-            )
-        })
-        .collect::<BTreeSet<_>>();
-    let class_b_detected = class_b_injections
-        .iter()
-        .filter(|injection| {
-            actual_spans.contains(&format!(
-                "{}|{}|{}|{}|{}",
-                injection.path,
-                injection.expected.line,
-                injection.expected.column,
-                injection.expected.end_line,
-                injection.expected.end_column
-            ))
-        })
-        .count();
-    let pass = class_a_misses.is_empty()
-        && baseline_misses.is_empty()
-        && unmappable.is_empty()
-        && unexpected.is_empty();
-    Ok(SeedAssertReport {
-        schema_version: 1,
-        tool: "tools/commands/davinci/seed-defects.rs --assert".to_string(),
-        source: manifest.source.clone(),
-        scope: manifest.scope.clone(),
-        lint: LintCounts {
-            baseline_diagnostics: baseline_rows.len(),
-            seeded_diagnostics: seeded_rows.len(),
-        },
-        class_a: ClassAReport {
-            expected: class_a_rows.len(),
-            detected: class_a_rows.len() - class_a_misses.len(),
-            misses: class_a_misses,
-        },
-        class_b: ClassBReport {
-            expected: class_b_injections.len(),
-            detected: class_b_detected,
-            note: "not gated: vize_croquis unused_bindings has no lint consumer today (FN ledger)"
-                .to_string(),
-        },
-        baseline_shift: BaselineShiftReport {
-            mapped: shifted.len(),
-            misses: baseline_misses,
-            unmappable,
-        },
-        unexpected,
-        verdict: if pass { "pass" } else { "fail" }.to_string(),
-    })
-}
-
-fn shift_baseline(
-    rows: &[DiagnosticRow],
-    manifest: &SeedManifest,
-    out_dir: &Path,
-) -> Result<(Vec<DiagnosticRow>, Vec<DiagnosticRow>), String> {
-    let mut shifted = Vec::new();
-    let mut unmappable = Vec::new();
-    for row in rows {
-        let edits = manifest.edits.get(&row.path).cloned().unwrap_or_default();
-        if edits.is_empty() {
-            shifted.push(row.clone());
-            continue;
-        }
-        let original_text = common::read_text(out_dir.join("original").join(&row.path))?;
-        let original_starts = line_starts_of(&original_text);
-        let start = line_col_to_index(&original_text, &original_starts, row.line, row.column);
-        let end = line_col_to_index(
-            &original_text,
-            &original_starts,
-            row.end_line,
-            row.end_column,
-        );
-        if start.is_none()
-            || end.is_none()
-            || span_overlaps_edits(start.unwrap(), end.unwrap(), &edits)
-        {
-            unmappable.push(row.clone());
-            continue;
-        }
-        let seeded_text = common::read_text(out_dir.join("seeded").join(&row.path))?;
-        if let Some(described) =
-            describe_mapped_span(&seeded_text, &edits, start.unwrap(), end.unwrap())
-        {
-            shifted.push(DiagnosticRow {
-                path: row.path.clone(),
-                rule_id: row.rule_id.clone(),
-                severity: row.severity,
-                line: described.line,
-                column: described.column,
-                end_line: described.end_line,
-                end_column: described.end_column,
-            });
-        } else {
-            unmappable.push(row.clone());
-        }
-    }
-    Ok((sort_diagnostics(shifted), sort_diagnostics(unmappable)))
-}
-
-fn expected_class_a_rows(manifest: &SeedManifest) -> Vec<(DiagnosticRow, String)> {
-    manifest
-        .injections
-        .iter()
-        .filter(|injection| injection.class_name == CLASS_A)
-        .map(|injection| {
-            (
-                DiagnosticRow {
-                    path: injection.path.clone(),
-                    rule_id: injection.expected_rule.clone().unwrap_or_default(),
-                    severity: 1,
-                    line: injection.expected.line,
-                    column: injection.expected.column,
-                    end_line: injection.expected.end_line,
-                    end_column: injection.expected.end_column,
-                },
-                injection.identifier.original.clone().unwrap_or_default(),
-            )
-        })
-        .collect()
-}
+mod seed_assert;
+pub use seed_assert::assert_seeded_tree;
 
 pub fn parse_suppression_line(line_text: &str) -> Option<SuppressionComment> {
     if !line_text.contains("eslint-") {

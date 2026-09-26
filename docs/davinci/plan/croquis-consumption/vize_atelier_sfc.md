@@ -11,8 +11,8 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | product                     | kind  | module    | files | sites |
 | --------------------------- | ----- | --------- | ----: | ----: |
 | `BindingMetadata`           | type  | `croquis` |    12 |    31 |
-| `Croquis`                   | type  | `croquis` |     9 |    21 |
-| `Drawer`                    | type  | `drawer`  |     2 |     7 |
+| `Croquis`                   | type  | `croquis` |    10 |    22 |
+| `Drawer`                    | type  | `drawer`  |     2 |     9 |
 | `DrawerOptions`             | type  | `drawer`  |     1 |     5 |
 | `ScopeKind`                 | type  | `scope`   |     1 |     2 |
 | `Croquis.binding_spans`     | field | `croquis` |     1 |     1 |
@@ -21,6 +21,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `Croquis.macros`            | field | `croquis` |     6 |    17 |
 | `Croquis.scopes`            | field | `croquis` |     1 |     2 |
 | `Croquis.types`             | field | `croquis` |     4 |    16 |
+| `Croquis.unused_bindings`   | field | `croquis` |     2 |     5 |
 
 ## Non-product `vize_croquis` imports
 
@@ -42,7 +43,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `ScriptParseResult`                       |     1 |     1 |
 | `ScriptParserOptions`                     |     1 |     1 |
 | `SfcCustomBlock`                          |     2 |     2 |
-| `SfcDescriptor`                           |    17 |    41 |
+| `SfcDescriptor`                           |    18 |    42 |
 | `SfcError`                                |    21 |    60 |
 | `SfcParseOptions`                         |    17 |   119 |
 | `SfcScriptBlock`                          |     2 |     2 |
@@ -59,8 +60,10 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `WITH_DEFAULTS`                           |     1 |     1 |
 | `analyze_script_setup_program`            |     1 |     1 |
 | `artifact_macro_names`                    |     1 |     1 |
+| `checked_v_bind_expression_ranges`        |     1 |     1 |
 | `extract_and_transform_v_bind`            |     1 |     1 |
 | `extract_and_transform_v_bind_with_scope` |     1 |     1 |
+| `extract_identifiers_checked`             |     1 |     1 |
 | `find_matching_paren`                     |     1 |     1 |
 | `is_builtin_component`                    |     1 |     1 |
 | `is_builtin_macro`                        |     2 |     2 |
@@ -76,20 +79,21 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 
 ## Naive grep disagreements (resolved/grep)
 
-| product             | resolved | grep |
-| ------------------- | -------: | ---: |
-| `BindingMetadata`   |       31 |   51 |
-| `BlockKind`         |        0 |   10 |
-| `Croquis`           |       21 |   48 |
-| `Drawer`            |        7 |    9 |
-| `DrawerOptions`     |        5 |    6 |
-| `ReactivityTracker` |        0 |    1 |
-| `Scope`             |        0 |    6 |
-| `ScopeKind`         |        2 |    3 |
-| `Span`              |        0 |    9 |
-| `Symbol`            |        0 |    5 |
-| `SymbolFlags`       |        0 |    5 |
-| `Croquis.bindings`  |       16 |  229 |
-| `Croquis.hoists`    |        0 |    2 |
-| `Croquis.macros`    |       17 |  114 |
-| `Croquis.types`     |       16 |   28 |
+| product                   | resolved | grep |
+| ------------------------- | -------: | ---: |
+| `BindingMetadata`         |       31 |   51 |
+| `BlockKind`               |        0 |   10 |
+| `Croquis`                 |       22 |   50 |
+| `Drawer`                  |        9 |   11 |
+| `DrawerOptions`           |        5 |    6 |
+| `ReactivityTracker`       |        0 |    1 |
+| `Scope`                   |        0 |    6 |
+| `ScopeKind`               |        2 |    3 |
+| `Span`                    |        0 |    9 |
+| `Symbol`                  |        0 |    5 |
+| `SymbolFlags`             |        0 |    5 |
+| `Croquis.bindings`        |       16 |  229 |
+| `Croquis.hoists`          |        0 |    2 |
+| `Croquis.macros`          |       17 |  114 |
+| `Croquis.types`           |       16 |   28 |
+| `Croquis.unused_bindings` |        5 |    9 |

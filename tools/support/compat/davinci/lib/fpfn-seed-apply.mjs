@@ -6,11 +6,10 @@
 //   eligibility contract) everywhere in the script block, so the template
 //   reference dangles. Expected diagnostic: vue/no-undefined-refs.
 //
-//   class (b) "unused-binding": inject `const __davinci_seeded_unused = 0;`
+//   class (b) "unused-binding": inject `const davinciSeededUnused = 0;`
 //   into `<script setup>` (creating the block when the file has none).
-//   Expected diagnostic: none — vize_croquis computes `unused_bindings` but
-//   no lint rule consumes it, which is exactly the documented FN this pilot
-//   records (docs/davinci/plan/ledger-fn.md).
+//   Expected diagnostic: vue/no-unused-setup-bindings, explicitly enabled
+//   on the independent class-(b) mutation plane.
 //
 // Every edit is recorded with its original-file span and length delta so
 // the identity assertion can map pristine-run diagnostics into seeded-file
@@ -31,8 +30,9 @@ import { indexToLineCol, lineStartsOf } from "./fpfn-shared.mjs";
 export const CLASS_A = "undefined-template-ref";
 export const CLASS_B = "unused-binding";
 export const CLASS_A_RULE = "vue/no-undefined-refs";
+export const CLASS_B_RULE = "vue/no-unused-setup-bindings";
 export const SEEDED_NAME_SUFFIX = "__davinci_seeded";
-export const UNUSED_BINDING_NAME = "__davinci_seeded_unused";
+export const UNUSED_BINDING_NAME = "davinciSeededUnused";
 export const UNUSED_BINDING_STATEMENT = `const ${UNUSED_BINDING_NAME} = 0;\n`;
 
 /** Standalone-token occurrences of `name` in blanked script text. */

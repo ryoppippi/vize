@@ -4830,6 +4830,16 @@ vue/no-unused-refs · lint 规则
   import { ref } from 'vue'
   const inputEl = ref(null)
   </script>
+=== vue/no-unused-setup-bindings
+vue/no-unused-setup-bindings · lint 规则
+禁止未被读取的 script setup 绑定
+
+精度层级: sound
+适用范围: valid inline script-setup declarations with no resolved script, template or style v-bind read; external blocks, eval and unsupported syntax are outside
+严重级别: 警告
+类别: recommended
+自动修复: 不支持
+文档: docs/content/rules/vue.md
 === vue/no-unused-vars
 vue/no-unused-vars · lint 规则
 禁止v-for指令中未使用的变量定义

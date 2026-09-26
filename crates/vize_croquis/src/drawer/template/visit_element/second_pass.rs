@@ -1,4 +1,6 @@
+use super::super::slot_names::slot_argument_is_runtime_dynamic;
 use super::dynamic_component_alias::dynamic_component_alias;
+use super::v_for_scope::v_for_scope_bindings;
 use crate::croquis::{TemplateExpression, TemplateExpressionKind};
 use crate::drawer::Drawer;
 use crate::drawer::helpers::{
@@ -10,10 +12,6 @@ use oxc_parser::Parser;
 use oxc_span::SourceType;
 use vize_carton::{CompactString, profile};
 use vize_relief::{DirectiveNode, ElementNode, ExpressionNode, JsExpression, PropNode};
-
-use super::super::slot_names::slot_argument_is_runtime_dynamic;
-use super::v_for_scope::v_for_scope_bindings;
-
 impl Drawer {
     pub(super) fn process_element_conditional_directive(
         &mut self,
@@ -27,16 +25,14 @@ impl Drawer {
             if dir.name != "if" && dir.name != "else-if" {
                 continue;
             }
-
             self.collect_basic_directive_expression(dir.exp.as_ref(), TemplateExpressionKind::VIf);
-            if self.options.detect_undefined
+            if self.checks_binding_reads()
                 && let Some(exp) = dir.exp.as_ref()
             {
                 self.check_expression_refs(exp, scope_vars);
             }
         }
     }
-
     pub(super) fn process_element_directives(
         &mut self,
         el: &ElementNode<'_>,
@@ -56,7 +52,6 @@ impl Drawer {
                 if matches!(dir.name, "match" | "when") {
                     continue;
                 }
-
                 if dir.name != "slot" {
                     self.collect_dynamic_directive_argument(dir, scope_vars);
                 }
@@ -115,7 +110,7 @@ impl Drawer {
         scope_vars: &[CompactString],
     ) {
         profile!("croquis.template.element.undefined_refs", {
-            if !self.options.detect_undefined {
+            if !self.options.detect_undefined && !self.track_unused_bindings {
                 return;
             }
 
@@ -193,7 +188,7 @@ impl Drawer {
             });
         }
 
-        if self.options.detect_undefined {
+        if self.checks_binding_reads() {
             self.check_expression_refs(arg, scope_vars);
         }
     }

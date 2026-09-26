@@ -211,7 +211,7 @@ impl Drawer {
                 vif_guard: self.current_vif_guard(),
             });
         }
-        if self.options.detect_undefined {
+        if self.checks_binding_reads() {
             let allocator = Allocator::new();
             let expression = ExpressionNode::Simple(Box::new_in(
                 SimpleExpressionNode::new(

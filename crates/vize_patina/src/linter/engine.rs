@@ -23,7 +23,6 @@ pub(crate) use template_extract::extract_template_fast;
 
 use crate::{context::LintContext, diagnostic::LintSummary, preset::LintPreset};
 use vize_armature::Parser;
-use vize_atelier_sfc::croquis::{SfcCroquisOptions, analyze_sfc_descriptor};
 use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
 use vize_croquis::{Croquis, Drawer};
 use vize_relief::RootNode;
@@ -78,12 +77,7 @@ impl<'a> TemplateRuleEnv<'a> {
     }
 }
 
-pub(crate) fn analyze_descriptor_for_lint(
-    descriptor: &vize_atelier_sfc::SfcDescriptor<'_>,
-    template_ast: Option<&RootNode<'_>>,
-) -> Croquis {
-    analyze_sfc_descriptor(descriptor, template_ast, SfcCroquisOptions::lint_demand())
-}
+pub(crate) use rule_sets::analyze_descriptor_for_lint;
 
 impl Linter {
     fn template_rule_count_for_source(
@@ -208,10 +202,7 @@ impl Linter {
     }
 
     fn needs_sfc_descriptor_for_lint(&self) -> bool {
-        // This gate decides whether the outer SFC lint path should pay the parse
-        // cost up front. Keep every consumer that can reuse descriptor metadata
-        // listed here; otherwise a rule may quietly fall back to its own parse and
-        // reintroduce per-rule work on large files.
+        // Parse once for consumers that share the descriptor.
         self.has_active_shared_sfc_descriptor_rules()
             || super::script_rules::has_active_builtin_script_rules(self)
             || super::css_rules::has_active_builtin_css_rules(self)

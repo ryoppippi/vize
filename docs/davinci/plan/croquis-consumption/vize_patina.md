@@ -11,7 +11,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | product                           | kind  | module              | files | sites |
 | --------------------------------- | ----- | ------------------- | ----: | ----: |
 | `COMPILER_MACRO_NAMES`            | type  | `croquis`           |     1 |     1 |
-| `Croquis`                         | type  | `croquis`           |    11 |    26 |
+| `Croquis`                         | type  | `croquis`           |    13 |    26 |
 | `Drawer`                          | type  | `drawer`            |     1 |     1 |
 | `ElementIdKind`                   | type  | `croquis::template` |     1 |     2 |
 | `OptionMember`                    | type  | `croquis`           |     2 |     3 |
@@ -31,9 +31,11 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | ----------------------------------------- | ----: | ----: |
 | `Bindings`                                |     1 |     2 |
 | `BlockLocation`                           |     1 |     2 |
-| `CroquisFacts`                            |     2 |     2 |
-| `Demand`                                  |     2 |     4 |
-| `FactConsumer`                            |     2 |     2 |
+| `CroquisFacts`                            |     4 |     5 |
+| `Demand`                                  |     3 |     6 |
+| `FactConsumer`                            |     4 |     4 |
+| `FactTable`                               |     1 |     1 |
+| `FactView`                                |     1 |     1 |
 | `MacroKind`                               |     3 |     3 |
 | `ReactiveKind`                            |     1 |     1 |
 | `ReactivityLoss`                          |     1 |     2 |
@@ -46,6 +48,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `SfcParseOptions`                         |    13 |    14 |
 | `SfcScriptBlock`                          |     1 |     1 |
 | `UndefinedRefs`                           |     1 |     2 |
+| `UnusedBindings`                          |     1 |     4 |
 | `collect_options_descriptor`              |     4 |     4 |
 | `collect_options_object`                  |     1 |     1 |
 | `extract_slot_props`                      |     1 |     1 |
@@ -66,7 +69,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | product                 | resolved | grep |
 | ----------------------- | -------: | ---: |
 | `COMPILER_MACRO_NAMES`  |        1 |    2 |
-| `Croquis`               |       26 |   50 |
+| `Croquis`               |       26 |   53 |
 | `Drawer`                |        1 |    2 |
 | `ElementIdKind`         |        2 |    3 |
 | `OptionMember`          |        3 |    5 |

@@ -10,6 +10,7 @@ mod helpers;
 mod options;
 mod script;
 mod template;
+mod unused;
 pub use template::{dynamic_component_alias, is_dynamic_component_alias};
 
 #[cfg(test)]
@@ -18,8 +19,8 @@ mod tests;
 pub use core::Drawer;
 pub use helpers::{
     EventHandlerExpression, IdentifierRef, VForScopeAliases, classify_event_handler,
-    extract_identifier_refs_oxc, extract_identifiers_oxc, extract_inline_callback_params,
-    extract_slot_props, is_builtin_directive, is_component_tag, is_keyword, parse_v_for_expression,
-    parse_v_for_scope_expression, strip_js_comments,
+    extract_identifier_refs_oxc, extract_identifiers_checked, extract_identifiers_oxc,
+    extract_inline_callback_params, extract_slot_props, is_builtin_directive, is_component_tag,
+    is_keyword, parse_v_for_expression, parse_v_for_scope_expression, strip_js_comments,
 };
 pub use options::DrawerOptions;

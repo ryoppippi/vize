@@ -24,6 +24,9 @@ pub fn print_assert_report(report: &SeedAssertReport) {
             miss.identifier
         );
     }
+    for miss in &report.class_b.misses {
+        println!("MISS class-b {}", describe_row(miss));
+    }
     for miss in &report.baseline_shift.misses {
         println!("MISS baseline {}", describe_row(miss));
     }

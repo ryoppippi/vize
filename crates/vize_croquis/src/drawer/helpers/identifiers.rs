@@ -6,12 +6,19 @@
 //! `item.name` yield only `"item"`, not `"name"`.
 
 mod ast;
+mod checked;
 mod comments;
 
 #[cfg(test)]
 mod tests;
 
 pub use comments::strip_js_comments;
+
+/// Demand-only reads, or `None` when syntax or eval prevents a sound conclusion.
+#[doc(hidden)]
+pub fn extract_identifiers_checked(source: &str) -> Option<Vec<CompactString>> {
+    checked::checked_reads(source)
+}
 
 use vize_carton::{CompactString, profile};
 use vize_relief::JsExpression;

@@ -31,6 +31,15 @@ pub fn parse_script_setup_with_generic_and_jsx(
     generic: Option<&str>,
     jsx: bool,
 ) -> ScriptParseResult {
+    parse_script_setup_for_unused(source, generic, jsx, false)
+}
+
+pub(crate) fn parse_script_setup_for_unused(
+    source: &str,
+    generic: Option<&str>,
+    jsx: bool,
+    unused: bool,
+) -> ScriptParseResult {
     let allocator = Allocator::default();
     let path = if jsx { "script.tsx" } else { "script.ts" };
     let source_type = SourceType::from_path(path).unwrap_or_default();
@@ -44,7 +53,11 @@ pub fn parse_script_setup_with_generic_and_jsx(
         return ScriptParseResult::default();
     }
 
-    analyze_script_setup_program(&ret.program, source, generic)
+    let mut result = analyze_script_setup_program(&ret.program, source, generic);
+    if unused && ret.diagnostics.is_empty() {
+        result.unused_bindings = super::unused_setup_bindings(&ret.program, &result);
+    }
+    result
 }
 
 /// Analyze an already-parsed script setup program.

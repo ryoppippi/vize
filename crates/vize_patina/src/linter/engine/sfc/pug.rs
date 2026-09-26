@@ -34,7 +34,7 @@ impl Linter {
             return None;
         }
         let view = PugBlockView::new(source, template.loc.start..template.loc.end).ok()?;
-        let mut result = self.lint_sfc_unrouted(&view.source, filename);
+        let mut result = self.lint_sfc_view(&view.source, filename, true);
         for diagnostic in &mut result.diagnostics {
             (diagnostic.start, diagnostic.end) = view.to_host(diagnostic.start, diagnostic.end);
             for label in &mut diagnostic.labels {

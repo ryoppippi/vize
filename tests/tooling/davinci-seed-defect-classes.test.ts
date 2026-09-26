@@ -313,7 +313,7 @@ test("vize lint recalls every snippet class by identity", () => {
   const out = tempDir("vize");
   const result = runTool(["--exact-classes", "--out", out, "--assert"]);
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-  assert.match(result.stdout, /assert: detected=19\/19 unexpected=0 verdict=pass/);
+  assert.match(result.stdout, /assert: detected=20\/20 unexpected=0 verdict=pass/);
   const report = JSON.parse(fs.readFileSync(path.join(out, "exact-report.json"), "utf8")) as {
     verdict: string;
     misses: unknown[];

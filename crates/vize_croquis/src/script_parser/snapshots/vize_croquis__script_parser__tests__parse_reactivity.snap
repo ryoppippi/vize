@@ -12,6 +12,7 @@ ScriptParseResult {
         is_script_setup: true,
         props_aliases: {},
     },
+    unused_bindings: [],
     macros: MacroTracker {
         calls: [],
         props: [],
