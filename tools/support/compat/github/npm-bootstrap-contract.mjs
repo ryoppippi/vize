@@ -4,19 +4,20 @@ import {
 } from "./release-preflight-core.mjs";
 import { githubApiPages, githubApiRequest } from "./release-preflight-github.mjs";
 
-export const bootstrapPackages = new Map([
-  ["npm/framework/nuxt-lint-config", "@vizejs/nuxt-lint-config"],
-]);
-export const bootstrapArtifacts = new Map([
-  ["npm/framework/nuxt-lint-config", "release-package-nuxt-lint-config"],
-]);
-export const requiredSuccessfulReleaseJobs = [
-  "Build release npm packages",
-  "Smoke release npm package installs",
-  "release-preflight / Verify release safety contract",
-];
-export const requiredFailedReleaseJobs = ["Release @vizejs/nuxt-lint-config to npm"];
-export const requiredSkippedReleaseJobs = ["Release @vizejs/nuxt to npm", "Create GitHub Release"];
+import {
+  bootstrapPackages,
+  bootstrapArtifacts,
+  bootstrapJobContract,
+  bootstrapArtifactContract,
+  requiredSuccessfulReleaseJobs,
+} from "./npm-bootstrap-packages.mjs";
+export {
+  bootstrapPackages,
+  bootstrapArtifacts,
+  requiredSuccessfulReleaseJobs,
+  requiredFailedReleaseJobs,
+  requiredSkippedReleaseJobs,
+} from "./npm-bootstrap-packages.mjs";
 
 const registryOrigin = "https://registry.npmjs.org";
 const releaseTagPattern =
@@ -149,7 +150,9 @@ export function validateReleaseRun({ run, releaseRunId, repository, tagName, tag
   }
 }
 
-export function validateReleaseJobs(jobs) {
+export function validateReleaseJobs(jobs, packagePath = "npm/framework/nuxt-lint-config") {
+  const { failedJobs: requiredFailedReleaseJobs, skippedJobs: requiredSkippedReleaseJobs } =
+    bootstrapJobContract(packagePath);
   const jobNameCounts = new Map();
   for (const job of jobs) {
     jobNameCounts.set(job.name, (jobNameCounts.get(job.name) ?? 0) + 1);
@@ -273,7 +276,7 @@ export async function verifyReleaseRunEvidence({
     resource: `actions/runs/${releaseRunId}/jobs`,
     collection: "jobs",
   });
-  validateReleaseJobs(jobs);
+  validateReleaseJobs(jobs, bootstrapArtifactContract(artifactName).path);
   const artifacts = await githubApiPages({
     ...requestOptions,
     resource: `actions/runs/${releaseRunId}/artifacts`,

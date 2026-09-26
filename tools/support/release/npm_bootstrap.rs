@@ -16,17 +16,8 @@ use std::{
     process::{Command, Stdio},
 };
 
-pub const BOOTSTRAP_PACKAGE_PATH: &str = "npm/framework/nuxt-lint-config";
-pub const BOOTSTRAP_PACKAGE_NAME: &str = "@vizejs/nuxt-lint-config";
-pub const BOOTSTRAP_ARTIFACT_NAME: &str = "release-package-nuxt-lint-config";
-pub const REQUIRED_SUCCESSFUL_RELEASE_JOBS: &[&str] = &[
-    "Build release npm packages",
-    "Smoke release npm package installs",
-    "release-preflight / Verify release safety contract",
-];
-pub const REQUIRED_FAILED_RELEASE_JOBS: &[&str] = &["Release @vizejs/nuxt-lint-config to npm"];
-pub const REQUIRED_SKIPPED_RELEASE_JOBS: &[&str] =
-    &["Release @vizejs/nuxt to npm", "Create GitHub Release"];
+mod npm_bootstrap_packages;
+pub use npm_bootstrap_packages::*;
 
 const REGISTRY_ORIGIN: &str = "https://registry.npmjs.org";
 
@@ -97,16 +88,7 @@ pub fn validate_bootstrap_request(
             empty_label(workflow_ref)
         ));
     }
-    if package_path != BOOTSTRAP_PACKAGE_PATH {
-        return Err(format!(
-            "Package path is not approved for npm bootstrap: {}",
-            if package_path.is_empty() {
-                "(empty)"
-            } else {
-                package_path
-            }
-        ));
-    }
+    let package = approved_package(package_path)?;
     if !release_tag_pattern().is_match(tag_name) {
         return Err(format!(
             "Release tag must be a strict v-prefixed SemVer, got {}",
@@ -126,8 +108,8 @@ pub fn validate_bootstrap_request(
         ));
     }
     Ok(BootstrapRequest {
-        artifact_name: BOOTSTRAP_ARTIFACT_NAME.to_string(),
-        package_name: BOOTSTRAP_PACKAGE_NAME.to_string(),
+        artifact_name: package.artifact.clone(),
+        package_name: package.name.clone(),
         package_path: package_path.to_string(),
         release_run_id: release_run_id.to_string(),
         tag_name: tag_name.to_string(),
@@ -225,7 +207,7 @@ pub fn verify_release_run_evidence(
         &format!("actions/runs/{release_run_id}/jobs"),
         Some("jobs"),
     )?;
-    validate_release_jobs(&jobs)?;
+    validate_release_jobs_for(&jobs, &approved_artifact(artifact_name)?.path)?;
     let artifacts = github_api_pages(
         api_url,
         repository,
@@ -816,7 +798,11 @@ fn positive_safe_integer(value: &str) -> bool {
 }
 
 fn empty_label(value: &str) -> &str {
-    if value.is_empty() { "(empty)" } else { value }
+    if value.is_empty() {
+        "(empty)"
+    } else {
+        value
+    }
 }
 
 fn value_string(value: Option<&Value>) -> String {
