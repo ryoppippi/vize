@@ -102,6 +102,7 @@ pub const JS_VISIBLE: &[&str] = &[
     "reactivity",
     "provide-inject",
     "race-conditions",
+    "unused-bindings",
     "component-signature",
     "prop-types",
     "emit-types",

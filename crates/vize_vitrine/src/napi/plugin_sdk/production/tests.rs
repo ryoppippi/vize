@@ -159,3 +159,27 @@ fn authored_foreign_and_external_templates_cannot_be_lowered_as_html() {
         .is_ok()
     );
 }
+
+#[test]
+fn unused_binding_demand_computes_authoritative_dependency_and_exact_span() {
+    let source =
+        "<script setup>const used = 1; const unused = 2;</script><template>{{ used }}</template>";
+    let document = PluginDocument::build(source, "Unused.vue").unwrap();
+    let found = project(&document, &["unused-bindings".into()]).unwrap();
+    let start = source.find("unused").unwrap();
+    assert_eq!(
+        found,
+        Map::from_iter([(
+            "unused-bindings".into(),
+            json!([["unused", {"span": [start, start + 6]}]])
+        )])
+    );
+    assert_eq!(
+        document.production.manager.lock().unwrap().computed(),
+        Demand::NONE.with(Bindings::ID).with(UnusedBindings::ID)
+    );
+    assert_eq!(
+        project(&document, &["unused-bindings".into()]).unwrap(),
+        found
+    );
+}

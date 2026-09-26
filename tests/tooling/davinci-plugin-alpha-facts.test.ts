@@ -178,3 +178,14 @@ test("authored foreign and external templates refuse before any JS callback", ()
     assert.throws(() => inspect(input), /JS plugin visits require an inline HTML template/);
   }
 });
+
+test("unused bindings use the real primary producer and host byte spans", () => {
+  const input = `<script setup>/* 日本語😀 */ const used = 1; const unused = 2;</script><template>{{ used }}</template>`;
+  const facts = inspect(input, ["unused-bindings"]);
+  const start = Buffer.byteLength(input.slice(0, input.indexOf("unused")));
+  assert.deepEqual(facts, { "unused-bindings": [["unused", { span: [start, start + 6] }]] });
+  const consumed = inspect(input.replace("{{ used }}", "{{ used }} {{ unused }}"), [
+    "unused-bindings",
+  ]);
+  assert.deepEqual(consumed, { "unused-bindings": [] });
+});

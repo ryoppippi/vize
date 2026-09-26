@@ -23,7 +23,7 @@ use vize_croquis::{
     Croquis,
     facts::{
         BindingKey, Bindings, CROQUIS_FACTS, ComponentUsages, FactConsumer, FactGroup, FactManager,
-        ProvideInject, RaceConditions, Reactivity, UndefinedRefs,
+        ProvideInject, RaceConditions, Reactivity, UndefinedRefs, UnusedBindings,
     },
 };
 use vize_davinci::fact::Demand;
@@ -37,6 +37,7 @@ pub const GROUPS: &[&str] = &[
     Reactivity::NAME,
     ProvideInject::NAME,
     RaceConditions::NAME,
+    UnusedBindings::NAME,
     Facet::Signature.group(),
     Facet::Prop.group(),
     Facet::Emit.group(),
@@ -127,7 +128,7 @@ impl ProductionDocument {
                     croquis: analyze_sfc_descriptor(
                         &descriptor,
                         root.as_ref(),
-                        SfcCroquisOptions::full(),
+                        SfcCroquisOptions::full().with_unused_bindings(),
                     ),
                 })
             })
@@ -145,7 +146,8 @@ impl FactConsumer for PluginFacts {
         .with(ComponentUsages::ID)
         .with(Reactivity::ID)
         .with(ProvideInject::ID)
-        .with(RaceConditions::ID);
+        .with(RaceConditions::ID)
+        .with(UnusedBindings::ID);
 }
 
 pub fn project(
@@ -211,5 +213,9 @@ pub fn project(
     group!(Reactivity, reactivity::project);
     group!(ProvideInject, flow::provide);
     group!(RaceConditions, flow::race);
+    group!(
+        UnusedBindings,
+        |(key, value)| json!([key, {"span": value.span}])
+    );
     Ok(output)
 }

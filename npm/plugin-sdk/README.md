@@ -44,7 +44,8 @@ Rules receive immutable batches. `ctx.facts(name)` requires the group in the
 static `demands` list; no undeclared table crosses the boundary. Native groups
 include `templateScopes` and the registered Croquis producers `bindings`,
 `undefined-refs`, `component-usages`, `reactivity`, `provide-inject` and
-`race-conditions`. Public component interface pages are `component-signature`,
+`race-conditions` and `unused-bindings`. The latter computes its registered
+`bindings` dependency and preserves authored script byte spans. Public component interface pages are `component-signature`,
 `prop-types`, `emit-types`, `slot-types`, `reactivity-classes` and
 `component-references`. Each interface value preserves the producer's schema,
 nullable unknowns and type dependency completeness. Imported types which this
