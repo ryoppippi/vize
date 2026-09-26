@@ -59,6 +59,8 @@ fn script_template_style_component_directive_and_expose_reads_count() {
         "<script setup lang=\"ts\">const value = {}; type T = typeof value; const _ignored: T = value;</script><template><div /></template>",
         "<script>const normal = 0;</script><template><div /></template>",
         "<script setup>const value = 0;</script><template lang=\"pug\">\nspan {{ value }}\n</template>",
+        "<script setup>import { ref } from 'vue'; const el = ref(null);</script><template><div ref=\"el\" /></template>",
+        "<script setup>import { ref } from 'vue'; const el = ref(null);</script><template><div :ref=\"'el'\" /></template>",
     ] {
         assert!(unused(source).is_empty(), "{source}");
     }

@@ -15,6 +15,8 @@
 
 use std::collections::BTreeSet;
 
+mod refs;
+
 use oxc_allocator::Allocator;
 use oxc_ast::AstKind;
 use oxc_parser::Parser;
@@ -84,6 +86,9 @@ pub fn evaluate(
         return Ok(FactTable::default());
     }
     let mut reads = BTreeSet::new();
+    if let Some(template) = descriptor.template.as_ref() {
+        reads.extend(refs::evaluate(&template.content));
+    }
     for expression in checked {
         if extract_identifiers_checked(&expression.content).is_none() {
             return Ok(FactTable::default());

@@ -72,6 +72,7 @@ impl Drawer {
         let in_loop = self.is_in_vfor_scope();
 
         for prop in &el.props {
+            self.read_setup_ref_prop(prop);
             match prop {
                 PropNode::Attribute(attr) => {
                     let attr_name = attr.name;

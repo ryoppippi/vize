@@ -106,8 +106,9 @@ const exposed = 0;
 const closure = () => exposed;
 defineExpose({ closure });
 const unread = 0;
+const element = ref(null);
 </script>
-<template><foo-bar /><UI.Child /><div v-focus>{{ color }}</div></template>
+<template><foo-bar /><UI.Child /><div v-focus ref="element">{{ color }}</div></template>
 <style>div { color: v-bind('color'); }</style>"#;
     let mut planes = Planes::default();
     run_source("all-reads.vue", source, &mut planes);
