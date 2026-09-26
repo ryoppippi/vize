@@ -2,17 +2,21 @@ import type { FactGroups } from "./facts.js";
 
 export declare const BATCH_SCHEMA: 1;
 export interface PluginNode {
-  id: number;
-  parent?: number;
-  kind: string;
-  name?: string;
-  value?: string;
-  attrs?: Array<[string, string | null]>;
-  alias?: { value: string; key: string | null; index: string | null };
+  readonly id: number;
+  readonly parent?: number;
+  readonly kind: string;
+  readonly name?: string;
+  readonly value?: string;
+  readonly attrs?: readonly (readonly [string, string | null])[];
+  readonly alias?: {
+    readonly value: string;
+    readonly key: string | null;
+    readonly index: string | null;
+  };
 }
 export interface ScopeEntry {
-  name: string;
-  position: "value" | "key" | "index" | "slot";
+  readonly name: string;
+  readonly position: "value" | "key" | "index" | "slot";
 }
 export interface RuleContext {
   readonly nodes: readonly PluginNode[];

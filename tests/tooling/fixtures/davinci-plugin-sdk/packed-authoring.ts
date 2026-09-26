@@ -131,6 +131,12 @@ import type {
   ComponentContract,
 } from "@vizejs/plugin-sdk";
 export function typedFacts(ctx: RuleContext) {
+  // @ts-expect-error native visit records are immutable
+  ctx.nodes[0].name = "changed";
+  // @ts-expect-error static attribute pairs are deeply readonly
+  ctx.nodes[0].attrs![0][1] = "changed";
+  // @ts-expect-error scoped binding facts are deeply readonly
+  ctx.facts("templateScopes").get(0)![0].name = "changed";
   const _scopes: ReadonlyMap<number, readonly ScopeEntry[]> = ctx.facts("templateScopes");
   const _bindings: ReadonlyMap<string, BindingFact> = ctx.facts("bindings");
   const refs: ReadonlyMap<number, UndefinedRefFact> = ctx.facts("undefined-refs");
@@ -215,6 +221,9 @@ export function typedFacts(ctx: RuleContext) {
   emit.overload_payloads satisfies readonly (string | null)[];
   emit.unresolved_type_arguments satisfies string | null;
   emit.validator_signatures satisfies readonly string[];
+  emit.validator_type_annotations satisfies readonly string[];
+  // @ts-expect-error active runtime type annotation lists are readonly
+  emit.validator_type_annotations.push("Unknown");
   // @ts-expect-error unknown overload type arguments remain nullable
   const _completeArguments: string = emit.unresolved_type_arguments;
   // @ts-expect-error emit type argument facts are readonly

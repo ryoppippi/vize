@@ -285,6 +285,7 @@ export interface EmitContract {
   readonly overload_payloads: readonly (string | null)[];
   readonly unresolved_type_arguments: string | null;
   readonly validator_signatures: readonly string[];
+  readonly validator_type_annotations: readonly string[];
   readonly type_dependencies: TypeEnvironment;
 }
 export interface SlotContract {
