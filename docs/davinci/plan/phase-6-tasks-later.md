@@ -15,8 +15,8 @@
 
 **Steps:**
 
-- [ ] `npm/plugin-sdk/` and `crates/vize_vitrine/src/napi/plugin_sdk*`; the same input twice must produce the same output, enforced in CI
-- [ ] Two real-world rules and one transform hook as fixtures
+- [x] `npm/plugin-sdk/` and `crates/vize_vitrine/src/napi/plugin_sdk*`; the same input twice must produce the same output, enforced in CI
+- [x] Two real-world rules and one transform hook as fixtures
 
 **Acceptance:** TS-51 GA — at least two real-world rules and one transform hook run deterministic, cached and cost-attributed; the parity bar unbroken (TS-11: a transform cannot exempt its output).
 
