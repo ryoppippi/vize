@@ -16,7 +16,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `DrawerOptions`             | type  | `drawer`  |     1 |     5 |
 | `ScopeKind`                 | type  | `scope`   |     1 |     2 |
 | `Croquis.binding_spans`     | field | `croquis` |     1 |     1 |
-| `Croquis.bindings`          | field | `croquis` |     6 |    16 |
+| `Croquis.bindings`          | field | `croquis` |     7 |    23 |
 | `Croquis.import_statements` | field | `croquis` |     1 |     2 |
 | `Croquis.macros`            | field | `croquis` |     6 |    17 |
 | `Croquis.scopes`            | field | `croquis` |     1 |     2 |
@@ -92,7 +92,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `Span`                    |        0 |    9 |
 | `Symbol`                  |        0 |    5 |
 | `SymbolFlags`             |        0 |    5 |
-| `Croquis.bindings`        |       16 |  229 |
+| `Croquis.bindings`        |       23 |  229 |
 | `Croquis.hoists`          |        0 |    2 |
 | `Croquis.macros`          |       17 |  114 |
 | `Croquis.types`           |       16 |   28 |
