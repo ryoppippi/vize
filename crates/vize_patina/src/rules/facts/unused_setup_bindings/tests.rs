@@ -89,6 +89,7 @@ fn unknown_blocks_parse_recovery_and_eval_do_not_prove_non_use() {
         "<script setup>const value = 0;</script><style>div { color: v-bind(broken +); }</style>",
         "<script setup>const value = 0;</script><style>div { color: v-bind(value; }</style>",
         "<script setup>const value = 0;</script><style>div { color: v-bind(eval('value')); }</style>",
+        "<script setup lang=\"coffee\">const value = 0;</script><template><div /></template>",
     ] {
         assert!(unused(source).is_empty(), "{source}");
     }

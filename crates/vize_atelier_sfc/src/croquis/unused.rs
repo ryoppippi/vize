@@ -9,15 +9,16 @@ pub(super) fn apply_style_reads(
     descriptor: &SfcDescriptor<'_>,
     derived: bool,
 ) {
-    if descriptor
-        .script_setup
-        .as_ref()
-        .is_some_and(|block| block.src.is_some())
-        || descriptor.template.as_ref().is_some_and(|block| {
-            block.src.is_some()
-                || (!derived && block.lang.as_deref().is_some_and(|lang| lang != "html"))
-        })
-        || descriptor.styles.iter().any(|style| style.src.is_some())
+    if descriptor.script_setup.as_ref().is_some_and(|block| {
+        block.src.is_some()
+            || block
+                .lang
+                .as_deref()
+                .is_some_and(|lang| !matches!(lang, "js" | "ts" | "jsx" | "tsx"))
+    }) || descriptor.template.as_ref().is_some_and(|block| {
+        block.src.is_some()
+            || (!derived && block.lang.as_deref().is_some_and(|lang| lang != "html"))
+    }) || descriptor.styles.iter().any(|style| style.src.is_some())
     {
         // External or unsupported blocks can contain reads we cannot see.
         croquis.unused_bindings.clear();

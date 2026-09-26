@@ -43,6 +43,10 @@ pub fn evaluate(
         return Ok(FactTable::default());
     };
     if setup.src.is_some()
+        || setup
+            .lang
+            .as_deref()
+            .is_some_and(|lang| !matches!(lang, "js" | "ts" | "jsx" | "tsx"))
         || descriptor.template.as_ref().is_some_and(|block| {
             block.src.is_some() || block.lang.as_deref().is_some_and(|lang| lang != "html")
         })
@@ -145,10 +149,12 @@ pub fn evaluate(
             .used_directives
             .iter()
             .any(|directive| normalized(&cstr!("v-{directive}")) == normalized(&decl.name));
-        if !script_read && !reads.contains(&decl.name) && !template_tag_read {
-            if let Some(span) = decl.span {
-                result.push((decl.name.as_str().into(), UnusedBindingFact { span }));
-            }
+        if !script_read
+            && !reads.contains(&decl.name)
+            && !template_tag_read
+            && let Some(span) = decl.span
+        {
+            result.push((decl.name.as_str().into(), UnusedBindingFact { span }));
         }
     }
     Ok(result.into_iter().collect())
