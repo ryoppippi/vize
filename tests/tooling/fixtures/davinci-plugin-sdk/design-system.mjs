@@ -1,19 +1,20 @@
-import { defineTransformPlugin } from "../../../../npm/plugin-sdk/index.js";
+// Team convention #2, the sweep-shaped rule the spike measured with: our
+// design system wraps every button, so a raw <button> is a review comment.
+// It reads one property of every element — the shape where per-read napi
+// crossings (the proxy arm) cost the most.
+import { definePlugin } from "./sdk.mjs";
 
-export default defineTransformPlugin({
+export default definePlugin({
   name: "design-system",
   version: "1.0.0",
-  cacheInputs: [{ name: "class-migration", value: "legacy-btn -> ds-button" }],
-  transform(batch) {
-    return batch.nodes
-      .filter((node) =>
-        node.attrs.some((attr) => attr.name === "class" && attr.value === "legacy-btn"),
-      )
-      .map((node) => ({
-        kind: "replace-static-attribute",
-        node: node.id,
-        name: "class",
-        value: "ds-button",
-      }));
+  visit: ["ui.element"],
+  rules: {
+    "use-base-button"(ctx) {
+      for (const element of ctx.nodes) {
+        if (element.name === "button") {
+          ctx.report(element, "Use <BaseButton> from the design system instead of a raw <button>.");
+        }
+      }
+    },
   },
 });

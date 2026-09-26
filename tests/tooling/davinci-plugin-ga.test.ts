@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { test } from "node:test";
 import { applyFixes, defineOutputPlugin, definePlugin } from "../../npm/plugin-sdk/index.js";
-import design from "./fixtures/davinci-plugin-sdk/design-system.mjs";
+import design from "./fixtures/davinci-plugin-sdk/transforms/design-system.mjs";
 import booleans from "./fixtures/davinci-plugin-sdk/boolean-attributes.mjs";
 import team from "./fixtures/davinci-plugin-sdk/team-conventions.mjs";
 

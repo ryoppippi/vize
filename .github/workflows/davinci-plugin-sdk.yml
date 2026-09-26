@@ -58,4 +58,4 @@ jobs:
       - name: Prepare the pinned isolation runtime
         run: vp exec node tools/support/compat/davinci/plugin-sandbox-image.mjs
       - name: Run the author package and native plugin contracts
-        run: vp exec node --test tests/tooling/davinci-plugin-authoring.test.ts tests/tooling/davinci-plugin-sdk.test.ts tests/tooling/davinci-plugin-ga.test.ts tests/tooling/davinci-plugin-fact-providers.test.ts tests/tooling/davinci-plugin-fact-provider-cache.test.ts tests/tooling/davinci-plugin-transform.test.ts tests/tooling/davinci-plugin-output.test.ts tests/tooling/davinci-plugin-sandbox.test.ts tests/tooling/davinci-plugin-sandbox-native.test.ts tests/tooling/davinci-plugin-alpha-facts.test.ts tests/tooling/davinci-plugin-package.test.ts
+        run: vp exec node --test tests/tooling/davinci-plugin-*.test.ts
