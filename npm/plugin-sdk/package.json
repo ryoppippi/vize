@@ -41,6 +41,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "devDependencies": {
+    "@vizejs/native": "workspace:*"
+  },
   "peerDependencies": {
     "@vizejs/native": ">=0.429.0"
   },

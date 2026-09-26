@@ -46,7 +46,10 @@ test("formatter and output hooks feed an executable native render result", () =>
   assert.deepEqual(compiled.result.ast, expected.ast);
   assert.deepEqual(compiled.result.helpers, expected.helpers);
   assert.equal(compiled.result.preamble, expected.preamble);
-  const render = new Function("Vue", compiled.result.code)(Vue);
+  const render = new Function(
+    "Vue",
+    `${compiled.result.preamble}\n${compiled.result.code}\nreturn render`,
+  )(Vue);
   let events = 0;
   const vnode = render({ label: "ready", save: () => events++ }, []);
   assert.equal(vnode.type, "button");
