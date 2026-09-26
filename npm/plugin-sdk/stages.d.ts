@@ -17,22 +17,30 @@ export interface NativeHook extends Omit<HookIdentity, "cacheInputs"> {
   run(batchJson: string): string;
 }
 export interface StaticAttributeTransformBatch {
-  schema: 1;
-  stage: "s2-precanonical-static-attributes";
-  plugin: string;
-  file: string;
-  nodes: readonly {
-    id: number;
-    kind: "ui.element";
-    tag: string;
-    namespace: string;
-    attrs: readonly { name: string; value: string | null }[];
+  readonly schema: 1;
+  readonly stage: "s2-precanonical-static-attributes";
+  readonly plugin: string;
+  readonly file: string;
+  readonly nodes: readonly {
+    readonly id: number;
+    readonly kind: "ui.element";
+    readonly tag: string;
+    readonly namespace: string;
+    readonly attrs: readonly { readonly name: string; readonly value: string | null }[];
   }[];
 }
+export type StaticAttributeName =
+  | "class"
+  | "id"
+  | "title"
+  | "role"
+  | "alt"
+  | `data-${string}`
+  | `aria-${string}`;
 export interface StaticAttributeEdit {
   kind: "replace-static-attribute";
   node: number;
-  name: string;
+  name: StaticAttributeName;
   value: string | null;
 }
 export declare function defineTransformPlugin(
@@ -41,19 +49,19 @@ export declare function defineTransformPlugin(
   },
 ): NativeHook;
 export interface CompiledArtifact {
-  code: string;
-  preamble: string;
-  ast: unknown;
-  map?: unknown;
-  helpers: readonly string[];
-  templates?: readonly string[] | null;
+  readonly code: string;
+  readonly preamble: string;
+  readonly ast: unknown;
+  readonly map?: unknown;
+  readonly helpers: readonly string[];
+  readonly templates?: readonly string[] | null;
 }
 export interface OutputBatch {
-  schema: 1;
-  plugin: string;
-  family: "formatter" | "output";
-  offsetEncoding: "utf8";
-  compiled: CompiledArtifact;
+  readonly schema: 1;
+  readonly plugin: string;
+  readonly family: "formatter" | "output";
+  readonly offsetEncoding: "utf8";
+  readonly compiled: CompiledArtifact;
 }
 export interface FormatEdit {
   start: number;
@@ -64,19 +72,31 @@ export interface OutputAddition {
   placement: "prepend" | "append";
   comment: string;
 }
+export interface FormatterBatch extends OutputBatch {
+  readonly family: "formatter";
+}
+export interface OutputHookBatch extends OutputBatch {
+  readonly family: "output";
+}
 export declare function defineOutputPlugin(
   definition: HookIdentity & {
-    family: "formatter" | "output";
-    output(batch: OutputBatch): readonly FormatEdit[] | readonly OutputAddition[];
+    family: "formatter";
+    output(batch: FormatterBatch): readonly FormatEdit[];
   },
-): NativeHook & { readonly family: "formatter" | "output" };
+): NativeHook & { readonly family: "formatter" };
+export declare function defineOutputPlugin(
+  definition: HookIdentity & {
+    family: "output";
+    output(batch: OutputHookBatch): readonly OutputAddition[];
+  },
+): NativeHook & { readonly family: "output" };
 export interface FactProviderBatch {
-  schema: 1;
-  plugin: string;
-  file: string;
-  parents: readonly number[];
-  nodes: readonly import("./index.js").PluginNode[];
-  facts: Readonly<Record<string, readonly (readonly [string | number, JsonValue])[]>>;
+  readonly schema: 1;
+  readonly plugin: string;
+  readonly file: string;
+  readonly parents: readonly number[];
+  readonly nodes: readonly import("./index.js").PluginNode[];
+  readonly facts: Readonly<Record<string, readonly (readonly [string | number, JsonValue])[]>>;
 }
 export declare function defineFactProvider(
   definition: HookIdentity & {

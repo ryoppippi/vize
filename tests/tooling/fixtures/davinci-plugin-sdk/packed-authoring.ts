@@ -53,7 +53,7 @@ export const transform = defineTransformPlugin({
     return input.nodes.map((node) => ({
       kind: "replace-static-attribute" as const,
       node: node.id,
-      name: "disabled",
+      name: "class",
       value: null,
     }));
   },
@@ -239,4 +239,36 @@ export function typedFacts(ctx: RuleContext) {
   usage.sites[0].nameOrdinal satisfies number | null;
   // @ts-expect-error primary nested component records are readonly
   usage.sites[0].usage!.props[0].value = "changed";
+}
+
+export function immutableHookInputs(
+  transformBatch: import("@vizejs/plugin-sdk").StaticAttributeTransformBatch,
+  outputBatch: import("@vizejs/plugin-sdk").OutputBatch,
+  providerBatch: import("@vizejs/plugin-sdk").FactProviderBatch,
+) {
+  // @ts-expect-error native transform attributes are deeply readonly
+  transformBatch.nodes[0].attrs[0].value = "changed";
+  // @ts-expect-error native compiled artifacts are immutable
+  outputBatch.compiled.code = "changed";
+  // @ts-expect-error provider context fields are immutable
+  providerBatch.parents = [];
+  // @ts-expect-error static transforms support the actual bounded host whitelist
+  const _unsupported: import("@vizejs/plugin-sdk").StaticAttributeName = "disabled";
+}
+
+export function refusedHookFamilies() {
+  defineOutputPlugin({
+    name: "bad-formatter",
+    version: "1",
+    family: "formatter",
+    // @ts-expect-error formatter callbacks return byte edits, not comment additions
+    output: () => [{ placement: "append", comment: "bad" }],
+  });
+  // @ts-expect-error output callbacks return additions, not byte edits
+  defineOutputPlugin({
+    name: "bad-output",
+    version: "1",
+    family: "output",
+    output: () => [{ start: 0, end: 0, text: "bad" }],
+  });
 }

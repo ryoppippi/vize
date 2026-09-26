@@ -27,6 +27,9 @@ test("rule visits are immutable and reports contain no user-supplied ranges", ()
     rules: {
       shorthand(ctx) {
         assert.throws(() => {
+          ctx.nodes = [];
+        }, TypeError);
+        assert.throws(() => {
           ctx.nodes[1].value = "false";
         }, TypeError);
         ctx.report(ctx.nodes[1], "Use the boolean attribute.", "disabled");

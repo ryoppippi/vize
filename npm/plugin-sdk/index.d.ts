@@ -72,3 +72,4 @@ export { defineFactProvider, defineOutputPlugin, defineTransformPlugin } from ".
 export { applyFixes } from "./fixes.js";
 
 export type * from "./facts.js";
+export type * from "./stages.js";

@@ -63,7 +63,7 @@ export function runRules(plugin, source) {
 function context(plugin, rule, { nodes, byId, facts, parent }, reports) {
   const where = `${plugin.name}/${rule}`;
   const visits = (kind) => !plugin.visit || plugin.visit.includes(kind);
-  return {
+  return Object.freeze({
     nodes,
     facts(name) {
       if (!plugin.demands.includes(name)) {
@@ -87,7 +87,7 @@ function context(plugin, rule, { nodes, byId, facts, parent }, reports) {
       }
       reports.push({ rule, node: node.id, message, ...(fix === undefined ? {} : { fix }) });
     },
-  };
+  });
 }
 
 function freeze(value) {
