@@ -219,6 +219,59 @@ export declare function compileJsx(
 ): JsxCompileResultNapi;
 
 /** Compile result */
+export interface OutputPluginNapi {
+  name: string;
+  version: string;
+  fingerprint: string;
+  family: string;
+  cacheInputs?: Array<OutputPluginCacheInputNapi>;
+  /** Batched compile document in, checked edits or comments out. */
+  run: (batch: string) => string;
+}
+
+export interface OutputPluginCacheInputNapi {
+  name: string;
+  value: string;
+}
+
+export interface OutputPluginOptionsNapi {
+  cache?: boolean;
+  cacheDir?: string;
+  /** Compare two validated outputs on a miss. Defaults to true. */
+  auditDeterminism?: boolean;
+}
+
+export interface OutputPluginCostNapi {
+  name: string;
+  version: string;
+  family: string;
+  contentKey: string;
+  batchBytes: number;
+  operations: number;
+  cached: boolean;
+  elapsedNs: number;
+  jsNs: number;
+}
+
+export interface OutputPluginsCompileResultNapi {
+  result: CompileResult;
+  plugins: Array<OutputPluginCostNapi>;
+}
+
+export declare function compileWithOutputPlugins(
+  template: string,
+  plugins: Array<OutputPluginNapi>,
+  options?: CompilerOptions | undefined | null,
+  hostOptions?: OutputPluginOptionsNapi | undefined | null,
+): OutputPluginsCompileResultNapi;
+
+export declare function applyOutputPlugins(
+  compiled: CompileResult,
+  plugins: Array<OutputPluginNapi>,
+  options?: OutputPluginOptionsNapi | undefined | null,
+): OutputPluginsCompileResultNapi;
+
+/** Compile result */
 export interface CompileResult {
   /** Generated code */
   code: string;
