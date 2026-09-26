@@ -118,6 +118,7 @@ import type {
   FactEntry,
   BindingFact,
   UndefinedRefFact,
+  UnusedBindingFact,
   ComponentUsagesFact,
   ReactivityFact,
   ProvideInjectFact,
@@ -133,6 +134,13 @@ export function typedFacts(ctx: RuleContext) {
   const _scopes: ReadonlyMap<number, readonly ScopeEntry[]> = ctx.facts("templateScopes");
   const _bindings: ReadonlyMap<string, BindingFact> = ctx.facts("bindings");
   const refs: ReadonlyMap<number, UndefinedRefFact> = ctx.facts("undefined-refs");
+  const unused: ReadonlyMap<string, UnusedBindingFact> = ctx.facts("unused-bindings");
+  const unusedBinding: FactValue<"unused-bindings"> = unused.get("unusedLocal")!;
+  unusedBinding.span satisfies readonly [number, number];
+  // @ts-expect-error unused bindings use binding names as keys
+  unused.get(0);
+  // @ts-expect-error native declaration spans are readonly tuples
+  unusedBinding.span[0] = 0;
   const usages: ReadonlyMap<string, ComponentUsagesFact> = ctx.facts("component-usages");
   const reactive: FactGroups["reactivity"] = ctx.facts("reactivity");
   const provide: FactGroups["provide-inject"] = ctx.facts("provide-inject");
@@ -205,6 +213,14 @@ export function typedFacts(ctx: RuleContext) {
   signature.prop_order.push("extra");
   const emit = emits.get("change")!;
   emit.overload_payloads satisfies readonly (string | null)[];
+  emit.unresolved_type_arguments satisfies string | null;
+  emit.validator_signatures satisfies readonly string[];
+  // @ts-expect-error unknown overload type arguments remain nullable
+  const _completeArguments: string = emit.unresolved_type_arguments;
+  // @ts-expect-error emit type argument facts are readonly
+  emit.unresolved_type_arguments = null;
+  // @ts-expect-error runtime validator headers are readonly
+  emit.validator_signatures.push("(payload: never): boolean");
   // @ts-expect-error ordered overload rows are readonly
   emit.overload_payloads[0] = null;
   const usage = usages.get('[null,"Card"]')!;

@@ -33,6 +33,9 @@ export interface UndefinedRefFact {
   readonly offset: number;
   readonly context: string;
 }
+export interface UnusedBindingFact {
+  readonly span: readonly [number, number];
+}
 
 export interface FactRange {
   readonly start: number;
@@ -280,6 +283,8 @@ export interface EmitContract {
   readonly name: string;
   readonly payload: string | null;
   readonly overload_payloads: readonly (string | null)[];
+  readonly unresolved_type_arguments: string | null;
+  readonly validator_signatures: readonly string[];
   readonly type_dependencies: TypeEnvironment;
 }
 export interface SlotContract {
@@ -319,6 +324,7 @@ export interface FactGroups {
   readonly templateScopes: ReadonlyMap<number, readonly TemplateScopeEntry[]>;
   readonly bindings: ReadonlyMap<string, BindingFact>;
   readonly "undefined-refs": ReadonlyMap<number, UndefinedRefFact>;
+  readonly "unused-bindings": ReadonlyMap<string, UnusedBindingFact>;
   /** Keys are serialized JSON tuples [module | null, export]. */
   readonly "component-usages": ReadonlyMap<string, ComponentUsagesFact>;
   readonly reactivity: ReadonlyMap<`source:${number}` | `loss:${number}`, ReactivityFact>;
