@@ -18,7 +18,11 @@ impl ProviderCatalog {
         let mut identities = BTreeSet::new();
         for (index, provider) in specs.iter().enumerate() {
             let name = provider.plugin.name;
-            if name.is_empty() || name.starts_with("@vize/") || !identities.insert(name) {
+            if name.is_empty()
+                || name == "@vize"
+                || name.starts_with("@vize/")
+                || !identities.insert(name)
+            {
                 return Err(refusal(
                     name,
                     "provider identity is empty, reserved or duplicated",
@@ -47,6 +51,7 @@ impl ProviderCatalog {
             let prefix = format!("{name}/");
             for group in provider.provides {
                 if JS_VISIBLE.contains(&group.as_str())
+                    || group.starts_with("@vize/")
                     || !group.starts_with(&prefix)
                     || group.len() == prefix.len()
                     || group.chars().any(char::is_whitespace)

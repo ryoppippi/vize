@@ -178,6 +178,7 @@ test("provider manifests reject primary overwrites, namespace theft and cyclic o
   for (const bad of [
     { ...base, provides: ["templateScopes"] },
     { ...base, provides: ["other/colors"] },
+    { ...base, name: "@vize", provides: ["@vize/colors"] },
     { ...base, provides: ["tokens/colors", "tokens/colors"] },
     { ...base, cacheInputs: undefined },
     { ...base, cacheInputs: [{ name: "@vize/fact:tokens/colors", value: "spoof" }] },

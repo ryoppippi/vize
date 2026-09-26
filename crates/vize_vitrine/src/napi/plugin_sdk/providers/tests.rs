@@ -87,6 +87,7 @@ fn prevents_primary_overwrite_foreign_namespaces_and_duplicate_declarations() {
         ProviderCatalog::new(&[provider("@vize/first", &names(&["@vize/first/data"]), &[])])
             .is_err()
     );
+    assert!(ProviderCatalog::new(&[provider("@vize", &names(&["@vize/data"]), &[])]).is_err());
 }
 
 #[test]
