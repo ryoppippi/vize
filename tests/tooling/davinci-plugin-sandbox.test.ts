@@ -4,7 +4,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { createSandboxRunner, SANDBOX_IMAGE } from "../../npm/plugin-sdk/sandbox.js";
+import {
+  createSandboxRunner,
+  SANDBOX_IMAGE,
+  SandboxRuntimeError,
+} from "../../npm/plugin-sdk/sandbox.js";
 
 const batch = JSON.stringify({
   schema: 1,
@@ -219,4 +223,24 @@ test("real sandbox kills infinite callbacks and oversized output, then confirms 
   assertNoContainers();
   assert.throws(() => rule("async () => []").run(batch), /asynchronous/);
   assertNoContainers();
+});
+
+test("repeated real output overflow preserves its execution error across container auto-removal races", () => {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    for (const callback of [
+      "ctx => { ctx.report(ctx.nodes[0], 'x'.repeat(1024 * 1024)); }",
+      "() => { process.stdout.write('x'.repeat(1024 * 1024)); }",
+    ]) {
+      assert.throws(
+        () => rule(callback, null, { maxBytes: 65536 }).run(batch),
+        (error: unknown) => {
+          assert.ok(error instanceof SandboxRuntimeError);
+          assert.equal(error.code, "execution_stopped");
+          assert.match(error.message, /ENOBUFS|output limit/);
+          return true;
+        },
+      );
+      assertNoContainers();
+    }
+  }
 });

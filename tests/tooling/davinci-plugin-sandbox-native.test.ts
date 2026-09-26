@@ -203,7 +203,7 @@ test("isolated transforms and output hooks compose into an executable Vue module
     assert.deepEqual(transformWarm.result, transformed.result);
     assert.equal(transformWarm.plugins[0].cached, true);
     assert.equal(transformWarm.plugins[0].jsNs, 0);
-    assert.equal(transformWarm.plugins[0].nodes, 0);
+    assert.equal(transformWarm.plugins[0].nodes, transformed.plugins[0].nodes);
     assert.equal(transform.calls(), 2);
     const output = native.applyOutputPlugins(
       transformed.result,

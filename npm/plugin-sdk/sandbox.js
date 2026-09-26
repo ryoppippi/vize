@@ -127,29 +127,14 @@ export function createSandboxRunner(input, limits = {}) {
       } finally {
         // Killing the attached CLI does not kill its container. Always remove it
         // by its unique name, and surface cleanup failure instead of returning.
-        const cleanup = spawnSync("docker", ["rm", "--force", name], {
-          encoding: "utf8",
-          timeout: 5000,
-          maxBuffer: 16384,
-          killSignal: "SIGKILL",
-        });
-        const absent =
-          !cleanup.error &&
-          cleanup.status !== 0 &&
-          /^Error response from daemon: No such container:/.test(cleanup.stderr.trim());
-        if (cleanup.error || (cleanup.status !== 0 && !absent)) {
+        try {
+          confirmRemoval(name);
+        } catch (cleanup) {
           throw new SandboxRuntimeError(
             "cleanup_failed",
-            "sandbox container cleanup was not confirmed",
+            `sandbox container cleanup was not confirmed: ${cleanup.message}`,
             {
-              cause: new AggregateError(
-                [
-                  failure,
-                  new Error(
-                    `sandbox cleanup failed: ${cleanup.error?.code ?? cleanup.stderr.trim()}`,
-                  ),
-                ].filter(Boolean),
-              ),
+              cause: new AggregateError([failure, cleanup].filter(Boolean)),
             },
           );
         }
@@ -158,6 +143,48 @@ export function createSandboxRunner(input, limits = {}) {
       return output;
     },
   });
+}
+
+function confirmRemoval(name) {
+  const deadline = performance.now() + 5000;
+  const run = (args) =>
+    spawnSync("docker", args, {
+      encoding: "utf8",
+      timeout: Math.max(1, Math.ceil(deadline - performance.now())),
+      maxBuffer: 16384,
+      killSignal: "SIGKILL",
+    });
+  const detail = (result) =>
+    `${result.error?.code ?? `status ${result.status}`}: ${result.stderr?.trim() ?? ""}`;
+  let last = "cleanup deadline expired";
+  while (performance.now() < deadline) {
+    const removed = run(["rm", "--force", name]);
+    if (!removed.error && removed.status === 0) return;
+    last = `rm: ${detail(removed)}`;
+    if (performance.now() >= deadline) break;
+    // --rm may already be deleting the container. An rm error is not proof of
+    // absence: inspect this exact unique name before returning or retrying.
+    const inspected = run(["container", "inspect", "--format={{.Id}}", name]);
+    last += `; inspect: ${detail(inspected)}`;
+    if (
+      !inspected.error &&
+      inspected.status !== 0 &&
+      new RegExp(
+        `^(?:Error response from daemon: |Error: )No such (?:object|container): ${name}$`,
+      ).test(inspected.stderr.trim())
+    )
+      return;
+    if (
+      inspected.error ||
+      inspected.status !== 0 ||
+      !/^[a-f0-9]{64}$/.test(inspected.stdout.trim())
+    ) {
+      throw new Error(last);
+    }
+    // It still exists, including removal-in-progress. All retries share the
+    // original deadline; daemon errors and timeout never count as success.
+  }
+  throw new Error(last);
 }
 
 function validate(input) {
