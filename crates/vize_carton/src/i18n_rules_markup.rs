@@ -266,6 +266,12 @@ static ENTRIES: &[(&str, &str, &str, &str)] = &[
         "报告从未在 <script> 中引用的模板引用（ref=\"x\"）",
     ),
     (
+        "vue/no-unused-setup-bindings.description",
+        "Disallow unread script setup bindings",
+        "読み取られない script setup のバインディングを禁止する",
+        "禁止未被读取的 script setup 绑定",
+    ),
+    (
         "vue/require-component-registration.description",
         "Require explicit import or registration for components",
         "コンポーネントの明示的なインポートか登録を必須にする",

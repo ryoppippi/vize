@@ -4598,7 +4598,7 @@ vue/no-unused-refs · lint ルール
   </script>
 === vue/no-unused-setup-bindings
 vue/no-unused-setup-bindings · lint ルール
-Disallow unread script setup bindings
+読み取られない script setup のバインディングを禁止する
 
 精度: sound
 対象: valid inline script-setup declarations with no resolved script, template or style v-bind read; external blocks, eval and unsupported syntax are outside
