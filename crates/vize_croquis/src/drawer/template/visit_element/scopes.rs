@@ -118,7 +118,7 @@ impl Drawer {
             return 0;
         }
 
-        if self.options.detect_undefined {
+        if self.checks_binding_reads() {
             self.mark_v_for_source_scope_refs(aliases.source.as_str());
         }
         // Generic slot props are not yet instantiated from sibling bindings. Mapping a

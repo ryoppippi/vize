@@ -21,7 +21,7 @@ impl Drawer {
         let mut previous_conditions = SmallVec::<[CompactString; 4]>::new();
 
         for branch in if_node.branches.iter() {
-            if self.options.detect_undefined
+            if self.checks_binding_reads()
                 && let Some(ref cond) = branch.condition
             {
                 profile!(
@@ -30,7 +30,7 @@ impl Drawer {
                 );
             }
 
-            if self.options.detect_undefined
+            if self.checks_binding_reads()
                 && let Some(PropNode::Directive(dir)) = &branch.user_key
                 && let Some(ref exp) = dir.exp
             {
@@ -135,7 +135,7 @@ impl Drawer {
             scope_vars.push(var);
         }
 
-        if self.options.detect_undefined {
+        if self.checks_binding_reads() {
             profile!(
                 "croquis.template.v_for.source_refs",
                 self.check_expression_refs(&for_node.source, scope_vars)

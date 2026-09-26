@@ -63,7 +63,11 @@ fn the_committed_planes_agree_with_the_specs() {
     }
     eprintln!("{}", matrix.scope_lines("matrix plane"));
     assert_census(&matrix, (90, 90, 0), (90, 90, 0), "matrix");
-    assert!(matrix.bindings.divergences.is_empty() && matrix.undefined.divergences.is_empty());
+    assert!(
+        matrix.bindings.divergences.is_empty()
+            && matrix.undefined.divergences.is_empty()
+            && matrix.unused.divergences.is_empty()
+    );
     for (label, plane) in [
         ("battery", &battery.reactivity),
         ("ladder", &ladder.reactivity),
@@ -87,6 +91,43 @@ fn the_committed_planes_agree_with_the_specs() {
             plane.divergences.is_empty(),
             "{label} reactivity diverged: {:?}",
             plane.divergences
+        );
+    }
+}
+
+#[test]
+fn unused_bindings_agree_for_every_read_channel_and_unknown_syntax() {
+    let source = r#"<script setup>
+import FooBar from './Foo.vue';
+import * as UI from './ui';
+const vFocus = {};
+const color = 'red';
+const exposed = 0;
+const closure = () => exposed;
+defineExpose({ closure });
+const unread = 0;
+</script>
+<template><foo-bar /><UI.Child /><div v-focus>{{ color }}</div></template>
+<style>div { color: v-bind('color'); }</style>"#;
+    let mut planes = Planes::default();
+    run_source("all-reads.vue", source, &mut planes);
+    run_source(
+        "unknown.vue",
+        "<script setup>const unread = 0;</script><template>{{ broken + }}</template>",
+        &mut planes,
+    );
+    planes
+        .unused
+        .verdict("unused-bindings", "read channels")
+        .unwrap();
+    if cfg!(debug_assertions) {
+        assert_eq!(
+            (
+                planes.unused.artifacts,
+                planes.unused.compared,
+                planes.unused.facts
+            ),
+            (2, 2, 1)
         );
     }
 }
@@ -130,6 +171,7 @@ fn the_corpus_shard_agrees_with_the_specs() {
     for file in &files {
         let Ok(source) = std::fs::read_to_string(file) else {
             shard.bindings.skip("unreadable");
+            shard.unused.skip("unreadable");
             shard.undefined.skip("unreadable");
             shard.reactivity.skip("unreadable");
             shard.provide.skip("unreadable");

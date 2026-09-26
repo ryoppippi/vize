@@ -85,12 +85,23 @@ pub fn extract_and_transform_v_bind_with_scope<'a>(
 /// Shares the compiler scanner, including its comment/string and nesting rules.
 #[doc(hidden)]
 pub fn v_bind_expression_ranges(css: &str) -> Vec<std::ops::Range<usize>> {
+    collect_v_bind_ranges(css).0
+}
+
+/// Demand-only variant: an unterminated binding makes unreadness unknown.
+#[doc(hidden)]
+pub fn checked_v_bind_expression_ranges(css: &str) -> Option<Vec<std::ops::Range<usize>>> {
+    let (ranges, complete) = collect_v_bind_ranges(css);
+    complete.then_some(ranges)
+}
+
+fn collect_v_bind_ranges(css: &str) -> (Vec<std::ops::Range<usize>>, bool) {
     let mut ranges = Vec::new();
     let mut pos = 0;
     while let Some(open) = find_next_v_bind(css, pos) {
         let start = open + 7;
         let Some(end) = find_matching_paren(css.get(start..).unwrap_or_default()) else {
-            break;
+            return (ranges, false);
         };
         let raw = css.get(start..start + end).unwrap_or_default();
         let trimmed = raw.trim();
@@ -100,7 +111,7 @@ pub fn v_bind_expression_ranges(css: &str) -> Vec<std::ops::Range<usize>> {
         ranges.push(start..start + expression.len());
         pos = open + 7 + end + 1;
     }
-    ranges
+    (ranges, true)
 }
 
 pub(crate) fn trim_outer_quotes(expr: &str) -> &str {

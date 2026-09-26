@@ -6,6 +6,7 @@
 
 mod directives;
 mod eslint_directive;
+mod facts;
 mod helpers;
 mod reporting;
 mod sfc_directives;
@@ -72,6 +73,8 @@ pub struct LintContext<'a> {
     config_rule_severities: FxHashMap<String, Severity>,
     /// Optional semantic analysis from croquis.
     pub(crate) analysis: Option<&'a Croquis>,
+    /// One lazy fact manager per drawn artifact for this lint pass.
+    facts: Option<vize_croquis::facts::CroquisFacts<'a>>,
     /// Optional parsed SFC descriptor shared by SFC-level rules.
     sfc_descriptor: Option<&'a SfcDescriptor<'a>>,
     /// Rules that should ignore semantic analysis for this lint pass.
@@ -132,6 +135,7 @@ impl<'a> LintContext<'a> {
             config_disabled_rules: FxHashSet::default(),
             config_rule_severities: FxHashMap::default(),
             analysis: None,
+            facts: None,
             sfc_descriptor: None,
             analysis_excluded_rules: None,
             ssr_mode: SsrMode::default(),
@@ -176,6 +180,7 @@ impl<'a> LintContext<'a> {
             config_disabled_rules: FxHashSet::default(),
             config_rule_severities: FxHashMap::default(),
             analysis: Some(analysis),
+            facts: Some(vize_croquis::facts::CroquisFacts::new(analysis)),
             sfc_descriptor: None,
             analysis_excluded_rules: None,
             ssr_mode: SsrMode::default(),
@@ -190,36 +195,6 @@ impl<'a> LintContext<'a> {
             ctx.prescan_eslint_disable_comments();
         }
         ctx
-    }
-
-    /// Set semantic analysis.
-    #[inline]
-    pub fn set_analysis(&mut self, analysis: &'a Croquis) {
-        self.analysis = Some(analysis);
-    }
-
-    /// Exclude selected rules from seeing semantic analysis in this pass.
-    #[inline]
-    pub fn set_analysis_excluded_rules(&mut self, rules: &'static [&'static str]) {
-        self.analysis_excluded_rules = Some(rules);
-    }
-
-    /// Get semantic analysis (if available).
-    #[inline]
-    pub fn analysis(&self) -> Option<&Croquis> {
-        if self
-            .analysis_excluded_rules
-            .is_some_and(|rules| rules.contains(&self.current_rule))
-        {
-            return None;
-        }
-        self.analysis
-    }
-
-    /// Check if semantic analysis is available.
-    #[inline]
-    pub fn has_analysis(&self) -> bool {
-        self.analysis().is_some()
     }
 
     /// Set parsed SFC descriptor shared by SFC-level rules.

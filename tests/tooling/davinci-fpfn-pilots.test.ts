@@ -81,7 +81,7 @@ test("seeding is deterministic: a second run is byte-identical", () => {
   }
 });
 
-test("identity assertion measures current recall exactly (0/3, each miss listed)", () => {
+test("identity assertion measures current recall exactly (class a 0/3, class b 4/4)", () => {
   const reportPath = path.join(seedOut, "assert-report.json");
   const result = runTool(seedTool, ["--assert", "--out", seedOut, "--report", reportPath]);
   assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
@@ -155,9 +155,9 @@ function syntheticTrees() {
       messages.push(syntheticMessage("vue/no-multi-spaces", SHIFTED_MULTI_SPACE));
     }
     for (const injection of manifest.injections) {
-      if (injection.class === "undefined-template-ref" && injection.path === file.path) {
-        assert.equal(injection.expectedRule, "vue/no-undefined-refs");
-        messages.push(syntheticMessage(injection.expectedRule, injection.expected));
+      if (injection.path === file.path) {
+        assert.ok(injection.expectedRule);
+        messages.push(syntheticMessage(injection.expectedRule as string, injection.expected));
       }
     }
     return { file: file.path, messages, errorCount: 0, warningCount: messages.length };
@@ -205,7 +205,7 @@ test("assertion mechanism: the exact expected diagnostic set passes", () => {
     },
     { expected: 3, detected: 3, misses: [] },
   );
-  assert.deepStrictEqual(summary.baselineShift, { mapped: 1, misses: [], unmappable: [] });
+  assert.deepStrictEqual(summary.baselineShift, { mapped: 2, misses: [], unmappable: [] });
   assert.deepStrictEqual(summary.unexpected, []);
 });
 
@@ -252,6 +252,28 @@ test("assertion mechanism: identity, not count — a moved diagnostic fails", ()
       endColumn: 31,
     },
   ]);
+});
+
+test("class-b identity rejects another rule at the correct location", () => {
+  const { result, report } = runSyntheticAssert("unused-wrong-rule", (seeded) => {
+    const row = (seeded as { file: string; messages: LintMessage[] }[]).find(
+      (row) => row.file === "PlainBadge.vue",
+    );
+    const message = row?.messages.find(
+      (message) => message.ruleId === "vue/no-unused-setup-bindings",
+    );
+    assert.ok(message);
+    message.ruleId = "vue/no-unused-vars";
+  });
+  assert.equal(result.status, 1);
+  const typed = report as {
+    classB: { detected: number; expected: number; misses: unknown[] };
+    unexpected: unknown[];
+  };
+  assert.equal(typed.classB.detected, 3);
+  assert.equal(typed.classB.expected, 4);
+  assert.equal(typed.classB.misses.length, 1);
+  assert.ok(typed.unexpected.length > 0);
 });
 
 test("suppression telemetry reports the mapped FP candidate and the unmapped name", () => {

@@ -5,8 +5,10 @@
 //! the precision of the analysis, stated as a tier in its docs.
 
 mod max_template_complexity;
+mod unused_setup_bindings;
 
 pub use max_template_complexity::MaxTemplateComplexity;
+pub use unused_setup_bindings::NoUnusedSetupBindings;
 
 use vize_davinci::fact::FactConsumer;
 
@@ -19,6 +21,9 @@ use crate::rule::RuleRegistry;
 /// a preset that suddenly warned on those would churn every project that
 /// adopted it (charter #23). A project opts in by naming the rule.
 pub(crate) fn register_opt_in(registry: &mut RuleRegistry) {
+    if !registry.has_rule(NoUnusedSetupBindings::NAME) {
+        registry.register(Box::new(NoUnusedSetupBindings));
+    }
     if !registry.has_rule(MaxTemplateComplexity::NAME) {
         registry.register(Box::new(MaxTemplateComplexity));
     }

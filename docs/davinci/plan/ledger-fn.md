@@ -65,24 +65,27 @@ pin in the same change that adds the rule to a default preset.
 
 ## FN-2 — class (b) unused-binding: `unused_bindings` has no lint consumer
 
-**Measured recall:** 0/130 on the corpus shard, 0/90 on the matrix stubs,
-0/4 on the miniature set.
+**Measured recall (2026-09-26):** 130/130 on the corpus shard, 90/90 on
+the matrix stubs, 4/4 on the miniature set, under explicit opt-in. The
+prior measurements were 0/130, 0/90 and 0/4.
 
-**Witness:** `vize_croquis` computes `unused_bindings`
-(`crates/vize_croquis/src/croquis.rs`), but no lint rule consumes it —
-`vue/no-unused-vars` covers only `v-for`/`v-slot` variables
-(`crates/vize_patina/src/rules/vue/no_unused_vars.rs`). This is the gap the
-P0-13 plan documents by design; the pilot turns it into a measured number.
+**Witness:** the previous `unused_bindings` field was empty producer
+storage; it had no production population or lint consumer. P4-3c now
+populates it on demand from the existing script AST's resolved OXC
+references, subtracts template/component/directive/style reads, and
+projects it through `UnusedBindings`. `vue/no-unused-setup-bindings` is
+the opt-in Sound consumer. Invalid semantics, direct eval and unknown
+external blocks cannot justify an unused report.
 
-Caveat recorded for the future flip: the seeded identifier
-(`__davinci_seeded_unused`, mandated by the P0-13 spec) is
-underscore-prefixed, and existing unused-checks treat `_`-prefixed names as
-intentionally unused — when a consumer lands, the seed name must be
-revisited together with this entry.
+The seed is now `davinciSeededUnused`. Underscore-prefixed declarations
+remain intentionally exempt; the old `__davinci_seeded_unused` did not
+exercise this contract. Class (b) runs on an independent mutation tree
+with complete baseline/seeded diagnostic multiset checks, preventing a
+class-(a) rename from introducing a separate unused declaration.
 
-**Disposition:** `deferred-with-issue` — the consumer arrives with the rule
-SDK / fact-channel work (assurance doctrine, precision tiers); explicitly
-not a phase-0 gate per the P0-13 plan text.
+**Disposition:** `fixed` — [P4-3c evidence](./phase-4-records/p4-3c.md).
+Default presets retain their scope, so FN-1's class-(a) default-preset
+misses remain visible in the aggregate assertion verdict.
 
 ## FN-3 — exact/sound rules without a seeded defect class (P4-15a)
 

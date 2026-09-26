@@ -49,7 +49,12 @@ impl Drawer {
         // Use OXC-based parser for accurate AST drawing
         let result = profile!(
             "croquis.drawer.script_setup",
-            crate::script_parser::parse_script_setup_with_generic_and_jsx(source, generic, jsx)
+            crate::script_parser::parse_script_setup_for_unused(
+                source,
+                generic,
+                jsx,
+                self.track_unused_bindings
+            )
         );
 
         result.apply_to_croquis(&mut self.croquis);
@@ -79,6 +84,10 @@ impl Drawer {
             crate::script_parser::analyze_script_setup_program(program, source, generic)
         );
 
+        let mut result = result;
+        if self.track_unused_bindings {
+            result.unused_bindings = crate::script_parser::unused_setup_bindings(program, &result);
+        }
         result.apply_to_croquis(&mut self.croquis);
 
         self

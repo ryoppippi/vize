@@ -11,6 +11,7 @@
 
 pub(super) const SEMANTIC_TEMPLATE_RULES: &[&str] = &[
     "vue/no-unused-vars",
+    "vue/no-unused-setup-bindings",
     "vue/no-unused-components",
     "vue/require-component-registration",
     "vue/no-undefined-refs",
@@ -28,6 +29,7 @@ pub(super) const SHARED_SFC_DESCRIPTOR_RULES: &[&str] = &[
     "vue/no-unused-refs",
     "vue/prop-name-casing",
     "vue/max-template-complexity",
+    "vue/no-unused-setup-bindings",
     "vue/sfc-element-order",
     "vue/require-scoped-style",
     "vue/single-style-block",
@@ -70,4 +72,35 @@ mod tests {
             "engine rule-name sets must only name rules a registry can instantiate"
         );
     }
+}
+
+impl crate::linter::config::Linter {
+    pub(crate) fn has_unused_bindings_demand(&self) -> bool {
+        self.registry.has_rule("vue/no-unused-setup-bindings")
+            && self.is_rule_enabled("vue/no-unused-setup-bindings")
+    }
+}
+
+use vize_atelier_sfc::croquis::{SfcCroquisOptions, analyze_sfc_descriptor};
+use vize_croquis::Croquis;
+use vize_relief::RootNode;
+
+pub(crate) fn analyze_descriptor_for_lint(
+    descriptor: &vize_atelier_sfc::SfcDescriptor<'_>,
+    template_ast: Option<&RootNode<'_>>,
+    unused: bool,
+    derived: bool,
+) -> Croquis {
+    let options = SfcCroquisOptions::lint_demand();
+    let options = if unused {
+        options.with_unused_bindings()
+    } else {
+        options
+    };
+    let options = if derived {
+        options.with_derived_template()
+    } else {
+        options
+    };
+    analyze_sfc_descriptor(descriptor, template_ast, options)
 }

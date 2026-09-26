@@ -41,6 +41,7 @@ pub(super) fn analyze_scripts(
             let plain = plain_drawer.finish();
 
             let setup_drawer = Drawer::with_options(drawer_options);
+            let setup_drawer = demand_unused(setup_drawer, options);
             let mut setup_drawer = apply_options_api_mode(setup_drawer, options_api, legacy_vue2);
             let generic = script_setup
                 .attrs
@@ -62,7 +63,7 @@ pub(super) fn analyze_scripts(
             summary
         }
         (_, Some(script_setup)) => {
-            let drawer = Drawer::with_options(drawer_options);
+            let drawer = demand_unused(Drawer::with_options(drawer_options), options);
             let mut drawer = apply_options_api_mode(drawer, options_api, legacy_vue2);
             let generic = script_setup
                 .attrs
@@ -96,4 +97,12 @@ pub(super) fn analyze_scripts(
 
 fn script_lang_is_jsx(lang: Option<&str>) -> bool {
     matches!(lang.map(str::trim), Some("tsx" | "jsx"))
+}
+
+fn demand_unused(drawer: Drawer, options: SfcCroquisOptions) -> Drawer {
+    if options.unused_bindings {
+        drawer.with_unused_bindings()
+    } else {
+        drawer
+    }
 }

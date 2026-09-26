@@ -39,6 +39,9 @@ impl Drawer {
         let tag = el.tag;
         self.check_orphan_pattern_arm(el, recover_pattern_arm);
         let is_component = is_component_tag(tag);
+        if is_component || crate::builtins::is_runtime_builtin_component(tag) {
+            self.read_setup_tag(tag);
+        }
         let mut subtree_end = None;
 
         let component_usage_name =

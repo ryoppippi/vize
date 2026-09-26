@@ -10,6 +10,9 @@ const A11Y: Domain = Domain::new(
 const BINDINGS: Domain = Domain::new(
     "bindings croquis resolves across <script setup> and the template; values reached through unresolved imports are outside",
 );
+const UNUSED_SETUP: Domain = Domain::new(
+    "valid inline script-setup declarations with no resolved script, template or style v-bind read; external blocks, eval and unsupported syntax are outside",
+);
 const BLOCKS: Domain = Domain::new("the SFC's top-level blocks, their order and their attributes");
 const CSS_TEXT: Domain =
     Domain::new("declarations and selectors of <style> blocks as parsed by lightningcss");
@@ -243,6 +246,7 @@ pub static RULE_CONTRACTS: &[RuleEntry] = &[
     row!("vue/no-unused-components", Complete, BINDINGS, Warning),
     row!("vue/no-unused-properties", Complete, BINDINGS, Warning),
     row!("vue/no-unused-refs", Complete, BINDINGS, Warning),
+    row!("vue/no-unused-setup-bindings", Sound, UNUSED_SETUP, Warning),
     row!("vue/no-unused-vars", Exact, DIRECTIVES, Warning),
     row!("vue/no-use-v-else-with-v-for", Exact, DIRECTIVES, Warning),
     row!("vue/no-use-v-if-with-v-for", Exact, DIRECTIVES, Warning),

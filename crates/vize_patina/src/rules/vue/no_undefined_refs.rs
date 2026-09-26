@@ -5,7 +5,7 @@
 use crate::context::LintContext;
 use crate::diagnostic::Severity;
 use crate::rule::{Rule, RuleCategory, RuleMeta};
-use vize_croquis::facts::{CroquisFacts, Demand, FactConsumer, FactGroup, UndefinedRefs};
+use vize_croquis::facts::{Demand, FactConsumer, FactGroup, UndefinedRefs};
 use vize_relief::RootNode;
 use vize_s0::cstr;
 
@@ -32,14 +32,13 @@ impl Rule for NoUndefinedRefs {
     }
 
     fn run_on_template<'a>(&self, ctx: &mut LintContext<'a>, _root: &RootNode<'a>) {
-        let Some(analysis) = ctx.analysis() else {
+        let Some(view) = ctx.facts::<Self>() else {
             return;
         };
 
-        let mut facts = CroquisFacts::new(analysis);
         // The rule declares the `UndefinedRefs` demand, so this lookup only
         // fails if the facts engine is broken; lint nothing in that case.
-        let Ok(undefined) = facts.prepare::<Self>().get::<UndefinedRefs>() else {
+        let Ok(undefined) = view.get::<UndefinedRefs>() else {
             return;
         };
         let undefined_refs: Vec<_> = undefined

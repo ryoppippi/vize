@@ -27,8 +27,9 @@ pub use types::{
 #[doc(hidden)]
 pub mod __internal {
     pub use super::css_transform::{
-        extract_and_transform_v_bind, extract_and_transform_v_bind_with_scope, find_matching_paren,
-        prod_scoped_v_bind_name, scoped_v_bind_name, v_bind_expression_ranges,
+        checked_v_bind_expression_ranges, extract_and_transform_v_bind,
+        extract_and_transform_v_bind_with_scope, find_matching_paren, prod_scoped_v_bind_name,
+        scoped_v_bind_name, v_bind_expression_ranges,
     };
 }
 

@@ -127,12 +127,17 @@
 
 **Steps:**
 
-- [ ] Group + TS-34 spec; the rule lives in lane B's own directory `crates/vize_patina/src/rules/facts/` (fact-driven rules migrated by lane B) and is registered by one line in the rule registry — the only edit outside lane B's paths
-- [ ] Revisit the `__davinci_seeded_unused` seed name per the ledger caveat (underscore-prefixed names are exempt by convention)
+- [x] Group + TS-34 spec; the rule lives in lane B's own directory `crates/vize_patina/src/rules/facts/` and is registered through the opt-in fact rule registry. Descriptor demand plumbing supplies the authoritative relation.
+- [x] Revisit the `__davinci_seeded_unused` seed name per the ledger caveat: `davinciSeededUnused` exercises the rule while underscore prefixes retain their convention.
 
 **Acceptance:** `rust-script tools/commands/davinci/seed-defects.rs --assert` reports class (b) recall 130/130 on the shard, 90/90 on the matrix stubs and 4/4 on the miniature set; `tests/_fixtures/davinci-fpfn/expected/assert-report.json` updated in the same PR; [ledger-fn.md](./ledger-fn.md) FN-2 flipped to `fixed`; TS-38 no new FP candidate on the shard; TS-35.
 
 **Deps:** P4-1a, P4-3a, P4-6a.
+
+**Checked 2026-09-26:** the opt-in Sound consumer recalls 130/130 corpus,
+90/90 matrix and 4/4 miniature class-(b) seeds by exact diagnostic identity.
+The independent mutation plane preserves complete diagnostic multisets;
+TS-38 adds no suppression candidate. See the [P4-3c record](./phase-4-records/p4-3c.md).
 
 **Non-goals:** default-preset enablement of `vue/no-undefined-refs` (FN-1, an FP-audit change); whole-project dead code.
 

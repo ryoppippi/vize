@@ -1,9 +1,4 @@
 mod planning;
-use planning::{
-    collect_emit_static_warning_or_probe_need, collect_prop_static_warning_or_probe_need,
-    is_type_rule_active,
-};
-
 use super::super::engine::{SfcTemplateLintInput, TemplateAnalysis};
 use super::document::project_type_aware;
 use super::{
@@ -20,6 +15,10 @@ use super::{
     template_queries::{TemplateQueryKind, collect_template_query_sets},
 };
 use crate::diagnostic::LintDiagnostic;
+use planning::{
+    collect_emit_static_warning_or_probe_need, collect_prop_static_warning_or_probe_need,
+    is_type_rule_active,
+};
 use vize_armature::Parser as TemplateParser;
 use vize_croquis::script_parser;
 use vize_s0::{FxHashSet, profile};
@@ -28,6 +27,7 @@ pub(super) fn lint_with_descriptor<'a>(
     source: &str,
     filename: &str,
     descriptor: &vize_atelier_sfc::SfcDescriptor<'a>,
+    derived: bool,
 ) -> LintResult {
     let allocator =
         vize_s0::Allocator::with_capacity((source.len() * 4).max(linter.initial_capacity));
@@ -45,16 +45,16 @@ pub(super) fn lint_with_descriptor<'a>(
     let template_has_fatal_parse_errors = template_ast
         .as_ref()
         .is_some_and(|(_, _, _, has_fatal)| *has_fatal);
-
     let analysis = profile!("patina.type_aware.croquis", {
         super::super::engine::analyze_descriptor_for_lint(
             descriptor,
             template_ast
                 .as_ref()
                 .and_then(|(root, _, _, has_fatal)| (!*has_fatal).then_some(root)),
+            linter.has_unused_bindings_demand(),
+            derived,
         )
     });
-
     let mut result = if let (Some((root, _, parse_errors, has_fatal)), Some(template)) =
         (template_ast.as_ref(), descriptor.template.as_ref())
     {
@@ -93,7 +93,6 @@ pub(super) fn lint_with_descriptor<'a>(
             .as_ref()
             .and_then(|(root, offset, _, fatal)| (!*fatal).then_some((root, *offset))),
     );
-
     let Some(script_block) = descriptor
         .script_setup
         .as_ref()

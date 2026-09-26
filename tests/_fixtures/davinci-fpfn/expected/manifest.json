@@ -46,8 +46,8 @@
       "scriptRenameCount": 1,
       "expected": {
         "span": [
-          137,
-          144
+          133,
+          140
         ],
         "line": 7,
         "column": 24,
@@ -58,23 +58,22 @@
     {
       "class": "unused-binding",
       "path": "BaselineDrift.vue",
-      "expectedRule": null,
+      "expectedRule": "vue/no-unused-setup-bindings",
       "identifier": {
         "original": null,
-        "seeded": "__davinci_seeded_unused"
+        "seeded": "davinciSeededUnused"
       },
       "createdScriptSetupBlock": false,
       "expected": {
         "span": [
           21,
-          44
+          40
         ],
         "line": 2,
         "column": 7,
         "endLine": 2,
-        "endColumn": 30
-      },
-      "note": "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)"
+        "endColumn": 26
+      }
     },
     {
       "class": "undefined-template-ref",
@@ -87,8 +86,8 @@
       "scriptRenameCount": 2,
       "expected": {
         "span": [
-          288,
-          293
+          284,
+          289
         ],
         "line": 14,
         "column": 60,
@@ -99,44 +98,42 @@
     {
       "class": "unused-binding",
       "path": "HelloCounter.vue",
-      "expectedRule": null,
+      "expectedRule": "vue/no-unused-setup-bindings",
       "identifier": {
         "original": null,
-        "seeded": "__davinci_seeded_unused"
+        "seeded": "davinciSeededUnused"
       },
       "createdScriptSetupBlock": false,
       "expected": {
         "span": [
           21,
-          44
+          40
         ],
         "line": 2,
         "column": 7,
         "endLine": 2,
-        "endColumn": 30
-      },
-      "note": "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)"
+        "endColumn": 26
+      }
     },
     {
       "class": "unused-binding",
       "path": "PlainBadge.vue",
-      "expectedRule": null,
+      "expectedRule": "vue/no-unused-setup-bindings",
       "identifier": {
         "original": null,
-        "seeded": "__davinci_seeded_unused"
+        "seeded": "davinciSeededUnused"
       },
       "createdScriptSetupBlock": true,
       "expected": {
         "span": [
           21,
-          44
+          40
         ],
         "line": 2,
         "column": 7,
         "endLine": 2,
-        "endColumn": 30
-      },
-      "note": "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)"
+        "endColumn": 26
+      }
     },
     {
       "class": "undefined-template-ref",
@@ -149,8 +146,8 @@
       "scriptRenameCount": 1,
       "expected": {
         "span": [
-          257,
-          264
+          253,
+          260
         ],
         "line": 11,
         "column": 29,
@@ -161,23 +158,22 @@
     {
       "class": "unused-binding",
       "path": "SuppressedSpaces.vue",
-      "expectedRule": null,
+      "expectedRule": "vue/no-unused-setup-bindings",
       "identifier": {
         "original": null,
-        "seeded": "__davinci_seeded_unused"
+        "seeded": "davinciSeededUnused"
       },
       "createdScriptSetupBlock": false,
       "expected": {
         "span": [
           21,
-          44
+          40
         ],
         "line": 2,
         "column": 7,
         "endLine": 2,
-        "endColumn": 30
-      },
-      "note": "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)"
+        "endColumn": 26
+      }
     }
   ],
   "edits": {
@@ -187,7 +183,7 @@
           15,
           15
         ],
-        "delta": 35
+        "delta": 31
       },
       {
         "span": [
@@ -203,7 +199,7 @@
           15,
           15
         ],
-        "delta": 35
+        "delta": 31
       },
       {
         "span": [
@@ -226,7 +222,7 @@
           0,
           0
         ],
-        "delta": 61
+        "delta": 57
       }
     ],
     "SuppressedSpaces.vue": [
@@ -235,7 +231,7 @@
           15,
           15
         ],
-        "delta": 35
+        "delta": 31
       },
       {
         "span": [

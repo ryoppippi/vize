@@ -8,9 +8,9 @@ use std::{
 
 use crate::common;
 use crate::davinci_fpfn::{
-    CLASS_A, CLASS_A_RULE, CLASS_B, EditRecord, Identifier, Injection, SeedFile, SeedManifest,
-    SeedScope, SourceInfo, UNUSED_BINDING_NAME, apply_seed, describe_seeded_span, list_vue_files,
-    plan_class_a, plan_class_b, resolve_corpus_sources, resolve_fixture_sources,
+    CLASS_A, CLASS_A_RULE, CLASS_B, CLASS_B_RULE, EditRecord, Identifier, Injection, SeedFile,
+    SeedManifest, SeedScope, SourceInfo, UNUSED_BINDING_NAME, apply_seed, describe_seeded_span,
+    list_vue_files, plan_class_a, plan_class_b, resolve_corpus_sources, resolve_fixture_sources,
 };
 
 pub fn seed(
@@ -74,7 +74,7 @@ pub fn seed(
                 injections.push(Injection {
                     class_name: CLASS_B.to_string(),
                     path: seed_path.clone(),
-                    expected_rule: None,
+                    expected_rule: Some(CLASS_B_RULE.to_string()),
                     identifier: Identifier {
                         original: None,
                         seeded: UNUSED_BINDING_NAME.to_string(),
@@ -87,10 +87,7 @@ pub fn seed(
                         id_start,
                         id_start + UNUSED_BINDING_NAME.len(),
                     ),
-                    note: Some(
-                        "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)"
-                            .to_string(),
-                    ),
+                    note: None,
                 });
             }
             if !applied.edits.is_empty() {

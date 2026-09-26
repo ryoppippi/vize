@@ -12,8 +12,8 @@
     "classBInjections": 4
   },
   "lint": {
-    "baselineDiagnostics": 1,
-    "seededDiagnostics": 1
+    "baselineDiagnostics": 2,
+    "seededDiagnostics": 6
   },
   "classA": {
     "expected": 3,
@@ -53,11 +53,12 @@
   },
   "classB": {
     "expected": 4,
-    "detected": 0,
-    "note": "not gated: vize_croquis unused_bindings has no lint consumer today (FN ledger)"
+    "detected": 4,
+    "misses": [],
+    "note": "gated by exact rule, severity and span on the independent class-b mutation plane (opt-in consumer)"
   },
   "baselineShift": {
-    "mapped": 1,
+    "mapped": 2,
     "misses": [],
     "unmappable": []
   },

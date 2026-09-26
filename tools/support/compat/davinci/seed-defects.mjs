@@ -7,8 +7,8 @@
 //   (a) undefined-template-ref — rename one `<script setup>` binding that
 //       the template references (first eligible, deterministic), so the
 //       template reference dangles. Expected: vue/no-undefined-refs.
-//   (b) unused-binding — inject `const __davinci_seeded_unused = 0;` into
-//       `<script setup>`. Expected today: nothing (documented FN gap).
+//   (b) unused-binding — inject `const davinciSeededUnused = 0;` into
+//       `<script setup>`. Expected: vue/no-unused-setup-bindings (opt-in).
 //
 // Modes:
 //   --fixtures <dir>  seed every .vue under <dir> (the committed CI set
@@ -41,6 +41,7 @@ import {
   CLASS_A,
   CLASS_A_RULE,
   CLASS_B,
+  CLASS_B_RULE,
   applySeed,
   describeSeededSpan,
   planClassA,
@@ -178,20 +179,19 @@ function seed(args, outDir) {
         });
       }
       if (classB.plan != null) {
-        const idStart = seeded.indexOf("__davinci_seeded_unused");
+        const idStart = seeded.indexOf("davinciSeededUnused");
         injections.push({
           class: CLASS_B,
           path: seedPath,
-          expectedRule: null,
-          identifier: { original: null, seeded: "__davinci_seeded_unused" },
+          expectedRule: CLASS_B_RULE,
+          identifier: { original: null, seeded: "davinciSeededUnused" },
           createdScriptSetupBlock: classB.plan.createdBlock,
           expected: describeSeededSpan(
             seeded,
             seededStarts,
             idStart,
-            idStart + "__davinci_seeded_unused".length,
+            idStart + "davinciSeededUnused".length,
           ),
-          note: "vize_croquis unused_bindings has no lint consumer (documented FN, ledger-fn.md)",
         });
       }
       if (fileEdits.length > 0) edits[seedPath] = fileEdits;

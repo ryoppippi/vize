@@ -61,6 +61,8 @@ pub(crate) struct RuntimeObjectLiteral {
 #[derive(Debug, Default)]
 pub struct ScriptParseResult {
     pub bindings: BindingMetadata,
+    /// Setup declarations with no resolved script read, when demanded.
+    pub unused_bindings: Vec<CompactString>,
     pub macros: MacroTracker,
     pub reactivity: ReactivityTracker,
     pub race_conditions: RaceConditionTracker,
@@ -243,6 +245,7 @@ impl ScriptParseResult {
     /// allowing callers to add template analysis before or after the script pass.
     pub fn apply_to_croquis(self, summary: &mut Croquis) {
         summary.bindings = self.bindings;
+        summary.unused_bindings = self.unused_bindings;
         summary.macros = self.macros;
         summary.reactivity = self.reactivity;
         summary.race_conditions = self.race_conditions;

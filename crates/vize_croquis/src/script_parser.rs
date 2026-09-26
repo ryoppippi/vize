@@ -27,9 +27,11 @@ mod recovery;
 mod result;
 mod type_definitions;
 mod typeof_refs;
+mod unused;
 mod walk;
 
 pub use define_art::parse_define_art;
+pub(crate) use parse::parse_script_setup_for_unused;
 pub use parse::{
     analyze_script_setup_program, parse_script, parse_script_setup,
     parse_script_setup_with_generic, parse_script_setup_with_generic_and_jsx,
@@ -39,6 +41,7 @@ pub use process::{collect_options_descriptor, collect_options_object, process_st
 pub use recovery::parse_program_for_analysis;
 pub(crate) use result::{ReactiveGetterContext, ReactiveValueOrigin, RuntimeObjectLiteral};
 pub use result::{ScriptParseResult, ScriptParserOptions};
+pub(crate) use unused::unused_setup_bindings;
 
 #[cfg(test)]
 #[expect(clippy::string_slice, reason = "tests assert by panicking")]

@@ -30,6 +30,7 @@ impl Linter {
         &self,
         filename: &str,
         descriptor: &vize_atelier_sfc::SfcDescriptor<'a>,
+        derived: bool,
     ) -> LintResult {
         let Some(template) = descriptor.template.as_ref() else {
             let mut result = empty_lint_result(filename);
@@ -54,7 +55,12 @@ impl Linter {
         let analysis = if !has_fatal_parse_errors && self.has_active_semantic_template_rules() {
             Some(profile!(
                 "patina.sfc.descriptor.croquis",
-                analyze_descriptor_for_lint(descriptor, Some(&root))
+                analyze_descriptor_for_lint(
+                    descriptor,
+                    Some(&root),
+                    self.has_unused_bindings_demand(),
+                    derived,
+                )
             ))
         } else {
             None
@@ -103,6 +109,10 @@ impl Linter {
 
     /// [`Self::lint_sfc`] without the template-dialect selector.
     pub(crate) fn lint_sfc_unrouted(&self, source: &str, filename: &str) -> LintResult {
+        self.lint_sfc_view(source, filename, false)
+    }
+
+    pub(crate) fn lint_sfc_view(&self, source: &str, filename: &str, derived: bool) -> LintResult {
         let shared_descriptor_result = if self.needs_sfc_descriptor_for_lint() {
             profile!(
                 "patina.sfc.shared_parse_sfc",
@@ -137,6 +147,7 @@ impl Linter {
                     source,
                     filename,
                     shared_descriptor,
+                    derived,
                 )
             );
             if super::super::css_rules::has_active_builtin_css_rules(self)
@@ -164,7 +175,8 @@ impl Linter {
             let template_result = match shared_descriptor {
                 Some(descriptor) => {
                     profile!("patina.sfc.descriptor_rules", {
-                        let mut result = self.lint_sfc_with_descriptor(filename, descriptor);
+                        let mut result =
+                            self.lint_sfc_with_descriptor(filename, descriptor, derived);
                         if super::super::css_rules::has_active_builtin_css_rules(self) {
                             super::super::css_rules::append_builtin_css_diagnostics(
                                 self,

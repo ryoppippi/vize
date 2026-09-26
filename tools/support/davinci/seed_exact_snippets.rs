@@ -15,6 +15,11 @@ const fn snippet(id: &'static str, rule: &'static str, source: &'static str) -> 
 
 pub const SNIPPETS: &[Snippet] = &[
     snippet(
+        "no-unused-setup-bindings",
+        "vue/no-unused-setup-bindings",
+        "<script setup>const [[unused]] = 0;</script><template><div /></template>\n",
+    ),
+    snippet(
         "no-v-html",
         "vue/no-v-html",
         "<template>\n<div [[v-html=\"content\"]]></div>\n</template>\n",
