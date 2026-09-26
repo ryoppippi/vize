@@ -270,11 +270,45 @@ pipelines or serialization cost.
   - Anything unobserved costs nothing (generic observers; entity decoding
     only when `&` is present; incremental keys only in resident mode).
 - **Regressions are stopped in the merge queue** with instruction-count
-  measurements per stage. The wall-clock envelope runs nightly.
+  measurements per stage
+  ([#6868](https://github.com/ubugeeei-prod/vize/issues/6868)). The
+  wall-clock envelope runs nightly.
 - **Per-stage budgets ratchet from current measurements.** Today all 102
   `wall_p50_ns` entries in `plan/budgets.toml` are unset.
 - Whether `SideTable` changes from `FxHashMap` to dense `Vec` storage is
-  decided after measuring table density and lookup cost.
+  decided after measuring table density and lookup cost
+  ([#6869](https://github.com/ubugeeei-prod/vize/issues/6869)).
+
+## Toolchain practice
+
+Vize follows language-toolchain practice, not compiler-only practice. It
+stays lightweight and fast. It avoids the heaviness of rust-analyzer-style
+designs: fine-grained per-node queries, per-node reference-counted trees and
+whole-workspace resident state.
+
+- **Two tiers stay as they are.** Long-lived processes (LSP, check server,
+  watch modes) use the salsa-based resident tier. The one-shot CLI uses the
+  fused non-salsa pipeline.
+- **One semantic query API over L2** serves every product
+  ([#6871](https://github.com/ubugeeei-prod/vize/issues/6871)).
+- **LSP state stays coarse**
+  ([#6872](https://github.com/ubugeeei-prod/vize/issues/6872)):
+  - Queries are per SFC block and per expression embed, not per node.
+  - Node references never survive an edit. A position is resolved to a node
+    on the latest snapshot through a span-sorted index.
+  - Diagnostics and code actions carry a range and a document version, and
+    they are recomputed when stale.
+  - Memory holds artifacts only for open files, plus `SfcSummary` for every
+    file.
+- **Stale requests are cancelled on edit**
+  ([#6873](https://github.com/ubugeeei-prod/vize/issues/6873)).
+- **The CLI and the LSP share one project model**
+  ([#6874](https://github.com/ubugeeei-prod/vize/issues/6874)).
+- **The formatter keeps its Doc IR separate from its printer**
+  ([#6875](https://github.com/ubugeeei-prod/vize/issues/6875)).
+- **Edits have one representation.** Diagnostic fixes, code actions and lint
+  autofixes are all L1 span edits tagged with a document version
+  ([#6876](https://github.com/ubugeeei-prod/vize/issues/6876)).
 
 ## CI tiers
 
