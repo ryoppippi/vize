@@ -44,11 +44,15 @@ export function createSandboxRunner(input, limits = {}) {
       const request = JSON.stringify({ definition, batchJson, sdk });
       if (Buffer.byteLength(request) > maxBytes)
         throw new RangeError("sandbox input limit exceeded");
-      const prerequisite = spawnSync("docker", ["image", "inspect", SANDBOX_IMAGE], {
-        encoding: "utf8",
-        timeout: 5000,
-        maxBuffer: 16384,
-      });
+      const prerequisite = spawnSync(
+        "docker",
+        ["image", "inspect", "--format={{.Id}}", SANDBOX_IMAGE],
+        {
+          encoding: "utf8",
+          timeout: 5000,
+          maxBuffer: 16384,
+        },
+      );
       if (prerequisite.error || prerequisite.status !== 0) {
         throw new SandboxRuntimeError(
           "runtime_unavailable",

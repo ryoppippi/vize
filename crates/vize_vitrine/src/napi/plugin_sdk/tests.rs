@@ -157,7 +157,7 @@ fn a_manifest_naming_an_unknown_group_or_kind_is_refused_exactly() {
         build_batch(&document, &spec(None, &bindings), &mut manager).expect_err("unknown fact");
     assert_eq!(
         error.to_string(),
-        "team: fact group `future-facts` is not available to JS plugins (available: templateScopes, bindings, undefined-refs, component-usages, reactivity, provide-inject, race-conditions)"
+        "team: fact group `future-facts` is not available to JS plugins (available: templateScopes, bindings, undefined-refs, component-usages, reactivity, provide-inject, race-conditions, component-signature, prop-types, emit-types, slot-types, reactivity-classes, component-references)"
     );
     let visit = strings(&["ui.div"]);
     let error =

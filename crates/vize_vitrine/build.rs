@@ -50,6 +50,7 @@ fn main() -> BuildResult {
         "crates/vize_vitrine/src/types.rs",
         "crates/vize_vitrine/src/template_syntax.rs",
         "crates/vize_vitrine/src/whitespace.rs",
+        "crates/vize_atelier_sfc/src",
         "crates/vize_atelier_core/src",
         "crates/vize_atelier_vapor/src",
         "crates/vize_atelier_dom/src",
@@ -59,6 +60,7 @@ fn main() -> BuildResult {
         "crates/vize_s1_to_s2/src",
         "crates/vize_s2/src",
         "crates/vize_croquis/src",
+        "crates/vize_impeto/src",
         "crates/vize_relief/src",
         "crates/vize_armature/src",
     ] {
