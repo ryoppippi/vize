@@ -6,6 +6,13 @@
 > Architecture and roadmap pages describe the intended design; a documented
 > contract alone does not mean that its implementation is complete.
 
+> [!IMPORTANT]
+> The [2026-09-27 level restructure decision record](./decisions/2026-09-27-level-restructure.md)
+> changes how levels are named (S0–S4 become L0–L4), how crates are laid out
+> (`vize_davinci` is removed), where emission lives, and several charter rows.
+> Where this page conflicts with that record, the record wins until this page
+> is rewritten.
+
 Davinci is the project name — and the name of the resulting infrastructure — for
 rearchitecting Vize's compiler core around a **multi-stage IR**, in the spirit of
 MLIR: many inputs, many outputs, one shared, progressively-lowered representation

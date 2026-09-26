@@ -154,3 +154,28 @@ On 2026-09-21 the maintainer set a public presentation target — Vue Fes Japan
 [phase 4 was re-cut early](./plan/phase-4.md). This entry records what changed,
 as the charter's revisit rule requires; amending row #45 itself is the
 maintainer's decision (P6-12 was its planned decision point).
+
+## Level restructure (2026-09-27)
+
+On 2026-09-27 the maintainer revised several charter positions in a design
+session. The [decision record](./decisions/2026-09-27-level-restructure.md)
+holds the full text. This entry records what changed, as the charter's
+revisit rule requires. The charter rows are rewritten once the rename work
+settles.
+
+- **#1 Framework scope:** other frameworks become in-tree, compiler included,
+  in the order TSRX → Solid → others. Only framework-neutral types and names
+  are designed before 2026-10-24.
+- **#5 Semantic engine:** Croquis is treated as legacy. Script analysis is
+  rebuilt natively in the levels rather than promoting Croquis trackers, and
+  no adapter presents Croquis output as Davinci facts.
+- **#9 L3 routing:** L3 is the shared decision layer. DOM and SSR read the L2
+  tree plus L3 decisions, Vapor reads the L3 program, and Vapor stops going
+  through the legacy IR.
+- **#11 Naming:**
+  - The stages are renamed to levels L0–L4, and crates carry level names
+    only.
+  - `vize_davinci` is deleted and its contents move into `vize_l0`.
+  - Codenames (including Folio) become doc-only aliases.
+  - Croquis keeps its name as a legacy product crate, not as the name of the
+    semantic engine.
