@@ -16,7 +16,7 @@ export type SandboxDefinition = SandboxIdentity &
     | { family: "transform" | "formatter" | "output"; callback: CallbackSource }
   );
 export interface SandboxLimits {
-  /** 100..60000 ms; default 5000. Cleanup adds at most 5000 ms. */
+  /** 100..60000 ms; default 5000. Runtime check and cleanup each add at most 5000 ms. */
   timeoutMs?: number;
   /** 1024..4194304 bytes for serialized request and each output stream; default 1 MiB. */
   maxBytes?: number;
@@ -26,8 +26,30 @@ export interface SandboxLimits {
  * invocation has fixed memory/CPU/PID limits and confirmed container cleanup.
  * Runtime filesystem contents remain readable. Native callbacks are trusted.
  */
+export type SandboxHook = NativeHook & { readonly visit?: string[]; readonly demands?: string[] };
+export declare function createSandboxRunner(
+  definition: SandboxIdentity & {
+    family: "provider";
+    provides: readonly string[];
+    callback: CallbackSource;
+  },
+  limits?: SandboxLimits,
+): SandboxHook & { readonly provides: string[] };
+export declare function createSandboxRunner(
+  definition: SandboxIdentity & { family: "formatter" | "output"; callback: CallbackSource },
+  limits?: SandboxLimits,
+): SandboxHook & { readonly family: "formatter" | "output" };
 export declare function createSandboxRunner(
   definition: SandboxDefinition,
   limits?: SandboxLimits,
-): NativeHook;
+): SandboxHook;
+export type SandboxErrorCode =
+  | "runtime_unavailable"
+  | "execution_stopped"
+  | "execution_failed"
+  | "cleanup_failed";
+export declare class SandboxRuntimeError extends Error {
+  readonly code: SandboxErrorCode;
+  constructor(code: SandboxErrorCode, message: string, options?: ErrorOptions);
+}
 export declare const SANDBOX_IMAGE: string;

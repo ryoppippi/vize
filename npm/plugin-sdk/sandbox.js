@@ -7,6 +7,15 @@ import { Script } from "node:vm";
 export const SANDBOX_IMAGE =
   "node:24.14.0-bookworm-slim@sha256:d8e448a56fc63242f70026718378bd4b00f8c82e78d20eefb199224a4d8e33d8";
 
+/** Typed refusal; unavailable isolation never falls back to a trusted callback. */
+export class SandboxRuntimeError extends Error {
+  constructor(code, message, options) {
+    super(message, options);
+    this.name = "SandboxRuntimeError";
+    this.code = code;
+  }
+}
+
 /** Run serialized callback source in a restricted container with no host mounts. */
 export function createSandboxRunner(input, limits = {}) {
   const definition = validate(input);
@@ -35,6 +44,18 @@ export function createSandboxRunner(input, limits = {}) {
       const request = JSON.stringify({ definition, batchJson, sdk });
       if (Buffer.byteLength(request) > maxBytes)
         throw new RangeError("sandbox input limit exceeded");
+      const prerequisite = spawnSync("docker", ["image", "inspect", SANDBOX_IMAGE], {
+        encoding: "utf8",
+        timeout: 5000,
+        maxBuffer: 16384,
+      });
+      if (prerequisite.error || prerequisite.status !== 0) {
+        throw new SandboxRuntimeError(
+          "runtime_unavailable",
+          `Docker and the pre-pulled SANDBOX_IMAGE are required: ${prerequisite.error?.code ?? prerequisite.stderr.trim()}`,
+          { cause: prerequisite.error },
+        );
+      }
       const name = `vize-plugin-${randomUUID()}`;
       let failure;
       let output;
@@ -81,12 +102,20 @@ export function createSandboxRunner(input, limits = {}) {
             windowsHide: true,
           },
         );
-        if (result.error) throw new Error(`sandbox execution stopped: ${result.error.code}`);
+        if (result.error)
+          throw new SandboxRuntimeError(
+            "execution_stopped",
+            `sandbox execution stopped: ${result.error.code}`,
+            { cause: result.error },
+          );
         if (result.status !== 0) {
-          throw new Error(`sandbox execution failed (${result.status}): ${result.stderr.trim()}`);
+          throw new SandboxRuntimeError(
+            "execution_failed",
+            `sandbox execution failed (${result.status}): ${result.stderr.trim()}`,
+          );
         }
         if (Buffer.byteLength(result.stdout) > maxBytes)
-          throw new Error("sandbox output limit exceeded");
+          throw new SandboxRuntimeError("execution_stopped", "sandbox output limit exceeded");
         JSON.parse(result.stdout);
         output = result.stdout;
       } catch (error) {
@@ -105,12 +134,19 @@ export function createSandboxRunner(input, limits = {}) {
           cleanup.status !== 0 &&
           /^Error response from daemon: No such container:/.test(cleanup.stderr.trim());
         if (cleanup.error || (cleanup.status !== 0 && !absent)) {
-          throw new AggregateError(
-            [
-              failure,
-              new Error(`sandbox cleanup failed: ${cleanup.error?.code ?? cleanup.stderr.trim()}`),
-            ].filter(Boolean),
+          throw new SandboxRuntimeError(
+            "cleanup_failed",
             "sandbox container cleanup was not confirmed",
+            {
+              cause: new AggregateError(
+                [
+                  failure,
+                  new Error(
+                    `sandbox cleanup failed: ${cleanup.error?.code ?? cleanup.stderr.trim()}`,
+                  ),
+                ].filter(Boolean),
+              ),
+            },
           );
         }
       }

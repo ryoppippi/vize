@@ -120,10 +120,10 @@ test("real Docker sandbox executes every hook family over serialized batches det
     name: "x",
     version: "1",
     family: "provider",
-    provides: ["x.labels"],
-    callback: "batch => ({ 'x.labels': batch.nodes.map(node => [node.id, 'known']) })",
+    provides: ["x/labels"],
+    callback: "batch => ({ 'x/labels': batch.nodes.map(node => [node.id, 'known']) })",
   });
-  assert.deepEqual(JSON.parse(provider.run(batch)), { "x.labels": [[0, "known"]] });
+  assert.deepEqual(JSON.parse(provider.run(batch)), { "x/labels": [[0, "known"]] });
   for (const family of ["formatter", "output"] as const) {
     const hook = createSandboxRunner({
       name: "x",
