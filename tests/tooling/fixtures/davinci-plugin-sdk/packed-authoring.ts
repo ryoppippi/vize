@@ -212,6 +212,7 @@ export function typedFacts(ctx: RuleContext) {
   signature.schema satisfies 1;
   signature.generic satisfies string | null;
   signature.props_complete satisfies boolean;
+  signature.with_defaults satisfies string | null;
   signature.prop_order satisfies readonly string[];
   signature.slot_order satisfies readonly string[];
   // @ts-expect-error schema is exactly one

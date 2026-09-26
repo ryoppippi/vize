@@ -71,6 +71,7 @@ test("six production alpha groups cross the native batch with exact typed fields
   assert.equal(signature.declared_name, "PublicComponent");
   assert.equal(signature.script_setup, true);
   assert.equal(signature.props_complete, true);
+  assert.equal(signature.with_defaults, null);
   assert.deepEqual(signature.prop_order, ["label", "choice", "value", "title"]);
   assert.deepEqual(signature.slot_order, ["default"]);
   const save = row(facts, "emit-types", "save");
@@ -263,4 +264,24 @@ test("binding source anchors map reordered split scripts through the shared prod
   const refInput =
     '<script setup>import { ref } from "vue"; const panel = ref(null)</script><template><div ref="panel" /></template>';
   assert.deepEqual(inspect(refInput, ["unused-bindings"]), { "unused-bindings": [] });
+});
+
+test("withDefaults retains authored defaults from literal and constant objects", () => {
+  const defaults = "{ label: 'a b', count: () => 2 }";
+  const input = `<script setup lang="ts">
+ const props = withDefaults(defineProps<{ label?: string; count?: number }>(), ${defaults})
+ </script><template>{{ props.label }}</template>`;
+  const before = inspect(input);
+  assert.equal(row(before, "component-signature", "Public.vue").with_defaults, defaults);
+  assert.equal(row(before, "prop-types", "label").default, "'a b'");
+  assert.equal(row(before, "prop-types", "count").default, "() => 2");
+  const constant = input
+    .replace("const props =", `const defaults = ${defaults}; const props =`)
+    .replace(`>(), ${defaults})`, ">(), defaults)");
+  const resolved = inspect(constant);
+  assert.equal(row(resolved, "component-signature", "Public.vue").with_defaults, "defaults");
+  assert.deepEqual(resolved["prop-types"], before["prop-types"]);
+  const changed = inspect(input.replace("'a b'", "'ab'"));
+  assert.notDeepEqual(row(changed, "prop-types", "label"), row(before, "prop-types", "label"));
+  assert.equal(row(changed, "prop-types", "label").default, "'ab'");
 });

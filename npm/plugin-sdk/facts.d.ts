@@ -2,7 +2,6 @@ export interface TemplateScopeEntry {
   readonly name: string;
   readonly position: "value" | "key" | "index" | "slot";
 }
-
 export type BindingKind =
   | "setup-let"
   | "setup-maybe-ref"
@@ -36,7 +35,6 @@ export interface UndefinedRefFact {
 export interface UnusedBindingFact {
   readonly span: readonly [number, number];
 }
-
 export interface FactRange {
   readonly start: number;
   readonly end: number;
@@ -83,7 +81,6 @@ export interface ComponentUsagesFact {
   readonly export: string;
   readonly sites: readonly ComponentUsageSite[];
 }
-
 export type ReactivityClass = "static" | "props-stable" | "reactive" | "unstable";
 export type Verdict = "proven" | "refuted" | "unknown";
 export type ReactivityEffect =
@@ -264,6 +261,7 @@ export interface SignatureContract {
   readonly slot_type_arguments: string | null;
   /** Public names in authored completion order, without folio key encoding. */
   readonly props_complete: boolean;
+  readonly with_defaults: string | null;
   readonly prop_order: readonly string[];
   readonly slot_order: readonly string[];
   readonly exposes_complete: boolean;
