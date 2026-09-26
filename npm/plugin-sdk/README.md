@@ -54,7 +54,9 @@ script when both exist). Reports and fixes always use the host's SFC ranges. Pub
 `prop-types`, `emit-types`, `slot-types`, `reactivity-classes` and
 `component-references`. Each interface value preserves the producer's schema,
 nullable unknowns and type dependency completeness. The signature's
-`props_complete` separately records whether all property names were enumerated. Imported types which this
+`props_complete` separately records whether all property names were enumerated.
+The source-only SDK route has no resolved catalog proof, so it reports false
+without reading imported files from disk. Imported types which this
 analysis cannot resolve remain explicit unknowns. Primary Croquis facts require
 a JavaScript or TypeScript script; other script dialects are refused explicitly.
 

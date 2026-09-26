@@ -70,7 +70,8 @@ test("six production alpha groups cross the native batch with exact typed fields
   assert.equal(signature.name, "Public.vue");
   assert.equal(signature.declared_name, "PublicComponent");
   assert.equal(signature.script_setup, true);
-  assert.equal(signature.props_complete, true);
+  // Source-only analysis has no resolved catalog proof and does not read disk.
+  assert.equal(signature.props_complete, false);
   assert.equal(signature.with_defaults, null);
   assert.deepEqual(signature.prop_order, ["label", "choice", "value", "title"]);
   assert.deepEqual(signature.slot_order, ["default"]);
