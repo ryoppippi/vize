@@ -183,3 +183,40 @@ fn unused_binding_demand_computes_authoritative_dependency_and_exact_span() {
         found
     );
 }
+
+#[test]
+fn binding_spans_map_reordered_split_scripts_without_changing_primary_facts() {
+    let source = "<template>日本語😀{{ used }}</template>\n<script setup>const used = 1; const unused = 2</script>\n<style>.button { color: red }</style>\n<script lang=\"ts\">export const outside = 3</script>";
+    let document = PluginDocument::build(source, "Split.vue").unwrap();
+    let found = project(&document, &["bindings".into(), "unused-bindings".into()]).unwrap();
+    let bindings = found.get("bindings").unwrap().as_array().unwrap();
+    for name in ["used", "unused", "outside"] {
+        let start = source[source.find("<script").unwrap()..]
+            .find(name)
+            .unwrap()
+            + source.find("<script").unwrap();
+        let row = bindings
+            .iter()
+            .find(|row| row.get(0) == Some(&json!(name)))
+            .unwrap();
+        assert_eq!(
+            row.get(1).unwrap().get("span"),
+            Some(&json!([start, start + name.len()]))
+        );
+    }
+    let analysis = document.production.analysis(source).unwrap();
+    let raw = analysis
+        .context
+        .croquis
+        .binding_spans
+        .get("unused")
+        .unwrap();
+    let authored = source.find("unused").unwrap() as u32;
+    assert_ne!(raw.0, authored);
+    assert_eq!(
+        analysis
+            .context
+            .script_source_offset(&analysis.descriptor, raw.0),
+        authored
+    );
+}

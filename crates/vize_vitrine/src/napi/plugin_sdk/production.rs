@@ -17,8 +17,10 @@ mod tests;
 use super::{document::PluginDocument, error::HostError};
 use serde_json::{Map, Value, json};
 use std::sync::{Mutex, OnceLock};
-use vize_atelier_sfc::croquis::{SfcCroquisOptions, analyze_sfc_descriptor};
-use vize_croquis::sfc::{SfcParseOptions, parse_sfc};
+use vize_atelier_sfc::croquis::{
+    SfcCroquisAnalysis, SfcCroquisOptions, analyze_sfc_descriptor_with_context,
+};
+use vize_croquis::sfc::{SfcDescriptor, SfcParseOptions, parse_sfc};
 use vize_croquis::{
     Croquis,
     facts::{
@@ -47,7 +49,8 @@ pub const GROUPS: &[&str] = &[
 ];
 
 struct ProductionAnalysis {
-    croquis: Croquis,
+    context: SfcCroquisAnalysis,
+    descriptor: SfcDescriptor<'static>,
     generic: Option<String>,
 }
 
@@ -75,7 +78,8 @@ impl core::fmt::Debug for ProductionDocument {
 }
 impl ProductionDocument {
     pub fn get(&self, source: &str) -> Result<&Croquis, HostError> {
-        self.analysis(source).map(|analysis| &analysis.croquis)
+        self.analysis(source)
+            .map(|analysis| &analysis.context.croquis)
     }
 
     fn pages(&self, source: &str, filename: &str) -> Result<&AlphaPages, HostError> {
@@ -83,6 +87,7 @@ impl ProductionDocument {
             .get_or_init(|| {
                 let analysis = self.analysis(source)?;
                 analysis
+                    .context
                     .croquis
                     .alpha_pages(filename, analysis.generic.as_deref())
                     .map_err(|error| {
@@ -123,13 +128,15 @@ impl ProductionDocument {
                     .as_ref()
                     .and_then(|script| script.attrs.get("generic"))
                     .map(|generic| generic.as_ref().to_owned());
+                let context = analyze_sfc_descriptor_with_context(
+                    &descriptor,
+                    root.as_ref(),
+                    SfcCroquisOptions::full().with_unused_bindings(),
+                );
                 Ok(ProductionAnalysis {
+                    context,
+                    descriptor: descriptor.into_owned(),
                     generic,
-                    croquis: analyze_sfc_descriptor(
-                        &descriptor,
-                        root.as_ref(),
-                        SfcCroquisOptions::full().with_unused_bindings(),
-                    ),
                 })
             })
             .as_ref()
@@ -179,7 +186,18 @@ pub fn project(
     if demand.is_empty() {
         return Ok(output);
     }
-    let croquis = document.production.get(&document.source)?;
+    let analysis = document.production.analysis(&document.source)?;
+    let croquis = &analysis.context.croquis;
+    let authored_span = |(start, end)| {
+        (
+            analysis
+                .context
+                .script_source_offset(&analysis.descriptor, start),
+            analysis
+                .context
+                .script_source_offset(&analysis.descriptor, end),
+        )
+    };
     let mut manager = document
         .production
         .manager
@@ -203,7 +221,7 @@ pub fn project(
     group!(Bindings, |(key, value)| match key {
         BindingKey::ScriptSetup => json!(["@script-setup", {"scriptSetup": true}]),
         BindingKey::Name(name) =>
-            json!([name.as_str(), {"kind": value.kind, "span": value.span, "propKey": value.prop_key.as_deref()}]),
+            json!([name.as_str(), {"kind": value.kind, "span": value.span.map(authored_span), "propKey": value.prop_key.as_deref()}]),
     });
     group!(
         UndefinedRefs,
@@ -215,7 +233,7 @@ pub fn project(
     group!(RaceConditions, flow::race);
     group!(
         UnusedBindings,
-        |(key, value)| json!([key, {"span": value.span}])
+        |(key, value)| json!([key, {"span": authored_span(value.span)}])
     );
     Ok(output)
 }

@@ -45,7 +45,12 @@ static `demands` list; no undeclared table crosses the boundary. Native groups
 include `templateScopes` and the registered Croquis producers `bindings`,
 `undefined-refs`, `component-usages`, `reactivity`, `provide-inject` and
 `race-conditions` and `unused-bindings`. The latter computes its registered
-`bindings` dependency and preserves authored script byte spans. Public component interface pages are `component-signature`,
+`bindings` dependency. The `bindings` and `unused-bindings` spans are authored
+SFC UTF-8 byte ranges, mapped by the shared producer even for reordered split
+scripts. Other primary position fields retain their Croquis analysis frame:
+undefined references/component usage are template-relative; reactivity,
+provide/inject and race positions are script-relative (the merged normal/setup
+script when both exist). Reports and fixes always use the host's SFC ranges. Public component interface pages are `component-signature`,
 `prop-types`, `emit-types`, `slot-types`, `reactivity-classes` and
 `component-references`. Each interface value preserves the producer's schema,
 nullable unknowns and type dependency completeness. The signature's

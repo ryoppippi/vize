@@ -244,3 +244,23 @@ test("missing property catalogs remain explicit independently of type closure", 
   assert.deepEqual(signature.prop_order, []);
   assert.deepEqual(facts["prop-types"], []);
 });
+
+test("binding source anchors map reordered split scripts through the shared producer", () => {
+  const input = `<template>日本語😀{{ used }}</template>
+<script setup>const used = 1; const unused = 2</script>
+<style>.button { color: red }</style>
+<script lang="ts">export const outside = 3</script>`;
+  const facts = inspect(input, ["bindings", "unused-bindings"]);
+  for (const name of ["used", "unused", "outside"]) {
+    const start = Buffer.byteLength(input.slice(0, input.indexOf(name, input.indexOf("<script"))));
+    const binding = row(facts, "bindings", name);
+    assert.deepEqual(binding.span, [start, start + name.length]);
+  }
+  const unusedStart = Buffer.byteLength(input.slice(0, input.indexOf("unused")));
+  assert.deepEqual(facts["unused-bindings"], [
+    ["unused", { span: [unusedStart, unusedStart + 6] }],
+  ]);
+  const refInput =
+    '<script setup>import { ref } from "vue"; const panel = ref(null)</script><template><div ref="panel" /></template>';
+  assert.deepEqual(inspect(refInput, ["unused-bindings"]), { "unused-bindings": [] });
+});
