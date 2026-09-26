@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { test } from "node:test";
-
 import {
   parseReleasePreflightMode,
   readPackageManifests,
@@ -163,6 +162,7 @@ test("release metadata inventory discovers every non-private npm and editor pack
       "npm/mcp-musea/package.json",
       "npm/native/package.json",
       "npm/oxlint/package.json",
+      "npm/plugin-sdk/package.json",
       "npm/ui/package.json",
       "npm/wasm/package.json",
     ],

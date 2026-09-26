@@ -189,3 +189,26 @@ test("unused bindings use the real primary producer and host byte spans", () => 
   ]);
   assert.deepEqual(consumed, { "unused-bindings": [] });
 });
+
+test("runtime validator headers carry public types while body edits preserve facts", () => {
+  const input = `<script setup lang="ts">
+ type Bound = { id: string }
+ const shared = { save: <T extends Bound>(value: T, count: number = 1): boolean => { return true } }
+ defineEmits({ ...shared, stable: (value: number): boolean => true })
+ </script><template><button /></template>`;
+  const before = inspect(input);
+  const save = row(before, "emit-types", "save");
+  assert.deepEqual(save.validator_signatures, [
+    "<T extends Bound>(value: T, count?: number): boolean",
+  ]);
+  assert.equal(save.unresolved_type_arguments, null);
+  assert.equal(save.type_dependencies.complete, false);
+  assert.ok(save.type_dependencies.declarations.some((entry: any) => entry.name === "Bound"));
+  const body = input
+    .replace("return true", "return value.id.length > count")
+    .replace("number = 1", "number = 42");
+  assert.deepEqual(inspect(body), before);
+  const changed = inspect(input.replace("id: string", "id: number"));
+  assert.notDeepEqual(row(changed, "emit-types", "save"), save);
+  assert.deepEqual(row(changed, "emit-types", "stable"), row(before, "emit-types", "stable"));
+});
