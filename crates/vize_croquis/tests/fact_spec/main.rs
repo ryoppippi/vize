@@ -38,6 +38,20 @@ fn the_committed_planes_agree_with_the_specs() {
         run_source(name, source, &mut battery);
     }
     battery.assert_verdicts("battery");
+    battery
+        .unused
+        .verdict("unused-bindings", "battery")
+        .unwrap();
+    if cfg!(debug_assertions) {
+        assert_eq!(
+            (
+                battery.unused.artifacts,
+                battery.unused.compared,
+                battery.unused.facts
+            ),
+            (9, 9, 24)
+        );
+    }
     eprintln!("{}", battery.scope_lines("battery"));
     assert_census(&battery, (9, 9, 87), (9, 9, 11), "battery");
 
@@ -46,6 +60,21 @@ fn the_committed_planes_agree_with_the_specs() {
         run_source(fixture.name, fixture.source, &mut ladder);
     }
     ladder.assert_verdicts("ladder");
+    // Both former candidates are static template refs. This plane exercises
+    // absence; the battery and read-channel witness require positive rows.
+    assert!(ladder.unused.divergences.is_empty());
+    assert_eq!(
+        (
+            ladder.unused.artifacts,
+            ladder.unused.compared,
+            ladder.unused.facts
+        ),
+        if cfg!(debug_assertions) {
+            (6, 5, 0)
+        } else {
+            (6, 0, 0)
+        }
+    );
     eprintln!("{}", ladder.scope_lines("ladder"));
     assert_census(&ladder, (6, 5, 80), (6, 6, 4), "ladder");
 
@@ -187,6 +216,10 @@ fn the_corpus_shard_agrees_with_the_specs() {
     }
     eprintln!("{}", shard.scope_lines("corpus shard"));
     shard.assert_verdicts("corpus shard");
+    shard
+        .unused
+        .verdict("unused-bindings", "corpus shard")
+        .unwrap();
     shard
         .reactivity
         .verdict("reactivity", "corpus shard")

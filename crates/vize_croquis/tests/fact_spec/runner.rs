@@ -62,9 +62,6 @@ impl Planes {
         self.bindings
             .verdict("bindings", label)
             .unwrap_or_else(|message| panic!("{message}"));
-        self.unused
-            .verdict("unused-bindings", label)
-            .unwrap_or_else(|message| panic!("{message}"));
         if cfg!(debug_assertions) {
             self.undefined
                 .verdict("undefined-refs", label)
