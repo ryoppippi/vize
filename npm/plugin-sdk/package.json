@@ -2,6 +2,10 @@
   "name": "@vizejs/plugin-sdk",
   "version": "0.428.1",
   "description": "Deterministic authoring and isolated execution for Vize JavaScript plugins",
+  "homepage": "https://github.com/ubugeeei-prod/vize",
+  "bugs": {
+    "url": "https://github.com/ubugeeei-prod/vize/issues"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -5,6 +5,7 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { compileFunction } from "node:vm";
 
 const require = createRequire(import.meta.url);
 const native = require("../../npm/native/index.js");
@@ -46,9 +47,9 @@ test("formatter and output hooks feed an executable native render result", () =>
   assert.deepEqual(compiled.result.ast, expected.ast);
   assert.deepEqual(compiled.result.helpers, expected.helpers);
   assert.equal(compiled.result.preamble, expected.preamble);
-  const render = new Function(
-    "Vue",
+  const render = compileFunction(
     `${compiled.result.preamble}\n${compiled.result.code}\nreturn render`,
+    ["Vue"],
   )(Vue);
   let events = 0;
   const vnode = render({ label: "ready", save: () => events++ }, []);

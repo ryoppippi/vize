@@ -29,7 +29,7 @@ function rule(name = "contrast-rule", demands = ["tokens/colors"]) {
         const colors = ctx.facts(demands[0]);
         for (const node of ctx.nodes) {
           const color = colors.get(node.id);
-          if (color) ctx.report(node, `Use contrast for ${color}`);
+          if (typeof color === "string") ctx.report(node, `Use contrast for ${color}`);
         }
       },
     },

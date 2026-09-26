@@ -124,20 +124,17 @@ export function createSandboxRunner(input, limits = {}) {
         output = result.stdout;
       } catch (error) {
         failure = error;
-      } finally {
-        // Killing the attached CLI does not kill its container. Always remove it
-        // by its unique name, and surface cleanup failure instead of returning.
-        try {
-          confirmRemoval(name);
-        } catch (cleanup) {
-          throw new SandboxRuntimeError(
-            "cleanup_failed",
-            `sandbox container cleanup was not confirmed: ${cleanup.message}`,
-            {
-              cause: new AggregateError([failure, cleanup].filter(Boolean)),
-            },
-          );
-        }
+      }
+      // Execution errors are captured above, so cleanup also runs after failure.
+      // Killing the attached CLI does not kill its container.
+      try {
+        confirmRemoval(name);
+      } catch (cleanup) {
+        failure = new SandboxRuntimeError(
+          "cleanup_failed",
+          `sandbox container cleanup was not confirmed: ${cleanup.message}`,
+          { cause: new AggregateError([failure, cleanup].filter(Boolean)) },
+        );
       }
       if (failure) throw failure;
       return output;
