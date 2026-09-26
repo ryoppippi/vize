@@ -245,10 +245,10 @@ test("declared demands independently invalidate plugin results", () => {
 });
 
 test("demands are static: unknown groups refuse, undeclared reads throw", () => {
-  const unknown = definePlugin({ ...team, demands: ["bindings"] });
+  const unknown = definePlugin({ ...team, demands: ["future-facts"] });
   assert.throws(() => lint(TODO_LIST, [unknown]), {
     message:
-      "team-conventions: fact group `bindings` is not available to JS plugins (available: templateScopes)",
+      "team-conventions: fact group `future-facts` is not available to JS plugins (available: templateScopes, bindings, undefined-refs, component-usages, reactivity, provide-inject, race-conditions, unused-bindings, component-signature, prop-types, emit-types, slot-types, reactivity-classes, component-references)",
   });
   const undeclared = definePlugin({ ...team, demands: [] });
   assert.throws(() => lint(TODO_LIST, [undeclared]), {

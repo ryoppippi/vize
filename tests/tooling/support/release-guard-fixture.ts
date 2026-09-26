@@ -19,6 +19,7 @@ export interface RepositoryGuardOptions {
   manifestPrecheckFails?: boolean;
   manifestTestFails?: boolean;
   guardFails?: boolean;
+  packageManifests?: Record<string, object>;
 }
 
 export function runRepositoryGuardFixture(options: RepositoryGuardOptions) {
@@ -32,6 +33,11 @@ export function runRepositoryGuardFixture(options: RepositoryGuardOptions) {
   const cargoToml = '[workspace.package]\nversion = "0.290.0"\n';
   fs.mkdirSync(binDir, { recursive: true });
   fs.mkdirSync(path.join(tempDir, "npm"));
+  for (const [relativePath, manifest] of Object.entries(options.packageManifests ?? {})) {
+    const manifestPath = path.join(tempDir, relativePath);
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  }
   fs.mkdirSync(path.join(tempDir, "tests/tooling"), { recursive: true });
   fs.writeFileSync(gitLogPath, "");
   fs.writeFileSync(nodeLogPath, "");

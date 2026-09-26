@@ -72,6 +72,7 @@ pub struct ForAlias {
 pub struct PluginDocument {
     pub filename: String,
     pub source: String,
+    pub production: super::production::ProductionDocument,
     pub nodes: Vec<PluginNode>,
     /// `lowered.scopes` names per binding-introducing op, in id order.
     pub scopes: Vec<(u32, Vec<String>)>,
@@ -90,12 +91,19 @@ impl PluginDocument {
         let mut document = Self {
             filename: filename.to_owned(),
             source: source.to_owned(),
+            production: super::production::ProductionDocument::default(),
             nodes: Vec::new(),
             scopes: Vec::new(),
         };
         let Some(template) = descriptor.template else {
             return Ok(document);
         };
+        if template.lang.as_deref().is_some_and(|lang| lang != "html") || template.src.is_some() {
+            return Err(HostError::Split(
+                "JS plugin visits require an inline HTML template; preprocess template dialects through their compiler integration"
+                    .into(),
+            ));
+        }
         let (start, end) = (template.loc.start, template.loc.end);
         let Some(content) = source.get(start..end) else {
             return Ok(document);

@@ -247,13 +247,7 @@ jobs:
   test-scripts:
     runs-on: blacksmith-32vcpu-ubuntu-2404
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
-    # Restoration of the original setup after the trim in #519 broke
-    # main: lsp-smoke.test.ts launches `vize lsp` (falls back to
-    # `cargo run -p vize` when no binary is staged), moonbit-*.test.ts
-    # files shell out to `moon run` for release-script coverage, and
-    # several tests assert on artifacts produced by the built CLI.
-    # Each of those was treated as not-needed and reintroduced a
-    # regression; keeping the full bootstrap is the safe answer.
+    # CLI, MoonBit and native artifact fixtures require the full bootstrap.
     timeout-minutes: 30
     env:
       NODE_OPTIONS: "--disable-warning=DEP0040 --disable-warning=DEP0169"
@@ -280,6 +274,8 @@ jobs:
         run: cargo build --profile ci -p vize
       - name: Install vize CLI
         run: sudo install -m 0755 target/ci/vize /usr/local/bin/vize
+      - name: Prepare the pinned plugin isolation runtime
+        run: vp exec node tools/support/compat/davinci/plugin-sandbox-image.mjs
       - name: Test release scripts
         run: vp run --workspace-root test:scripts
   editor-extensions:

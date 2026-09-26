@@ -155,10 +155,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: cli-${{ matrix.settings.target }}
-          path: ${{ matrix.settings.archive }}
-          if-no-files-found: error
-          compression-level: 0
+          {
+            name: "cli-${{ matrix.settings.target }}",
+            path: "${{ matrix.settings.archive }}",
+            if-no-files-found: error,
+            compression-level: 0,
+          }
   build-editor-extensions:
     if: inputs.release_pr != ''
     needs: candidate
@@ -167,8 +169,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", cache: true, run-install: false }
       - name: Install JS dependencies
         run: vp install --workspace-root --frozen-lockfile --prefer-offline
@@ -213,8 +214,7 @@ jobs:
       VSCE_PAT: "${{ secrets.VSCE_PAT }}"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download editor extension artifact
@@ -269,8 +269,7 @@ jobs:
       - name: Build WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: moon run --target native tools/moon/cmd/build_vize_wasm_package --
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: true }
       - name: Smoke @vizejs/wasm package
         run: rust-script tools/commands/release/npm/smoke-wasm-package.rs npm/wasm
@@ -297,8 +296,7 @@ jobs:
       - name: Enable long paths (Windows)
         if: runner.os == 'Windows'
         run: git config --system core.longpaths true
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", cache: true, run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Install dependencies
@@ -424,6 +422,9 @@ jobs:
       - name: Download ui package artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with: { name: release-package-ui, path: npm/ui }
+      - name: Download plugin SDK artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with: { name: release-package-plugin-sdk, path: npm/plugin-sdk }
       - name: Download vize native artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with: { pattern: bindings-*, path: npm/native/artifacts }
@@ -462,7 +463,8 @@ jobs:
             npm/framework/nuxt \
             npm/marquette \
             npm/compose/core \
-            npm/ui
+            npm/ui \
+            npm/plugin-sdk
   candidate-preflight:
     needs: candidate
     permissions: { actions: write, contents: read, issues: read, pull-requests: read }
@@ -503,8 +505,7 @@ jobs:
     permissions: { contents: read, id-token: write }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", cache: true, run-install: false }
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -547,8 +548,7 @@ jobs:
     permissions: { contents: read, id-token: write }
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", cache: true, run-install: false }
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -613,8 +613,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -642,8 +641,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
@@ -671,8 +669,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt package
@@ -691,8 +688,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt package
@@ -711,8 +707,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt package
@@ -720,6 +715,25 @@ jobs:
         with: { name: release-package-ui, path: npm/ui }
       - name: Publish @vizejs/ui
         run: moon run --target native tools/moon/cmd/publish_npm_package -- npm/ui --provenance
+
+  release-npm-plugin-sdk:
+    name: Release @vizejs/plugin-sdk to npm
+    runs-on: ubuntu-24.04
+    needs: [build-release-packages, release-npm-native, smoke-release-packages, release-preflight]
+    timeout-minutes: 15
+    environment: npm
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with: { persist-credentials: false }
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+        with: { node-version-file: "package.json", run-install: false }
+      - uses: ./.github/actions/setup-moonbit
+      - name: Download prebuilt package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with: { name: release-package-plugin-sdk, path: npm/plugin-sdk }
+      - name: Publish @vizejs/plugin-sdk
+        run: moon run --target native tools/moon/cmd/publish_npm_package -- npm/plugin-sdk --provenance
 
   release-npm-unplugin:
     name: Release @vizejs/unplugin to npm
@@ -731,8 +745,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -752,8 +765,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -772,8 +784,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -792,8 +803,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -812,8 +822,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -832,8 +841,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -853,8 +861,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -885,8 +892,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - uses: ./.github/actions/setup-moonbit
       - name: Download prebuilt packages
@@ -972,6 +978,7 @@ jobs:
       - release-npm-marquette
       - release-npm-composable
       - release-npm-ui
+      - release-npm-plugin-sdk
       - release-npm-unplugin
       - release-npm-fresco
       - release-npm-musea-mcp-server
@@ -993,10 +1000,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Download CLI artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: cli-*
-          path: cli-artifacts
-          merge-multiple: true
+        with: { pattern: cli-*, path: cli-artifacts, merge-multiple: true }
       - name: Download editor extension artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with: { name: editor-extensions, path: editor-extension-artifacts }
@@ -1004,11 +1008,7 @@ jobs:
         run: ls -la cli-artifacts/
       - name: List editor extension artifacts
         run: find editor-extension-artifacts -maxdepth 5 -type f | sort
-      # SBOM: generate one SBOM per source-of-truth artifact set so adopters
-      # can audit transitive dependencies for a release tag without rebuilding.
-      # CycloneDX 1.5 JSON is the lingua franca for SCA tooling (Snyk, Trivy,
-      # Grype, GitHub Dependency Graph). SPDX is generated by the same action
-      # when adopters need an OSS-license-focused view.
+      # Publish CycloneDX and SPDX SBOMs for dependency auditing.
       - name: Generate workspace SBOM (CycloneDX)
         uses: anchore/sbom-action@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.8
         with:
@@ -1023,20 +1023,12 @@ jobs:
           format: spdx-json
           output-file: vize-${{ inputs.tag_name }}-spdx.sbom.json
           upload-artifact: false
-      # Cosign keyless signing via Sigstore. The OIDC token issued to the
-      # workflow stands in for a long-lived private key, and the resulting
-      # certificate + signature live in the public Rekor transparency log.
-      # Each .tar.gz / .zip / .vsix gets a detached `.sig` and `.pem` so
-      # adopters can verify with `cosign verify-blob --certificate-identity ...`.
+      # Sign artifacts with the workflow OIDC identity and Sigstore.
       - name: Install cosign
         uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
         with:
           cosign-release: v2.4.1
-      # SHA-256 sums are the simplest integrity check downstream tools
-      # (the VS Code extension's pre-execution download) can verify
-      # without pulling in cosign or sigstore-verify libraries. Cosign
-      # remains the source of truth via the bundle below; the .sha256
-      # files are an easy-to-verify hash pin. (#969)
+      # Publish SHA-256 checksums alongside signatures and certificates.
       - name: Generate SHA-256 checksums for release artifacts
         run: |
           for artifact in \
@@ -1110,8 +1102,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with: { persist-credentials: false }
-      - name: Setup Vite+ and Node.js
-        uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
+      - uses: voidzero-dev/setup-vp@ca1c46663915d6c1042ae23bd39ab85718bfb0fa # v1
         with: { node-version-file: "package.json", run-install: false }
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c # stable

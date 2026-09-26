@@ -8,7 +8,9 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 
 ## Resolved product sites
 
-_None._
+| product         | kind  | module    | files | sites |
+| --------------- | ----- | --------- | ----: | ----: |
+| `Croquis.types` | field | `croquis` |     2 |     3 |
 
 ## Non-product `vize_croquis` imports
 
@@ -18,4 +20,4 @@ _None._
 
 | product         | resolved | grep |
 | --------------- | -------: | ---: |
-| `Croquis.types` |        0 |   11 |
+| `Croquis.types` |        3 |   11 |

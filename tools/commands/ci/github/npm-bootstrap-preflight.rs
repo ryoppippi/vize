@@ -167,7 +167,13 @@ fn contract(args: &[String]) -> Result<(), String> {
                 .get("jobs")
                 .and_then(serde_json::Value::as_array)
                 .ok_or_else(|| "jobs must be an array".to_string())?;
-            npm_bootstrap::validate_release_jobs(jobs)?;
+            npm_bootstrap::validate_release_jobs_for(
+                jobs,
+                value
+                    .get("packagePath")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or(npm_bootstrap::BOOTSTRAP_PACKAGE_PATH),
+            )?;
         }
         "release-artifact" => {
             let artifacts = value

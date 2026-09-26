@@ -17,7 +17,7 @@
     reason = "N-API values cross the boundary as std `String`s"
 )]
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -30,7 +30,9 @@ use vize_davinci::key::{AmbientInput, CachedArtifact, KeyManifest, source_block_
 use super::batch::{BATCH_SCHEMA, PluginDiagnostic, PluginSpec};
 use super::error::HostError;
 
-const CACHE_SCHEMA: u32 = 1;
+const CACHE_SCHEMA: u32 = 2;
+const MAX_ENTRIES: usize = 256;
+const MAX_BYTES: usize = 4 * 1024 * 1024;
 
 /// An explicitly declared plugin-owned input, such as a rule option or env value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,6 +52,13 @@ pub fn validate_cache_inputs(
         return Err(HostError::InvalidCacheInputs {
             plugin: plugin.to_owned(),
             detail: "declare cacheInputs, even when it is empty".to_owned(),
+        });
+    }
+    if inputs.iter().any(|input| input.name.starts_with("@vize/")) {
+        return Err(HostError::InvalidCacheInputs {
+            plugin: plugin.to_owned(),
+            detail: "input names starting with @vize/ are reserved for host dependency stamps"
+                .into(),
         });
     }
     let mut names: Vec<&str> = inputs.iter().map(|input| input.name).collect();
@@ -137,7 +146,9 @@ pub fn content_key_for_build(
 
 #[derive(Default)]
 pub struct PluginCache {
-    entries: HashMap<String, Vec<PluginDiagnostic>>,
+    entries: HashMap<String, (Vec<PluginDiagnostic>, usize)>,
+    order: VecDeque<String>,
+    bytes: usize,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -151,7 +162,7 @@ impl PluginCache {
     /// Read a result from memory or an optional cross-process disk store.
     /// A missing, torn or stale disk entry is a miss, never a diagnostic.
     pub fn get(&mut self, key: &str, dir: Option<&Path>) -> Option<Vec<PluginDiagnostic>> {
-        if let Some(found) = self.entries.get(key) {
+        if let Some((found, _)) = self.entries.get(key) {
             let found = found.clone();
             if let Some(dir) = dir
                 && !path(dir, key).is_some_and(|at| at.is_file())
@@ -161,6 +172,9 @@ impl PluginCache {
             return Some(found);
         }
         let at = path(dir?, key)?;
+        if fs::metadata(&at).ok()?.len() > MAX_BYTES as u64 {
+            return None;
+        }
         let bytes = fs::read(&at).ok()?;
         let Ok(file) = serde_json::from_slice::<CacheFile>(&bytes) else {
             let _ = fs::remove_file(at);
@@ -170,8 +184,7 @@ impl PluginCache {
             let _ = fs::remove_file(at);
             return None;
         }
-        self.entries
-            .insert(key.to_owned(), file.diagnostics.clone());
+        self.remember(key, file.diagnostics.clone());
         Some(file.diagnostics)
     }
 
@@ -180,7 +193,32 @@ impl PluginCache {
         if let Some(dir) = dir {
             self.write(key, &diagnostics, dir);
         }
-        self.entries.insert(key.to_owned(), diagnostics);
+        self.remember(key, diagnostics);
+    }
+
+    fn remember(&mut self, key: &str, diagnostics: Vec<PluginDiagnostic>) {
+        let Ok(encoded) = serde_json::to_vec(&diagnostics) else {
+            return;
+        };
+        let bytes = key.len().saturating_add(encoded.len());
+        if bytes > MAX_BYTES {
+            return;
+        }
+        if let Some((_, previous)) = self.entries.remove(key) {
+            self.bytes = self.bytes.saturating_sub(previous);
+            self.order.retain(|entry| entry != key);
+        }
+        while self.entries.len() >= MAX_ENTRIES || self.bytes.saturating_add(bytes) > MAX_BYTES {
+            let Some(oldest) = self.order.pop_front() else {
+                break;
+            };
+            if let Some((_, removed)) = self.entries.remove(&oldest) {
+                self.bytes = self.bytes.saturating_sub(removed);
+            }
+        }
+        self.bytes = self.bytes.saturating_add(bytes);
+        self.order.push_back(key.to_owned());
+        self.entries.insert(key.to_owned(), (diagnostics, bytes));
     }
 
     fn write(&self, key: &str, diagnostics: &[PluginDiagnostic], dir: &Path) {
@@ -195,6 +233,9 @@ impl PluginCache {
         let Ok(bytes) = serde_json::to_vec(&file) else {
             return;
         };
+        if bytes.len() > MAX_BYTES {
+            return;
+        }
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let Some(at) = path(dir, key) else {
             return;

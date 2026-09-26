@@ -13,7 +13,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `BindingMetadata`  | type  | `croquis` |     1 |     1 |
 | `Croquis`          | type  | `croquis` |    13 |    26 |
 | `Drawer`           | type  | `drawer`  |     1 |     1 |
-| `Croquis.bindings` | field | `croquis` |     1 |     1 |
+| `Croquis.bindings` | field | `croquis` |     3 |     9 |
 
 ## Non-product `vize_croquis` imports
 
@@ -29,5 +29,5 @@ _None._
 | `Scope`            |        0 |    1 |
 | `ScopeBinding`     |        0 |    4 |
 | `Span`             |        0 |   78 |
-| `Croquis.bindings` |        1 |   38 |
+| `Croquis.bindings` |        9 |   38 |
 | `Croquis.scopes`   |        0 |   11 |

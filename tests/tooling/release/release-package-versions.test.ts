@@ -20,6 +20,7 @@ const releasePackageJsonPaths = [
   "npm/mcp-musea/package.json",
   "npm/native/package.json",
   "npm/oxlint/package.json",
+  "npm/plugin-sdk/package.json",
   "npm/wasm/package.json",
 ];
 

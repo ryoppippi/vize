@@ -66,6 +66,7 @@ test("every publication edge waits for credential-free release preflight", () =>
     "release-npm-nuxt",
     "release-npm-nuxt-lint-config",
     "release-npm-oxlint-plugin",
+    "release-npm-plugin-sdk",
     "release-npm-rspack-plugin",
     "release-npm-ui",
     "release-npm-unplugin",

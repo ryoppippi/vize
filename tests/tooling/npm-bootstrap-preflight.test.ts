@@ -23,9 +23,21 @@ import {
   tagSha,
 } from "./support/npm-bootstrap.ts";
 
-test("npm bootstrap allowlist binds one package path to one Release artifact", () => {
-  assert.deepEqual([...bootstrapPackages], [[packagePath, packageName]]);
-  assert.deepEqual([...bootstrapArtifacts], [[packagePath, artifactName]]);
+test("npm bootstrap allowlist binds each approved package path to one Release artifact", () => {
+  assert.deepEqual(
+    [...bootstrapPackages],
+    [
+      [packagePath, packageName],
+      ["npm/plugin-sdk", "@vizejs/plugin-sdk"],
+    ],
+  );
+  assert.deepEqual(
+    [...bootstrapArtifacts],
+    [
+      [packagePath, artifactName],
+      ["npm/plugin-sdk", "release-package-plugin-sdk"],
+    ],
+  );
   assert.deepEqual(request(), {
     artifactName,
     packageName,

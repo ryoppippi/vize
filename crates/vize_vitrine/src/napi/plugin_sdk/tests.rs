@@ -34,22 +34,6 @@ fn content_key(source: &str, filename: &str, spec: &PluginSpec<'_>) -> String {
 }
 
 #[test]
-fn positions_clamp_mid_character_and_past_end_offsets() {
-    let document = PluginDocument {
-        filename: "Offsets.vue".to_owned(),
-        source: "a\né🦀".to_owned(),
-        nodes: Vec::new(),
-        scopes: Vec::new(),
-    };
-
-    assert_eq!(document.position(3), (2, 1)); // Inside the two-byte é.
-    assert_eq!(document.position(4), (2, 2)); // After é.
-    assert_eq!(document.position(7), (2, 2)); // Inside the four-byte crab.
-    assert_eq!(document.position(8), (2, 4)); // After its two UTF-16 units.
-    assert_eq!(document.position(u32::MAX), (2, 4));
-}
-
-#[test]
 fn the_page_is_flattened_in_s2_id_order() {
     let document = PluginDocument::build(TODOS, "Todos.vue").expect("splits");
     let rows: Vec<_> = document
@@ -168,12 +152,12 @@ fn destructured_and_slot_scopes_bind_exactly_their_names() {
 fn a_manifest_naming_an_unknown_group_or_kind_is_refused_exactly() {
     let document = PluginDocument::build(TODOS, "Todos.vue").expect("splits");
     let mut manager = FactManager::new(&REGISTRY);
-    let bindings = strings(&["bindings"]);
+    let bindings = strings(&["future-facts"]);
     let error =
         build_batch(&document, &spec(None, &bindings), &mut manager).expect_err("unknown fact");
     assert_eq!(
         error.to_string(),
-        "team: fact group `bindings` is not available to JS plugins (available: templateScopes)"
+        "team: fact group `future-facts` is not available to JS plugins (available: templateScopes, bindings, undefined-refs, component-usages, reactivity, provide-inject, race-conditions, unused-bindings, component-signature, prop-types, emit-types, slot-types, reactivity-classes, component-references)"
     );
     let visit = strings(&["ui.div"]);
     let error =

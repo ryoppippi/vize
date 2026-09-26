@@ -86,6 +86,11 @@ pub fn validate_release_run(
 }
 
 pub fn validate_release_jobs(jobs: &[Value]) -> Result<(), String> {
+    validate_release_jobs_for(jobs, BOOTSTRAP_PACKAGE_PATH)
+}
+
+pub fn validate_release_jobs_for(jobs: &[Value], package_path: &str) -> Result<(), String> {
+    let package = approved_package(package_path)?;
     let mut counts: BTreeMap<String, usize> = BTreeMap::new();
     for job in jobs {
         let name = value_string(job.get("name"));
@@ -131,20 +136,22 @@ pub fn validate_release_jobs(jobs: &[Value]) -> Result<(), String> {
     for name in required {
         validate_exact_job(jobs, name, "success")?;
     }
-    for name in REQUIRED_FAILED_RELEASE_JOBS {
+    for name in &package.failed_jobs {
         validate_exact_job(jobs, name, "failure")?;
     }
-    for name in REQUIRED_SKIPPED_RELEASE_JOBS {
+    for name in &package.skipped_jobs {
         validate_exact_job(jobs, name, "skipped")?;
     }
 
-    let allowed_non_success = REQUIRED_FAILED_RELEASE_JOBS
+    let allowed_non_success = package
+        .failed_jobs
         .iter()
-        .map(|name| (*name, "failure"))
+        .map(|name| (name.as_str(), "failure"))
         .chain(
-            REQUIRED_SKIPPED_RELEASE_JOBS
+            package
+                .skipped_jobs
                 .iter()
-                .map(|name| (*name, "skipped")),
+                .map(|name| (name.as_str(), "skipped")),
         )
         .collect::<BTreeMap<_, _>>();
     for job in jobs {

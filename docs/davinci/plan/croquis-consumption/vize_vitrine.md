@@ -12,11 +12,13 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | ----------------------------- | ----- | ------------ | ----: | ----: |
 | `Analyzer`                    | type  | `analyzer`   |     1 |     1 |
 | `AnalyzerOptions`             | type  | `analyzer`   |     1 |     1 |
-| `Croquis`                     | type  | `croquis`    |     3 |     3 |
+| `Croquis`                     | type  | `croquis`    |     4 |     5 |
 | `InvalidExportKind`           | type  | `croquis`    |     1 |     6 |
 | `ReactivityTracker`           | type  | `reactivity` |     1 |     1 |
 | `ScopeKind`                   | type  | `scope`      |     1 |     6 |
 | `TypeExportKind`              | type  | `croquis`    |     1 |     2 |
+| `Croquis.binding_spans`       | field | `croquis`    |     1 |     1 |
+| `Croquis.bindings`            | field | `croquis`    |     2 |     2 |
 | `Croquis.invalid_exports`     | field | `croquis`    |     1 |     2 |
 | `Croquis.macros`              | field | `croquis`    |     1 |     3 |
 | `Croquis.pattern_diagnostics` | field | `croquis`    |     2 |     3 |
@@ -29,31 +31,58 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 
 | item                                         | files | sites |
 | -------------------------------------------- | ----: | ----: |
-| `Bindings`                                   |     1 |     2 |
+| `BindingKey`                                 |     1 |     2 |
+| `BindingType`                                |     1 |     1 |
+| `Bindings`                                   |     2 |     5 |
+| `CROQUIS_FACTS`                              |     1 |     2 |
+| `ComponentContract`                          |     1 |     1 |
+| `ComponentIdentity`                          |     1 |     1 |
+| `ComponentUsages`                            |     1 |     3 |
 | `CroquisFacts`                               |     1 |     1 |
 | `Demand`                                     |     1 |     2 |
-| `FactConsumer`                               |     1 |     1 |
-| `InjectPattern`                              |     1 |     8 |
-| `ProvideKey`                                 |     1 |     4 |
-| `SfcDescriptor`                              |     3 |     3 |
-| `SfcParseOptions`                            |    10 |    15 |
+| `EmitContract`                               |     1 |     1 |
+| `FactConsumer`                               |     2 |     2 |
+| `FactManager`                                |     1 |     2 |
+| `GroupedComponentUse`                        |     1 |     1 |
+| `InjectPattern`                              |     2 |    13 |
+| `PropContract`                               |     1 |     1 |
+| `ProvideInject`                              |     1 |     3 |
+| `ProvideInjectFact`                          |     1 |     4 |
+| `ProvideInjectKey`                           |     1 |     4 |
+| `ProvideKey`                                 |     2 |     7 |
+| `RaceConditionRisk`                          |     1 |     1 |
+| `RaceConditionRiskKind`                      |     1 |     5 |
+| `RaceConditions`                             |     1 |     3 |
+| `ReactiveKind`                               |     1 |     9 |
+| `Reactivity`                                 |     1 |     3 |
+| `ReactivityContract`                         |     1 |     1 |
+| `ReactivityFact`                             |     1 |     3 |
+| `ReactivityKey`                              |     1 |     3 |
+| `ReactivityLossKind`                         |     1 |    11 |
+| `SfcDescriptor`                              |     4 |     4 |
+| `SfcParseOptions`                            |    11 |    16 |
+| `SignatureContract`                          |     1 |     1 |
+| `SlotContract`                               |     1 |     1 |
+| `UndefinedRefs`                              |     1 |     3 |
+| `UnusedBindings`                             |     1 |     3 |
 | `generate_declaration_ts`                    |     1 |     2 |
 | `generate_declaration_ts_with_split_scripts` |     1 |     1 |
 | `inject_entries`                             |     1 |     1 |
-| `parse_sfc`                                  |     1 |     1 |
+| `parse_sfc`                                  |     2 |     2 |
 | `provide_entries`                            |     1 |     1 |
 
 ## Naive grep disagreements (resolved/grep)
 
-| product             | resolved | grep |
-| ------------------- | -------: | ---: |
-| `Analyzer`          |        1 |    2 |
-| `BindingMetadata`   |        0 |    7 |
-| `Croquis`           |        3 |    7 |
-| `ReactivityTracker` |        1 |    2 |
-| `Scope`             |        0 |    2 |
-| `ScopeId`           |        0 |    2 |
-| `Span`              |        0 |    3 |
-| `Symbol`            |        0 |    3 |
-| `Croquis.bindings`  |        0 |   14 |
-| `Croquis.scopes`    |        3 |    8 |
+| product              | resolved | grep |
+| -------------------- | -------: | ---: |
+| `Analyzer`           |        1 |    2 |
+| `BindingMetadata`    |        0 |    7 |
+| `Croquis`            |        5 |   13 |
+| `ReactivityTracker`  |        1 |    2 |
+| `Scope`              |        0 |    2 |
+| `ScopeId`            |        0 |    2 |
+| `Span`               |        0 |    7 |
+| `Symbol`             |        0 |    4 |
+| `Croquis.bindings`   |        2 |   15 |
+| `Croquis.reactivity` |        1 |    3 |
+| `Croquis.scopes`     |        3 |    8 |
