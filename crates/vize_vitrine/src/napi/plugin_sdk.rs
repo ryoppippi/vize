@@ -39,6 +39,7 @@ mod error;
 mod facts;
 mod plugin_cache;
 mod production;
+mod providers;
 mod proxy;
 #[cfg(test)]
 mod tests;
@@ -58,6 +59,7 @@ use document::PluginDocument;
 use error::HostError;
 use facts::REGISTRY;
 use plugin_cache::{PluginCacheInput, cache, content_key, validate_cache_inputs};
+use providers::{JsFactProviderNapi, ProviderCostNapi, ProviderHost};
 
 /// A plugin as the SDK's `definePlugin` hands it to the host.
 #[napi(object, object_to_js = false)]
@@ -81,7 +83,7 @@ pub struct PluginCacheInputNapi {
     pub value: String,
 }
 
-#[napi(object)]
+#[napi(object, object_to_js = false)]
 #[derive(Default)]
 pub struct PluginLintOptionsNapi {
     pub filename: Option<String>,
@@ -92,6 +94,8 @@ pub struct PluginLintOptionsNapi {
     /// Run identical batches twice and reject different diagnostics or fixes.
     /// Always enabled for cache misses.
     pub validate_determinism: Option<bool>,
+    /// Namespaced providers resolved from each plugin's static fact demand.
+    pub fact_providers: Option<Vec<JsFactProviderNapi>>,
 }
 
 #[napi(object)]
@@ -120,6 +124,8 @@ pub struct PluginCostNapi {
     pub batch_bytes: u32,
     pub reports: u32,
     pub cached: bool,
+    /// JS executions (two for an audited miss, zero for a hit).
+    pub executions: u32,
     /// Host time for this plugin: batch build, the JS call, report mapping.
     pub elapsed_ns: f64,
     /// The JS call alone.
@@ -133,6 +139,7 @@ pub struct PluginLintOutputNapi {
     pub plugins: Vec<PluginCostNapi>,
     /// Suggested replacements over host-owned node spans.
     pub fixes: Vec<PluginFixNapi>,
+    pub fact_providers: Vec<ProviderCostNapi>,
 }
 
 /// One plugin autofix, confined to the reported node's source span.
@@ -174,12 +181,16 @@ pub fn lint_with_plugins(
     options: Option<PluginLintOptionsNapi>,
 ) -> Result<PluginLintOutputNapi> {
     let options = options.unwrap_or_default();
+    let provider_definitions = options.fact_providers.unwrap_or_default();
+    let has_providers = !provider_definitions.is_empty();
+    let mut providers = ProviderHost::new(provider_definitions)?;
     let filename = options
         .filename
         .unwrap_or_else(|| "anonymous.vue".to_owned());
     let use_cache = options.cache == Some(true);
     let audit = use_cache || options.validate_determinism == Some(true);
     let cache_dir = options.cache_dir.as_deref().map(Path::new);
+    providers.configure_cache(use_cache, cache_dir);
     let document = PluginDocument::build(&source, &filename).map_err(host_error)?;
     let mut manager = FactManager::new(&REGISTRY);
     let mut all = Vec::new();
@@ -194,8 +205,10 @@ pub fn lint_with_plugins(
             visit: plugin.visit.as_deref(),
             demands: &demands,
         };
-        validate_spec(&spec).map_err(host_error)?;
-        let cache_inputs: Vec<PluginCacheInput<'_>> = plugin
+        if !has_providers {
+            validate_spec(&spec).map_err(host_error)?;
+        }
+        let mut cache_inputs: Vec<PluginCacheInput<'_>> = plugin
             .cache_inputs
             .as_deref()
             .unwrap_or_default()
@@ -209,6 +222,19 @@ pub fn lint_with_plugins(
             validate_cache_inputs(&plugin.name, plugin.cache_inputs.is_some(), &cache_inputs)
                 .map_err(host_error)?;
         }
+        let provided = if has_providers {
+            Some(providers.batch(&env, &document, &spec, &mut manager)?)
+        } else {
+            None
+        };
+        if let Some(provided) = &provided {
+            cache_inputs.extend(
+                provided
+                    .cache_inputs
+                    .iter()
+                    .map(|(name, value)| PluginCacheInput { name, value }),
+            );
+        }
         let key = content_key(&source, &filename, &spec, &cache_inputs);
         let cache_key = key.as_deref().filter(|_| use_cache);
         let hit = cache_key
@@ -217,7 +243,10 @@ pub fn lint_with_plugins(
         let (found, nodes, bytes, js_ns, cached) = match hit {
             Some(found) => (found, 0, 0, 0.0, true),
             None => {
-                let built = build_batch(&document, &spec, &mut manager).map_err(host_error)?;
+                let built = match provided {
+                    Some(provided) => provided.built,
+                    None => build_batch(&document, &spec, &mut manager).map_err(host_error)?,
+                };
                 let bytes = built.json.len() as u32;
                 let run = plugin.run.borrow_back(&env)?;
                 let called = Instant::now();
@@ -252,6 +281,13 @@ pub fn lint_with_plugins(
             batch_bytes: bytes,
             reports: found.len() as u32,
             cached,
+            executions: if cached {
+                0
+            } else if audit {
+                2
+            } else {
+                1
+            },
             elapsed_ns: started.elapsed().as_nanos() as f64,
             js_ns,
         });
@@ -275,5 +311,6 @@ pub fn lint_with_plugins(
         diagnostics: all.into_iter().map(to_napi).collect(),
         plugins: costs,
         fixes,
+        fact_providers: providers.costs(),
     })
 }

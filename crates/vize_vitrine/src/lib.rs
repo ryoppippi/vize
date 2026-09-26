@@ -34,6 +34,7 @@ mod plugin_sdk_host {
     mod facts;
     mod plugin_cache;
     mod production;
+    mod providers;
     mod tests;
 }
 

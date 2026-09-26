@@ -56,4 +56,4 @@ jobs:
         working-directory: npm/native
         run: vp run build:ci
       - name: Run the author package and native plugin contracts
-        run: vp exec node --test tests/tooling/davinci-plugin-authoring.test.ts tests/tooling/davinci-plugin-sdk.test.ts tests/tooling/davinci-plugin-ga.test.ts
+        run: vp exec node --test tests/tooling/davinci-plugin-authoring.test.ts tests/tooling/davinci-plugin-sdk.test.ts tests/tooling/davinci-plugin-ga.test.ts tests/tooling/davinci-plugin-fact-providers.test.ts tests/tooling/davinci-plugin-fact-provider-cache.test.ts
