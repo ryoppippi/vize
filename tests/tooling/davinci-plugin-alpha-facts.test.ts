@@ -76,6 +76,7 @@ test("six production alpha groups cross the native batch with exact typed fields
   assert.equal(save.payload, "[value: T]");
   assert.deepEqual(save.overload_payloads, ["[value: T]"]);
   assert.equal(save.unresolved_type_arguments, null);
+  assert.deepEqual(save.validator_type_annotations, []);
   const label = row(facts, "prop-types", "label");
   assert.equal(label.type, "'a b'");
   assert.equal(label.default, null);
@@ -202,6 +203,7 @@ test("runtime validator headers carry public types while body edits preserve fac
     "<T extends Bound>(value: T, count?: number): boolean",
   ]);
   assert.equal(save.unresolved_type_arguments, null);
+  assert.deepEqual(save.validator_type_annotations, []);
   assert.equal(save.type_dependencies.complete, false);
   assert.ok(save.type_dependencies.declarations.some((entry: any) => entry.name === "Bound"));
   const body = input
@@ -211,4 +213,20 @@ test("runtime validator headers carry public types while body edits preserve fac
   const changed = inspect(input.replace("id: string", "id: number"));
   assert.notDeepEqual(row(changed, "emit-types", "save"), save);
   assert.deepEqual(row(changed, "emit-types", "stable"), row(before, "emit-types", "stable"));
+});
+
+test("active runtime type annotations retain their actual declaration dependencies", () => {
+  const input = `<script setup lang="ts">
+ type Payload = string
+ type Contract = { save: (value: Payload) => boolean }
+ defineEmits(({ save: (value: Payload): boolean => true } satisfies Contract))
+ </script><template><button /></template>`;
+  const before = inspect(input);
+  const save = row(before, "emit-types", "save");
+  assert.deepEqual(save.validator_type_annotations, ["Contract"]);
+  assert.ok(save.type_dependencies.declarations.some((entry: any) => entry.name === "Contract"));
+  assert.ok(save.type_dependencies.declarations.some((entry: any) => entry.name === "Payload"));
+  const changed = inspect(input.replace("Payload = string", "Payload = number"));
+  assert.notDeepEqual(row(changed, "emit-types", "save"), save);
+  assert.deepEqual(changed["prop-types"], before["prop-types"]);
 });
