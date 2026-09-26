@@ -95,7 +95,15 @@ pub const REGISTRY: FactRegistry<PluginDocument> =
     FactRegistry::new(&[ProducerEntry::of::<TemplateScopes>()]);
 
 /// The names of [`REGISTRY`]'s groups, as the unknown-demand error lists them.
-pub const JS_VISIBLE: &[&str] = &[TemplateScopes::NAME];
+pub const JS_VISIBLE: &[&str] = &[
+    TemplateScopes::NAME,
+    "bindings",
+    "undefined-refs",
+    "component-usages",
+    "reactivity",
+    "provide-inject",
+    "race-conditions",
+];
 
 /// The host reads facts on the plugins' behalf; its demand is every
 /// JS-visible group.
@@ -116,6 +124,7 @@ pub fn resolve_demands(plugin: &str, names: &[String]) -> Result<Demand, HostErr
         let entry = REGISTRY.producers().iter().find(|e| e.desc.name == name);
         match entry {
             Some(entry) => Ok(demand.with(entry.desc.id)),
+            None if super::production::GROUPS.contains(&name.as_str()) => Ok(demand),
             None => Err(HostError::UnknownFact {
                 plugin: plugin.to_owned(),
                 name: name.clone(),

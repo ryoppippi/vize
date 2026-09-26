@@ -33,6 +33,7 @@ mod plugin_sdk_host {
     mod error;
     mod facts;
     mod plugin_cache;
+    mod production;
     mod tests;
 }
 

@@ -737,6 +737,8 @@ export interface PluginLintOptionsNapi {
   cache?: boolean;
   /** Optional directory for reusing results across Node processes. */
   cacheDir?: string;
+  /** Audit identical batches twice; always enabled for cache misses. */
+  validateDeterminism?: boolean;
 }
 
 export interface PluginDiagnosticNapi {
@@ -768,10 +770,19 @@ export interface PluginCostNapi {
   jsNs: number;
 }
 
+export interface PluginFixNapi {
+  ruleId: string;
+  plugin: string;
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface PluginLintOutputNapi {
   filename: string;
   diagnostics: Array<PluginDiagnosticNapi>;
   plugins: Array<PluginCostNapi>;
+  fixes: Array<PluginFixNapi>;
 }
 
 /**

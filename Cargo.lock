@@ -4860,6 +4860,7 @@ dependencies = [
  "vize_curator",
  "vize_davinci",
  "vize_glyph",
+ "vize_impeto",
  "vize_musea",
  "vize_patina",
  "vize_relief",

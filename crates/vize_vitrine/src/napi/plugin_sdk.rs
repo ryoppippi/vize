@@ -38,6 +38,8 @@ mod document;
 mod error;
 mod facts;
 mod plugin_cache;
+mod production;
+mod proxy;
 #[cfg(test)]
 mod tests;
 
@@ -49,10 +51,12 @@ use napi::bindgen_prelude::{Error, FunctionRef, Result, Status};
 use napi_derive::napi;
 use vize_davinci::fact::FactManager;
 
-use batch::{PluginDiagnostic, PluginSpec, build_batch, diagnostics, sort, validate_spec};
+use batch::{
+    PluginDiagnostic, PluginSpec, build_batch, diagnostics, sort, valid_cached, validate_spec,
+};
 use document::PluginDocument;
 use error::HostError;
-use facts::{REGISTRY, TemplateScopes, resolve_demands};
+use facts::REGISTRY;
 use plugin_cache::{PluginCacheInput, cache, content_key, validate_cache_inputs};
 
 /// A plugin as the SDK's `definePlugin` hands it to the host.
@@ -85,6 +89,9 @@ pub struct PluginLintOptionsNapi {
     pub cache: Option<bool>,
     /// Optional directory for reusing results across Node processes.
     pub cache_dir: Option<String>,
+    /// Run identical batches twice and reject different diagnostics or fixes.
+    /// Always enabled for cache misses.
+    pub validate_determinism: Option<bool>,
 }
 
 #[napi(object)]
@@ -124,6 +131,18 @@ pub struct PluginLintOutputNapi {
     pub filename: String,
     pub diagnostics: Vec<PluginDiagnosticNapi>,
     pub plugins: Vec<PluginCostNapi>,
+    /// Suggested replacements over host-owned node spans.
+    pub fixes: Vec<PluginFixNapi>,
+}
+
+/// One plugin autofix, confined to the reported node's source span.
+#[napi(object)]
+pub struct PluginFixNapi {
+    pub rule_id: String,
+    pub plugin: String,
+    pub start: u32,
+    pub end: u32,
+    pub text: String,
 }
 
 fn host_error(error: HostError) -> Error {
@@ -159,6 +178,7 @@ pub fn lint_with_plugins(
         .filename
         .unwrap_or_else(|| "anonymous.vue".to_owned());
     let use_cache = options.cache == Some(true);
+    let audit = use_cache || options.validate_determinism == Some(true);
     let cache_dir = options.cache_dir.as_deref().map(Path::new);
     let document = PluginDocument::build(&source, &filename).map_err(host_error)?;
     let mut manager = FactManager::new(&REGISTRY);
@@ -191,7 +211,9 @@ pub fn lint_with_plugins(
         }
         let key = content_key(&source, &filename, &spec, &cache_inputs);
         let cache_key = key.as_deref().filter(|_| use_cache);
-        let hit = cache_key.and_then(|key| cache().lock().ok()?.get(key, cache_dir));
+        let hit = cache_key
+            .and_then(|key| cache().lock().ok()?.get(key, cache_dir))
+            .filter(|found| valid_cached(&document, &plugin.name, found));
         let (found, nodes, bytes, js_ns, cached) = match hit {
             Some(found) => (found, 0, 0, 0.0, true),
             None => {
@@ -199,9 +221,21 @@ pub fn lint_with_plugins(
                 let bytes = built.json.len() as u32;
                 let run = plugin.run.borrow_back(&env)?;
                 let called = Instant::now();
-                let reports = run.call(built.json)?;
-                let js_ns = called.elapsed().as_nanos() as f64;
+                let reports = run.call(built.json.clone())?;
+                let mut js_ns = called.elapsed().as_nanos() as f64;
                 let found = diagnostics(&document, &plugin.name, &reports).map_err(host_error)?;
+                if audit {
+                    let called = Instant::now();
+                    let repeated = run.call(built.json)?;
+                    js_ns += called.elapsed().as_nanos() as f64;
+                    let repeated =
+                        diagnostics(&document, &plugin.name, &repeated).map_err(host_error)?;
+                    if found != repeated {
+                        return Err(host_error(HostError::Nondeterministic {
+                            plugin: plugin.name.clone(),
+                        }));
+                    }
+                }
                 if let Some(key) = cache_key
                     && let Ok(mut map) = cache().lock()
                 {
@@ -224,104 +258,22 @@ pub fn lint_with_plugins(
         all.extend(found);
     }
     sort(&mut all);
+    let fixes = all
+        .iter()
+        .filter_map(|diagnostic| {
+            diagnostic.fix.as_ref().map(|text| PluginFixNapi {
+                rule_id: diagnostic.rule_id.clone(),
+                plugin: diagnostic.plugin.clone(),
+                start: diagnostic.start,
+                end: diagnostic.end,
+                text: text.clone(),
+            })
+        })
+        .collect();
     Ok(PluginLintOutputNapi {
         filename,
         diagnostics: all.into_iter().map(to_napi).collect(),
         plugins: costs,
+        fixes,
     })
-}
-
-/// The proxy arm the spike measured and rejected: the same document behind
-/// a handle whose every read is one napi call.
-#[napi]
-pub struct PluginDocumentHandle {
-    document: PluginDocument,
-    scopes: Vec<(u32, Vec<facts::ScopeEntry>)>,
-}
-
-/// Open the proxy-arm handle over one SFC, computing `templateScopes`.
-#[napi(js_name = "openPluginDocument")]
-pub fn open_plugin_document(
-    source: String,
-    filename: Option<String>,
-) -> Result<PluginDocumentHandle> {
-    let filename = filename.unwrap_or_else(|| "anonymous.vue".to_owned());
-    let document = PluginDocument::build(&source, &filename).map_err(host_error)?;
-    let demand = resolve_demands("proxy", &["templateScopes".to_owned()]).map_err(host_error)?;
-    let mut manager = FactManager::new(&REGISTRY);
-    manager
-        .compute(&document, demand)
-        .map_err(|error| Error::new(Status::GenericFailure, format!("{error:?}")))?;
-    let view = manager.view::<facts::JsPluginHost>();
-    let scopes = view
-        .get::<TemplateScopes>()
-        .map(|table| {
-            table
-                .iter()
-                .map(|(id, entries)| (*id, entries.clone()))
-                .collect()
-        })
-        .unwrap_or_default();
-    Ok(PluginDocumentHandle { document, scopes })
-}
-
-#[napi]
-impl PluginDocumentHandle {
-    /// How many nodes the document has (ids are `0..count`).
-    #[napi]
-    pub fn count(&self) -> u32 {
-        self.document.nodes.len() as u32
-    }
-
-    #[napi]
-    pub fn kind(&self, id: u32) -> Option<String> {
-        self.node(id).map(|node| node.kind.to_owned())
-    }
-
-    /// The owning node, or -1.
-    #[napi]
-    pub fn parent(&self, id: u32) -> i32 {
-        self.node(id)
-            .and_then(|node| node.parent)
-            .map_or(-1, |parent| parent as i32)
-    }
-
-    /// `name`, `value`, `alias.value`, `alias.key` or `alias.index`.
-    #[napi]
-    pub fn field(&self, id: u32, key: String) -> Option<String> {
-        let node = self.node(id)?;
-        let alias = node.alias.as_ref();
-        match key.as_str() {
-            "name" => node.name.clone(),
-            "value" => node.value.clone(),
-            "alias.value" => alias.map(|alias| alias.value.clone()),
-            "alias.key" => alias.and_then(|alias| alias.key.clone()),
-            "alias.index" => alias.and_then(|alias| alias.index.clone()),
-            _ => None,
-        }
-    }
-
-    /// The names scope `id` binds (`templateScopes`), or `null`.
-    #[napi]
-    pub fn scope(&self, id: u32) -> Option<Vec<ScopeEntryNapi>> {
-        let (_, entries) = self.scopes.iter().find(|(scope, _)| *scope == id)?;
-        let own = |entry: &facts::ScopeEntry| ScopeEntryNapi {
-            name: entry.name.clone(),
-            position: entry.position.to_owned(),
-        };
-        Some(entries.iter().map(own).collect())
-    }
-}
-
-/// One `templateScopes` entry on the proxy arm.
-#[napi(object)]
-pub struct ScopeEntryNapi {
-    pub name: String,
-    pub position: String,
-}
-
-impl PluginDocumentHandle {
-    fn node(&self, id: u32) -> Option<&document::PluginNode> {
-        self.document.nodes.get(id as usize)
-    }
 }

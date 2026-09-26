@@ -102,13 +102,15 @@ pub fn build_batch(
     };
     let nodes: Vec<&PluginNode> = document.nodes.iter().filter(visited).collect();
     let parent = |node: &PluginNode| node.parent.map_or(-1, i64::from);
+    let mut facts = demanded_facts(manager, document, demand);
+    facts.extend(super::production::project(document, spec.demands)?);
     let batch = Batch {
         schema: BATCH_SCHEMA,
         plugin: spec.name,
         file: &document.filename,
         parents: document.nodes.iter().map(parent).collect(),
         nodes,
-        facts: demanded_facts(manager, document, demand),
+        facts,
     };
     let count = batch.nodes.len() as u32;
     let json =
@@ -132,12 +134,18 @@ pub fn validate_spec(spec: &PluginSpec<'_>) -> Result<vize_davinci::fact::Demand
     resolve_demands(spec.name, spec.demands)
 }
 
+#[cfg(test)]
+mod tests;
+
 /// One report as a plugin returns it.
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Report {
     rule: String,
     node: u32,
     message: String,
+    #[serde(default)]
+    fix: Option<String>,
 }
 
 /// One plugin diagnostic, anchored on the host's own span for the node.
@@ -146,6 +154,8 @@ pub struct PluginDiagnostic {
     pub rule_id: String,
     pub plugin: String,
     pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fix: Option<String>,
     pub start: u32,
     pub end: u32,
     pub line: u32,
@@ -165,11 +175,23 @@ pub fn diagnostics(
     plugin: &str,
     reports: &str,
 ) -> Result<Vec<PluginDiagnostic>, HostError> {
+    if reports.len() > 4 * 1024 * 1024 {
+        return Err(HostError::BadReports {
+            plugin: plugin.to_owned(),
+            detail: "report array exceeds 4 MiB".into(),
+        });
+    }
     let reports: Vec<Report> =
         serde_json::from_str(reports).map_err(|error| HostError::BadReports {
             plugin: plugin.to_owned(),
             detail: error.to_string(),
         })?;
+    if reports.len() > 4096 {
+        return Err(HostError::BadReports {
+            plugin: plugin.to_owned(),
+            detail: "report array exceeds 4096 entries".into(),
+        });
+    }
     let mut out = Vec::with_capacity(reports.len());
     for report in reports {
         let Some(node) = document.nodes.get(report.node as usize) else {
@@ -185,6 +207,7 @@ pub fn diagnostics(
             rule_id: format!("{plugin}/{}", report.rule),
             plugin: plugin.to_owned(),
             message: report.message,
+            fix: report.fix,
             start: node.start,
             end: node.end,
             line,
@@ -202,4 +225,26 @@ pub fn sort(diagnostics: &mut [PluginDiagnostic]) {
     diagnostics.sort_by(|a, b| {
         (a.start, a.end, &a.rule_id, &a.message).cmp(&(b.start, b.end, &b.rule_id, &b.message))
     });
+}
+
+/// A cache entry must retain the exact host-owned anchors of this document.
+pub fn valid_cached(document: &PluginDocument, plugin: &str, found: &[PluginDiagnostic]) -> bool {
+    found.len() <= 4096
+        && found.iter().all(|diagnostic| {
+            diagnostic.plugin == plugin
+                && diagnostic
+                    .rule_id
+                    .strip_prefix(plugin)
+                    .is_some_and(|rule| rule.starts_with('/') && rule.len() > 1)
+                && document
+                    .nodes
+                    .iter()
+                    .any(|node| node.start == diagnostic.start && node.end == diagnostic.end)
+                && document
+                    .source
+                    .get(diagnostic.start as usize..diagnostic.end as usize)
+                    .is_some()
+                && document.position(diagnostic.start) == (diagnostic.line, diagnostic.column)
+                && document.position(diagnostic.end) == (diagnostic.end_line, diagnostic.end_column)
+        })
 }

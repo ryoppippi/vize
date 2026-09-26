@@ -1,0 +1,38 @@
+{
+  "name": "@vizejs/plugin-sdk",
+  "version": "0.428.1",
+  "private": true,
+  "description": "Authoring contracts for Vize serialized JavaScript plugin visits",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ubugeeei-prod/vize.git",
+    "directory": "npm/plugin-sdk"
+  },
+  "files": [
+    "index.js",
+    "identity.js",
+    "index.d.ts",
+    "stages.js",
+    "stages.d.ts",
+    "fixes.js",
+    "fixes.d.ts",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./fixes": {
+      "types": "./fixes.d.ts",
+      "default": "./fixes.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

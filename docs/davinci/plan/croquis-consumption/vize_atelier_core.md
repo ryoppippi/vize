@@ -16,7 +16,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `ScopeKind`        | type  | `scope`   |     2 |     2 |
 | `VForScopeData`    | type  | `scope`   |     1 |     1 |
 | `VSlotScopeData`   | type  | `scope`   |     1 |     1 |
-| `Croquis.bindings` | field | `croquis` |     1 |     2 |
+| `Croquis.bindings` | field | `croquis` |     4 |    10 |
 
 ## Non-product `vize_croquis` imports
 
@@ -42,7 +42,7 @@ One shard of the [Croquis consumption matrix](../croquis-consumption.md): every 
 | `Symbol`             |        0 |    5 |
 | `VForScopeData`      |        1 |    2 |
 | `VSlotScopeData`     |        1 |    2 |
-| `Croquis.bindings`   |        2 |   35 |
+| `Croquis.bindings`   |       10 |   35 |
 | `Croquis.hoists`     |        0 |    8 |
 | `Croquis.reactivity` |        0 |    1 |
 | `Croquis.scopes`     |        0 |    4 |

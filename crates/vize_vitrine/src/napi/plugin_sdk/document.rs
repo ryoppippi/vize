@@ -72,6 +72,7 @@ pub struct ForAlias {
 pub struct PluginDocument {
     pub filename: String,
     pub source: String,
+    pub production: super::production::ProductionDocument,
     pub nodes: Vec<PluginNode>,
     /// `lowered.scopes` names per binding-introducing op, in id order.
     pub scopes: Vec<(u32, Vec<String>)>,
@@ -90,6 +91,7 @@ impl PluginDocument {
         let mut document = Self {
             filename: filename.to_owned(),
             source: source.to_owned(),
+            production: super::production::ProductionDocument::default(),
             nodes: Vec::new(),
             scopes: Vec::new(),
         };

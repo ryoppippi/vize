@@ -24,6 +24,8 @@ pub enum HostError {
     InvalidCacheInputs { plugin: String, detail: String },
     /// A plugin's `run` returned something other than a report array.
     BadReports { plugin: String, detail: String },
+    /// Identical plugin inputs produced different diagnostics or fixes.
+    Nondeterministic { plugin: String },
     /// A report named a node id outside the document.
     UnknownNode {
         plugin: String,
@@ -57,6 +59,10 @@ impl fmt::Display for HostError {
                     "{plugin}: run() must return a JSON report array ({detail})"
                 )
             }
+            Self::Nondeterministic { plugin } => write!(
+                f,
+                "{plugin}: identical visit batches produced different diagnostics or fixes"
+            ),
             Self::UnknownNode { plugin, rule, node } => {
                 write!(
                     f,

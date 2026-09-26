@@ -940,6 +940,8 @@ importers:
 
   npm/extension-sdk: {}
 
+  npm/plugin-sdk: {}
+
   npm/framework/musea-nuxt:
     devDependencies:
       typescript:
