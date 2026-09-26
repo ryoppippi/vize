@@ -169,3 +169,12 @@ test("every emit overload and unresolved generic crosses the native boundary", (
   assert.equal(unresolved.type_dependencies.complete, false);
   assert.ok(unresolved.type_dependencies.declarations.some((entry: any) => entry.name === "Later"));
 });
+
+test("authored foreign and external templates refuse before any JS callback", () => {
+  for (const input of [
+    '<template lang="pug">button {{ value }}</template>',
+    '<template src="./external.html" />',
+  ]) {
+    assert.throws(() => inspect(input), /JS plugin visits require an inline HTML template/);
+  }
+});

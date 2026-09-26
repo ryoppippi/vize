@@ -137,3 +137,25 @@ fn primary_fact_demands_are_computed_once_per_document() {
         Demand::NONE.with(Bindings::ID).with(Reactivity::ID)
     );
 }
+
+#[test]
+fn authored_foreign_and_external_templates_cannot_be_lowered_as_html() {
+    for source in [
+        "<template lang=\"pug\">button {{ value }}</template>",
+        "<template src=\"./external.html\" />",
+    ] {
+        assert_eq!(
+            PluginDocument::build(source, "Foreign.vue").unwrap_err(),
+            HostError::Split(
+                "JS plugin visits require an inline HTML template; preprocess template dialects through their compiler integration".into()
+            )
+        );
+    }
+    assert!(
+        PluginDocument::build(
+            "<template lang=\"html\"><button /></template>",
+            "Inline.vue"
+        )
+        .is_ok()
+    );
+}

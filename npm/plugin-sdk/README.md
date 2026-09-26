@@ -51,6 +51,10 @@ nullable unknowns and type dependency completeness. Imported types which this
 analysis cannot resolve remain explicit unknowns. Primary Croquis facts require
 a JavaScript or TypeScript script; other script dialects are refused explicitly.
 
+Plugin visits require inline HTML templates. Authored foreign template dialects
+and external template blocks are refused before callbacks; the SDK does not
+pretend their source is HTML or invent source maps for a preprocessing pass.
+
 TypeScript infers each native group's exact map keys and deeply readonly values
 from `ctx.facts("prop-types")`, including authored interface order and all emit
 overloads. The package exports `FactGroups`, `FactKey`, `FactValue`, `FactEntry`
