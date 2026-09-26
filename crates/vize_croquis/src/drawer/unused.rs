@@ -36,7 +36,7 @@ impl Drawer {
         if let Some(name) = name {
             self.croquis
                 .unused_bindings
-                .retain(|candidate| candidate != &name);
+                .retain(|candidate| candidate.as_str() != name.as_str());
         }
     }
 

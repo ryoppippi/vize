@@ -70,6 +70,9 @@ for (const [mode, expected] of [
       assert.deepEqual(report.baselineShift.misses, [], result.stdout);
       assert.deepEqual(report.baselineShift.unmappable, [], result.stdout);
       assert.deepEqual(report.unexpected, [], result.stdout);
+      t.diagnostic(
+        `class-b=${report.classB.detected}/${report.classB.expected} baseline-mapped=${report.baselineShift.mapped} misses=0 unmappable=0 unexpected=0`,
+      );
       if (mode === "corpus-shard") {
         const manifest = JSON.parse(fs.readFileSync(path.join(out, "manifest.json"), "utf8"));
         const files = manifest.files.map((file: { path: string }) => file.path);
