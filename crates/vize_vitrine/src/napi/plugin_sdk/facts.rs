@@ -10,11 +10,10 @@
 //! twice — the batch never carries an undeclared group, and the SDK's
 //! `ctx.facts(name)` throws on one (the TS-35 rule, on the JS side).
 //!
-//! Until the P4-3 waves register production producers there is one
-//! JS-visible group, `templateScopes`, derived from the S2 page. It takes
-//! the first fixture-range id: this registry never shares a manager with
-//! production groups (the `fact::ids` rule), and P6-7 replaces it with the
-//! production groups' α pages (P4-2).
+//! `templateScopes` comes from S2. The production boundary separately serves
+//! registered Croquis β groups and its six authoritative α interface pages.
+//! This fixture registry never shares a manager with production groups
+//! (`fact::ids`); an α-only demand does not compute any β registry group.
 
 #![expect(
     clippy::disallowed_types,
@@ -103,6 +102,12 @@ pub const JS_VISIBLE: &[&str] = &[
     "reactivity",
     "provide-inject",
     "race-conditions",
+    "component-signature",
+    "prop-types",
+    "emit-types",
+    "slot-types",
+    "reactivity-classes",
+    "component-references",
 ];
 
 /// The host reads facts on the plugins' behalf; its demand is every

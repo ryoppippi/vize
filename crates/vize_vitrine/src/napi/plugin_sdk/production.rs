@@ -5,6 +5,9 @@
 #![expect(clippy::disallowed_methods, reason = "JSON and N-API own std strings")]
 #![expect(clippy::disallowed_macros, reason = "JSON values use serde macros")]
 
+mod alpha;
+#[cfg(test)]
+mod alpha_tests;
 mod components;
 mod flow;
 mod reactivity;
@@ -24,6 +27,7 @@ use vize_croquis::{
     },
 };
 use vize_davinci::fact::Demand;
+use vize_davinci::summary::{AlphaPages, Facet};
 use vize_s0::Allocator;
 
 pub const GROUPS: &[&str] = &[
@@ -33,16 +37,29 @@ pub const GROUPS: &[&str] = &[
     Reactivity::NAME,
     ProvideInject::NAME,
     RaceConditions::NAME,
+    Facet::Signature.group(),
+    Facet::Prop.group(),
+    Facet::Emit.group(),
+    Facet::Slot.group(),
+    Facet::Reactivity.group(),
+    Facet::Component.group(),
 ];
 
+struct ProductionAnalysis {
+    croquis: Croquis,
+    generic: Option<String>,
+}
+
 pub struct ProductionDocument {
-    croquis: OnceLock<Result<Croquis, HostError>>,
+    croquis: OnceLock<Result<ProductionAnalysis, HostError>>,
+    alpha: OnceLock<Result<AlphaPages, HostError>>,
     manager: Mutex<FactManager<'static, Croquis>>,
 }
 impl Default for ProductionDocument {
     fn default() -> Self {
         Self {
             croquis: OnceLock::new(),
+            alpha: OnceLock::new(),
             manager: Mutex::new(FactManager::new(&CROQUIS_FACTS)),
         }
     }
@@ -57,6 +74,25 @@ impl core::fmt::Debug for ProductionDocument {
 }
 impl ProductionDocument {
     pub fn get(&self, source: &str) -> Result<&Croquis, HostError> {
+        self.analysis(source).map(|analysis| &analysis.croquis)
+    }
+
+    fn pages(&self, source: &str, filename: &str) -> Result<&AlphaPages, HostError> {
+        self.alpha
+            .get_or_init(|| {
+                let analysis = self.analysis(source)?;
+                analysis
+                    .croquis
+                    .alpha_pages(filename, analysis.generic.as_deref())
+                    .map_err(|error| {
+                        HostError::Split(format!("production alpha export failed: {error}"))
+                    })
+            })
+            .as_ref()
+            .map_err(Clone::clone)
+    }
+
+    fn analysis(&self, source: &str) -> Result<&ProductionAnalysis, HostError> {
         self.croquis
             .get_or_init(|| {
                 let descriptor = parse_sfc(source, SfcParseOptions::default())
@@ -81,11 +117,19 @@ impl ProductionDocument {
                 let root = descriptor.template.as_ref().map(|template| {
                     vize_atelier_core::parser::parse(&allocator, template.content.as_ref()).0
                 });
-                Ok(analyze_sfc_descriptor(
-                    &descriptor,
-                    root.as_ref(),
-                    SfcCroquisOptions::full(),
-                ))
+                let generic = descriptor
+                    .script_setup
+                    .as_ref()
+                    .and_then(|script| script.attrs.get("generic"))
+                    .map(|generic| generic.as_ref().to_owned());
+                Ok(ProductionAnalysis {
+                    generic,
+                    croquis: analyze_sfc_descriptor(
+                        &descriptor,
+                        root.as_ref(),
+                        SfcCroquisOptions::full(),
+                    ),
+                })
             })
             .as_ref()
             .map_err(Clone::clone)
@@ -109,6 +153,17 @@ pub fn project(
     names: &[String],
 ) -> Result<Map<String, Value>, HostError> {
     let mut output = Map::new();
+    if names
+        .iter()
+        .any(|name| Facet::from_group_name(name).is_some())
+    {
+        output.extend(alpha::project(
+            document
+                .production
+                .pages(&document.source, &document.filename)?,
+            names,
+        )?);
+    }
     let mut demand = Demand::NONE;
     for name in names {
         if let Some(entry) = CROQUIS_FACTS
