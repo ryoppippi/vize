@@ -282,6 +282,9 @@ test("withDefaults retains authored defaults from literal and constant objects",
   const resolved = inspect(constant);
   assert.equal(row(resolved, "component-signature", "Public.vue").with_defaults, "defaults");
   assert.deepEqual(resolved["prop-types"], before["prop-types"]);
+  const changedConstant = inspect(constant.replace("'a b'", "'ab'"));
+  assert.equal(row(changedConstant, "prop-types", "label").default, "'ab'");
+  assert.notDeepEqual(changedConstant["prop-types"], resolved["prop-types"]);
   const changed = inspect(input.replace("'a b'", "'ab'"));
   assert.notDeepEqual(row(changed, "prop-types", "label"), row(before, "prop-types", "label"));
   assert.equal(row(changed, "prop-types", "label").default, "'ab'");
