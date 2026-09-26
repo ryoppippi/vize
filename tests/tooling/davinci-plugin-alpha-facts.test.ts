@@ -70,6 +70,12 @@ test("six production alpha groups cross the native batch with exact typed fields
   assert.equal(signature.name, "Public.vue");
   assert.equal(signature.declared_name, "PublicComponent");
   assert.equal(signature.script_setup, true);
+  assert.deepEqual(signature.prop_order, ["label", "choice", "value", "title"]);
+  assert.deepEqual(signature.slot_order, ["default"]);
+  const save = row(facts, "emit-types", "save");
+  assert.equal(save.payload, "[value: T]");
+  assert.deepEqual(save.overload_payloads, ["[value: T]"]);
+  assert.equal(save.unresolved_type_arguments, null);
   const label = row(facts, "prop-types", "label");
   assert.equal(label.type, "'a b'");
   assert.equal(label.default, null);
@@ -117,4 +123,49 @@ test("alpha fact requests reject unsupported foreign scripts", () => {
       ]),
     /production JS plugin facts require a JavaScript or TypeScript script/,
   );
+});
+
+test("authored slot order survives canonical page sorting", () => {
+  const ordered = source.replace(
+    "defineSlots<{ default(props: { item: T }): any }>()",
+    "defineSlots<{ zebra(props: { item: T }): any; default(props: {}): any }>()",
+  );
+  const facts = inspect(ordered);
+  assert.deepEqual(row(facts, "component-signature", "Public.vue").slot_order, [
+    "zebra",
+    "default",
+  ]);
+  assert.deepEqual(
+    facts["slot-types"].map(([key]) => key),
+    ["default", "zebra"],
+  );
+});
+
+test("every emit overload and unresolved generic crosses the native boundary", () => {
+  const input = `<script setup lang="ts">
+ type Later = string
+ defineProps<{ stable: boolean }>()
+ defineEmits<{ (event: 'save', value: number): void; (event: 'save', value: Later): void; stable: [] }>()
+ </script><template><button /></template>`;
+  const before = inspect(input);
+  const save = row(before, "emit-types", "save");
+  assert.equal(save.payload, "[value: number]");
+  assert.deepEqual(save.overload_payloads, ["[value: number]", "[value: Later]"]);
+  assert.equal(save.type_dependencies.complete, true);
+  assert.equal(
+    save.type_dependencies.declarations.find((entry: any) => entry.name === "Later").body,
+    "string",
+  );
+  const changed = inspect(input.replace("Later = string", "Later = boolean"));
+  assert.notDeepEqual(row(changed, "emit-types", "save"), save);
+  assert.deepEqual(row(changed, "emit-types", "stable"), row(before, "emit-types", "stable"));
+  assert.deepEqual(changed["prop-types"], before["prop-types"]);
+  const generic = inspect(
+    input.replace("(event: 'save', value: Later)", "<T extends Later>(event: 'save', value: T)"),
+  );
+  const unresolved = row(generic, "emit-types", "save");
+  assert.deepEqual(unresolved.overload_payloads, ["[value: number]", null]);
+  assert.match(unresolved.unresolved_type_arguments, /<T extends Later>/);
+  assert.equal(unresolved.type_dependencies.complete, false);
+  assert.ok(unresolved.type_dependencies.declarations.some((entry: any) => entry.name === "Later"));
 });
