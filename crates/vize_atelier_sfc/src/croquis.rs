@@ -271,7 +271,11 @@ fn analyze_sfc_descriptor_resolved_impl(
 
     let mut croquis = drawer.finish();
     if options.unused_bindings {
-        unused::apply_style_reads(&mut croquis, descriptor, options.template_is_derived);
+        if descriptor.template.is_some() && template_ast.is_none() {
+            croquis.unused_bindings.clear();
+        } else {
+            unused::apply_style_reads(&mut croquis, descriptor, options.template_is_derived);
+        }
     }
     let (script_content, script_offset) = script_content_for_descriptor(descriptor, options);
     SfcCroquisAnalysis {

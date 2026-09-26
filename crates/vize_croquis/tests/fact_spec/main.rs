@@ -163,6 +163,52 @@ const element = ref(null);
 }
 
 #[test]
+fn unused_bindings_require_the_inline_template_view() {
+    use vize_atelier_sfc::croquis::{SfcCroquisOptions, analyze_sfc_descriptor};
+    use vize_atelier_sfc::{SfcParseOptions, parse_sfc};
+    use vize_croquis::facts::{CroquisFacts, Demand, FactConsumer, FactGroup, UnusedBindings};
+
+    struct Reader;
+    impl FactConsumer for Reader {
+        const NAME: &'static str = "test/unused-template-view";
+        const DEMAND: Demand = Demand::NONE.with(UnusedBindings::ID);
+    }
+    let names = |croquis: &vize_croquis::Croquis| {
+        let mut facts = CroquisFacts::new(croquis);
+        let view = facts.prepare::<Reader>();
+        view.get::<UnusedBindings>()
+            .unwrap()
+            .iter()
+            .map(|(name, _)| name.as_str().to_owned())
+            .collect::<Vec<_>>()
+    };
+    let source =
+        "<script setup>const used=0; const unused=1;</script><template>{{used}}</template>";
+    let descriptor = parse_sfc(source, SfcParseOptions::default()).unwrap();
+    let options = SfcCroquisOptions::full().with_unused_bindings();
+    let incomplete = analyze_sfc_descriptor(&descriptor, None, options);
+    assert_eq!(names(&incomplete).len(), 0);
+
+    let allocator = vize_carton::Allocator::new();
+    let (root, errors) = vize_armature::Parser::new(
+        &allocator,
+        descriptor.template.as_ref().unwrap().content.as_ref(),
+    )
+    .parse();
+    assert_eq!(errors.len(), 0);
+    let complete = analyze_sfc_descriptor(&descriptor, Some(&root), options);
+    assert_eq!(names(&complete), ["unused"]);
+
+    let script_only = parse_sfc(
+        "<script setup>const unused=1;</script>",
+        SfcParseOptions::default(),
+    )
+    .unwrap();
+    let known = analyze_sfc_descriptor(&script_only, None, options);
+    assert_eq!(names(&known), ["unused"]);
+}
+
+#[test]
 fn the_lattice_join_matches_the_spec() {
     let matrix = reactivity::join_matrix();
     eprintln!("{}", matrix.scope_line("reactivity", "lattice matrix"));
