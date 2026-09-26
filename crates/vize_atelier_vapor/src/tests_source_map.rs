@@ -12,6 +12,14 @@
     reason = "test fixtures and insta snapshots use std strings and format"
 )]
 
+mod component_names;
+mod computed_dom;
+mod model_names;
+mod slot_props;
+mod structural_slots;
+mod suspense;
+mod transition;
+
 mod support;
 
 use super::{VaporCompilerOptions, compile_vapor};

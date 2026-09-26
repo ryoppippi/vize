@@ -21,5 +21,7 @@ _None._
 | product            | resolved | grep |
 | ------------------ | -------: | ---: |
 | `BindingMetadata`  |        0 |   16 |
-| `Span`             |        0 |   17 |
-| `Croquis.bindings` |       11 |   38 |
+| `Span`             |        0 |   20 |
+| `SymbolId`         |        0 |    4 |
+| `Croquis.bindings` |       11 |   44 |
+| `Croquis.symbols`  |        0 |    4 |

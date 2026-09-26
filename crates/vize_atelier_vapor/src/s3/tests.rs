@@ -3,7 +3,12 @@ use super::{
     retained::Retained,
 };
 
+mod component_names;
+mod computed_dom;
 mod keep_alive;
+mod slot_props;
+mod suspense;
+mod transition;
 use vize_atelier_core::TemplateSyntaxMode;
 use vize_carton::Allocator;
 use vize_s3::{
@@ -192,8 +197,7 @@ fn unsupported_source_semantics_have_explicit_legacy_routes() {
         "<div>{{ one as number }}</div>",
         "<div v-pre>{{ literal }}</div>",
         "<input v-model.foo=\"text\" />",
-        "<MyComp v-model:[field]=\"checked\" />",
-        "<div :[key]=\"value\"></div>",
+        "<div :[key].camel=\"value\"></div>",
         "<div ref=\"node\"></div>",
         "<div :style=\"s\" style></div>",
         "<div @click=\"a++; b++\"></div>",
@@ -309,10 +313,12 @@ mod attributes;
 mod components;
 mod elements;
 mod events;
+mod model_names;
 mod models;
 mod parser_agreement;
 mod select;
 mod slots;
 mod spreads;
+mod structural_slots;
 mod teleport;
 mod templates;

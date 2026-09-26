@@ -5,10 +5,10 @@
 //! or `v-on` object on a component becomes a `$` source in that order.
 
 use oxc_allocator::HashSet;
-use vize_carton::{Allocator, String, Vec, cstr};
+use vize_carton::{Allocator, Vec};
 use vize_s3::op::{OpId, RegionId};
 
-use super::super::{Binding, BindingKind, Content, Expr, Node, Prop};
+use super::super::{Binding, BindingKind, Content, Node, Prop};
 use super::{Result, Slots, at, at_mut, component::component_prop};
 use crate::s3::{AdmissionFailure, LegacyReason};
 
@@ -27,20 +27,28 @@ pub(super) fn bindings<'a>(
         match &node.content {
             Content::Element { attributes, .. } => {
                 names.extend(
-                    (attributes.iter()).map(|(name, ..)| (index, BindingKind::Prop, *name)),
+                    (attributes.iter()).map(|(name, ..)| (index, BindingKind::Prop, *name, false)),
                 );
             }
             Content::Component { props, .. } | Content::Outlet { props, .. } => {
-                names.extend((props.iter()).map(|prop| (index, BindingKind::Prop, prop.key)));
+                names.extend((props.iter()).map(|prop| {
+                    (
+                        index,
+                        BindingKind::Prop,
+                        prop.key,
+                        prop.dynamic_name.is_some(),
+                    )
+                }));
             }
             _ => {}
         }
     }
-    // Elements whose props merge through a `v-bind` object keep every static
+    // Props merged through an object or computed key keep every static
     // attribute and `:class`/`:style` as its own ordered source.
     let mut spreads = super::filled(alloc, false, nodes.len());
     for (target, .., binding) in bindings.iter() {
-        if binding.kind == BindingKind::Spread
+        if (binding.kind == BindingKind::Spread
+            || binding.kind == BindingKind::Prop && binding.dynamic_name.is_some())
             && let Some(&Some((index, _))) = slots.get(target.index() as usize)
         {
             *at_mut(&mut spreads, index)? = true;
@@ -55,7 +63,12 @@ pub(super) fn bindings<'a>(
                 "binding target is outside its native region",
             ));
         }
-        let fresh = names.insert((index, binding.kind, binding.name));
+        let fresh = names.insert((
+            index,
+            binding.kind,
+            binding.name,
+            binding.dynamic_name.is_some(),
+        ));
         // Slot content binds to its `<template>` or to its component (only
         // its named slot there); the structure is checked once attached.
         if binding.kind == BindingKind::Slot {
@@ -80,7 +93,10 @@ pub(super) fn bindings<'a>(
                 tag: "component",
                 is,
                 ..
-            } if binding.kind == BindingKind::Prop && binding.name == "is" => {
+            } if binding.kind == BindingKind::Prop
+                && binding.name == "is"
+                && binding.dynamic_name.is_none() =>
+            {
                 if is.replace(binding.value).is_some() {
                     return Err(LegacyReason::Component.into());
                 }
@@ -94,6 +110,7 @@ pub(super) fn bindings<'a>(
                 }
                 props.push(Prop {
                     key: "$",
+                    dynamic_name: None,
                     value: Some(binding.value),
                     value_kind: crate::ir::PropValueKind::Expression,
                     dynamic: true,
@@ -113,12 +130,21 @@ pub(super) fn bindings<'a>(
                 if !fresh {
                     return Err(LegacyReason::Component.into());
                 }
-                component_model(props, &binding, position, &mut names, index, alloc)?;
+                super::component_model::expand(
+                    props, &binding, position, &mut names, index, alloc,
+                )?;
                 continue;
             }
             Content::Component { props, .. } => {
                 prop(props, binding, position, fresh, true)?;
                 continue;
+            }
+            Content::Outlet { .. }
+                if binding.kind == BindingKind::Prop
+                    && binding.dynamic_name.is_none()
+                    && binding.name == "name" =>
+            {
+                return Err(LegacyReason::Component.into());
             }
             Content::Outlet { props, .. } => {
                 prop(props, binding, position, fresh, false)?;
@@ -134,8 +160,9 @@ pub(super) fn bindings<'a>(
             // Only a `:class`/`:style` beside its static attribute repeats.
             if binding.kind != BindingKind::Prop
                 || !matches!(binding.name, "class" | "style")
-                || (at(nodes, index)?.bindings.iter())
-                    .any(|b| b.kind == binding.kind && b.name == binding.name)
+                || (at(nodes, index)?.bindings.iter()).any(|b| {
+                    b.kind == binding.kind && b.name == binding.name && b.dynamic_name.is_none()
+                })
             {
                 return Err(LegacyReason::Binding.into());
             }
@@ -145,10 +172,16 @@ pub(super) fn bindings<'a>(
                 return Err(LegacyReason::Binding.into());
             }
         }
-        if binding.kind == BindingKind::Prop && binding.name == "is" {
+        if binding.kind == BindingKind::Prop
+            && binding.dynamic_name.is_none()
+            && binding.name == "is"
+        {
             return Err(LegacyReason::Binding.into());
         }
-        if binding.kind == BindingKind::Prop && binding.name == "key" {
+        if binding.kind == BindingKind::Prop
+            && binding.dynamic_name.is_none()
+            && binding.name == "key"
+        {
             // Only the body element of an element-carried loop owns a key.
             let owner = match *at(parents, index)? {
                 Some(parent) => Some(&mut at_mut(nodes, parent)?.content),
@@ -191,70 +224,6 @@ pub(super) fn bindings<'a>(
     Ok(())
 }
 
-/// Expand a checked component model into the same getter, update listener,
-/// and optional modifier props as the retained component transform.
-fn component_model<'a>(
-    props: &mut Vec<'a, Prop<'a>>,
-    binding: &Binding<'a>,
-    position: u32,
-    names: &mut HashSet<'_, (usize, BindingKind, &'a str)>,
-    index: usize,
-    alloc: &'a Allocator,
-) -> Result<()> {
-    let prop = binding.name;
-    let event = alloc.alloc_str(&cstr!("update:{prop}"));
-    let modifiers = if binding.modifiers.is_empty() {
-        None
-    } else if matches!(prop, "modelValue" | "model-value") {
-        Some("modelModifiers")
-    } else {
-        Some(alloc.alloc_str(&cstr!("{prop}Modifiers")))
-    };
-    if !names.insert((index, BindingKind::Prop, prop))
-        || !names.insert((index, BindingKind::Event, event))
-        || modifiers.is_some_and(|name| !names.insert((index, BindingKind::Prop, name)))
-    {
-        return Err(LegacyReason::Component.into());
-    }
-    props.push(Prop {
-        key: prop,
-        value: Some(binding.value),
-        value_kind: crate::ir::PropValueKind::Expression,
-        dynamic: true,
-        handler: false,
-        position,
-    });
-    props.push(Prop {
-        key: event,
-        value: Some(binding.value),
-        value_kind: crate::ir::PropValueKind::ModelUpdate,
-        dynamic: true,
-        handler: true,
-        position,
-    });
-    if let Some(name) = modifiers {
-        let mut object = String::from("{ ");
-        for (i, modifier) in binding.modifiers.iter().enumerate() {
-            if i != 0 {
-                object.push_str(", ");
-            }
-            object.push('"');
-            object.push_str(&crate::generate::escape_js_string_literal(modifier));
-            object.push_str("\": true");
-        }
-        object.push_str(" }");
-        props.push(Prop {
-            key: name,
-            value: Some(Expr::plain(alloc.alloc_str(&object))),
-            value_kind: crate::ir::PropValueKind::ModelModifiers,
-            dynamic: true,
-            handler: false,
-            position,
-        });
-    }
-    Ok(())
-}
-
 /// A component `:prop` or `@event`, or an outlet `:prop`. Repeated names merge
 /// only for `class`/`style`, which the shared generator normalizes together.
 fn prop<'a>(
@@ -266,20 +235,17 @@ fn prop<'a>(
 ) -> Result<()> {
     let handler = match binding.kind {
         BindingKind::Prop => false,
-        BindingKind::Event
-            if component && binding.dynamic_name.is_none() && binding.modifiers.is_empty() =>
-        {
-            true
-        }
+        BindingKind::Event if component && binding.modifiers.is_empty() => true,
         _ => return Err(LegacyReason::Component.into()),
     };
-    if !handler && !component_prop(binding.name)
-        || !fresh && !matches!(binding.name, "class" | "style")
+    if !handler && binding.dynamic_name.is_none() && !component_prop(binding.name)
+        || !fresh && (binding.dynamic_name.is_some() || !matches!(binding.name, "class" | "style"))
     {
         return Err(LegacyReason::Component.into());
     }
     props.push(Prop {
         key: binding.name,
+        dynamic_name: binding.dynamic_name,
         value: Some(binding.value),
         value_kind: crate::ir::PropValueKind::Expression,
         dynamic: true,

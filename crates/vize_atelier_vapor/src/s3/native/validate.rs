@@ -4,6 +4,7 @@
 
 mod attach;
 mod component;
+mod component_model;
 mod control;
 mod expressions;
 mod ident;
@@ -16,7 +17,10 @@ mod order;
 mod select;
 mod slots;
 mod spread;
+mod structural_slots;
+mod suspense;
 mod teleport;
+mod transition;
 mod tree;
 
 use std::borrow::Cow;
@@ -174,6 +178,8 @@ pub(super) fn admit<'a>(
     slots::check(&nodes, &parents)?;
     teleport::check(&nodes)?;
     keep_alive::check(&nodes)?;
+    suspense::check(&nodes)?;
+    transition::check(&nodes)?;
     model::check(&nodes)?;
     select::check(&nodes, &parents)?;
     once::check(&nodes, &parents)?;
