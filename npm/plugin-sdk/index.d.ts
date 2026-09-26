@@ -1,3 +1,5 @@
+import type { FactGroups } from "./facts.js";
+
 export declare const BATCH_SCHEMA: 1;
 export interface PluginNode {
   id: number;
@@ -15,6 +17,7 @@ export interface ScopeEntry {
 export interface RuleContext {
   readonly nodes: readonly PluginNode[];
   facts(name: "templateScopes"): ReadonlyMap<number, readonly ScopeEntry[]>;
+  facts<K extends keyof FactGroups>(name: K): FactGroups[K];
   facts<T = unknown>(name: string): ReadonlyMap<string | number, T>;
   ancestors(node: PluginNode, kind: string): IterableIterator<PluginNode>;
   /** Replace the whole reported node span; ranges are assigned by the host. */
@@ -63,3 +66,5 @@ export declare function runRules(
 
 export { defineFactProvider, defineOutputPlugin, defineTransformPlugin } from "./stages.js";
 export { applyFixes } from "./fixes.js";
+
+export type * from "./facts.js";

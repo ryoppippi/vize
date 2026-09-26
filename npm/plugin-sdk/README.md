@@ -48,7 +48,14 @@ include `templateScopes` and the registered Croquis producers `bindings`,
 `prop-types`, `emit-types`, `slot-types`, `reactivity-classes` and
 `component-references`. Each interface value preserves the producer's schema,
 nullable unknowns and type dependency completeness. Imported types which this
-analysis cannot resolve remain explicit unknowns.
+analysis cannot resolve remain explicit unknowns. Primary Croquis facts require
+a JavaScript or TypeScript script; other script dialects are refused explicitly.
+
+TypeScript infers each native group's exact map keys and deeply readonly values
+from `ctx.facts("prop-types")`, including authored interface order and all emit
+overloads. The package exports `FactGroups`, `FactKey`, `FactValue`, `FactEntry`
+and the individual native contracts. Custom provider groups can use
+`ctx.facts<MyFact>("design/labels")`; unknown groups default to `unknown`.
 
 ## Fact providers
 

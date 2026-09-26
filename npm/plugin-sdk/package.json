@@ -16,6 +16,7 @@
     "index.js",
     "identity.js",
     "index.d.ts",
+    "facts.d.ts",
     "stages.js",
     "stages.d.ts",
     "fixes.js",

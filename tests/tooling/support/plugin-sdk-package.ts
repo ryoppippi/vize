@@ -88,6 +88,7 @@ export function verifyStandalonePluginSdk(
     for (const entry of [
       "index.js",
       "index.d.ts",
+      "facts.d.ts",
       "fixes.js",
       "fixes.d.ts",
       "sandbox.js",
