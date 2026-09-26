@@ -8,6 +8,18 @@
 > [stage dependency policy](./plan/stage-dependencies.md). Historical art-name
 > package ids stay visible during the mechanical rename window.
 
+> [!IMPORTANT]
+> The [2026-09-27 level restructure decision record](./decisions/2026-09-27-level-restructure.md)
+> supersedes parts of this page:
+>
+> - S0–S4 naming (now levels L0–L4)
+> - the crate layout (`vize_davinci` is removed; crates carry level names
+>   only)
+> - S4 placement (now a single `vize_l4`)
+> - S3 routing (L3 is the decision layer for every backend)
+>
+> Where they conflict, the record wins until this page is rewritten.
+
 ## What we take from MLIR, and what we refuse
 
 **Taken as philosophy:**
