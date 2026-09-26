@@ -70,6 +70,7 @@ test("six production alpha groups cross the native batch with exact typed fields
   assert.equal(signature.name, "Public.vue");
   assert.equal(signature.declared_name, "PublicComponent");
   assert.equal(signature.script_setup, true);
+  assert.equal(signature.props_complete, true);
   assert.deepEqual(signature.prop_order, ["label", "choice", "value", "title"]);
   assert.deepEqual(signature.slot_order, ["default"]);
   const save = row(facts, "emit-types", "save");
@@ -229,4 +230,17 @@ test("active runtime type annotations retain their actual declaration dependenci
   const changed = inspect(input.replace("Payload = string", "Payload = number"));
   assert.notDeepEqual(row(changed, "emit-types", "save"), save);
   assert.deepEqual(changed["prop-types"], before["prop-types"]);
+});
+
+test("missing property catalogs remain explicit independently of type closure", () => {
+  const input = `<script setup lang="ts">
+ import type { Public } from './missing'
+ defineProps<Public>()
+ </script><template><button /></template>`;
+  const facts = inspect(input);
+  const signature = row(facts, "component-signature", "Public.vue");
+  assert.equal(signature.props_complete, false);
+  assert.equal(signature.type_dependencies.complete, false);
+  assert.deepEqual(signature.prop_order, []);
+  assert.deepEqual(facts["prop-types"], []);
 });

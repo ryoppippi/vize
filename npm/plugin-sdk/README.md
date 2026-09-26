@@ -48,7 +48,8 @@ include `templateScopes` and the registered Croquis producers `bindings`,
 `bindings` dependency and preserves authored script byte spans. Public component interface pages are `component-signature`,
 `prop-types`, `emit-types`, `slot-types`, `reactivity-classes` and
 `component-references`. Each interface value preserves the producer's schema,
-nullable unknowns and type dependency completeness. Imported types which this
+nullable unknowns and type dependency completeness. The signature's
+`props_complete` separately records whether all property names were enumerated. Imported types which this
 analysis cannot resolve remain explicit unknowns. Primary Croquis facts require
 a JavaScript or TypeScript script; other script dialects are refused explicitly.
 

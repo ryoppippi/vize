@@ -263,6 +263,7 @@ export interface SignatureContract {
   readonly emit_type_arguments: string | null;
   readonly slot_type_arguments: string | null;
   /** Public names in authored completion order, without folio key encoding. */
+  readonly props_complete: boolean;
   readonly prop_order: readonly string[];
   readonly slot_order: readonly string[];
   readonly exposes_complete: boolean;
