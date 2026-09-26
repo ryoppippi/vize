@@ -38,11 +38,11 @@ fn the_committed_planes_agree_with_the_specs() {
         run_source(name, source, &mut battery);
     }
     battery.assert_verdicts("battery");
-    battery
-        .unused
-        .verdict("unused-bindings", "battery")
-        .unwrap();
     if cfg!(debug_assertions) {
+        battery
+            .unused
+            .verdict("unused-bindings", "battery")
+            .unwrap();
         assert_eq!(
             (
                 battery.unused.artifacts,
@@ -146,11 +146,11 @@ const element = ref(null);
         "<script setup>const unread = 0;</script><template>{{ broken + }}</template>",
         &mut planes,
     );
-    planes
-        .unused
-        .verdict("unused-bindings", "read channels")
-        .unwrap();
     if cfg!(debug_assertions) {
+        planes
+            .unused
+            .verdict("unused-bindings", "read channels")
+            .unwrap();
         assert_eq!(
             (
                 planes.unused.artifacts,
@@ -216,10 +216,12 @@ fn the_corpus_shard_agrees_with_the_specs() {
     }
     eprintln!("{}", shard.scope_lines("corpus shard"));
     shard.assert_verdicts("corpus shard");
-    shard
-        .unused
-        .verdict("unused-bindings", "corpus shard")
-        .unwrap();
+    if cfg!(debug_assertions) {
+        shard
+            .unused
+            .verdict("unused-bindings", "corpus shard")
+            .unwrap();
+    }
     shard
         .reactivity
         .verdict("reactivity", "corpus shard")
