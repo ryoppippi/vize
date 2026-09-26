@@ -1,8 +1,7 @@
 {
   "name": "@vizejs/plugin-sdk",
   "version": "0.428.1",
-  "private": true,
-  "description": "Authoring contracts for Vize serialized JavaScript plugin visits",
+  "description": "Deterministic authoring and isolated execution for Vize JavaScript plugins",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -17,7 +16,10 @@
     "stages.d.ts",
     "fixes.js",
     "fixes.d.ts",
-    "README.md"
+    "README.md",
+    "sandbox.js",
+    "sandbox-worker.js",
+    "sandbox.d.ts"
   ],
   "type": "module",
   "sideEffects": false,
@@ -30,6 +32,21 @@
     "./fixes": {
       "types": "./fixes.d.ts",
       "default": "./fixes.js"
+    },
+    "./sandbox": {
+      "types": "./sandbox.d.ts",
+      "default": "./sandbox.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@vizejs/native": ">=0.429.0"
+  },
+  "peerDependenciesMeta": {
+    "@vizejs/native": {
+      "optional": true
     }
   },
   "engines": {

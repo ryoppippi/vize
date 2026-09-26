@@ -10,7 +10,9 @@ export interface HookIdentity {
   version: string;
   cacheInputs?: readonly { name: string; value: string }[];
 }
-export interface NativeHook extends HookIdentity {
+/** Runtime arrays are frozen; declarations match generated native descriptors. */
+export interface NativeHook extends Omit<HookIdentity, "cacheInputs"> {
+  readonly cacheInputs?: { name: string; value: string }[];
   readonly fingerprint: string;
   run(batchJson: string): string;
 }
@@ -85,4 +87,8 @@ export declare function defineFactProvider(
       batch: FactProviderBatch,
     ): Readonly<Record<string, readonly (readonly [string | number, JsonValue])[]>>;
   },
-): NativeHook & { readonly provides: readonly string[] };
+): NativeHook & {
+  readonly provides: string[];
+  readonly visit?: string[];
+  readonly demands: string[];
+};

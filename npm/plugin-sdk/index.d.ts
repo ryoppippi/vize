@@ -29,7 +29,11 @@ export interface PluginDefinition {
   cacheInputs?: readonly { name: string; value: string }[];
   rules: Readonly<Record<string, (context: RuleContext) => void>>;
 }
-export interface Plugin extends PluginDefinition {
+/** Frozen at runtime. Array declarations interoperate with generated native descriptors. */
+export interface Plugin extends Omit<PluginDefinition, "visit" | "demands" | "cacheInputs"> {
+  readonly visit?: string[];
+  readonly demands: string[];
+  readonly cacheInputs?: { name: string; value: string }[];
   readonly fingerprint: string;
   run(batchJson: string): string;
 }
@@ -39,12 +43,22 @@ export interface VisitBatch {
   file?: string;
   parents: number[];
   nodes: PluginNode[];
-  facts: Record<string, Array<[number, ScopeEntry[]]>>;
+  facts: Record<string, Array<[string | number, unknown]>>;
 }
 export declare function definePlugin(definition: PluginDefinition): Plugin;
 export declare function runBatch(
   plugin: Plugin,
   batch: VisitBatch,
+): Array<{ rule: string; node: number; message: string; fix?: string }>;
+
+export declare function runRules(
+  plugin: Plugin,
+  source: {
+    nodes: readonly PluginNode[];
+    byId: ReadonlyMap<number, PluginNode>;
+    facts(name: string): ReadonlyMap<string | number, unknown>;
+    parent(id: number): number;
+  },
 ): Array<{ rule: string; node: number; message: string; fix?: string }>;
 
 export { defineFactProvider, defineOutputPlugin, defineTransformPlugin } from "./stages.js";

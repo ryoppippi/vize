@@ -46,6 +46,7 @@ function stage(manifest, callback, encode) {
   if (!manifest.name || !manifest.version || typeof callback !== "function") {
     throw new TypeError("a plugin hook needs name, version and a synchronous function");
   }
+  manifest = structuredClone(manifest);
   const fingerprint = createHash("sha256")
     .update(JSON.stringify([SDK_FINGERPRINT, manifest, String(callback)]))
     .digest("hex");
