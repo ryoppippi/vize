@@ -58,6 +58,8 @@ pub fn run(
 ) -> Result<(CompileResult, Cost), String> {
     let started = Instant::now();
     validate(spec, use_cache)?;
+    // Cached operations always satisfy the deterministic-output contract.
+    let audit = use_cache || audit;
     let key = cache::content_key(compiled, spec, config, audit)?;
     let mut cost = Cost {
         name: spec.name.to_owned(),

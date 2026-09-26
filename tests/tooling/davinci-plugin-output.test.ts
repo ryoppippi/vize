@@ -115,7 +115,7 @@ test("formatter and output cannot change executable text or forge maps", () => {
             JSON.stringify([{ placement: "append", comment: String(++calls) }]),
           ),
         ],
-        { cache: true },
+        { cache: true, auditDeterminism: false },
       ),
     /nondeterministic/,
   );

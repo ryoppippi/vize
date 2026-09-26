@@ -31,8 +31,8 @@ does not reconstruct full internal generated ranges from them. A compile that
 did not request maps still returns no map.
 
 Each plugin reports host time, callback time, batch size, operation count and
-cache status. Determinism auditing defaults to two calls on a miss; invalid or
-inconsistent results never enter the cache. The content key covers the entire
+cache status. Cached misses always audit two calls; uncached runs audit by default. Invalid
+or inconsistent results never enter the cache. The content key covers the entire
 preceding compile result, compiler configuration, host build, feature flags,
 audit mode, plugin family/name/version/code fingerprint and its declared input
 values. The process cache keeps at most 64 results and 4 MiB of serialized

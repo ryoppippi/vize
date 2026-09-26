@@ -36,7 +36,7 @@ pub struct OutputPluginCacheInputNapi {
 pub struct OutputPluginOptionsNapi {
     pub cache: Option<bool>,
     pub cache_dir: Option<String>,
-    /// On a miss, compare two validated outputs. Defaults to true.
+    /// Uncached misses audit by default; cached misses always audit.
     pub audit_determinism: Option<bool>,
 }
 

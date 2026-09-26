@@ -936,7 +936,7 @@ export interface OutputPluginNapi {
 export interface OutputPluginOptionsNapi {
   cache?: boolean;
   cacheDir?: string;
-  /** On a miss, compare two validated outputs. Defaults to true. */
+  /** Uncached misses audit by default; cached misses always audit. */
   auditDeterminism?: boolean;
 }
 

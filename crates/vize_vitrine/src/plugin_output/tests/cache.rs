@@ -181,3 +181,30 @@ fn cache_requires_declared_unique_inputs_even_on_a_hit() {
         .is_err()
     );
 }
+
+#[test]
+fn cached_operations_cannot_disable_determinism_audits() {
+    let compiled = native(false);
+    let plugin = spec("cache-forces-output-audit", "output");
+    let mut calls = 0;
+    let error = run(&compiled, &plugin, "config", true, false, None, |_| {
+        calls += 1;
+        Ok(
+            serde_json::json!([{ "placement": "append", "comment": calls.to_string() }])
+                .to_string(),
+        )
+    })
+    .unwrap_err();
+    assert_eq!(
+        error,
+        "plugin `cache-forces-output-audit` returned nondeterministic output"
+    );
+    assert_eq!(calls, 2);
+    let (_, cost) = run(&compiled, &plugin, "config", true, true, None, |_| {
+        calls += 1;
+        Ok("[]".to_owned())
+    })
+    .unwrap();
+    assert_eq!(calls, 4);
+    assert!(!cost.cached);
+}

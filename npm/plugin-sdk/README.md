@@ -152,8 +152,8 @@ Declare every captured configuration or ambient input in `cacheInputs`, even
 when the list is empty. Names beginning `@vize/` are host-reserved. Source,
 filename, native build, SDK runtime bytes, plugin version/code, static demands,
 visits and inputs participate in keys. A cached lint miss always audits two
-identical batches. Providers and transforms audit misses; output hooks audit by
-default. Different validated outputs refuse before caching. All hook families
+identical batches. Providers and transforms audit misses. Cached output hooks also always audit;
+uncached output hooks audit by default. Different validated outputs refuse before caching. All hook families
 have bounded in-process caches and opt-in `cacheDir` persistence. Disk hits
 validate their schema, keys and host-confined outputs before reuse.
 
